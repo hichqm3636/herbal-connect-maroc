@@ -17,6 +17,7 @@ import { Route as AppOrdersRouteImport } from './routes/_app/orders'
 import { Route as AppLoyaltyRouteImport } from './routes/_app/loyalty'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppAdminRouteImport } from './routes/_app/_admin'
+import { Route as AppProductsProductIdRouteImport } from './routes/_app/products.$productId'
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
 import { Route as AppAdminAdminProductsRouteImport } from './routes/_app/_admin/admin.products'
 import { Route as AppAdminAdminOrdersRouteImport } from './routes/_app/_admin/admin.orders'
@@ -60,6 +61,11 @@ const AppAdminRoute = AppAdminRouteImport.update({
   id: '/_admin',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProductsProductIdRoute = AppProductsProductIdRouteImport.update({
+  id: '/$productId',
+  path: '/$productId',
+  getParentRoute: () => AppProductsRoute,
+} as any)
 const AppAdminAdminIndexRoute = AppAdminAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
@@ -88,7 +94,8 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/loyalty': typeof AppLoyaltyRoute
   '/orders': typeof AppOrdersRoute
-  '/products': typeof AppProductsRoute
+  '/products': typeof AppProductsRouteWithChildren
+  '/products/$productId': typeof AppProductsProductIdRoute
   '/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
   '/admin/products': typeof AppAdminAdminProductsRoute
@@ -100,7 +107,8 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/loyalty': typeof AppLoyaltyRoute
   '/orders': typeof AppOrdersRoute
-  '/products': typeof AppProductsRoute
+  '/products': typeof AppProductsRouteWithChildren
+  '/products/$productId': typeof AppProductsProductIdRoute
   '/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
   '/admin/products': typeof AppAdminAdminProductsRoute
@@ -115,7 +123,8 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/loyalty': typeof AppLoyaltyRoute
   '/_app/orders': typeof AppOrdersRoute
-  '/_app/products': typeof AppProductsRoute
+  '/_app/products': typeof AppProductsRouteWithChildren
+  '/_app/products/$productId': typeof AppProductsProductIdRoute
   '/_app/_admin/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/_app/_admin/admin/orders': typeof AppAdminAdminOrdersRoute
   '/_app/_admin/admin/products': typeof AppAdminAdminProductsRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/loyalty'
     | '/orders'
     | '/products'
+    | '/products/$productId'
     | '/admin/distributors'
     | '/admin/orders'
     | '/admin/products'
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/loyalty'
     | '/orders'
     | '/products'
+    | '/products/$productId'
     | '/admin/distributors'
     | '/admin/orders'
     | '/admin/products'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/_app/loyalty'
     | '/_app/orders'
     | '/_app/products'
+    | '/_app/products/$productId'
     | '/_app/_admin/admin/distributors'
     | '/_app/_admin/admin/orders'
     | '/_app/_admin/admin/products'
@@ -226,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/products/$productId': {
+      id: '/_app/products/$productId'
+      path: '/$productId'
+      fullPath: '/products/$productId'
+      preLoaderRoute: typeof AppProductsProductIdRouteImport
+      parentRoute: typeof AppProductsRoute
+    }
     '/_app/_admin/admin/': {
       id: '/_app/_admin/admin/'
       path: '/admin'
@@ -275,12 +294,24 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
   AppAdminRouteChildren,
 )
 
+interface AppProductsRouteChildren {
+  AppProductsProductIdRoute: typeof AppProductsProductIdRoute
+}
+
+const AppProductsRouteChildren: AppProductsRouteChildren = {
+  AppProductsProductIdRoute: AppProductsProductIdRoute,
+}
+
+const AppProductsRouteWithChildren = AppProductsRoute._addFileChildren(
+  AppProductsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppDashboardRoute: typeof AppDashboardRoute
   AppLoyaltyRoute: typeof AppLoyaltyRoute
   AppOrdersRoute: typeof AppOrdersRoute
-  AppProductsRoute: typeof AppProductsRoute
+  AppProductsRoute: typeof AppProductsRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -288,7 +319,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppLoyaltyRoute: AppLoyaltyRoute,
   AppOrdersRoute: AppOrdersRoute,
-  AppProductsRoute: AppProductsRoute,
+  AppProductsRoute: AppProductsRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

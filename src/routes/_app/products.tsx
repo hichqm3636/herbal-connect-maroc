@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ShoppingCart, Plus, Minus, Trash2, Loader2, PackageSearch } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -216,19 +216,29 @@ function ProductsPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((p) => (
             <Card key={p.id} className="overflow-hidden flex flex-col shadow-soft hover:shadow-elegant transition-shadow group">
-              <div className="aspect-square bg-muted overflow-hidden">
+              <Link
+                to="/products/$productId"
+                params={{ productId: p.id }}
+                className="aspect-square bg-muted overflow-hidden block"
+              >
                 <img
                   src={p.image_url ?? ""}
                   alt={p.name_ar}
                   loading="lazy"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-              </div>
+              </Link>
               <div className="p-4 flex flex-col flex-1 gap-2">
                 {p.category && (
                   <Badge variant="secondary" className="w-fit text-xs">{p.category}</Badge>
                 )}
-                <h3 className="font-semibold leading-snug line-clamp-2">{p.name_ar}</h3>
+                <Link
+                  to="/products/$productId"
+                  params={{ productId: p.id }}
+                  className="font-semibold leading-snug line-clamp-2 hover:text-primary transition-colors"
+                >
+                  {p.name_ar}
+                </Link>
                 <p className="text-xs text-muted-foreground line-clamp-2 flex-1">{p.description_ar}</p>
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-lg font-bold text-primary">{formatMAD(p.price_mad)}</span>
