@@ -358,10 +358,14 @@ function ProductDetail() {
             size="lg"
             className="w-full gap-2"
             onClick={handleAdd}
-            disabled={outOfStock}
+            disabled={outOfStock || qty < minQty}
           >
             <Plus className="h-4 w-4" />
-            {outOfStock ? "غير متوفر" : "إضافة إلى السلة"}
+            {outOfStock
+              ? "غير متوفر"
+              : qty < minQty
+                ? `الحد الأدنى ${minQty} وحدة`
+                : "إضافة إلى السلة"}
           </Button>
         </div>
       </div>
