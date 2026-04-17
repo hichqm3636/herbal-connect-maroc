@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_app/_admin/admin/")({
 
 function AdminDashboard() {
   const [stats, setStats] = useState({ sales: 0, orders: 0, distributors: 0, pending: 0 });
-  const [recent, setRecent] = useState<{ id: string; status: string; total_mad: number; created_at: string }[]>([]);
+  const [recent, setRecent] = useState<{ id: string; order_number: string; status: string; total_mad: number; created_at: string }[]>([]);
 
   useEffect(() => {
     (async () => {
