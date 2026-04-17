@@ -255,6 +255,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _tmp_check_auth_user: {
+        Args: { _email: string }
+        Returns: {
+          created_at: string
+          email: string
+          id: string
+          raw_user_meta_data: Json
+        }[]
+      }
       admin_exists: { Args: never; Returns: boolean }
       claim_first_admin: { Args: never; Returns: boolean }
       has_role: {
