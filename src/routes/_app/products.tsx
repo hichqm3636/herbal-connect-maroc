@@ -60,42 +60,7 @@ function ProductsPage() {
     toast.success("تمت إضافة المنتج إلى السلة");
   };
 
-  const placeOrder = async () => {
-    if (!user || cart.length === 0) return;
-    setSubmitting(true);
-    const points = Math.floor(total / 100);
-    const { data: order, error } = await supabase
-      .from("orders")
-      .insert({
-        distributor_id: user.id,
-        total_mad: total,
-        points_earned: points,
-        status: "pending",
-      })
-      .select("id")
-      .single();
-    if (error || !order) {
-      toast.error("تعذر إنشاء الطلب");
-      setSubmitting(false);
-      return;
-    }
-    const items = cart.map((i) => ({
-      order_id: order.id,
-      product_id: i.id,
-      quantity: i.qty,
-      unit_price_mad: i.price_mad,
-    }));
-    const { error: itemsErr } = await supabase.from("order_items").insert(items);
-    if (itemsErr) {
-      toast.error("تعذر حفظ عناصر الطلب");
-      setSubmitting(false);
-      return;
-    }
-    toast.success(`تم إرسال الطلب بنجاح • +${points} نقطة`);
-    clear();
-    setOpen(false);
-    setSubmitting(false);
-  };
+
 
   return (
     <div className="space-y-6">
