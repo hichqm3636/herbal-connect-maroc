@@ -72,7 +72,7 @@ function OrdersPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform data-[state=open]:rotate-180 shrink-0" />
                     <div className="text-right min-w-0">
-                      <p className="font-semibold text-sm">طلب #{o.id.slice(0, 8)}</p>
+                      <p className="font-semibold text-sm">{o.order_number}</p>
                       <p className="text-xs text-muted-foreground">{formatDateTimeAr(o.created_at)}</p>
                     </div>
                   </div>
