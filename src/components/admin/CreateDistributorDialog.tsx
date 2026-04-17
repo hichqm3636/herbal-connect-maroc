@@ -52,18 +52,33 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
     if (!validate()) return;
     setBusy(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        await supabase.auth.signOut();
+        toast.error("انتهت الجلسة، يرجى تسجيل الدخول من جديد");
+        window.location.href = "/login";
+        return;
+      }
       const { data, error } = await supabase.functions.invoke("create-distributor", {
         body: { action: "create", ...form },
       });
       if (error) {
         let msg = error.message;
+        let status: number | undefined;
         try {
           const ctx = (error as { context?: Response }).context;
           if (ctx) {
+            status = ctx.status;
             const j = await ctx.clone().json();
             if (j?.error) msg = j.error;
           }
         } catch { /* ignore */ }
+        if (status === 401) {
+          await supabase.auth.signOut();
+          toast.error("انتهت الجلسة، يرجى تسجيل الدخول من جديد");
+          window.location.href = "/login";
+          return;
+        }
         throw new Error(msg);
       }
       if (data?.error) throw new Error(data.error);
