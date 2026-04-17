@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMAD } from "@/lib/format";
+import { deriveWholesaleFromRRP, parseTiers } from "@/lib/pricing";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/_admin/admin/products")({
@@ -151,7 +152,11 @@ function AdminProducts() {
       .from("products")
       .select("*")
       .order("created_at", { ascending: false });
-    setProducts(data ?? []);
+    const rows = (data ?? []).map((p) => ({
+      ...p,
+      price_tiers: parseTiers((p as { price_tiers?: unknown }).price_tiers),
+    })) as Product[];
+    setProducts(rows);
   };
 
   useEffect(() => {
