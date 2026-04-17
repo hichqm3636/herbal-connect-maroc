@@ -31,13 +31,21 @@ const LEVEL_THRESHOLDS = [
 ];
 
 function LoyaltyPage() {
-  const { user } = useAuth();
+  const { user, refreshRoles, isAdmin } = useAuth();
   const [points, setPoints] = useState(0);
   const [level, setLevel] = useState<string>("distributor");
   const [txs, setTxs] = useState<Tx[]>([]);
+  const [adminExists, setAdminExists] = useState<boolean | null>(null);
+  const [claiming, setClaiming] = useState(false);
+
+  const checkAdmin = async () => {
+    const { data } = await supabase.rpc("admin_exists");
+    setAdminExists(Boolean(data));
+  };
 
   useEffect(() => {
     if (!user) return;
+    checkAdmin();
     (async () => {
       const { data: prof } = await supabase
         .from("profiles")
@@ -57,6 +65,24 @@ function LoyaltyPage() {
       setTxs(t ?? []);
     })();
   }, [user]);
+
+  const claimAdmin = async () => {
+    setClaiming(true);
+    const { data, error } = await supabase.rpc("claim_first_admin");
+    setClaiming(false);
+    if (error) {
+      toast.error("تعذّر تعيينك كمسؤول");
+      return;
+    }
+    if (data === true) {
+      toast.success("تم تعيينك كمسؤول بنجاح");
+      await refreshRoles();
+      await checkAdmin();
+    } else {
+      toast.error("يوجد مسؤول بالفعل");
+      await checkAdmin();
+    }
+  };
 
   const tier = LEVEL_THRESHOLDS.find((t) => t.level === level) ?? LEVEL_THRESHOLDS[0];
   const nextTier = LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.findIndex((t) => t.level === level) + 1];
