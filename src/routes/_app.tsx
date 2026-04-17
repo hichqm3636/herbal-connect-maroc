@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { Separator } from "@/components/ui/separator";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
+import { CartProvider } from "@/hooks/useCart";
 import { Leaf } from "lucide-react";
 
 export const Route = createFileRoute("/_app")({
