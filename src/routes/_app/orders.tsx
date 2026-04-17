@@ -39,6 +39,20 @@ interface Order {
 function OrdersPage() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyOrderNumber = async (e: React.MouseEvent, orderNumber: string, orderId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    try {
+      await navigator.clipboard.writeText(orderNumber);
+      setCopiedId(orderId);
+      toast.success("تم نسخ رقم الطلب");
+      setTimeout(() => setCopiedId((c) => (c === orderId ? null : c)), 1500);
+    } catch {
+      toast.error("تعذر النسخ");
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -73,7 +87,21 @@ function OrdersPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform data-[state=open]:rotate-180 shrink-0" />
                     <div className="text-right min-w-0">
-                      <p className="font-semibold text-sm">{o.order_number}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-semibold text-sm">{o.order_number}</p>
+                        <button
+                          type="button"
+                          onClick={(e) => copyOrderNumber(e, o.order_number, o.id)}
+                          aria-label="نسخ رقم الطلب"
+                          className="p-1 -m-1 text-muted-foreground hover:text-foreground rounded transition-colors"
+                        >
+                          {copiedId === o.id ? (
+                            <Check className="h-3.5 w-3.5 text-success" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </div>
                       <p className="text-xs text-muted-foreground">{formatDateTimeAr(o.created_at)}</p>
                     </div>
                   </div>
