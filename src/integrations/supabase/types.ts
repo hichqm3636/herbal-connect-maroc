@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_activity_log: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          id: string
+          metadata: Json
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       loyalty_transactions: {
         Row: {
           admin_id: string | null
@@ -199,6 +226,7 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
+          is_active: boolean
           level: Database["public"]["Enums"]["distributor_level"]
           loyalty_points: number
           monthly_sales: number
@@ -210,6 +238,7 @@ export type Database = {
           created_at?: string
           full_name?: string
           id: string
+          is_active?: boolean
           level?: Database["public"]["Enums"]["distributor_level"]
           loyalty_points?: number
           monthly_sales?: number
@@ -221,6 +250,7 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
+          is_active?: boolean
           level?: Database["public"]["Enums"]["distributor_level"]
           loyalty_points?: number
           monthly_sales?: number
