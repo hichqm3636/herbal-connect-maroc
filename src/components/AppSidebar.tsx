@@ -8,6 +8,7 @@ import {
   Boxes,
   Users,
   Activity,
+  MapPin,
   LogOut,
   Leaf,
 } from "lucide-react";
@@ -37,6 +38,7 @@ const adminItems = [
   { title: "لوحة الإدارة", url: "/admin", icon: ShieldCheck },
   { title: "إدارة المنتجات", url: "/admin/products", icon: Boxes },
   { title: "إدارة الموزعين", url: "/admin/distributors", icon: Users },
+  { title: "إدارة المناطق", url: "/admin/territories", icon: MapPin },
   { title: "إدارة الطلبات", url: "/admin/orders", icon: ClipboardList },
   { title: "سجل النشاط", url: "/admin/activity", icon: Activity },
 ];
