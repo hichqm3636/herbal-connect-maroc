@@ -14,16 +14,231 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      loyalty_transactions: {
+        Row: {
+          admin_id: string | null
+          created_at: string
+          distributor_id: string
+          id: string
+          points: number
+          reason: string
+        }
+        Insert: {
+          admin_id?: string | null
+          created_at?: string
+          distributor_id: string
+          id?: string
+          points: number
+          reason?: string
+        }
+        Update: {
+          admin_id?: string | null
+          created_at?: string
+          distributor_id?: string
+          id?: string
+          points?: number
+          reason?: string
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          product_id: string
+          quantity: number
+          unit_price_mad: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          product_id: string
+          quantity: number
+          unit_price_mad: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          product_id?: string
+          quantity?: number
+          unit_price_mad?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          distributor_id: string
+          id: string
+          notes: string | null
+          points_earned: number
+          status: Database["public"]["Enums"]["order_status"]
+          total_mad: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          distributor_id: string
+          id?: string
+          notes?: string | null
+          points_earned?: number
+          status?: Database["public"]["Enums"]["order_status"]
+          total_mad?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          distributor_id?: string
+          id?: string
+          notes?: string | null
+          points_earned?: number
+          status?: Database["public"]["Enums"]["order_status"]
+          total_mad?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          active: boolean
+          category: string | null
+          created_at: string
+          description_ar: string
+          id: string
+          image_url: string | null
+          name_ar: string
+          price_mad: number
+          stock: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description_ar?: string
+          id?: string
+          image_url?: string | null
+          name_ar: string
+          price_mad: number
+          stock?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description_ar?: string
+          id?: string
+          image_url?: string | null
+          name_ar?: string
+          price_mad?: number
+          stock?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          city: string | null
+          created_at: string
+          full_name: string
+          id: string
+          level: Database["public"]["Enums"]["distributor_level"]
+          loyalty_points: number
+          monthly_sales: number
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          full_name?: string
+          id: string
+          level?: Database["public"]["Enums"]["distributor_level"]
+          loyalty_points?: number
+          monthly_sales?: number
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          level?: Database["public"]["Enums"]["distributor_level"]
+          loyalty_points?: number
+          monthly_sales?: number
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "distributor"
+      distributor_level:
+        | "distributor"
+        | "senior_consultant"
+        | "success_builder"
+        | "supervisor"
+        | "world_team"
+      order_status:
+        | "pending"
+        | "confirmed"
+        | "shipped"
+        | "delivered"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +365,22 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "distributor"],
+      distributor_level: [
+        "distributor",
+        "senior_consultant",
+        "success_builder",
+        "supervisor",
+        "world_team",
+      ],
+      order_status: [
+        "pending",
+        "confirmed",
+        "shipped",
+        "delivered",
+        "cancelled",
+      ],
+    },
   },
 } as const
