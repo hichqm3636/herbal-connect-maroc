@@ -243,7 +243,7 @@ function AdminOrders() {
             <div className="flex flex-col md:flex-row md:items-center gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold">طلب #{o.id.slice(0, 8)}</p>
+                  <p className="font-semibold">{o.order_number}</p>
                   <Badge variant={STATUS_VARIANTS[o.status]}>{STATUS_LABELS[o.status]}</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
