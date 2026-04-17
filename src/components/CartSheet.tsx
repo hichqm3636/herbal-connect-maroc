@@ -52,11 +52,14 @@ export function CartSheet() {
   const { items, total, isOpen, setOpen, updateQty, removeItem, clear } = useCart();
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const placeOrder = async () => {
     if (!user || items.length === 0) return;
     setSubmitting(true);
     const points = Math.floor(total / 100);
+    const trimmedNotes = notes.trim();
     const { data: order, error } = await supabase
       .from("orders")
       .insert({
@@ -64,6 +67,7 @@ export function CartSheet() {
         total_mad: total,
         points_earned: points,
         status: "pending",
+        notes: trimmedNotes ? trimmedNotes : null,
       })
       .select("id")
       .single();
@@ -86,6 +90,8 @@ export function CartSheet() {
     }
     toast.success(`تم إرسال الطلب بنجاح • +${points} نقطة`);
     clear();
+    setNotes("");
+    setConfirmOpen(false);
     setOpen(false);
     setSubmitting(false);
   };
@@ -103,46 +109,64 @@ export function CartSheet() {
               السلة فارغة
             </div>
           ) : (
-            items.map((item) => (
-              <div key={item.id} className="flex gap-3 p-3 rounded-lg border bg-card">
-                <img
-                  src={item.image_url ?? ""}
-                  alt={item.name_ar}
-                  className="h-16 w-16 rounded-md object-cover bg-muted"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{item.name_ar}</p>
-                  <p className="text-xs text-muted-foreground">{formatMAD(item.price_mad)}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      className="h-7 w-7"
-                      onClick={() => updateQty(item.id, -1)}
-                    >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <span className="text-sm font-medium w-6 text-center">{item.qty}</span>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      className="h-7 w-7"
-                      onClick={() => updateQty(item.id, 1)}
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7 mr-auto text-destructive"
-                      onClick={() => removeItem(item.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+            <>
+              {items.map((item) => (
+                <div key={item.id} className="flex gap-3 p-3 rounded-lg border bg-card">
+                  <img
+                    src={item.image_url ?? ""}
+                    alt={item.name_ar}
+                    className="h-16 w-16 rounded-md object-cover bg-muted"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{item.name_ar}</p>
+                    <p className="text-xs text-muted-foreground">{formatMAD(item.price_mad)}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-7 w-7"
+                        onClick={() => updateQty(item.id, -1)}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="text-sm font-medium w-6 text-center">{item.qty}</span>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-7 w-7"
+                        onClick={() => updateQty(item.id, 1)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 mr-auto text-destructive"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
+              ))}
+              <div className="space-y-2 pt-2">
+                <Label htmlFor="delivery-notes" className="text-sm">
+                  ملاحظات التوصيل (اختياري)
+                </Label>
+                <Textarea
+                  id="delivery-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="العنوان، وقت التوصيل المفضل، أو أي تعليمات أخرى"
+                  rows={3}
+                  maxLength={500}
+                />
+                <p className="text-xs text-muted-foreground text-left">
+                  {notes.length}/500
+                </p>
               </div>
-            ))
+            </>
           )}
         </div>
         {items.length > 0 && (
@@ -151,13 +175,55 @@ export function CartSheet() {
               <span className="text-muted-foreground">الإجمالي</span>
               <span className="text-lg font-bold">{formatMAD(total)}</span>
             </div>
-            <Button onClick={placeOrder} disabled={submitting} className="w-full" size="lg">
-              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              تأكيد الطلب
+            <Button
+              onClick={() => setConfirmOpen(true)}
+              disabled={submitting}
+              className="w-full"
+              size="lg"
+            >
+              متابعة الطلب
             </Button>
           </SheetFooter>
         )}
       </SheetContent>
+      <AlertDialog open={confirmOpen} onOpenChange={(o) => !submitting && setConfirmOpen(o)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد الطلب</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-right">
+                <div>
+                  عدد المنتجات: <span className="font-medium text-foreground">{items.length}</span>
+                </div>
+                <div>
+                  الإجمالي:{" "}
+                  <span className="font-medium text-foreground">{formatMAD(total)}</span>
+                </div>
+                {notes.trim() && (
+                  <div>
+                    ملاحظات:{" "}
+                    <span className="text-foreground whitespace-pre-wrap">{notes.trim()}</span>
+                  </div>
+                )}
+                <div className="pt-2">هل تريد تأكيد إرسال الطلب؟</div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={submitting}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                placeOrder();
+              }}
+              disabled={submitting}
+            >
+              {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              تأكيد
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }
