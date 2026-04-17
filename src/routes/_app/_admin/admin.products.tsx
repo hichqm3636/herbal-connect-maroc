@@ -12,6 +12,7 @@ import {
   ArrowDown,
   FileSpreadsheet,
   RefreshCw,
+  Download,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { syncWooCommerceProducts } from "@/utils/woocommerce.functions";
