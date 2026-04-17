@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, Award } from "lucide-react";
+import { Loader2, Award, UserPlus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,11 +19,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD, LEVEL_LABELS } from "@/lib/format";
 import { toast } from "sonner";
+import { createDistributor } from "@/server/createDistributor";
 
 export const Route = createFileRoute("/_app/_admin/admin/distributors")({
   component: AdminDistributors,
@@ -49,6 +51,15 @@ function AdminDistributors() {
   const [pointsDelta, setPointsDelta] = useState(0);
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newDist, setNewDist] = useState({
+    fullName: "",
+    phone: "",
+    city: "",
+    email: "",
+    password: "",
+  });
 
   const load = async () => {
     const { data } = await supabase
@@ -101,11 +112,100 @@ function AdminDistributors() {
     load();
   };
 
+  const handleCreate = async () => {
+    if (
+      !newDist.fullName.trim() ||
+      !newDist.phone.trim() ||
+      !newDist.city.trim() ||
+      !newDist.email.trim() ||
+      newDist.password.length < 8
+    ) {
+      toast.error("املأ جميع الحقول وكلمة مرور 8 أحرف على الأقل");
+      return;
+    }
+    setCreating(true);
+    try {
+      await createDistributor({ data: newDist });
+      toast.success("تم إنشاء الموزع بنجاح");
+      setCreateOpen(false);
+      setNewDist({ fullName: "", phone: "", city: "", email: "", password: "" });
+      load();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "تعذر الإنشاء";
+      toast.error(msg);
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">إدارة الموزعين</h1>
-        <p className="text-sm text-muted-foreground mt-1">{list.length} موزع</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">إدارة الموزعين</h1>
+          <p className="text-sm text-muted-foreground mt-1">{list.length} موزع</p>
+        </div>
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <UserPlus className="h-4 w-4" />
+              إضافة موزع
+            </Button>
+          </DialogTrigger>
+          <DialogContent dir="rtl">
+            <DialogHeader>
+              <DialogTitle>إنشاء حساب موزع جديد</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label>الاسم الكامل</Label>
+                <Input
+                  value={newDist.fullName}
+                  onChange={(e) => setNewDist({ ...newDist, fullName: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>الهاتف</Label>
+                  <Input
+                    value={newDist.phone}
+                    onChange={(e) => setNewDist({ ...newDist, phone: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>المدينة</Label>
+                  <Input
+                    value={newDist.city}
+                    onChange={(e) => setNewDist({ ...newDist, city: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>البريد الإلكتروني</Label>
+                <Input
+                  type="email"
+                  value={newDist.email}
+                  onChange={(e) => setNewDist({ ...newDist, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>كلمة المرور (8+ أحرف، حروف وأرقام)</Label>
+                <Input
+                  type="text"
+                  value={newDist.password}
+                  onChange={(e) => setNewDist({ ...newDist, password: e.target.value })}
+                  placeholder="شارك كلمة المرور مع الموزع"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={handleCreate} disabled={creating}>
+                {creating && <Loader2 className="h-4 w-4 animate-spin" />}
+                إنشاء الحساب
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-3">
