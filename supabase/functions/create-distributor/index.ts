@@ -18,7 +18,7 @@ interface Payload {
   password?: string;
   fullName?: string;
   phone?: string;
-  city?: string;
+  territoryId?: string;
   initialPoints?: number;
   // reset_password / set_active
   userId?: string;
@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
     const password = body.password ?? "";
     const fullName = body.fullName?.trim() ?? "";
     const phone = body.phone?.trim() ?? "";
-    const city = body.city?.trim() ?? "";
+    const territoryId = body.territoryId?.trim() ?? "";
     const initialPoints = Math.max(0, Math.floor(body.initialPoints ?? 0));
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return bad("بريد غير صالح");
@@ -98,13 +98,30 @@ Deno.serve(async (req) => {
       return bad("كلمة المرور يجب أن تحتوي 8 أحرف على الأقل مع حروف وأرقام");
     if (fullName.length < 2) return bad("الاسم قصير جداً");
     if (phone.length < 6) return bad("رقم الهاتف غير صالح");
-    if (city.length < 2) return bad("المدينة مطلوبة");
+    if (!territoryId) return bad("المنطقة مطلوبة");
+
+    const { data: territory, error: tErr } = await admin
+      .from("territories")
+      .select("id, name")
+      .eq("id", territoryId)
+      .maybeSingle();
+    if (tErr) return bad(tErr.message, 500);
+    if (!territory) return bad("المنطقة غير موجودة", 400);
+
+    const { data: dup } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("phone", phone)
+      .eq("territory_id", territoryId)
+      .eq("is_active", true)
+      .limit(1);
+    if (dup && dup.length > 0) return bad("رقم الهاتف مستخدم بالفعل في نفس المنطقة", 409);
 
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name: fullName, phone, city },
+      user_metadata: { full_name: fullName, phone, city: territory.name },
     });
     if (createErr) {
       const msg = /already|exists|registered/i.test(createErr.message)
@@ -114,12 +131,16 @@ Deno.serve(async (req) => {
     }
     if (!created.user) return bad("تعذر إنشاء المستخدم", 500);
 
-    // Apply initial loyalty points if any
+    const { error: updErr } = await admin
+      .from("profiles")
+      .update({ territory_id: territoryId, ...(initialPoints > 0 ? { loyalty_points: initialPoints } : {}) })
+      .eq("id", created.user.id);
+    if (updErr) {
+      await admin.auth.admin.deleteUser(created.user.id);
+      return bad(updErr.message, 400);
+    }
+
     if (initialPoints > 0) {
-      await admin
-        .from("profiles")
-        .update({ loyalty_points: initialPoints })
-        .eq("id", created.user.id);
       await admin.from("loyalty_transactions").insert({
         distributor_id: created.user.id,
         points: initialPoints,
@@ -128,7 +149,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    await log("create_distributor", created.user.id, { email, fullName, city });
+    await log("create_distributor", created.user.id, { email, fullName, territoryId, territoryName: territory.name });
     return json({ id: created.user.id, email: created.user.email });
   }
 
