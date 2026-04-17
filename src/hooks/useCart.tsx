@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 export interface CartProduct {
   id: string;
@@ -24,9 +24,50 @@ interface CartContextValue {
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
+const STORAGE_KEY = "herbalife_cart_v1";
+
+function loadInitial(): CartItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (i): i is CartItem =>
+        i &&
+        typeof i.id === "string" &&
+        typeof i.name_ar === "string" &&
+        typeof i.qty === "number" &&
+        i.qty > 0,
+    );
+  } catch {
+    return [];
+  }
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(() => loadInitial());
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch {
+      // storage full or disabled — ignore
+    }
+  }, [items]);
+
+  // Sync across tabs
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== STORAGE_KEY) return;
+      setItems(loadInitial());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const addItem = useCallback((product: CartProduct, qty = 1) => {
     if (qty <= 0) return;
