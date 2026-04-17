@@ -98,7 +98,13 @@ function LoginPage() {
     });
     setSubmitting(false);
     if (error) {
-      toast.error(error.message.includes("already") ? "هذا الحساب موجود بالفعل" : "تعذر إنشاء الحساب");
+      const msg = error.message || "";
+      let friendly = msg;
+      if (/already|registered|exists/i.test(msg)) friendly = "هذا الحساب موجود بالفعل";
+      else if (/weak|pwned|password.*short|at least|leaked|compromised/i.test(msg))
+        friendly = "كلمة المرور ضعيفة أو مسرّبة. اختر كلمة مرور أقوى (8+ أحرف، حروف وأرقام)";
+      else if (/rate|too many/i.test(msg)) friendly = "محاولات كثيرة، حاول لاحقاً";
+      toast.error(friendly, { description: msg !== friendly ? msg : undefined });
       return;
     }
     toast.success("تم إنشاء الحساب بنجاح");
