@@ -132,6 +132,7 @@ function AdminProducts() {
     updated?: number;
     failed: number;
     errors: string[];
+    failedRows?: CsvPreviewRow[];
   } | null>(null);
   const [previewRows, setPreviewRows] = useState<CsvPreviewRow[] | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
