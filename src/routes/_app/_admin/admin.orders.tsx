@@ -29,6 +29,7 @@ interface OrderItem {
 
 interface OrderRow {
   id: string;
+  order_number: string;
   status: string;
   total_mad: number;
   points_earned: number;
@@ -54,7 +55,7 @@ function AdminOrders() {
   const load = async () => {
     const { data } = await supabase
       .from("orders")
-      .select("id, status, total_mad, points_earned, created_at, distributor_id, notes, admin_notes, profiles(full_name, city), order_items(quantity, products(name_ar))")
+      .select("id, order_number, status, total_mad, points_earned, created_at, distributor_id, notes, admin_notes, profiles(full_name, city), order_items(quantity, products(name_ar))")
       .order("created_at", { ascending: false });
     setOrders((data as unknown as OrderRow[]) ?? []);
   };
@@ -120,7 +121,8 @@ function AdminOrders() {
     if (!q) return true;
     const name = o.profiles?.full_name?.toLowerCase() ?? "";
     const city = o.profiles?.city?.toLowerCase() ?? "";
-    return name.includes(q) || city.includes(q) || o.id.toLowerCase().startsWith(q);
+    const num = o.order_number?.toLowerCase() ?? "";
+    return name.includes(q) || city.includes(q) || num.includes(q) || o.id.toLowerCase().startsWith(q);
   });
 
   const exportCsv = () => {
@@ -129,6 +131,7 @@ function AdminOrders() {
       return;
     }
     const headers = [
+      "Order Number",
       "Order ID",
       "Created At",
       "Status",
@@ -145,6 +148,7 @@ function AdminOrders() {
       return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const rows = filtered.map((o) => [
+      o.order_number,
       o.id,
       new Date(o.created_at).toISOString(),
       o.status,
@@ -200,7 +204,7 @@ function AdminOrders() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث باسم الموزع، المدينة، أو رقم الطلب…"
+            placeholder="بحث برقم الطلب، اسم الموزع، أو المدينة…"
             className="pr-9 pl-9"
           />
           {search && (
@@ -239,7 +243,7 @@ function AdminOrders() {
             <div className="flex flex-col md:flex-row md:items-center gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold">طلب #{o.id.slice(0, 8)}</p>
+                  <p className="font-semibold">{o.order_number}</p>
                   <Badge variant={STATUS_VARIANTS[o.status]}>{STATUS_LABELS[o.status]}</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">

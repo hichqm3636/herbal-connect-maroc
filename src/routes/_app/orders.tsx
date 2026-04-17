@@ -26,6 +26,7 @@ interface OrderItem {
 
 interface Order {
   id: string;
+  order_number: string;
   status: string;
   total_mad: number;
   points_earned: number;
@@ -43,7 +44,7 @@ function OrdersPage() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("id, status, total_mad, points_earned, created_at, notes, order_items(id, quantity, unit_price_mad, products(name_ar, image_url))")
+        .select("id, order_number, status, total_mad, points_earned, created_at, notes, order_items(id, quantity, unit_price_mad, products(name_ar, image_url))")
         .eq("distributor_id", user.id)
         .order("created_at", { ascending: false });
       setOrders((data as unknown as Order[]) ?? []);
@@ -71,7 +72,7 @@ function OrdersPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform data-[state=open]:rotate-180 shrink-0" />
                     <div className="text-right min-w-0">
-                      <p className="font-semibold text-sm">طلب #{o.id.slice(0, 8)}</p>
+                      <p className="font-semibold text-sm">{o.order_number}</p>
                       <p className="text-xs text-muted-foreground">{formatDateTimeAr(o.created_at)}</p>
                     </div>
                   </div>
