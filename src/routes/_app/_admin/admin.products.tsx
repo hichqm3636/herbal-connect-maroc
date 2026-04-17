@@ -39,6 +39,11 @@ export const Route = createFileRoute("/_app/_admin/admin/products")({
   head: () => ({ meta: [{ title: "إدارة المنتجات — هيرباليفي" }] }),
 });
 
+interface PriceTier {
+  min_qty: number;
+  price: number;
+}
+
 interface Product {
   id: string;
   name_ar: string;
@@ -49,6 +54,11 @@ interface Product {
   stock: number;
   active: boolean;
   points_per_unit: number;
+  rrp_price: number | null;
+  pharmacy_price: number | null;
+  map_price: number | null;
+  minimum_order: number;
+  price_tiers: PriceTier[];
 }
 
 interface ProductImage {
@@ -67,6 +77,15 @@ const empty: Omit<Product, "id" | "image_url"> = {
   stock: 0,
   active: true,
   points_per_unit: 0,
+  rrp_price: null,
+  pharmacy_price: null,
+  map_price: null,
+  minimum_order: 1,
+  price_tiers: [
+    { min_qty: 6, price: 0 },
+    { min_qty: 12, price: 0 },
+    { min_qty: 24, price: 0 },
+  ],
 };
 
 function AdminProducts() {
