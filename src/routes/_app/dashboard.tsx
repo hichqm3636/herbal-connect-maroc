@@ -29,6 +29,7 @@ interface Profile {
 }
 interface OrderRow {
   id: string;
+  order_number: string;
   status: string;
   total_mad: number;
   created_at: string;
@@ -54,7 +55,7 @@ function Dashboard() {
 
       const { data: recent } = await supabase
         .from("orders")
-        .select("id, status, total_mad, created_at")
+        .select("id, order_number, status, total_mad, created_at")
         .eq("distributor_id", user.id)
         .order("created_at", { ascending: false })
         .limit(5);
@@ -226,7 +227,7 @@ function Dashboard() {
             {orders.map((o) => (
               <div key={o.id} className="flex items-center justify-between py-3">
                 <div>
-                  <p className="text-sm font-medium">طلب #{o.id.slice(0, 8)}</p>
+                  <p className="text-sm font-medium">{o.order_number}</p>
                   <p className="text-xs text-muted-foreground">{formatDateAr(o.created_at)}</p>
                 </div>
                 <div className="flex items-center gap-3">

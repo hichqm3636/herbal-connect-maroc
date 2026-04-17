@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_app/_admin/admin/")({
 
 function AdminDashboard() {
   const [stats, setStats] = useState({ sales: 0, orders: 0, distributors: 0, pending: 0 });
-  const [recent, setRecent] = useState<{ id: string; status: string; total_mad: number; created_at: string }[]>([]);
+  const [recent, setRecent] = useState<{ id: string; order_number: string; status: string; total_mad: number; created_at: string }[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -33,7 +33,7 @@ function AdminDashboard() {
 
       const { data: r } = await supabase
         .from("orders")
-        .select("id, status, total_mad, created_at")
+        .select("id, order_number, status, total_mad, created_at")
         .order("created_at", { ascending: false })
         .limit(8);
       setRecent(r ?? []);
@@ -70,7 +70,7 @@ function AdminDashboard() {
             {recent.map((o) => (
               <div key={o.id} className="flex items-center justify-between py-3">
                 <div>
-                  <p className="text-sm font-medium">طلب #{o.id.slice(0, 8)}</p>
+                  <p className="text-sm font-medium">{o.order_number}</p>
                   <p className="text-xs text-muted-foreground">{formatDateAr(o.created_at)}</p>
                 </div>
                 <div className="flex items-center gap-3">
