@@ -669,6 +669,7 @@ function AdminProducts() {
         pharmacy_price: r.pharmacy_price ?? derived?.pharmacy_price ?? null,
         map_price: r.map_price ?? derived?.map_price ?? null,
         price_tiers: tiers,
+        minimum_order: r.minimum_order,
       };
 
       const existingId = existingMap.get(r.sku);
