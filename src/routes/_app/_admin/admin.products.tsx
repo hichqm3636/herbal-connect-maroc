@@ -1355,7 +1355,7 @@ function AdminProducts() {
                   "name","sku","price","category","stock",
                   "rrp_price","pharmacy_price",
                   "distributor_6","distributor_12","distributor_24",
-                  "map_price","_error",
+                  "map_price","minimum_order","_error",
                 ];
                 const escape = (v: unknown) => {
                   const s = v == null || (typeof v === "number" && !Number.isFinite(v)) ? "" : String(v);
@@ -1367,7 +1367,7 @@ function AdminProducts() {
                     r.name, r.sku, r.price, r.category, r.stockStatus || r.stock,
                     r.rrp_price, r.pharmacy_price,
                     r.tier_6, r.tier_12, r.tier_24,
-                    r.map_price, r.statusLabel,
+                    r.map_price, r.minimum_order, r.statusLabel,
                   ].map(escape).join(","));
                 }
                 const csv = "\uFEFF" + lines.join("\n") + "\n";
