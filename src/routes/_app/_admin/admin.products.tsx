@@ -11,7 +11,10 @@ import {
   ArrowUp,
   ArrowDown,
   FileSpreadsheet,
+  RefreshCw,
 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { syncWooCommerceProducts } from "@/utils/woocommerce.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +78,7 @@ function AdminProducts() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [importResult, setImportResult] = useState<{
     created: number;
     updated?: number;
@@ -84,6 +88,44 @@ function AdminProducts() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const catalogInputRef = useRef<HTMLInputElement>(null);
+  const syncWoo = useServerFn(syncWooCommerceProducts);
+
+  const handleWooSync = async () => {
+    setSyncing(true);
+    setImportResult(null);
+    try {
+      const result = await syncWoo();
+      if (!result.ok) {
+        toast.error(result.message ?? "تعذر مزامنة المنتجات");
+        setImportResult({
+          created: result.created,
+          updated: result.updated,
+          failed: result.failed,
+          errors: result.message
+            ? [result.message, ...result.errors]
+            : result.errors,
+        });
+        return;
+      }
+      setImportResult({
+        created: result.created,
+        updated: result.updated,
+        failed: result.failed,
+        errors: result.errors,
+      });
+      if (result.created + result.updated > 0) {
+        toast.success(`تمت المزامنة: ${result.created} جديد، ${result.updated} محدّث`);
+        load();
+      } else {
+        toast.message("لا توجد منتجات للمزامنة");
+      }
+    } catch (err) {
+      toast.error("تعذر تشغيل المزامنة");
+      console.error(err);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const load = async () => {
     const { data } = await supabase
@@ -600,6 +642,20 @@ function AdminProducts() {
               <FileSpreadsheet className="h-4 w-4" />
             )}
             استيراد الكتالوج
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleWooSync}
+            disabled={syncing}
+            className="gap-2"
+          >
+            {syncing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            مزامنة المنتجات
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
