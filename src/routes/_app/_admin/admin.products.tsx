@@ -838,13 +838,13 @@ function AdminProducts() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
+    <div className="space-y-6 min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">إدارة المنتجات</h1>
           <p className="text-sm text-muted-foreground mt-1">{products.length} منتج</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap [&>button]:flex-1 sm:[&>button]:flex-none [&>button]:min-w-0">
           <input
             ref={csvInputRef}
             type="file"
