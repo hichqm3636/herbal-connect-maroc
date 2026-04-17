@@ -116,7 +116,7 @@ function Dashboard() {
   const total30d = useMemo(() => chartData.reduce((s, d) => s + d.revenue, 0), [chartData]);
 
   const chartConfig = {
-    revenue: { label: "الإيرادات", color: "hsl(var(--primary))" },
+    revenue: { label: "الإيرادات", color: "var(--primary)" },
   } satisfies ChartConfig;
   return (
     <div className="space-y-6">
