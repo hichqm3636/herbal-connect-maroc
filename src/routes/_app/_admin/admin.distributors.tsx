@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Award,
+  Download,
   Loader2,
   MoreVertical,
   Pencil,
@@ -11,6 +12,7 @@ import {
   UserPlus,
   KeyRound,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,6 +90,11 @@ function AdminDistributors() {
   const [pointsSaving, setPointsSaving] = useState(false);
   const [confirmDisable, setConfirmDisable] = useState<Distributor | null>(null);
   const [disabling, setDisabling] = useState(false);
+
+  // bulk selection
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkConfirm, setBulkConfirm] = useState<"enable" | "disable" | null>(null);
 
   // filters
   const [search, setSearch] = useState("");
@@ -194,6 +201,76 @@ function AdminDistributors() {
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map((d) => d.id)));
+  };
+
+  const runBulkSetActive = async (makeActive: boolean) => {
+    if (selected.size === 0) return;
+    setBulkBusy(true);
+    let ok = 0;
+    let fail = 0;
+    for (const id of selected) {
+      const { data, error } = await supabase.functions.invoke("create-distributor", {
+        body: { action: "set_active", userId: id, isActive: makeActive },
+      });
+      if (error || data?.error) fail++;
+      else ok++;
+    }
+    setBulkBusy(false);
+    setBulkConfirm(null);
+    setSelected(new Set());
+    if (fail === 0) toast.success(`تمت العملية على ${ok} موزع`);
+    else toast.error(`نجاح: ${ok} — فشل: ${fail}`);
+    load();
+  };
+
+  const exportCsv = () => {
+    const rows = selected.size > 0 ? filtered.filter((d) => selected.has(d.id)) : filtered;
+    if (rows.length === 0) return toast.error("لا توجد بيانات للتصدير");
+    const headers = ["الاسم", "الهاتف", "المدينة", "المستوى", "النقاط", "المبيعات الشهرية", "الحالة"];
+    const escape = (v: string | number | null | undefined) => {
+      const s = String(v ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [
+      headers.join(","),
+      ...rows.map((d) =>
+        [
+          d.full_name,
+          d.phone,
+          d.city,
+          LEVEL_LABELS[d.level] ?? d.level,
+          d.loyalty_points,
+          d.monthly_sales,
+          d.is_active ? "مفعل" : "معطل",
+        ]
+          .map(escape)
+          .join(","),
+      ),
+    ].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `distributors-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`تم تصدير ${rows.length} موزع`);
+  };
+
+  const allSelected = filtered.length > 0 && selected.size === filtered.length;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -203,10 +280,16 @@ function AdminDistributors() {
             {filtered.length} من {list.length} موزع
           </p>
         </div>
-        <Button className="gap-2 self-start sm:self-auto" onClick={() => setCreateOpen(true)}>
-          <UserPlus className="h-4 w-4" />
-          إضافة موزع
-        </Button>
+        <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+          <Button variant="outline" className="gap-2" onClick={exportCsv}>
+            <Download className="h-4 w-4" />
+            تصدير CSV
+          </Button>
+          <Button className="gap-2" onClick={() => setCreateOpen(true)}>
+            <UserPlus className="h-4 w-4" />
+            إضافة موزع
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -245,6 +328,33 @@ function AdminDistributors() {
         </div>
       </Card>
 
+      {/* Bulk toolbar */}
+      {selected.size > 0 && (
+        <Card className="p-3 shadow-soft flex flex-col sm:flex-row sm:items-center gap-3 border-primary/40 bg-accent/30">
+          <div className="flex items-center gap-2 flex-1">
+            <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} aria-label="تحديد الكل" />
+            <span className="text-sm font-medium">تم تحديد {selected.size} موزع</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={bulkBusy}>
+              إلغاء التحديد
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1" onClick={exportCsv} disabled={bulkBusy}>
+              <Download className="h-4 w-4" />
+              تصدير
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setBulkConfirm("enable")} disabled={bulkBusy}>
+              <ShieldCheck className="h-4 w-4" />
+              تفعيل
+            </Button>
+            <Button size="sm" variant="destructive" className="gap-1" onClick={() => setBulkConfirm("disable")} disabled={bulkBusy}>
+              <ShieldOff className="h-4 w-4" />
+              تعطيل
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {/* List */}
       {loading ? (
         <div className="flex justify-center py-12">
@@ -254,9 +364,24 @@ function AdminDistributors() {
         <Card className="p-8 text-center text-muted-foreground">لا يوجد موزعون مطابقون.</Card>
       ) : (
         <div className="grid gap-3">
+          <div className="flex items-center gap-2 px-1">
+            <Checkbox
+              checked={allSelected}
+              onCheckedChange={toggleSelectAll}
+              aria-label="تحديد كل الموزعين"
+            />
+            <span className="text-xs text-muted-foreground">تحديد الكل ({filtered.length})</span>
+          </div>
           {filtered.map((d) => (
             <Card key={d.id} className="p-4 shadow-soft">
               <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                <div className="flex items-start md:items-center">
+                  <Checkbox
+                    checked={selected.has(d.id)}
+                    onCheckedChange={() => toggleSelect(d.id)}
+                    aria-label={`تحديد ${d.full_name}`}
+                  />
+                </div>
                 {/* Identity */}
                 <div className="flex items-start gap-3 flex-1 min-w-0">
                   <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-accent-foreground font-semibold shrink-0">
@@ -422,6 +547,35 @@ function AdminDistributors() {
             >
               {disabling && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
               تعطيل
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk confirm */}
+      <AlertDialog open={!!bulkConfirm} onOpenChange={(o) => !o && setBulkConfirm(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {bulkConfirm === "disable" ? "تعطيل" : "تفعيل"} {selected.size} موزع؟
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulkConfirm === "disable"
+                ? "سيتم تعطيل دخول جميع الموزعين المحددين. يمكن إعادة تفعيلهم لاحقًا."
+                : "سيتم إعادة تفعيل دخول جميع الموزعين المحددين."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel disabled={bulkBusy}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                runBulkSetActive(bulkConfirm === "enable");
+              }}
+            >
+              {bulkBusy && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+              تأكيد
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
