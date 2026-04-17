@@ -160,6 +160,11 @@ function ProductsPage() {
                           {formatMAD(p.rrp_price)}
                         </span>
                       )}
+                      {p.minimum_order > 1 && (
+                        <span className="text-[10px] text-muted-foreground mt-0.5">
+                          الحد الأدنى: {p.minimum_order}
+                        </span>
+                      )}
                     </div>
                     <Button size="sm" onClick={() => addToCart(p)} className="gap-1">
                       <Plus className="h-3.5 w-3.5" />
