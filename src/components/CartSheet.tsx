@@ -68,7 +68,7 @@ export function CartSheet() {
         points_earned: points,
         status: "pending",
         notes: trimmedNotes ? trimmedNotes : null,
-      })
+      } as never)
       .select("id")
       .single();
     if (error || !order) {
