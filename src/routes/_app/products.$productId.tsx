@@ -34,7 +34,7 @@ interface ProductImage {
 
 function ProductDetail() {
   const { productId } = Route.useParams();
-  const { addItem } = useCart();
+  const { addItem, openCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
