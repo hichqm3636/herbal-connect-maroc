@@ -643,6 +643,20 @@ function AdminProducts() {
             )}
             استيراد الكتالوج
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleWooSync}
+            disabled={syncing}
+            className="gap-2"
+          >
+            {syncing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            مزامنة المنتجات
+          </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button onClick={openNew} className="gap-2">
