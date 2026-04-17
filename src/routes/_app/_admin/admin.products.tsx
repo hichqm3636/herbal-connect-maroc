@@ -286,6 +286,7 @@ function AdminProducts() {
       category: form.category || null,
       stock: form.stock,
       active: form.active,
+      points_per_unit: form.points_per_unit,
     };
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
