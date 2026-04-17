@@ -103,6 +103,14 @@ function OrdersPage() {
                         </p>
                       </div>
                     ))}
+                    {o.notes && (
+                      <div className="p-3 bg-muted/40">
+                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                          ملاحظات التوصيل
+                        </p>
+                        <p className="text-sm whitespace-pre-wrap">{o.notes}</p>
+                      </div>
+                    )}
                   </div>
                 </CollapsibleContent>
               </Collapsible>
