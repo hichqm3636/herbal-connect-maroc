@@ -803,8 +803,13 @@ function AdminProducts() {
             </Button>
           </div>
           <p className="text-sm">
-            تم إنشاء <span className="font-bold text-primary">{importResult.created}</span> منتج،
-            فشل <span className="font-bold text-destructive">{importResult.failed}</span> سطر.
+            تم إنشاء <span className="font-bold text-primary">{importResult.created}</span> منتج
+            {typeof importResult.updated === "number" && (
+              <>
+                ، تحديث <span className="font-bold text-primary">{importResult.updated}</span>
+              </>
+            )}
+            ، فشل <span className="font-bold text-destructive">{importResult.failed}</span> سطر.
           </p>
           {importResult.errors.length > 0 && (
             <ul className="text-xs text-muted-foreground list-disc pr-4 space-y-1">
