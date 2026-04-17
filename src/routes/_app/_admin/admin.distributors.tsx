@@ -63,7 +63,10 @@ function AdminDistributors() {
   }, []);
 
   const updateLevel = async (id: string, level: string) => {
-    const { error } = await supabase.from("profiles").update({ level: level as Distributor["level"] }).eq("id", id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ level: level as "distributor" | "senior_consultant" | "success_builder" | "supervisor" | "world_team" })
+      .eq("id", id);
     if (error) {
       toast.error("تعذر التحديث");
       return;

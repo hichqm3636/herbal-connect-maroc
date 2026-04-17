@@ -48,7 +48,7 @@ function AdminOrders() {
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase
       .from("orders")
-      .update({ status: status as OrderRow["status"] })
+      .update({ status: status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" })
       .eq("id", id);
     if (error) {
       toast.error("تعذر التحديث");
