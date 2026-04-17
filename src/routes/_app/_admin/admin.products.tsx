@@ -566,6 +566,13 @@ function AdminProducts() {
             className="hidden"
             onChange={handleCsvImport}
           />
+          <input
+            ref={catalogInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={handleCatalogImport}
+          />
           <Button
             type="button"
             variant="outline"
@@ -579,6 +586,20 @@ function AdminProducts() {
               <FileSpreadsheet className="h-4 w-4" />
             )}
             استيراد المنتجات (CSV)
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => catalogInputRef.current?.click()}
+            disabled={importing}
+            className="gap-2"
+          >
+            {importing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="h-4 w-4" />
+            )}
+            استيراد الكتالوج
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
