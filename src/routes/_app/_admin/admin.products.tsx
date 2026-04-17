@@ -113,6 +113,8 @@ function AdminProducts() {
     failed: number;
     errors: string[];
   } | null>(null);
+  const [previewRows, setPreviewRows] = useState<CsvPreviewRow[] | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const catalogInputRef = useRef<HTMLInputElement>(null);
