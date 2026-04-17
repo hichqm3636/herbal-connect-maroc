@@ -1,5 +1,5 @@
-import { ShoppingCart, Plus, Minus, Trash2, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { ShoppingCart, Plus, Minus, Trash2, Loader2, AlertTriangle } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -21,10 +21,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useCart } from "@/hooks/useCart";
+import { useCart, type CartItem } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMAD } from "@/lib/format";
+import { getUnitPrice, validateLine } from "@/lib/pricing";
 import { toast } from "sonner";
 
 export function CartButton() {
@@ -48,15 +49,56 @@ export function CartButton() {
   );
 }
 
+interface PricedLine {
+  item: CartItem;
+  unitPrice: number;
+  lineTotal: number;
+  blocked: boolean;
+  message?: string;
+}
+
 export function CartSheet() {
-  const { items, total, isOpen, setOpen, updateQty, removeItem, clear } = useCart();
-  const { user } = useAuth();
+  const { items, isOpen, setOpen, updateQty, removeItem, clear } = useCart();
+  const { user, partnerType } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  const priced: PricedLine[] = useMemo(
+    () =>
+      items.map((item) => {
+        // Reconstruct PricedProduct shape from cart item
+        const pp = {
+          rrp_price: item.rrp_price ?? null,
+          pharmacy_price: item.pharmacy_price ?? null,
+          map_price: item.map_price ?? null,
+          minimum_order: item.minimum_order ?? 1,
+          price_tiers: item.price_tiers ?? [],
+          price_mad: item.price_mad,
+        };
+        const { unitPrice } = getUnitPrice(pp, partnerType, item.qty);
+        const v = validateLine(pp, partnerType, item.qty, unitPrice, item.name_ar);
+        return {
+          item,
+          unitPrice,
+          lineTotal: unitPrice * item.qty,
+          blocked: !v.ok,
+          message: v.message,
+        };
+      }),
+    [items, partnerType],
+  );
+
+  const total = priced.reduce((s, l) => s + l.lineTotal, 0);
+  const blockedLines = priced.filter((l) => l.blocked);
+  const canCheckout = items.length > 0 && blockedLines.length === 0;
+
   const placeOrder = async () => {
     if (!user || items.length === 0) return;
+    if (!canCheckout) {
+      toast.error(blockedLines[0]?.message ?? "تعذر إتمام الطلب");
+      return;
+    }
     setSubmitting(true);
     const points = Math.floor(total / 100);
     const trimmedNotes = notes.trim();
@@ -76,11 +118,11 @@ export function CartSheet() {
       setSubmitting(false);
       return;
     }
-    const orderItems = items.map((i) => ({
+    const orderItems = priced.map((l) => ({
       order_id: order.id,
-      product_id: i.id,
-      quantity: i.qty,
-      unit_price_mad: i.price_mad,
+      product_id: l.item.id,
+      quantity: l.item.qty,
+      unit_price_mad: l.unitPrice,
     }));
     const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);
     if (itemsErr) {
@@ -104,14 +146,19 @@ export function CartSheet() {
           <SheetDescription>راجع منتجاتك قبل إرسال الطلب</SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto py-4 space-y-3">
-          {items.length === 0 ? (
+          {priced.length === 0 ? (
             <div className="text-center text-sm text-muted-foreground py-12">
               السلة فارغة
             </div>
           ) : (
             <>
-              {items.map((item) => (
-                <div key={item.id} className="flex gap-3 p-3 rounded-lg border bg-card">
+              {priced.map(({ item, unitPrice, lineTotal, blocked, message }) => (
+                <div
+                  key={item.id}
+                  className={`flex gap-3 p-3 rounded-lg border bg-card ${
+                    blocked ? "border-destructive/60" : ""
+                  }`}
+                >
                   <img
                     src={item.image_url ?? ""}
                     alt={item.name_ar}
@@ -119,7 +166,20 @@ export function CartSheet() {
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{item.name_ar}</p>
-                    <p className="text-xs text-muted-foreground">{formatMAD(item.price_mad)}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{formatMAD(unitPrice)}</span>
+                      <span>×</span>
+                      <span>{item.qty}</span>
+                      <span className="font-semibold text-foreground">
+                        = {formatMAD(lineTotal)}
+                      </span>
+                    </div>
+                    {blocked && message && (
+                      <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        {message}
+                      </p>
+                    )}
                     <div className="flex items-center gap-2 mt-2">
                       <Button
                         size="icon"
@@ -129,7 +189,9 @@ export function CartSheet() {
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
-                      <span className="text-sm font-medium w-6 text-center">{item.qty}</span>
+                      <span className="text-sm font-medium w-6 text-center">
+                        {item.qty}
+                      </span>
                       <Button
                         size="icon"
                         variant="outline"
@@ -169,15 +231,21 @@ export function CartSheet() {
             </>
           )}
         </div>
-        {items.length > 0 && (
+        {priced.length > 0 && (
           <SheetFooter className="flex-col gap-3 sm:flex-col border-t pt-4">
+            {blockedLines.length > 0 && (
+              <div className="text-xs text-destructive flex items-center gap-1.5 w-full">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                صحّح المنتجات المظللة قبل إرسال الطلب
+              </div>
+            )}
             <div className="flex items-center justify-between w-full">
               <span className="text-muted-foreground">الإجمالي</span>
               <span className="text-lg font-bold">{formatMAD(total)}</span>
             </div>
             <Button
               onClick={() => setConfirmOpen(true)}
-              disabled={submitting}
+              disabled={submitting || !canCheckout}
               className="w-full"
               size="lg"
             >
@@ -193,7 +261,8 @@ export function CartSheet() {
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-right">
                 <div>
-                  عدد المنتجات: <span className="font-medium text-foreground">{items.length}</span>
+                  عدد المنتجات:{" "}
+                  <span className="font-medium text-foreground">{items.length}</span>
                 </div>
                 <div>
                   الإجمالي:{" "}
