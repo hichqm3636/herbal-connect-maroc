@@ -1413,9 +1413,12 @@ function AdminProducts() {
               <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
                 {p.description_ar}
               </p>
-              <div className="flex items-center gap-3 mt-2 text-sm">
+              <div className="flex items-center gap-3 mt-2 text-sm flex-wrap">
                 <span className="font-bold text-primary">{formatMAD(p.price_mad)}</span>
                 <span className="text-muted-foreground">المخزون: {p.stock}</span>
+                <span className="text-muted-foreground">
+                  الحد الأدنى: {p.minimum_order}
+                </span>
               </div>
             </div>
             <div className="flex gap-1">
