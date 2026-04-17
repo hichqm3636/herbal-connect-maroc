@@ -12,12 +12,13 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { TerritorySelect } from "@/components/admin/TerritorySelect";
 
 interface DistributorEditable {
   id: string;
   full_name: string;
   phone: string | null;
-  city: string | null;
+  territory_id: string | null;
 }
 
 interface Props {
@@ -27,7 +28,7 @@ interface Props {
 }
 
 export function EditDistributorDialog({ distributor, onClose, onSaved }: Props) {
-  const [form, setForm] = useState({ full_name: "", phone: "", city: "" });
+  const [form, setForm] = useState({ full_name: "", phone: "", territory_id: "" });
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export function EditDistributorDialog({ distributor, onClose, onSaved }: Props) 
       setForm({
         full_name: distributor.full_name ?? "",
         phone: distributor.phone ?? "",
-        city: distributor.city ?? "",
+        territory_id: distributor.territory_id ?? "",
       });
     }
   }, [distributor]);
@@ -44,18 +45,18 @@ export function EditDistributorDialog({ distributor, onClose, onSaved }: Props) 
     if (!distributor) return;
     if (form.full_name.trim().length < 2) return toast.error("الاسم قصير جداً");
     if (form.phone.trim().length < 6) return toast.error("رقم هاتف غير صالح");
-    if (form.city.trim().length < 2) return toast.error("المدينة مطلوبة");
+    if (!form.territory_id) return toast.error("المنطقة مطلوبة");
     setBusy(true);
     const { error } = await supabase
       .from("profiles")
       .update({
         full_name: form.full_name.trim(),
         phone: form.phone.trim(),
-        city: form.city.trim(),
+        territory_id: form.territory_id,
       })
       .eq("id", distributor.id);
     setBusy(false);
-    if (error) return toast.error("تعذر التحديث");
+    if (error) return toast.error(error.message);
     toast.success("تم التحديث");
     onSaved();
     onClose();
@@ -78,8 +79,11 @@ export function EditDistributorDialog({ distributor, onClose, onSaved }: Props) 
               <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} inputMode="tel" />
             </div>
             <div className="space-y-1.5">
-              <Label>المدينة</Label>
-              <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+              <Label>المدينة / المنطقة</Label>
+              <TerritorySelect
+                value={form.territory_id || null}
+                onChange={(id) => setForm({ ...form, territory_id: id })}
+              />
             </div>
           </div>
         </div>

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { TerritorySelect } from "@/components/admin/TerritorySelect";
 
 interface Props {
   open: boolean;
@@ -22,7 +23,7 @@ interface Props {
 const empty = {
   fullName: "",
   phone: "",
-  city: "",
+  territoryId: "",
   email: "",
   password: "",
   initialPoints: 0,
@@ -37,7 +38,7 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
     const e: Record<string, string> = {};
     if (form.fullName.trim().length < 2) e.fullName = "الاسم قصير جداً";
     if (form.phone.trim().length < 6) e.phone = "رقم الهاتف غير صالح";
-    if (form.city.trim().length < 2) e.city = "المدينة مطلوبة";
+    if (!form.territoryId) e.territoryId = "المنطقة مطلوبة";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
       e.email = "بريد إلكتروني غير صالح";
     if (form.password.length < 8 || !/[A-Za-z]/.test(form.password) || !/[0-9]/.test(form.password))
@@ -99,10 +100,10 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
                 inputMode="tel"
               />
             </Field>
-            <Field label="المدينة" error={errors.city}>
-              <Input
-                value={form.city}
-                onChange={(e) => setForm({ ...form, city: e.target.value })}
+            <Field label="المدينة / المنطقة" error={errors.territoryId}>
+              <TerritorySelect
+                value={form.territoryId || null}
+                onChange={(id) => setForm({ ...form, territoryId: id })}
               />
             </Field>
           </div>
