@@ -9,38 +9,181 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppProductsRouteImport } from './routes/_app/products'
+import { Route as AppOrdersRouteImport } from './routes/_app/orders'
+import { Route as AppLoyaltyRouteImport } from './routes/_app/loyalty'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppAdminRouteImport } from './routes/_app/_admin'
+import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
+import { Route as AppAdminAdminProductsRouteImport } from './routes/_app/_admin/admin.products'
+import { Route as AppAdminAdminOrdersRouteImport } from './routes/_app/_admin/admin.orders'
+import { Route as AppAdminAdminDistributorsRouteImport } from './routes/_app/_admin/admin.distributors'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppProductsRoute = AppProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrdersRoute = AppOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLoyaltyRoute = AppLoyaltyRouteImport.update({
+  id: '/loyalty',
+  path: '/loyalty',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/_admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminAdminIndexRoute = AppAdminAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminAdminProductsRoute = AppAdminAdminProductsRouteImport.update({
+  id: '/admin/products',
+  path: '/admin/products',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminAdminOrdersRoute = AppAdminAdminOrdersRouteImport.update({
+  id: '/admin/orders',
+  path: '/admin/orders',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminAdminDistributorsRoute =
+  AppAdminAdminDistributorsRouteImport.update({
+    id: '/admin/distributors',
+    path: '/admin/distributors',
+    getParentRoute: () => AppAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/loyalty': typeof AppLoyaltyRoute
+  '/orders': typeof AppOrdersRoute
+  '/products': typeof AppProductsRoute
+  '/admin/distributors': typeof AppAdminAdminDistributorsRoute
+  '/admin/orders': typeof AppAdminAdminOrdersRoute
+  '/admin/products': typeof AppAdminAdminProductsRoute
+  '/admin/': typeof AppAdminAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/loyalty': typeof AppLoyaltyRoute
+  '/orders': typeof AppOrdersRoute
+  '/products': typeof AppProductsRoute
+  '/admin/distributors': typeof AppAdminAdminDistributorsRoute
+  '/admin/orders': typeof AppAdminAdminOrdersRoute
+  '/admin/products': typeof AppAdminAdminProductsRoute
+  '/admin': typeof AppAdminAdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_app/_admin': typeof AppAdminRouteWithChildren
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/loyalty': typeof AppLoyaltyRoute
+  '/_app/orders': typeof AppOrdersRoute
+  '/_app/products': typeof AppProductsRoute
+  '/_app/_admin/admin/distributors': typeof AppAdminAdminDistributorsRoute
+  '/_app/_admin/admin/orders': typeof AppAdminAdminOrdersRoute
+  '/_app/_admin/admin/products': typeof AppAdminAdminProductsRoute
+  '/_app/_admin/admin/': typeof AppAdminAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/dashboard'
+    | '/loyalty'
+    | '/orders'
+    | '/products'
+    | '/admin/distributors'
+    | '/admin/orders'
+    | '/admin/products'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/dashboard'
+    | '/loyalty'
+    | '/orders'
+    | '/products'
+    | '/admin/distributors'
+    | '/admin/orders'
+    | '/admin/products'
+    | '/admin'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/_app/_admin'
+    | '/_app/dashboard'
+    | '/_app/loyalty'
+    | '/_app/orders'
+    | '/_app/products'
+    | '/_app/_admin/admin/distributors'
+    | '/_app/_admin/admin/orders'
+    | '/_app/_admin/admin/products'
+    | '/_app/_admin/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,12 +191,122 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/products': {
+      id: '/_app/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof AppProductsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/orders': {
+      id: '/_app/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof AppOrdersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/loyalty': {
+      id: '/_app/loyalty'
+      path: '/loyalty'
+      fullPath: '/loyalty'
+      preLoaderRoute: typeof AppLoyaltyRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/_admin': {
+      id: '/_app/_admin'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/_admin/admin/': {
+      id: '/_app/_admin/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AppAdminAdminIndexRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/_admin/admin/products': {
+      id: '/_app/_admin/admin/products'
+      path: '/admin/products'
+      fullPath: '/admin/products'
+      preLoaderRoute: typeof AppAdminAdminProductsRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/_admin/admin/orders': {
+      id: '/_app/_admin/admin/orders'
+      path: '/admin/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AppAdminAdminOrdersRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/_admin/admin/distributors': {
+      id: '/_app/_admin/admin/distributors'
+      path: '/admin/distributors'
+      fullPath: '/admin/distributors'
+      preLoaderRoute: typeof AppAdminAdminDistributorsRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
   }
 }
 
+interface AppAdminRouteChildren {
+  AppAdminAdminDistributorsRoute: typeof AppAdminAdminDistributorsRoute
+  AppAdminAdminOrdersRoute: typeof AppAdminAdminOrdersRoute
+  AppAdminAdminProductsRoute: typeof AppAdminAdminProductsRoute
+  AppAdminAdminIndexRoute: typeof AppAdminAdminIndexRoute
+}
+
+const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminAdminDistributorsRoute: AppAdminAdminDistributorsRoute,
+  AppAdminAdminOrdersRoute: AppAdminAdminOrdersRoute,
+  AppAdminAdminProductsRoute: AppAdminAdminProductsRoute,
+  AppAdminAdminIndexRoute: AppAdminAdminIndexRoute,
+}
+
+const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
+  AppAdminRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRouteWithChildren
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppLoyaltyRoute: typeof AppLoyaltyRoute
+  AppOrdersRoute: typeof AppOrdersRoute
+  AppProductsRoute: typeof AppProductsRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRouteWithChildren,
+  AppDashboardRoute: AppDashboardRoute,
+  AppLoyaltyRoute: AppLoyaltyRoute,
+  AppOrdersRoute: AppOrdersRoute,
+  AppProductsRoute: AppProductsRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
