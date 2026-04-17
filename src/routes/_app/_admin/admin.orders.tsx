@@ -25,6 +25,7 @@ interface OrderRow {
   points_earned: number;
   created_at: string;
   distributor_id: string;
+  notes: string | null;
   profiles: { full_name: string; city: string | null } | null;
 }
 
@@ -36,7 +37,7 @@ function AdminOrders() {
   const load = async () => {
     const { data } = await supabase
       .from("orders")
-      .select("id, status, total_mad, points_earned, created_at, distributor_id, profiles(full_name, city)")
+      .select("id, status, total_mad, points_earned, created_at, distributor_id, notes, profiles(full_name, city)")
       .order("created_at", { ascending: false });
     setOrders((data as unknown as OrderRow[]) ?? []);
   };
