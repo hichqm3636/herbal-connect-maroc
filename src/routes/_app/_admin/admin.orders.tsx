@@ -25,6 +25,7 @@ interface OrderRow {
   points_earned: number;
   created_at: string;
   distributor_id: string;
+  notes: string | null;
   profiles: { full_name: string; city: string | null } | null;
 }
 
@@ -36,7 +37,7 @@ function AdminOrders() {
   const load = async () => {
     const { data } = await supabase
       .from("orders")
-      .select("id, status, total_mad, points_earned, created_at, distributor_id, profiles(full_name, city)")
+      .select("id, status, total_mad, points_earned, created_at, distributor_id, notes, profiles(full_name, city)")
       .order("created_at", { ascending: false });
     setOrders((data as unknown as OrderRow[]) ?? []);
   };
@@ -97,6 +98,12 @@ function AdminOrders() {
                 </Select>
               </div>
             </div>
+            {o.notes && (
+              <div className="mt-3 pt-3 border-t">
+                <p className="text-xs font-medium text-muted-foreground mb-1">ملاحظات التوصيل</p>
+                <p className="text-sm whitespace-pre-wrap">{o.notes}</p>
+              </div>
+            )}
           </Card>
         ))}
       </div>
