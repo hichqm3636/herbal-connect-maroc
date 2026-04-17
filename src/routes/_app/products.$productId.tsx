@@ -1,10 +1,11 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Plus, Loader2, PackageX } from "lucide-react";
+import { ArrowRight, Plus, Minus, Loader2, PackageX, ShoppingCart } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { useCart } from "@/hooks/useCart";
 import { formatMAD } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -33,10 +34,11 @@ interface ProductImage {
 
 function ProductDetail() {
   const { productId } = Route.useParams();
-  const navigate = useNavigate();
+  const { addItem, totalQty } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,13 +56,25 @@ function ProductDetail() {
       setProduct(p as Product | null);
       setImages((imgs as ProductImage[] | null) ?? []);
       setActiveIdx(0);
+      setQty(1);
       setLoading(false);
     })();
   }, [productId]);
 
-  const addToCartAndGo = () => {
-    toast.success("تمت إضافة المنتج إلى السلة");
-    navigate({ to: "/products" });
+  const handleAdd = () => {
+    if (!product) return;
+    addItem(
+      {
+        id: product.id,
+        name_ar: product.name_ar,
+        price_mad: product.price_mad,
+        image_url: product.image_url,
+        stock: product.stock,
+      },
+      qty,
+    );
+    toast.success(`تمت إضافة ${qty} ${qty === 1 ? "منتج" : "منتجات"} إلى السلة`);
+    setQty(1);
   };
 
   if (loading) {
@@ -91,15 +105,27 @@ function ProductDetail() {
         ? [{ id: "fallback", url: fallbackUrl }]
         : [];
   const mainUrl = gallery[activeIdx]?.url ?? "";
+  const maxQty = product.stock > 0 ? product.stock : 1;
+  const outOfStock = product.stock === 0 || !product.active;
 
   return (
     <div className="space-y-6">
-      <Button asChild variant="ghost" size="sm" className="gap-2 -ms-2">
-        <Link to="/products">
-          <ArrowRight className="h-4 w-4" />
-          العودة إلى الكتالوج
-        </Link>
-      </Button>
+      <div className="flex items-center justify-between gap-2">
+        <Button asChild variant="ghost" size="sm" className="gap-2 -ms-2">
+          <Link to="/products">
+            <ArrowRight className="h-4 w-4" />
+            العودة إلى الكتالوج
+          </Link>
+        </Button>
+        {totalQty > 0 && (
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <Link to="/products">
+              <ShoppingCart className="h-4 w-4" />
+              السلة ({totalQty})
+            </Link>
+          </Button>
+        )}
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3">
@@ -171,14 +197,59 @@ function ProductDetail() {
             </p>
           </Card>
 
+          {!outOfStock && (
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium">الكمية:</span>
+              <div className="flex items-center gap-1 border rounded-md">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9"
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  disabled={qty <= 1}
+                  aria-label="إنقاص الكمية"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <input
+                  type="number"
+                  min={1}
+                  max={maxQty}
+                  value={qty}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    if (Number.isFinite(n)) setQty(Math.min(maxQty, Math.max(1, Math.floor(n))));
+                  }}
+                  className="w-12 text-center bg-transparent outline-none font-medium tabular-nums"
+                  aria-label="الكمية"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9"
+                  onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+                  disabled={qty >= maxQty}
+                  aria-label="زيادة الكمية"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                الإجمالي: {formatMAD(product.price_mad * qty)}
+              </span>
+            </div>
+          )}
+
           <Button
             size="lg"
             className="w-full gap-2"
-            onClick={addToCartAndGo}
-            disabled={product.stock === 0 || !product.active}
+            onClick={handleAdd}
+            disabled={outOfStock}
           >
             <Plus className="h-4 w-4" />
-            {product.stock === 0 ? "غير متوفر" : "إضافة إلى السلة"}
+            {outOfStock ? "غير متوفر" : "إضافة إلى السلة"}
           </Button>
         </div>
       </div>
