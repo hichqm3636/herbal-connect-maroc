@@ -91,6 +91,11 @@ function AdminDistributors() {
   const [confirmDisable, setConfirmDisable] = useState<Distributor | null>(null);
   const [disabling, setDisabling] = useState(false);
 
+  // bulk selection
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkConfirm, setBulkConfirm] = useState<"enable" | "disable" | null>(null);
+
   // filters
   const [search, setSearch] = useState("");
   const [cityFilter, setCityFilter] = useState<string>("all");
