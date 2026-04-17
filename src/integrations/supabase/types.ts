@@ -195,6 +195,7 @@ export type Database = {
           name_ar: string
           points_per_unit: number
           price_mad: number
+          sku: string | null
           stock: number
           updated_at: string
         }
@@ -208,6 +209,7 @@ export type Database = {
           name_ar: string
           points_per_unit?: number
           price_mad: number
+          sku?: string | null
           stock?: number
           updated_at?: string
         }
@@ -221,6 +223,7 @@ export type Database = {
           name_ar?: string
           points_per_unit?: number
           price_mad?: number
+          sku?: string | null
           stock?: number
           updated_at?: string
         }
