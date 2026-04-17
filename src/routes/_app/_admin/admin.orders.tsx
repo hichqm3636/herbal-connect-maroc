@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Loader2, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -26,6 +29,7 @@ interface OrderRow {
   created_at: string;
   distributor_id: string;
   notes: string | null;
+  admin_notes: string | null;
   profiles: { full_name: string; city: string | null } | null;
 }
 
@@ -33,11 +37,15 @@ const STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 
 function AdminOrders() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [appendMode, setAppendMode] = useState(false);
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   const load = async () => {
     const { data } = await supabase
       .from("orders")
-      .select("id, status, total_mad, points_earned, created_at, distributor_id, notes, profiles(full_name, city)")
+      .select("id, status, total_mad, points_earned, created_at, distributor_id, notes, admin_notes, profiles(full_name, city)")
       .order("created_at", { ascending: false });
     setOrders((data as unknown as OrderRow[]) ?? []);
   };
@@ -56,6 +64,44 @@ function AdminOrders() {
       return;
     }
     toast.success("تم تحديث حالة الطلب");
+    load();
+  };
+
+  const startEdit = (o: OrderRow, append: boolean) => {
+    setEditingId(o.id);
+    setAppendMode(append);
+    setDraft(append ? "" : (o.admin_notes ?? ""));
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setDraft("");
+    setAppendMode(false);
+  };
+
+  const saveAdminNotes = async (o: OrderRow) => {
+    const trimmed = draft.trim();
+    let next: string | null;
+    if (appendMode) {
+      if (!trimmed) {
+        cancelEdit();
+        return;
+      }
+      const stamp = new Date().toLocaleString("ar-MA");
+      const entry = `[${stamp}] ${trimmed}`;
+      next = o.admin_notes ? `${o.admin_notes}\n${entry}` : entry;
+    } else {
+      next = trimmed ? trimmed : null;
+    }
+    setSavingId(o.id);
+    const { error } = await supabase.from("orders").update({ admin_notes: next }).eq("id", o.id);
+    setSavingId(null);
+    if (error) {
+      toast.error("تعذر حفظ الملاحظة");
+      return;
+    }
+    toast.success("تم حفظ الملاحظة الداخلية");
+    cancelEdit();
     load();
   };
 
@@ -104,6 +150,59 @@ function AdminOrders() {
                 <p className="text-sm whitespace-pre-wrap">{o.notes}</p>
               </div>
             )}
+            <div className="mt-3 pt-3 border-t bg-muted/30 -mx-4 -mb-4 px-4 pb-4 rounded-b-lg">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  ملاحظات داخلية (للإدارة فقط)
+                </p>
+                {editingId !== o.id && (
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs"
+                      onClick={() => startEdit(o, true)}
+                    >
+                      إضافة
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs"
+                      onClick={() => startEdit(o, false)}
+                    >
+                      <Pencil className="h-3 w-3 mr-1" />
+                      تعديل
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {editingId === o.id ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    placeholder={appendMode ? "إضافة ملاحظة جديدة…" : "تعديل الملاحظات الداخلية…"}
+                    rows={3}
+                    maxLength={1000}
+                    autoFocus
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <Button size="sm" variant="outline" onClick={cancelEdit} disabled={savingId === o.id}>
+                      إلغاء
+                    </Button>
+                    <Button size="sm" onClick={() => saveAdminNotes(o)} disabled={savingId === o.id}>
+                      {savingId === o.id && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                      حفظ
+                    </Button>
+                  </div>
+                </div>
+              ) : o.admin_notes ? (
+                <p className="text-sm whitespace-pre-wrap">{o.admin_notes}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">لا توجد ملاحظات داخلية</p>
+              )}
+            </div>
           </Card>
         ))}
       </div>
