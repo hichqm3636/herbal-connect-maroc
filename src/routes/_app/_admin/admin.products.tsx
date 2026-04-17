@@ -1175,6 +1175,76 @@ function AdminProducts() {
         </div>
       </div>
 
+      <Dialog open={previewOpen} onOpenChange={(v) => { if (!v) { setPreviewOpen(false); setPreviewRows(null); } }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>معاينة استيراد CSV</DialogTitle>
+          </DialogHeader>
+          {previewRows && (
+            <div className="space-y-3">
+              <div className="text-sm text-muted-foreground flex flex-wrap gap-3">
+                <span>الإجمالي: <strong>{previewRows.length}</strong></span>
+                <span className="text-green-600">
+                  جاهز: <strong>{previewRows.filter((r) => r.status === "ok").length}</strong>
+                </span>
+                <span className="text-amber-600">
+                  للتحديث: <strong>{previewRows.filter((r) => r.status === "ok" && r.willUpdate).length}</strong>
+                </span>
+                <span className="text-destructive">
+                  أخطاء: <strong>{previewRows.filter((r) => r.status !== "ok").length}</strong>
+                </span>
+              </div>
+              <div className="border rounded-md max-h-[50vh] overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>الاسم</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead>السعر</TableHead>
+                      <TableHead>الحالة</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {previewRows.map((r, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="max-w-[200px] truncate">{r.name || "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">{r.sku || "—"}</TableCell>
+                        <TableCell>{Number.isFinite(r.price) ? formatMAD(r.price) : "—"}</TableCell>
+                        <TableCell>
+                          {r.status === "ok" ? (
+                            <Badge variant={r.willUpdate ? "secondary" : "default"}>
+                              {r.willUpdate ? "تحديث" : "جديد"}
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive">{r.statusLabel}</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => { setPreviewOpen(false); setPreviewRows(null); }}
+              disabled={importing}
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={executeCsvImport}
+              disabled={importing || !previewRows?.some((r) => r.status === "ok")}
+            >
+              {importing && <Loader2 className="h-4 w-4 animate-spin" />}
+              تأكيد الاستيراد
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {importResult && (
         <Card className="p-4 shadow-soft space-y-2">
           <div className="flex items-center justify-between">
