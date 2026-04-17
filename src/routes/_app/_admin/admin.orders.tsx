@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, Pencil, Search, X } from "lucide-react";
+import { Download, Loader2, Pencil, Search, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -117,13 +117,71 @@ function AdminOrders() {
     return name.includes(q) || city.includes(q) || o.id.toLowerCase().startsWith(q);
   });
 
+  const exportCsv = () => {
+    if (filtered.length === 0) {
+      toast.error("لا توجد طلبات للتصدير");
+      return;
+    }
+    const headers = [
+      "Order ID",
+      "Created At",
+      "Status",
+      "Distributor",
+      "City",
+      "Total (MAD)",
+      "Points Earned",
+      "Delivery Notes",
+      "Admin Notes",
+    ];
+    const escape = (v: unknown) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = filtered.map((o) => [
+      o.id,
+      new Date(o.created_at).toISOString(),
+      o.status,
+      o.profiles?.full_name ?? "",
+      o.profiles?.city ?? "",
+      o.total_mad,
+      o.points_earned,
+      o.notes ?? "",
+      o.admin_notes ?? "",
+    ]);
+    const csv =
+      "\uFEFF" +
+      [headers, ...rows].map((r) => r.map(escape).join(",")).join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    a.href = url;
+    a.download = `orders-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`تم تصدير ${filtered.length} طلب`);
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">إدارة الطلبات</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {filtered.length} من {orders.length} طلب
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">إدارة الطلبات</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {filtered.length} من {orders.length} طلب
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={exportCsv}
+          disabled={filtered.length === 0}
+        >
+          <Download className="h-4 w-4 mr-1" />
+          تصدير CSV
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
