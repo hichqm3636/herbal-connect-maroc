@@ -358,6 +358,30 @@ function AdminProducts() {
       toast.error("اسم المنتج والسعر مطلوبان");
       return;
     }
+    if (form.minimum_order < 1) {
+      toast.error("الحد الأدنى للطلب يجب أن يكون 1 على الأقل");
+      return;
+    }
+    // MAP guardrail: prevent admin from saving any wholesale tier below MAP
+    // when MAP is set. (MAP at runtime is only enforced for pharmacy partners,
+    // but we warn the admin upfront for any tier.)
+    if (form.map_price != null && form.map_price > 0) {
+      const offending = form.price_tiers.find((t) => t.price > 0 && t.price < form.map_price!);
+      if (offending) {
+        toast.error(
+          `سعر الطبقة (${offending.min_qty}+) أقل من السعر الأدنى المعلن (MAP)`,
+        );
+        return;
+      }
+      if (
+        form.pharmacy_price != null &&
+        form.pharmacy_price > 0 &&
+        form.pharmacy_price < form.map_price
+      ) {
+        toast.error("سعر الصيدلية أقل من السعر الأدنى المعلن (MAP)");
+        return;
+      }
+    }
     setSaving(true);
     const payload = {
       name_ar: form.name_ar,
@@ -367,6 +391,11 @@ function AdminProducts() {
       stock: form.stock,
       active: form.active,
       points_per_unit: form.points_per_unit,
+      rrp_price: form.rrp_price,
+      pharmacy_price: form.pharmacy_price,
+      map_price: form.map_price,
+      minimum_order: form.minimum_order,
+      price_tiers: form.price_tiers,
     };
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
