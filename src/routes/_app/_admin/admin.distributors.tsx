@@ -280,10 +280,16 @@ function AdminDistributors() {
             {filtered.length} من {list.length} موزع
           </p>
         </div>
-        <Button className="gap-2 self-start sm:self-auto" onClick={() => setCreateOpen(true)}>
-          <UserPlus className="h-4 w-4" />
-          إضافة موزع
-        </Button>
+        <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+          <Button variant="outline" className="gap-2" onClick={exportCsv}>
+            <Download className="h-4 w-4" />
+            تصدير CSV
+          </Button>
+          <Button className="gap-2" onClick={() => setCreateOpen(true)}>
+            <UserPlus className="h-4 w-4" />
+            إضافة موزع
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
