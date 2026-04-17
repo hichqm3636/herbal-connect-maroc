@@ -4,6 +4,7 @@ import {
   Award,
   Download,
   Loader2,
+  MapPin,
   MoreVertical,
   Pencil,
   Search,
@@ -67,10 +68,16 @@ interface Distributor {
   full_name: string;
   phone: string | null;
   city: string | null;
+  territory_id: string | null;
   level: string;
   loyalty_points: number;
   monthly_sales: number;
   is_active: boolean;
+}
+
+interface TerritoryLite {
+  id: string;
+  name: string;
 }
 
 const LEVELS = ["distributor", "senior_consultant", "success_builder", "supervisor", "world_team"];
@@ -98,16 +105,21 @@ function AdminDistributors() {
 
   // filters
   const [search, setSearch] = useState("");
-  const [cityFilter, setCityFilter] = useState<string>("all");
+  const [territoryFilter, setTerritoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [territories, setTerritories] = useState<TerritoryLite[]>([]);
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, full_name, phone, city, level, loyalty_points, monthly_sales, is_active")
-      .order("created_at", { ascending: false });
-    setList((data ?? []) as Distributor[]);
+    const [{ data: profs }, { data: terrs }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, full_name, phone, city, territory_id, level, loyalty_points, monthly_sales, is_active")
+        .order("created_at", { ascending: false }),
+      supabase.from("territories").select("id, name").order("name"),
+    ]);
+    setList((profs ?? []) as Distributor[]);
+    setTerritories((terrs ?? []) as TerritoryLite[]);
     setLoading(false);
   };
 
@@ -115,23 +127,23 @@ function AdminDistributors() {
     load();
   }, []);
 
-  const cities = useMemo(() => {
-    const set = new Set<string>();
-    list.forEach((d) => d.city && set.add(d.city));
-    return Array.from(set).sort();
-  }, [list]);
+  const territoryById = useMemo(() => {
+    const m = new Map<string, string>();
+    territories.forEach((t) => m.set(t.id, t.name));
+    return m;
+  }, [territories]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return list.filter((d) => {
       if (q && !(d.full_name?.toLowerCase().includes(q) || d.phone?.toLowerCase().includes(q)))
         return false;
-      if (cityFilter !== "all" && d.city !== cityFilter) return false;
+      if (territoryFilter !== "all" && d.territory_id !== territoryFilter) return false;
       if (statusFilter === "active" && !d.is_active) return false;
       if (statusFilter === "disabled" && d.is_active) return false;
       return true;
     });
-  }, [list, search, cityFilter, statusFilter]);
+  }, [list, search, territoryFilter, statusFilter]);
 
   const updateLevel = async (id: string, level: string) => {
     const { error } = await supabase
@@ -238,7 +250,7 @@ function AdminDistributors() {
   const exportCsv = () => {
     const rows = selected.size > 0 ? filtered.filter((d) => selected.has(d.id)) : filtered;
     if (rows.length === 0) return toast.error("لا توجد بيانات للتصدير");
-    const headers = ["الاسم", "الهاتف", "المدينة", "المستوى", "النقاط", "المبيعات الشهرية", "الحالة"];
+    const headers = ["الاسم", "الهاتف", "المنطقة", "المستوى", "النقاط", "المبيعات الشهرية", "الحالة"];
     const escape = (v: string | number | null | undefined) => {
       const s = String(v ?? "");
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -249,7 +261,7 @@ function AdminDistributors() {
         [
           d.full_name,
           d.phone,
-          d.city,
+          d.territory_id ? (territoryById.get(d.territory_id) ?? "") : (d.city ?? ""),
           LEVEL_LABELS[d.level] ?? d.level,
           d.loyalty_points,
           d.monthly_sales,
@@ -304,14 +316,14 @@ function AdminDistributors() {
               className="pr-9"
             />
           </div>
-          <Select value={cityFilter} onValueChange={setCityFilter}>
+          <Select value={territoryFilter} onValueChange={setTerritoryFilter}>
             <SelectTrigger>
-              <SelectValue placeholder="المدينة" />
+              <SelectValue placeholder="المنطقة" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">كل المدن</SelectItem>
-              {cities.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
+              <SelectItem value="all">كل المناطق</SelectItem>
+              {territories.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -398,7 +410,12 @@ function AdminDistributors() {
                     <p className="text-xs text-muted-foreground mt-0.5 truncate" dir="ltr">
                       {d.phone || "—"}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">{d.city || "—"}</p>
+                    <div className="mt-1">
+                      <Badge variant="outline" className="gap-1 text-[10px] border-primary/40 text-primary">
+                        <MapPin className="h-3 w-3" />
+                        {d.territory_id ? (territoryById.get(d.territory_id) ?? d.city ?? "—") : (d.city || "—")}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
 

@@ -231,6 +231,7 @@ export type Database = {
           loyalty_points: number
           monthly_sales: number
           phone: string | null
+          territory_id: string
           updated_at: string
         }
         Insert: {
@@ -243,6 +244,7 @@ export type Database = {
           loyalty_points?: number
           monthly_sales?: number
           phone?: string | null
+          territory_id: string
           updated_at?: string
         }
         Update: {
@@ -255,6 +257,39 @@ export type Database = {
           loyalty_points?: number
           monthly_sales?: number
           phone?: string | null
+          territory_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_territory_id_fkey"
+            columns: ["territory_id"]
+            isOneToOne: false
+            referencedRelation: "territories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      territories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
           updated_at?: string
         }
         Relationships: []
