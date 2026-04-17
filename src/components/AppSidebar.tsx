@@ -62,8 +62,8 @@ export function AppSidebar() {
             <Leaf className="h-5 w-5 text-primary-foreground" />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-bold leading-tight">هيرباليفي</span>
-            <span className="text-xs text-muted-foreground">بوابة الشركاء</span>
+            <span className="text-sm font-bold leading-tight">Herbialife Partner Hub</span>
+            <span className="text-xs text-muted-foreground">منصة إدارة الموزعين والطلبات</span>
           </div>
         </div>
       </SidebarHeader>
