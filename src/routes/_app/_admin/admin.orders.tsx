@@ -22,6 +22,11 @@ export const Route = createFileRoute("/_app/_admin/admin/orders")({
   head: () => ({ meta: [{ title: "إدارة الطلبات — هيرباليفي" }] }),
 });
 
+interface OrderItem {
+  quantity: number;
+  products: { name_ar: string } | null;
+}
+
 interface OrderRow {
   id: string;
   status: string;
@@ -32,6 +37,7 @@ interface OrderRow {
   notes: string | null;
   admin_notes: string | null;
   profiles: { full_name: string; city: string | null } | null;
+  order_items: OrderItem[];
 }
 
 const STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
@@ -48,7 +54,7 @@ function AdminOrders() {
   const load = async () => {
     const { data } = await supabase
       .from("orders")
-      .select("id, status, total_mad, points_earned, created_at, distributor_id, notes, admin_notes, profiles(full_name, city)")
+      .select("id, status, total_mad, points_earned, created_at, distributor_id, notes, admin_notes, profiles(full_name, city), order_items(quantity, products(name_ar))")
       .order("created_at", { ascending: false });
     setOrders((data as unknown as OrderRow[]) ?? []);
   };
