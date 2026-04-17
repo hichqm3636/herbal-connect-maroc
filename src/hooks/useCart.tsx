@@ -21,6 +21,10 @@ interface CartContextValue {
   setQty: (id: string, qty: number) => void;
   removeItem: (id: string) => void;
   clear: () => void;
+  isOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
+  setOpen: (open: boolean) => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -48,6 +52,7 @@ function loadInitial(): CartItem[] {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(() => loadInitial());
+  const [isOpen, setOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -90,7 +95,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const setQty = useCallback((id: string, qty: number) => {
+  const setItemQty = useCallback((id: string, qty: number) => {
     setItems((prev) =>
       prev
         .map((i) => (i.id === id ? { ...i, qty: Math.max(0, qty) } : i))
@@ -104,12 +109,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const clear = useCallback(() => setItems([]), []);
+  const openCart = useCallback(() => setOpen(true), []);
+  const closeCart = useCallback(() => setOpen(false), []);
 
   const value = useMemo<CartContextValue>(() => {
     const total = items.reduce((s, i) => s + Number(i.price_mad) * i.qty, 0);
     const totalQty = items.reduce((s, i) => s + i.qty, 0);
-    return { items, total, totalQty, addItem, updateQty, setQty, removeItem, clear };
-  }, [items, addItem, updateQty, setQty, removeItem, clear]);
+    return {
+      items,
+      total,
+      totalQty,
+      addItem,
+      updateQty,
+      setQty: setItemQty,
+      removeItem,
+      clear,
+      isOpen,
+      openCart,
+      closeCart,
+      setOpen,
+    };
+  }, [items, addItem, updateQty, setItemQty, removeItem, clear, isOpen, openCart, closeCart]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
