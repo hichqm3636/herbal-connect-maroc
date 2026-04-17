@@ -1184,10 +1184,10 @@ function AdminProducts() {
             <div className="space-y-3">
               <div className="text-sm text-muted-foreground flex flex-wrap gap-3">
                 <span>الإجمالي: <strong>{previewRows.length}</strong></span>
-                <span className="text-green-600">
+                <span className="text-primary">
                   جاهز: <strong>{previewRows.filter((r) => r.status === "ok").length}</strong>
                 </span>
-                <span className="text-amber-600">
+                <span className="text-muted-foreground">
                   للتحديث: <strong>{previewRows.filter((r) => r.status === "ok" && r.willUpdate).length}</strong>
                 </span>
                 <span className="text-destructive">
