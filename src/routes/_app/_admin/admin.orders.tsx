@@ -98,6 +98,12 @@ function AdminOrders() {
                 </Select>
               </div>
             </div>
+            {o.notes && (
+              <div className="mt-3 pt-3 border-t">
+                <p className="text-xs font-medium text-muted-foreground mb-1">ملاحظات التوصيل</p>
+                <p className="text-sm whitespace-pre-wrap">{o.notes}</p>
+              </div>
+            )}
           </Card>
         ))}
       </div>
