@@ -61,7 +61,9 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword(parsed.data);
     setSubmitting(false);
     if (error) {
-      toast.error("بيانات الدخول غير صحيحة");
+      const msg = error.message || "";
+      const friendly = /invalid|credentials/i.test(msg) ? "بيانات الدخول غير صحيحة" : msg;
+      toast.error(friendly);
       return;
     }
     toast.success("مرحباً بعودتك");
