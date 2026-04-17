@@ -25,7 +25,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD, LEVEL_LABELS } from "@/lib/format";
 import { toast } from "sonner";
-import { createDistributor } from "@/server/createDistributor";
 
 export const Route = createFileRoute("/_app/_admin/admin/distributors")({
   component: AdminDistributors,
@@ -125,7 +124,24 @@ function AdminDistributors() {
     }
     setCreating(true);
     try {
-      await createDistributor({ data: newDist });
+      const { data, error } = await supabase.functions.invoke("create-distributor", {
+        body: newDist,
+      });
+      if (error) {
+        // Try to extract message from edge function response
+        let msg = error.message;
+        try {
+          const ctx = (error as { context?: Response }).context;
+          if (ctx) {
+            const j = await ctx.clone().json();
+            if (j?.error) msg = j.error;
+          }
+        } catch {
+          /* ignore */
+        }
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
       toast.success("تم إنشاء الموزع بنجاح");
       setCreateOpen(false);
       setNewDist({ fullName: "", phone: "", city: "", email: "", password: "" });
