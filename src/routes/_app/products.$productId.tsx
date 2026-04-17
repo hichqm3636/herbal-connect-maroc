@@ -110,22 +110,12 @@ function ProductDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-2">
-        <Button asChild variant="ghost" size="sm" className="gap-2 -ms-2">
-          <Link to="/products">
-            <ArrowRight className="h-4 w-4" />
-            العودة إلى الكتالوج
-          </Link>
-        </Button>
-        {totalQty > 0 && (
-          <Button asChild variant="outline" size="sm" className="gap-2">
-            <Link to="/products">
-              <ShoppingCart className="h-4 w-4" />
-              السلة ({totalQty})
-            </Link>
-          </Button>
-        )}
-      </div>
+      <Button asChild variant="ghost" size="sm" className="gap-2 -ms-2">
+        <Link to="/products">
+          <ArrowRight className="h-4 w-4" />
+          العودة إلى الكتالوج
+        </Link>
+      </Button>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3">
