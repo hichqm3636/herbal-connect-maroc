@@ -12,6 +12,7 @@ import {
   ArrowDown,
   FileSpreadsheet,
   RefreshCw,
+  Download,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { syncWooCommerceProducts } from "@/utils/woocommerce.functions";
@@ -828,6 +829,52 @@ function AdminProducts() {
             className="hidden"
             onChange={handleCatalogImport}
           />
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              const headers = [
+                "name",
+                "sku",
+                "price",
+                "category",
+                "stock",
+                "rrp_price",
+                "pharmacy_price",
+                "distributor_6",
+                "distributor_12",
+                "distributor_24",
+                "map_price",
+              ];
+              const sample = [
+                "Magnesium glycinate",
+                "MAG-001",
+                "180",
+                "Supplements",
+                "instock",
+                "180",
+                "126",
+                "122",
+                "117",
+                "108",
+                "162",
+              ];
+              const csv = `\uFEFF${headers.join(",")}\n${sample.join(",")}\n`;
+              const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "products-template.csv";
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            قالب CSV
+          </Button>
           <Button
             type="button"
             variant="outline"
