@@ -16,6 +16,14 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { syncWooCommerceProducts } from "@/utils/woocommerce.functions";
 import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,6 +70,25 @@ interface Product {
   price_tiers: PriceTier[];
 }
 
+interface CsvPreviewRow {
+  line: number;
+  name: string;
+  sku: string;
+  price: number;
+  category: string;
+  stock: number;
+  stockStatus: string; // raw "instock"/"outofstock"
+  rrp_price: number | null;
+  pharmacy_price: number | null;
+  map_price: number | null;
+  tier_6: number | null;
+  tier_12: number | null;
+  tier_24: number | null;
+  status: "ok" | "missing_sku" | "missing_name" | "invalid_price";
+  statusLabel: string;
+  willUpdate: boolean;
+}
+
 interface ProductImage {
   id: string;
   product_id: string;
@@ -105,6 +132,8 @@ function AdminProducts() {
     failed: number;
     errors: string[];
   } | null>(null);
+  const [previewRows, setPreviewRows] = useState<CsvPreviewRow[] | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const catalogInputRef = useRef<HTMLInputElement>(null);
@@ -461,6 +490,14 @@ function AdminProducts() {
     });
   };
 
+  const numOrNull = (v: unknown): number | null => {
+    if (v === undefined || v === null) return null;
+    const s = String(v).trim();
+    if (s === "") return null;
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : null;
+  };
+
   const handleCsvImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -473,73 +510,184 @@ function AdminProducts() {
       const rows = parseCsv(text);
       if (rows.length === 0) {
         toast.error("ملف CSV فارغ أو غير صالح");
-        setImporting(false);
         return;
       }
 
-      const errors: string[] = [];
-      const payloads: {
-        name_ar: string;
-        description_ar: string;
-        price_mad: number;
-        stock: number;
-        points_per_unit: number;
-        image_url: string | null;
-        active: boolean;
-      }[] = [];
+      // Pre-fetch existing SKUs to mark create vs update in preview
+      const skus = rows
+        .map((r) => (r.sku ?? "").trim())
+        .filter(Boolean);
+      const existingSet = new Set<string>();
+      if (skus.length > 0) {
+        const { data: existing } = await supabase
+          .from("products")
+          .select("sku")
+          .in("sku", skus);
+        for (const p of existing ?? []) {
+          if (p.sku) existingSet.add(p.sku);
+        }
+      }
 
-      rows.forEach((row, idx) => {
-        const lineNum = idx + 2;
+      const preview: CsvPreviewRow[] = rows.map((row, idx) => {
+        const sku = (row.sku ?? "").trim();
         const name = (row.name ?? row.name_ar ?? "").trim();
-        if (!name) {
-          errors.push(`السطر ${lineNum}: اسم المنتج مطلوب`);
-          return;
+        const rawPrice = (row.price ?? "").toString().trim();
+        const rawRrp = (row.rrp_price ?? "").toString().trim();
+        const priceSource = rawPrice !== "" ? rawPrice : rawRrp;
+        const price = parseFloat(priceSource);
+        const stockStatus = (row.stock ?? "").toString().trim().toLowerCase();
+        let stock = 0;
+        if (stockStatus === "instock") stock = 1;
+        else if (stockStatus === "outofstock") stock = 0;
+        else {
+          const n = parseFloat(stockStatus);
+          stock = Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
         }
-        const price = Number(row.price ?? row.price_mad);
-        if (!Number.isFinite(price) || price < 0) {
-          errors.push(`السطر ${lineNum}: سعر غير صالح`);
-          return;
+
+        let status: CsvPreviewRow["status"] = "ok";
+        let statusLabel = "OK";
+        if (!sku) {
+          status = "missing_sku";
+          statusLabel = "SKU required";
+        } else if (!name) {
+          status = "missing_name";
+          statusLabel = "Missing name";
+        } else if (!Number.isFinite(price) || price < 0) {
+          status = "invalid_price";
+          statusLabel = "Invalid price";
         }
-        const points = Number(row.points ?? row.points_per_unit ?? 0);
-        const stock = Number(row.stock ?? 0);
-        const imageUrl = (row.image_url ?? "").trim() || null;
-        payloads.push({
-          name_ar: name,
-          description_ar: "",
-          price_mad: price,
-          stock: Number.isFinite(stock) ? stock : 0,
-          points_per_unit: Number.isFinite(points) ? points : 0,
-          image_url: imageUrl,
-          active: true,
-        });
+
+        return {
+          line: idx + 2,
+          name,
+          sku,
+          price: Number.isFinite(price) ? price : NaN,
+          category: (row.category ?? "").trim(),
+          stock,
+          stockStatus,
+          rrp_price: numOrNull(row.rrp_price),
+          pharmacy_price: numOrNull(row.pharmacy_price),
+          map_price: numOrNull(row.map_price),
+          tier_6: numOrNull(row.distributor_6),
+          tier_12: numOrNull(row.distributor_12),
+          tier_24: numOrNull(row.distributor_24),
+          status,
+          statusLabel,
+          willUpdate: !!sku && existingSet.has(sku),
+        };
       });
 
-      let created = 0;
-      if (payloads.length > 0) {
-        const { data, error } = await supabase
-          .from("products")
-          .insert(payloads)
-          .select("id");
-        if (error) {
-          errors.push(`خطأ في الإدراج: ${error.message}`);
-        } else {
-          created = data?.length ?? 0;
-        }
-      }
-
-      setImportResult({ created, failed: errors.length, errors: errors.slice(0, 10) });
-      if (created > 0) {
-        toast.success(`تم استيراد ${created} منتج`);
-        load();
-      }
-      if (errors.length > 0 && created === 0) {
-        toast.error("فشل الاستيراد");
-      }
+      setPreviewRows(preview);
+      setPreviewOpen(true);
     } catch (err) {
       toast.error("تعذر قراءة الملف");
       console.error(err);
     } finally {
       setImporting(false);
+    }
+  };
+
+  const executeCsvImport = async () => {
+    if (!previewRows) return;
+    setImporting(true);
+    const errors: string[] = [];
+    let created = 0;
+    let updated = 0;
+
+    const valid = previewRows.filter((r) => r.status === "ok");
+    for (const r of previewRows) {
+      if (r.status !== "ok") {
+        errors.push(`السطر ${r.line} (${r.sku || "—"}): ${r.statusLabel}`);
+      }
+    }
+
+    // Pre-fetch existing rows once with full id+sku map
+    const skus = valid.map((r) => r.sku);
+    const existingMap = new Map<string, string>();
+    if (skus.length > 0) {
+      const { data: existing, error: fetchErr } = await supabase
+        .from("products")
+        .select("id, sku")
+        .in("sku", skus);
+      if (fetchErr) {
+        toast.error("تعذر قراءة الكتالوج الحالي");
+        setImporting(false);
+        return;
+      }
+      for (const p of existing ?? []) {
+        if (p.sku) existingMap.set(p.sku, p.id);
+      }
+    }
+
+    for (const r of valid) {
+      // Build wholesale fields. Auto-derive missing tiers from RRP.
+      const rrp = r.rrp_price ?? r.price;
+      const derived = rrp > 0 ? deriveWholesaleFromRRP(rrp) : null;
+
+      const tiers = [
+        {
+          min_qty: 6,
+          price: r.tier_6 ?? derived?.price_tiers[0].price ?? 0,
+        },
+        {
+          min_qty: 12,
+          price: r.tier_12 ?? derived?.price_tiers[1].price ?? 0,
+        },
+        {
+          min_qty: 24,
+          price: r.tier_24 ?? derived?.price_tiers[2].price ?? 0,
+        },
+      ];
+
+      const payload = {
+        sku: r.sku,
+        name_ar: r.name,
+        price_mad: r.price,
+        category: r.category || null,
+        stock: r.stock,
+        rrp_price: r.rrp_price,
+        pharmacy_price: r.pharmacy_price ?? derived?.pharmacy_price ?? null,
+        map_price: r.map_price ?? derived?.map_price ?? null,
+        price_tiers: tiers,
+      };
+
+      const existingId = existingMap.get(r.sku);
+      if (existingId) {
+        const { error } = await supabase
+          .from("products")
+          .update(payload)
+          .eq("id", existingId);
+        if (error) {
+          errors.push(`السطر ${r.line} (${r.sku}): ${error.message}`);
+        } else {
+          updated++;
+        }
+      } else {
+        const { error } = await supabase
+          .from("products")
+          .insert({ ...payload, description_ar: "", active: true });
+        if (error) {
+          errors.push(`السطر ${r.line} (${r.sku}): ${error.message}`);
+        } else {
+          created++;
+        }
+      }
+    }
+
+    setImportResult({
+      created,
+      updated,
+      failed: errors.length,
+      errors: errors.slice(0, 20),
+    });
+    setPreviewOpen(false);
+    setPreviewRows(null);
+    setImporting(false);
+    if (created + updated > 0) {
+      toast.success(`تم: ${created} جديد، ${updated} محدّث`);
+      load();
+    } else if (errors.length > 0) {
+      toast.error("فشل الاستيراد");
     }
   };
 
@@ -1026,6 +1174,76 @@ function AdminProducts() {
         </Dialog>
         </div>
       </div>
+
+      <Dialog open={previewOpen} onOpenChange={(v) => { if (!v) { setPreviewOpen(false); setPreviewRows(null); } }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>معاينة استيراد CSV</DialogTitle>
+          </DialogHeader>
+          {previewRows && (
+            <div className="space-y-3">
+              <div className="text-sm text-muted-foreground flex flex-wrap gap-3">
+                <span>الإجمالي: <strong>{previewRows.length}</strong></span>
+                <span className="text-primary">
+                  جاهز: <strong>{previewRows.filter((r) => r.status === "ok").length}</strong>
+                </span>
+                <span className="text-muted-foreground">
+                  للتحديث: <strong>{previewRows.filter((r) => r.status === "ok" && r.willUpdate).length}</strong>
+                </span>
+                <span className="text-destructive">
+                  أخطاء: <strong>{previewRows.filter((r) => r.status !== "ok").length}</strong>
+                </span>
+              </div>
+              <div className="border rounded-md max-h-[50vh] overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>الاسم</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead>السعر</TableHead>
+                      <TableHead>الحالة</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {previewRows.map((r, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="max-w-[200px] truncate">{r.name || "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">{r.sku || "—"}</TableCell>
+                        <TableCell>{Number.isFinite(r.price) ? formatMAD(r.price) : "—"}</TableCell>
+                        <TableCell>
+                          {r.status === "ok" ? (
+                            <Badge variant={r.willUpdate ? "secondary" : "default"}>
+                              {r.willUpdate ? "تحديث" : "جديد"}
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive">{r.statusLabel}</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => { setPreviewOpen(false); setPreviewRows(null); }}
+              disabled={importing}
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={executeCsvImport}
+              disabled={importing || !previewRows?.some((r) => r.status === "ok")}
+            >
+              {importing && <Loader2 className="h-4 w-4 animate-spin" />}
+              تأكيد الاستيراد
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {importResult && (
         <Card className="p-4 shadow-soft space-y-2">
