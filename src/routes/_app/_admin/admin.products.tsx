@@ -70,6 +70,25 @@ interface Product {
   price_tiers: PriceTier[];
 }
 
+interface CsvPreviewRow {
+  line: number;
+  name: string;
+  sku: string;
+  price: number;
+  category: string;
+  stock: number;
+  stockStatus: string; // raw "instock"/"outofstock"
+  rrp_price: number | null;
+  pharmacy_price: number | null;
+  map_price: number | null;
+  tier_6: number | null;
+  tier_12: number | null;
+  tier_24: number | null;
+  status: "ok" | "missing_sku" | "missing_name" | "invalid_price";
+  statusLabel: string;
+  willUpdate: boolean;
+}
+
 interface ProductImage {
   id: string;
   product_id: string;
