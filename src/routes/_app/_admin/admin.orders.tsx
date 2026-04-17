@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, Pencil } from "lucide-react";
+import { Loader2, Pencil, Search, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -41,6 +42,8 @@ function AdminOrders() {
   const [draft, setDraft] = useState("");
   const [appendMode, setAppendMode] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const load = async () => {
     const { data } = await supabase
@@ -105,15 +108,65 @@ function AdminOrders() {
     load();
   };
 
+  const q = search.trim().toLowerCase();
+  const filtered = orders.filter((o) => {
+    if (statusFilter !== "all" && o.status !== statusFilter) return false;
+    if (!q) return true;
+    const name = o.profiles?.full_name?.toLowerCase() ?? "";
+    const city = o.profiles?.city?.toLowerCase() ?? "";
+    return name.includes(q) || city.includes(q) || o.id.toLowerCase().startsWith(q);
+  });
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">إدارة الطلبات</h1>
-        <p className="text-sm text-muted-foreground mt-1">{orders.length} طلب</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {filtered.length} من {orders.length} طلب
+        </p>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="بحث باسم الموزع، المدينة، أو رقم الطلب…"
+            className="pr-9 pl-9"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              aria-label="مسح البحث"
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">كل الحالات</SelectItem>
+            {STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {STATUS_LABELS[s]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid gap-3">
-        {orders.map((o) => (
+        {filtered.length === 0 ? (
+          <Card className="p-8 text-center text-sm text-muted-foreground">
+            لا توجد طلبات مطابقة
+          </Card>
+        ) : filtered.map((o) => (
           <Card key={o.id} className="p-4 shadow-soft">
             <div className="flex flex-col md:flex-row md:items-center gap-3">
               <div className="flex-1 min-w-0">
