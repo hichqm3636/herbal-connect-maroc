@@ -152,6 +152,9 @@ function AdminOrders() {
       o.profiles?.city ?? "",
       o.total_mad,
       o.points_earned,
+      (o.order_items ?? [])
+        .map((it) => `${it.products?.name_ar ?? "?"} x${it.quantity}`)
+        .join("; "),
       o.notes ?? "",
       o.admin_notes ?? "",
     ]);
