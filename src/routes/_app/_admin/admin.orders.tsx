@@ -136,6 +136,7 @@ function AdminOrders() {
       "City",
       "Total (MAD)",
       "Points Earned",
+      "Items",
       "Delivery Notes",
       "Admin Notes",
     ];
