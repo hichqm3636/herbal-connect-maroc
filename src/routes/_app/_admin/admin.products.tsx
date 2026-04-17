@@ -189,6 +189,18 @@ function AdminProducts() {
       stock: p.stock,
       active: p.active,
       points_per_unit: p.points_per_unit ?? 0,
+      rrp_price: p.rrp_price,
+      pharmacy_price: p.pharmacy_price,
+      map_price: p.map_price,
+      minimum_order: p.minimum_order ?? 1,
+      price_tiers:
+        p.price_tiers && p.price_tiers.length > 0
+          ? p.price_tiers
+          : [
+              { min_qty: 6, price: 0 },
+              { min_qty: 12, price: 0 },
+              { min_qty: 24, price: 0 },
+            ],
     });
     await loadImages(p.id);
     setOpen(true);
@@ -217,7 +229,7 @@ function AdminProducts() {
       toast.error("تعذر إنشاء المنتج");
       return null;
     }
-    setEditing(data as Product);
+    setEditing({ ...(data as unknown as Omit<Product, "price_tiers">), price_tiers: parseTiers((data as { price_tiers?: unknown }).price_tiers) });
     return data.id;
   };
 
