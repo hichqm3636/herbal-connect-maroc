@@ -30,6 +30,7 @@ interface Order {
   total_mad: number;
   points_earned: number;
   created_at: string;
+  notes: string | null;
   order_items: OrderItem[];
 }
 
@@ -42,7 +43,7 @@ function OrdersPage() {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("id, status, total_mad, points_earned, created_at, order_items(id, quantity, unit_price_mad, products(name_ar, image_url))")
+        .select("id, status, total_mad, points_earned, created_at, notes, order_items(id, quantity, unit_price_mad, products(name_ar, image_url))")
         .eq("distributor_id", user.id)
         .order("created_at", { ascending: false });
       setOrders((data as unknown as Order[]) ?? []);
