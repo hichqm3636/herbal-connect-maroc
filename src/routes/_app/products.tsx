@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/hooks/useCart";
 import { formatMAD } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -34,15 +35,11 @@ interface Product {
   stock: number;
 }
 
-interface CartItem extends Product {
-  qty: number;
-}
-
 function ProductsPage() {
   const { user } = useAuth();
+  const { items: cart, total, totalQty, addItem, updateQty, removeItem, clear } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -69,25 +66,12 @@ function ProductsPage() {
   );
 
   const addToCart = (p: Product) => {
-    setCart((prev) => {
-      const existing = prev.find((i) => i.id === p.id);
-      if (existing) return prev.map((i) => (i.id === p.id ? { ...i, qty: i.qty + 1 } : i));
-      return [...prev, { ...p, qty: 1 }];
-    });
+    addItem(
+      { id: p.id, name_ar: p.name_ar, price_mad: p.price_mad, image_url: p.image_url, stock: p.stock },
+      1,
+    );
     toast.success("تمت إضافة المنتج إلى السلة");
   };
-
-  const updateQty = (id: string, delta: number) =>
-    setCart((prev) =>
-      prev
-        .map((i) => (i.id === id ? { ...i, qty: Math.max(0, i.qty + delta) } : i))
-        .filter((i) => i.qty > 0),
-    );
-
-  const removeItem = (id: string) => setCart((prev) => prev.filter((i) => i.id !== id));
-
-  const total = cart.reduce((s, i) => s + Number(i.price_mad) * i.qty, 0);
-  const totalQty = cart.reduce((s, i) => s + i.qty, 0);
 
   const placeOrder = async () => {
     if (!user || cart.length === 0) return;
