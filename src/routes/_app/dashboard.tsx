@@ -159,6 +159,56 @@ function Dashboard() {
 
       <Card className="p-5 shadow-soft">
         <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-bold">إيرادات آخر 30 يوماً</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              المجموع: <span className="font-semibold text-foreground">{formatMAD(total30d)}</span>
+            </p>
+          </div>
+        </div>
+        <ChartContainer config={chartConfig} className="h-[240px] w-full" dir="ltr">
+          <AreaChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 0 }}>
+            <defs>
+              <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-revenue)" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="var(--color-revenue)" stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              minTickGap={24}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              width={50}
+              tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))}
+            />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value) => formatMAD(Number(value))}
+                  labelFormatter={(label) => String(label)}
+                />
+              }
+            />
+            <Area
+              type="monotone"
+              dataKey="revenue"
+              stroke="var(--color-revenue)"
+              fill="url(#fillRevenue)"
+              strokeWidth={2}
+            />
+          </AreaChart>
+        </ChartContainer>
+      </Card>
+
+      <Card className="p-5 shadow-soft">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold">آخر الطلبات</h2>
           <Button asChild variant="ghost" size="sm">
             <Link to="/orders">عرض الكل</Link>
