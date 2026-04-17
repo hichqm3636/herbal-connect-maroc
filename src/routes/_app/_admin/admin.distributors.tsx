@@ -328,6 +328,33 @@ function AdminDistributors() {
         </div>
       </Card>
 
+      {/* Bulk toolbar */}
+      {selected.size > 0 && (
+        <Card className="p-3 shadow-soft flex flex-col sm:flex-row sm:items-center gap-3 border-primary/40 bg-accent/30">
+          <div className="flex items-center gap-2 flex-1">
+            <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} aria-label="تحديد الكل" />
+            <span className="text-sm font-medium">تم تحديد {selected.size} موزع</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={bulkBusy}>
+              إلغاء التحديد
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1" onClick={exportCsv} disabled={bulkBusy}>
+              <Download className="h-4 w-4" />
+              تصدير
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setBulkConfirm("enable")} disabled={bulkBusy}>
+              <ShieldCheck className="h-4 w-4" />
+              تفعيل
+            </Button>
+            <Button size="sm" variant="destructive" className="gap-1" onClick={() => setBulkConfirm("disable")} disabled={bulkBusy}>
+              <ShieldOff className="h-4 w-4" />
+              تعطيل
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {/* List */}
       {loading ? (
         <div className="flex justify-center py-12">
@@ -337,9 +364,24 @@ function AdminDistributors() {
         <Card className="p-8 text-center text-muted-foreground">لا يوجد موزعون مطابقون.</Card>
       ) : (
         <div className="grid gap-3">
+          <div className="flex items-center gap-2 px-1">
+            <Checkbox
+              checked={allSelected}
+              onCheckedChange={toggleSelectAll}
+              aria-label="تحديد كل الموزعين"
+            />
+            <span className="text-xs text-muted-foreground">تحديد الكل ({filtered.length})</span>
+          </div>
           {filtered.map((d) => (
             <Card key={d.id} className="p-4 shadow-soft">
               <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                <div className="flex items-start md:items-center">
+                  <Checkbox
+                    checked={selected.has(d.id)}
+                    onCheckedChange={() => toggleSelect(d.id)}
+                    aria-label={`تحديد ${d.full_name}`}
+                  />
+                </div>
                 {/* Identity */}
                 <div className="flex items-start gap-3 flex-1 min-w-0">
                   <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-accent-foreground font-semibold shrink-0">
