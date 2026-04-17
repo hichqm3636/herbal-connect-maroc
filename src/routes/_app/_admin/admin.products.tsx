@@ -636,7 +636,34 @@ function AdminProducts() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      {importResult && (
+        <Card className="p-4 shadow-soft space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">نتيجة الاستيراد</h3>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setImportResult(null)}
+            >
+              إغلاق
+            </Button>
+          </div>
+          <p className="text-sm">
+            تم إنشاء <span className="font-bold text-primary">{importResult.created}</span> منتج،
+            فشل <span className="font-bold text-destructive">{importResult.failed}</span> سطر.
+          </p>
+          {importResult.errors.length > 0 && (
+            <ul className="text-xs text-muted-foreground list-disc pr-4 space-y-1">
+              {importResult.errors.map((e, i) => (
+                <li key={i}>{e}</li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      )}
 
       <div className="grid gap-3">
         {products.map((p) => (
