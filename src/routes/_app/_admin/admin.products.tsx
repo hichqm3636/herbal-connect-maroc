@@ -875,6 +875,7 @@ function AdminProducts() {
                 "distributor_12",
                 "distributor_24",
                 "map_price",
+                "minimum_order",
               ];
               const sample = [
                 "Magnesium glycinate",
@@ -888,6 +889,7 @@ function AdminProducts() {
                 "117",
                 "108",
                 "162",
+                "1",
               ];
               const csv = `\uFEFF${headers.join(",")}\n${sample.join(",")}\n`;
               const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
