@@ -1,21 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ShoppingCart, Plus, Minus, Trash2, Loader2, PackageSearch } from "lucide-react";
+import { Plus, PackageSearch } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { formatMAD } from "@/lib/format";
 import { toast } from "sonner";
@@ -36,12 +26,9 @@ interface Product {
 }
 
 function ProductsPage() {
-  const { user } = useAuth();
-  const { items: cart, total, totalQty, addItem, updateQty, removeItem, clear } = useCart();
+  const { addItem } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
-  const [open, setOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -73,42 +60,7 @@ function ProductsPage() {
     toast.success("تمت إضافة المنتج إلى السلة");
   };
 
-  const placeOrder = async () => {
-    if (!user || cart.length === 0) return;
-    setSubmitting(true);
-    const points = Math.floor(total / 100);
-    const { data: order, error } = await supabase
-      .from("orders")
-      .insert({
-        distributor_id: user.id,
-        total_mad: total,
-        points_earned: points,
-        status: "pending",
-      })
-      .select("id")
-      .single();
-    if (error || !order) {
-      toast.error("تعذر إنشاء الطلب");
-      setSubmitting(false);
-      return;
-    }
-    const items = cart.map((i) => ({
-      order_id: order.id,
-      product_id: i.id,
-      quantity: i.qty,
-      unit_price_mad: i.price_mad,
-    }));
-    const { error: itemsErr } = await supabase.from("order_items").insert(items);
-    if (itemsErr) {
-      toast.error("تعذر حفظ عناصر الطلب");
-      setSubmitting(false);
-      return;
-    }
-    toast.success(`تم إرسال الطلب بنجاح • +${points} نقطة`);
-    clear();
-    setOpen(false);
-    setSubmitting(false);
-  };
+
 
   return (
     <div className="space-y-6">
@@ -124,70 +76,6 @@ function ProductsPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:w-64"
           />
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button className="relative gap-2">
-                <ShoppingCart className="h-4 w-4" />
-                السلة
-                {totalQty > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-warning text-warning-foreground text-xs font-bold rounded-full h-5 min-w-5 px-1 flex items-center justify-center">
-                    {totalQty}
-                  </span>
-                )}
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
-              <SheetHeader>
-                <SheetTitle>سلة الطلب</SheetTitle>
-                <SheetDescription>راجع منتجاتك قبل إرسال الطلب</SheetDescription>
-              </SheetHeader>
-              <div className="flex-1 overflow-y-auto py-4 space-y-3">
-                {cart.length === 0 ? (
-                  <div className="text-center text-sm text-muted-foreground py-12">
-                    السلة فارغة
-                  </div>
-                ) : (
-                  cart.map((item) => (
-                    <div key={item.id} className="flex gap-3 p-3 rounded-lg border bg-card">
-                      <img
-                        src={item.image_url ?? ""}
-                        alt={item.name_ar}
-                        className="h-16 w-16 rounded-md object-cover bg-muted"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{item.name_ar}</p>
-                        <p className="text-xs text-muted-foreground">{formatMAD(item.price_mad)}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(item.id, -1)}>
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="text-sm font-medium w-6 text-center">{item.qty}</span>
-                          <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(item.id, 1)}>
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7 mr-auto text-destructive" onClick={() => removeItem(item.id)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-              {cart.length > 0 && (
-                <SheetFooter className="flex-col gap-3 sm:flex-col border-t pt-4">
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-muted-foreground">الإجمالي</span>
-                    <span className="text-lg font-bold">{formatMAD(total)}</span>
-                  </div>
-                  <Button onClick={placeOrder} disabled={submitting} className="w-full" size="lg">
-                    {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                    تأكيد الطلب
-                  </Button>
-                </SheetFooter>
-              )}
-            </SheetContent>
-          </Sheet>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Plus, Minus, Loader2, PackageX, ShoppingCart } from "lucide-react";
+import { ArrowRight, Plus, Minus, Loader2, PackageX } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +34,7 @@ interface ProductImage {
 
 function ProductDetail() {
   const { productId } = Route.useParams();
-  const { addItem, totalQty } = useCart();
+  const { addItem, openCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -75,6 +75,7 @@ function ProductDetail() {
     );
     toast.success(`تمت إضافة ${qty} ${qty === 1 ? "منتج" : "منتجات"} إلى السلة`);
     setQty(1);
+    openCart();
   };
 
   if (loading) {
@@ -110,22 +111,12 @@ function ProductDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-2">
-        <Button asChild variant="ghost" size="sm" className="gap-2 -ms-2">
-          <Link to="/products">
-            <ArrowRight className="h-4 w-4" />
-            العودة إلى الكتالوج
-          </Link>
-        </Button>
-        {totalQty > 0 && (
-          <Button asChild variant="outline" size="sm" className="gap-2">
-            <Link to="/products">
-              <ShoppingCart className="h-4 w-4" />
-              السلة ({totalQty})
-            </Link>
-          </Button>
-        )}
-      </div>
+      <Button asChild variant="ghost" size="sm" className="gap-2 -ms-2">
+        <Link to="/products">
+          <ArrowRight className="h-4 w-4" />
+          العودة إلى الكتالوج
+        </Link>
+      </Button>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3">

@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { AppSidebar } from "@/components/AppSidebar";
+import { CartButton, CartSheet } from "@/components/CartSheet";
 import { useAuth } from "@/hooks/useAuth";
 import { CartProvider } from "@/hooks/useCart";
 import { Leaf } from "lucide-react";
@@ -39,10 +40,14 @@ function AppLayout() {
               <SidebarTrigger />
               <Separator orientation="vertical" className="h-5" />
               <span className="text-sm font-medium text-muted-foreground">بوابة شركاء هيرباليفي</span>
+              <div className="ms-auto">
+                <CartButton />
+              </div>
             </header>
             <main className="flex-1 p-4 md:p-6 lg:p-8">
               <Outlet />
             </main>
+            <CartSheet />
           </SidebarInset>
         </div>
       </SidebarProvider>
