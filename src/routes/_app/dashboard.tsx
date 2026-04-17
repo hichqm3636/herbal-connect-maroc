@@ -1,10 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Wallet, ShoppingCart, Award, TrendingUp } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { StatCard } from "@/components/StatCard";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD, formatDateAr, LEVEL_LABELS, STATUS_LABELS, STATUS_VARIANTS } from "@/lib/format";
@@ -33,6 +40,7 @@ function Dashboard() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [totalOrders, setTotalOrders] = useState(0);
   const [monthlySales, setMonthlySales] = useState(0);
+  const [revenue30d, setRevenue30d] = useState<{ created_at: string; total_mad: number }[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -68,9 +76,48 @@ function Dashboard() {
         .gte("created_at", startOfMonth.toISOString())
         .neq("status", "cancelled");
       setMonthlySales((monthOrders ?? []).reduce((s, o) => s + Number(o.total_mad), 0));
+
+      const start30 = new Date();
+      start30.setDate(start30.getDate() - 29);
+      start30.setHours(0, 0, 0, 0);
+      const { data: rev } = await supabase
+        .from("orders")
+        .select("created_at, total_mad")
+        .eq("distributor_id", user.id)
+        .gte("created_at", start30.toISOString())
+        .neq("status", "cancelled");
+      setRevenue30d(rev ?? []);
     })();
   }, [user]);
 
+  const chartData = useMemo(() => {
+    const days: { date: string; label: string; revenue: number }[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      days.push({
+        date: key,
+        label: d.toLocaleDateString("ar-MA", { day: "numeric", month: "short" }),
+        revenue: 0,
+      });
+    }
+    const map = new Map(days.map((d) => [d.date, d]));
+    for (const r of revenue30d) {
+      const key = new Date(r.created_at).toISOString().slice(0, 10);
+      const day = map.get(key);
+      if (day) day.revenue += Number(r.total_mad);
+    }
+    return days;
+  }, [revenue30d]);
+
+  const total30d = useMemo(() => chartData.reduce((s, d) => s + d.revenue, 0), [chartData]);
+
+  const chartConfig = {
+    revenue: { label: "الإيرادات", color: "var(--primary)" },
+  } satisfies ChartConfig;
   return (
     <div className="space-y-6">
       <div>
@@ -109,6 +156,56 @@ function Dashboard() {
           accent="muted"
         />
       </div>
+
+      <Card className="p-5 shadow-soft">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-bold">إيرادات آخر 30 يوماً</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              المجموع: <span className="font-semibold text-foreground">{formatMAD(total30d)}</span>
+            </p>
+          </div>
+        </div>
+        <ChartContainer config={chartConfig} className="h-[240px] w-full" dir="ltr">
+          <AreaChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 0 }}>
+            <defs>
+              <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-revenue)" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="var(--color-revenue)" stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              minTickGap={24}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              width={50}
+              tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))}
+            />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value) => formatMAD(Number(value))}
+                  labelFormatter={(label) => String(label)}
+                />
+              }
+            />
+            <Area
+              type="monotone"
+              dataKey="revenue"
+              stroke="var(--color-revenue)"
+              fill="url(#fillRevenue)"
+              strokeWidth={2}
+            />
+          </AreaChart>
+        </ChartContainer>
+      </Card>
 
       <Card className="p-5 shadow-soft">
         <div className="flex items-center justify-between mb-4">
