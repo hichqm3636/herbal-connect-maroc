@@ -26,12 +26,9 @@ interface Product {
 }
 
 function ProductsPage() {
-  const { user } = useAuth();
-  const { items: cart, total, totalQty, addItem, updateQty, removeItem, clear } = useCart();
+  const { addItem } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
-  const [open, setOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     (async () => {
