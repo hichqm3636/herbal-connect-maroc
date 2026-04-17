@@ -22,6 +22,7 @@ import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/adm
 import { Route as AppAdminAdminProductsRouteImport } from './routes/_app/_admin/admin.products'
 import { Route as AppAdminAdminOrdersRouteImport } from './routes/_app/_admin/admin.orders'
 import { Route as AppAdminAdminDistributorsRouteImport } from './routes/_app/_admin/admin.distributors'
+import { Route as AppAdminAdminActivityRouteImport } from './routes/_app/_admin/admin.activity'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -87,6 +88,11 @@ const AppAdminAdminDistributorsRoute =
     path: '/admin/distributors',
     getParentRoute: () => AppAdminRoute,
   } as any)
+const AppAdminAdminActivityRoute = AppAdminAdminActivityRouteImport.update({
+  id: '/admin/activity',
+  path: '/admin/activity',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/orders': typeof AppOrdersRoute
   '/products': typeof AppProductsRouteWithChildren
   '/products/$productId': typeof AppProductsProductIdRoute
+  '/admin/activity': typeof AppAdminAdminActivityRoute
   '/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
   '/admin/products': typeof AppAdminAdminProductsRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/orders': typeof AppOrdersRoute
   '/products': typeof AppProductsRouteWithChildren
   '/products/$productId': typeof AppProductsProductIdRoute
+  '/admin/activity': typeof AppAdminAdminActivityRoute
   '/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
   '/admin/products': typeof AppAdminAdminProductsRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/_app/orders': typeof AppOrdersRoute
   '/_app/products': typeof AppProductsRouteWithChildren
   '/_app/products/$productId': typeof AppProductsProductIdRoute
+  '/_app/_admin/admin/activity': typeof AppAdminAdminActivityRoute
   '/_app/_admin/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/_app/_admin/admin/orders': typeof AppAdminAdminOrdersRoute
   '/_app/_admin/admin/products': typeof AppAdminAdminProductsRoute
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/products'
     | '/products/$productId'
+    | '/admin/activity'
     | '/admin/distributors'
     | '/admin/orders'
     | '/admin/products'
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/products'
     | '/products/$productId'
+    | '/admin/activity'
     | '/admin/distributors'
     | '/admin/orders'
     | '/admin/products'
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/_app/orders'
     | '/_app/products'
     | '/_app/products/$productId'
+    | '/_app/_admin/admin/activity'
     | '/_app/_admin/admin/distributors'
     | '/_app/_admin/admin/orders'
     | '/_app/_admin/admin/products'
@@ -273,10 +285,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminDistributorsRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/_admin/admin/activity': {
+      id: '/_app/_admin/admin/activity'
+      path: '/admin/activity'
+      fullPath: '/admin/activity'
+      preLoaderRoute: typeof AppAdminAdminActivityRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
   }
 }
 
 interface AppAdminRouteChildren {
+  AppAdminAdminActivityRoute: typeof AppAdminAdminActivityRoute
   AppAdminAdminDistributorsRoute: typeof AppAdminAdminDistributorsRoute
   AppAdminAdminOrdersRoute: typeof AppAdminAdminOrdersRoute
   AppAdminAdminProductsRoute: typeof AppAdminAdminProductsRoute
@@ -284,6 +304,7 @@ interface AppAdminRouteChildren {
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminAdminActivityRoute: AppAdminAdminActivityRoute,
   AppAdminAdminDistributorsRoute: AppAdminAdminDistributorsRoute,
   AppAdminAdminOrdersRoute: AppAdminAdminOrdersRoute,
   AppAdminAdminProductsRoute: AppAdminAdminProductsRoute,

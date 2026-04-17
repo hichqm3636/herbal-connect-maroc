@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Boxes,
   Users,
+  Activity,
   LogOut,
   Leaf,
 } from "lucide-react";
@@ -37,6 +38,7 @@ const adminItems = [
   { title: "إدارة المنتجات", url: "/admin/products", icon: Boxes },
   { title: "إدارة الموزعين", url: "/admin/distributors", icon: Users },
   { title: "إدارة الطلبات", url: "/admin/orders", icon: ClipboardList },
+  { title: "سجل النشاط", url: "/admin/activity", icon: Activity },
 ];
 
 export function AppSidebar() {
