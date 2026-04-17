@@ -45,6 +45,7 @@ interface Product {
   category: string | null;
   stock: number;
   active: boolean;
+  points_per_unit: number;
 }
 
 interface ProductImage {
@@ -62,6 +63,7 @@ const empty: Omit<Product, "id" | "image_url"> = {
   category: "",
   stock: 0,
   active: true,
+  points_per_unit: 0,
 };
 
 function AdminProducts() {
@@ -72,7 +74,14 @@ function AdminProducts() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    created: number;
+    failed: number;
+    errors: string[];
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     const { data } = await supabase
