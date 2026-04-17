@@ -105,7 +105,7 @@ function ProductsPage() {
       return;
     }
     toast.success(`تم إرسال الطلب بنجاح • +${points} نقطة`);
-    setCart([]);
+    clear();
     setOpen(false);
     setSubmitting(false);
   };
