@@ -75,6 +75,7 @@ function ProductDetail() {
     );
     toast.success(`تمت إضافة ${qty} ${qty === 1 ? "منتج" : "منتجات"} إلى السلة`);
     setQty(1);
+    openCart();
   };
 
   if (loading) {
