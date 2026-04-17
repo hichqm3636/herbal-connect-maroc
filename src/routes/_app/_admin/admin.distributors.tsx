@@ -551,6 +551,35 @@ function AdminDistributors() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk confirm */}
+      <AlertDialog open={!!bulkConfirm} onOpenChange={(o) => !o && setBulkConfirm(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {bulkConfirm === "disable" ? "تعطيل" : "تفعيل"} {selected.size} موزع؟
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulkConfirm === "disable"
+                ? "سيتم تعطيل دخول جميع الموزعين المحددين. يمكن إعادة تفعيلهم لاحقًا."
+                : "سيتم إعادة تفعيل دخول جميع الموزعين المحددين."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel disabled={bulkBusy}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                runBulkSetActive(bulkConfirm === "enable");
+              }}
+            >
+              {bulkBusy && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+              تأكيد
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
