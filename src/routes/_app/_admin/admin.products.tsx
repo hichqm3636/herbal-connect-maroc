@@ -77,11 +77,13 @@ function AdminProducts() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{
     created: number;
+    updated?: number;
     failed: number;
     errors: string[];
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
+  const catalogInputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     const { data } = await supabase
@@ -434,6 +436,121 @@ function AdminProducts() {
     }
   };
 
+  const handleCatalogImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (catalogInputRef.current) catalogInputRef.current.value = "";
+
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const text = await file.text();
+      const rows = parseCsv(text);
+      if (rows.length === 0) {
+        toast.error("ملف CSV فارغ أو غير صالح");
+        setImporting(false);
+        return;
+      }
+
+      const errors: string[] = [];
+      const skus = rows
+        .map((r) => (r.sku ?? "").trim())
+        .filter(Boolean);
+
+      // Fetch existing products by SKU
+      const existingBySku = new Map<string, { id: string }>();
+      if (skus.length > 0) {
+        const { data: existing, error: fetchErr } = await supabase
+          .from("products")
+          .select("id, sku")
+          .in("sku", skus);
+        if (fetchErr) {
+          toast.error("تعذر قراءة الكتالوج الحالي");
+          setImporting(false);
+          return;
+        }
+        for (const p of existing ?? []) {
+          if (p.sku) existingBySku.set(p.sku, { id: p.id });
+        }
+      }
+
+      let created = 0;
+      let updated = 0;
+
+      for (let idx = 0; idx < rows.length; idx++) {
+        const row = rows[idx];
+        const lineNum = idx + 2;
+        const sku = (row.sku ?? "").trim();
+        if (!sku) {
+          errors.push(`السطر ${lineNum}: SKU مطلوب`);
+          continue;
+        }
+        const name = (row.name ?? row.name_ar ?? "").trim();
+        const price = Number(row.price ?? row.price_mad);
+        if (!name) {
+          errors.push(`السطر ${lineNum} (${sku}): الاسم مطلوب`);
+          continue;
+        }
+        if (!Number.isFinite(price) || price < 0) {
+          errors.push(`السطر ${lineNum} (${sku}): سعر غير صالح`);
+          continue;
+        }
+        const points = Number(row.points ?? 0);
+        const stock = Number(row.stock ?? 0);
+        const imageUrl = (row.image_url ?? "").trim() || null;
+
+        const payload = {
+          sku,
+          name_ar: name,
+          price_mad: price,
+          stock: Number.isFinite(stock) ? stock : 0,
+          points_per_unit: Number.isFinite(points) ? points : 0,
+          image_url: imageUrl,
+        };
+
+        const existing = existingBySku.get(sku);
+        if (existing) {
+          const { error } = await supabase
+            .from("products")
+            .update(payload)
+            .eq("id", existing.id);
+          if (error) {
+            errors.push(`السطر ${lineNum} (${sku}): ${error.message}`);
+          } else {
+            updated++;
+          }
+        } else {
+          const { error } = await supabase
+            .from("products")
+            .insert({ ...payload, description_ar: "", active: true });
+          if (error) {
+            errors.push(`السطر ${lineNum} (${sku}): ${error.message}`);
+          } else {
+            created++;
+          }
+        }
+      }
+
+      setImportResult({
+        created,
+        updated,
+        failed: errors.length,
+        errors: errors.slice(0, 10),
+      });
+      if (created + updated > 0) {
+        toast.success(`تم إنشاء ${created} وتحديث ${updated} منتج`);
+        load();
+      } else if (errors.length > 0) {
+        toast.error("فشل استيراد الكتالوج");
+      }
+    } catch (err) {
+      toast.error("تعذر قراءة الملف");
+      console.error(err);
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -449,6 +566,13 @@ function AdminProducts() {
             className="hidden"
             onChange={handleCsvImport}
           />
+          <input
+            ref={catalogInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={handleCatalogImport}
+          />
           <Button
             type="button"
             variant="outline"
@@ -462,6 +586,20 @@ function AdminProducts() {
               <FileSpreadsheet className="h-4 w-4" />
             )}
             استيراد المنتجات (CSV)
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => catalogInputRef.current?.click()}
+            disabled={importing}
+            className="gap-2"
+          >
+            {importing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="h-4 w-4" />
+            )}
+            استيراد الكتالوج
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -665,8 +803,13 @@ function AdminProducts() {
             </Button>
           </div>
           <p className="text-sm">
-            تم إنشاء <span className="font-bold text-primary">{importResult.created}</span> منتج،
-            فشل <span className="font-bold text-destructive">{importResult.failed}</span> سطر.
+            تم إنشاء <span className="font-bold text-primary">{importResult.created}</span> منتج
+            {typeof importResult.updated === "number" && (
+              <>
+                ، تحديث <span className="font-bold text-primary">{importResult.updated}</span>
+              </>
+            )}
+            ، فشل <span className="font-bold text-destructive">{importResult.failed}</span> سطر.
           </p>
           {importResult.errors.length > 0 && (
             <ul className="text-xs text-muted-foreground list-disc pr-4 space-y-1">
