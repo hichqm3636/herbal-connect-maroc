@@ -23,7 +23,14 @@ const signInSchema = z.object({
   password: z.string().min(6, { message: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" }).max(100),
 });
 
-const signUpSchema = signInSchema.extend({
+const signUpSchema = z.object({
+  email: z.string().trim().email({ message: "بريد إلكتروني غير صالح" }).max(255),
+  password: z
+    .string()
+    .min(8, { message: "كلمة المرور يجب أن تكون 8 أحرف على الأقل" })
+    .max(100)
+    .regex(/[A-Za-z]/, { message: "يجب أن تحتوي كلمة المرور على حرف" })
+    .regex(/[0-9]/, { message: "يجب أن تحتوي كلمة المرور على رقم" }),
   fullName: z.string().trim().min(2, { message: "الاسم مطلوب" }).max(100),
   phone: z.string().trim().min(6, { message: "رقم الهاتف مطلوب" }).max(20),
   city: z.string().trim().min(2, { message: "المدينة مطلوبة" }).max(80),
