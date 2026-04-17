@@ -1,0 +1,1 @@
+ALTER TABLE public.orders ADD COLUMN admin_notes text;
