@@ -42,6 +42,8 @@ function AdminOrders() {
   const [draft, setDraft] = useState("");
   const [appendMode, setAppendMode] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const load = async () => {
     const { data } = await supabase
