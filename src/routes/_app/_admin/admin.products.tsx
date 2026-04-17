@@ -179,8 +179,50 @@ function AdminProducts() {
                 <Input value={form.category ?? ""} onChange={(e) => setForm({ ...form, category: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>رابط الصورة</Label>
-                <Input value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." />
+                <Label>صورة المنتج</Label>
+                {form.image_url ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={form.image_url}
+                      alt=""
+                      className="h-32 w-32 rounded-md object-cover border"
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="destructive"
+                      className="absolute -top-2 -left-2 h-6 w-6 rounded-full"
+                      onClick={() => setForm({ ...form, image_url: "" })}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="gap-2"
+                    >
+                      {uploading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      {uploading ? "جارٍ الرفع..." : "رفع صورة"}
+                    </Button>
+                    <span className="text-xs text-muted-foreground">PNG, JPG حتى 5MB</span>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
               </div>
               <div className="flex items-center gap-2">
                 <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
