@@ -312,6 +312,128 @@ function AdminProducts() {
     load();
   };
 
+  const parseCsv = (text: string): Record<string, string>[] => {
+    const lines = text
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    if (lines.length < 2) return [];
+    const splitRow = (row: string): string[] => {
+      const out: string[] = [];
+      let cur = "";
+      let inQuotes = false;
+      for (let i = 0; i < row.length; i++) {
+        const c = row[i];
+        if (c === '"') {
+          if (inQuotes && row[i + 1] === '"') {
+            cur += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (c === "," && !inQuotes) {
+          out.push(cur);
+          cur = "";
+        } else {
+          cur += c;
+        }
+      }
+      out.push(cur);
+      return out.map((s) => s.trim());
+    };
+    const headers = splitRow(lines[0]).map((h) => h.toLowerCase());
+    return lines.slice(1).map((line) => {
+      const cells = splitRow(line);
+      const row: Record<string, string> = {};
+      headers.forEach((h, i) => {
+        row[h] = cells[i] ?? "";
+      });
+      return row;
+    });
+  };
+
+  const handleCsvImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (csvInputRef.current) csvInputRef.current.value = "";
+
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const text = await file.text();
+      const rows = parseCsv(text);
+      if (rows.length === 0) {
+        toast.error("ملف CSV فارغ أو غير صالح");
+        setImporting(false);
+        return;
+      }
+
+      const errors: string[] = [];
+      const payloads: {
+        name_ar: string;
+        description_ar: string;
+        price_mad: number;
+        stock: number;
+        points_per_unit: number;
+        image_url: string | null;
+        active: boolean;
+      }[] = [];
+
+      rows.forEach((row, idx) => {
+        const lineNum = idx + 2;
+        const name = (row.name ?? row.name_ar ?? "").trim();
+        if (!name) {
+          errors.push(`السطر ${lineNum}: اسم المنتج مطلوب`);
+          return;
+        }
+        const price = Number(row.price ?? row.price_mad);
+        if (!Number.isFinite(price) || price < 0) {
+          errors.push(`السطر ${lineNum}: سعر غير صالح`);
+          return;
+        }
+        const points = Number(row.points ?? row.points_per_unit ?? 0);
+        const stock = Number(row.stock ?? 0);
+        const imageUrl = (row.image_url ?? "").trim() || null;
+        payloads.push({
+          name_ar: name,
+          description_ar: "",
+          price_mad: price,
+          stock: Number.isFinite(stock) ? stock : 0,
+          points_per_unit: Number.isFinite(points) ? points : 0,
+          image_url: imageUrl,
+          active: true,
+        });
+      });
+
+      let created = 0;
+      if (payloads.length > 0) {
+        const { data, error } = await supabase
+          .from("products")
+          .insert(payloads)
+          .select("id");
+        if (error) {
+          errors.push(`خطأ في الإدراج: ${error.message}`);
+        } else {
+          created = data?.length ?? 0;
+        }
+      }
+
+      setImportResult({ created, failed: errors.length, errors: errors.slice(0, 10) });
+      if (created > 0) {
+        toast.success(`تم استيراد ${created} منتج`);
+        load();
+      }
+      if (errors.length > 0 && created === 0) {
+        toast.error("فشل الاستيراد");
+      }
+    } catch (err) {
+      toast.error("تعذر قراءة الملف");
+      console.error(err);
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
