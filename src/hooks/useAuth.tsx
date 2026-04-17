@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import type { PartnerType } from "@/lib/pricing";
 
 type AppRole = "admin" | "distributor";
 
@@ -9,6 +10,7 @@ interface AuthContextValue {
   user: User | null;
   roles: AppRole[];
   isAdmin: boolean;
+  partnerType: PartnerType;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshRoles: () => Promise<void>;
