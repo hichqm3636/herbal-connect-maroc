@@ -23,7 +23,14 @@ const signInSchema = z.object({
   password: z.string().min(6, { message: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" }).max(100),
 });
 
-const signUpSchema = signInSchema.extend({
+const signUpSchema = z.object({
+  email: z.string().trim().email({ message: "بريد إلكتروني غير صالح" }).max(255),
+  password: z
+    .string()
+    .min(8, { message: "كلمة المرور يجب أن تكون 8 أحرف على الأقل" })
+    .max(100)
+    .regex(/[A-Za-z]/, { message: "يجب أن تحتوي كلمة المرور على حرف" })
+    .regex(/[0-9]/, { message: "يجب أن تحتوي كلمة المرور على رقم" }),
   fullName: z.string().trim().min(2, { message: "الاسم مطلوب" }).max(100),
   phone: z.string().trim().min(6, { message: "رقم الهاتف مطلوب" }).max(20),
   city: z.string().trim().min(2, { message: "المدينة مطلوبة" }).max(80),
@@ -54,7 +61,9 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword(parsed.data);
     setSubmitting(false);
     if (error) {
-      toast.error("بيانات الدخول غير صحيحة");
+      const msg = error.message || "";
+      const friendly = /invalid|credentials/i.test(msg) ? "بيانات الدخول غير صحيحة" : msg;
+      toast.error(friendly);
       return;
     }
     toast.success("مرحباً بعودتك");
@@ -91,7 +100,13 @@ function LoginPage() {
     });
     setSubmitting(false);
     if (error) {
-      toast.error(error.message.includes("already") ? "هذا الحساب موجود بالفعل" : "تعذر إنشاء الحساب");
+      const msg = error.message || "";
+      let friendly = msg;
+      if (/already|registered|exists/i.test(msg)) friendly = "هذا الحساب موجود بالفعل";
+      else if (/weak|pwned|password.*short|at least|leaked|compromised/i.test(msg))
+        friendly = "كلمة المرور ضعيفة أو مسرّبة. اختر كلمة مرور أقوى (8+ أحرف، حروف وأرقام)";
+      else if (/rate|too many/i.test(msg)) friendly = "محاولات كثيرة، حاول لاحقاً";
+      toast.error(friendly, { description: msg !== friendly ? msg : undefined });
       return;
     }
     toast.success("تم إنشاء الحساب بنجاح");
