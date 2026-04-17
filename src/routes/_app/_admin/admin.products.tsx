@@ -132,6 +132,7 @@ function AdminProducts() {
     updated?: number;
     failed: number;
     errors: string[];
+    failedRows?: CsvPreviewRow[];
   } | null>(null);
   const [previewRows, setPreviewRows] = useState<CsvPreviewRow[] | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -675,11 +676,21 @@ function AdminProducts() {
       }
     }
 
+    const failedSkus = new Set<string>();
+    for (const e of errors) {
+      const m = e.match(/\(([^)]+)\)/);
+      if (m && m[1] !== "—") failedSkus.add(m[1]);
+    }
+    const failedRows = previewRows.filter(
+      (r) => r.status !== "ok" || failedSkus.has(r.sku),
+    );
+
     setImportResult({
       created,
       updated,
       failed: errors.length,
       errors: errors.slice(0, 20),
+      failedRows,
     });
     setPreviewOpen(false);
     setPreviewRows(null);
@@ -1311,8 +1322,49 @@ function AdminProducts() {
                 ، تحديث <span className="font-bold text-primary">{importResult.updated}</span>
               </>
             )}
-            ، فشل <span className="font-bold text-destructive">{importResult.failed}</span> سطر.
+            ، تم تخطي <span className="font-bold text-destructive">{importResult.failed}</span> سطر.
           </p>
+          {importResult.failedRows && importResult.failedRows.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                const headers = [
+                  "name","sku","price","category","stock",
+                  "rrp_price","pharmacy_price",
+                  "distributor_6","distributor_12","distributor_24",
+                  "map_price","_error",
+                ];
+                const escape = (v: unknown) => {
+                  const s = v == null || (typeof v === "number" && !Number.isFinite(v)) ? "" : String(v);
+                  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                };
+                const lines = [headers.join(",")];
+                for (const r of importResult.failedRows!) {
+                  lines.push([
+                    r.name, r.sku, r.price, r.category, r.stockStatus || r.stock,
+                    r.rrp_price, r.pharmacy_price,
+                    r.tier_6, r.tier_12, r.tier_24,
+                    r.map_price, r.statusLabel,
+                  ].map(escape).join(","));
+                }
+                const csv = "\uFEFF" + lines.join("\n") + "\n";
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "failed-rows.csv";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }}
+            >
+              <Download className="h-4 w-4" />
+              تنزيل الأسطر الفاشلة ({importResult.failedRows.length})
+            </Button>
+          )}
           {importResult.errors.length > 0 && (
             <ul className="text-xs text-muted-foreground list-disc pr-4 space-y-1">
               {importResult.errors.map((e, i) => (
