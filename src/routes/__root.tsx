@@ -33,6 +33,12 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "بوابة شركاء هيرباليفي" },
       { name: "description", content: "بوابة الموزعين الرسمية لمنتجات هيرباليفي بالمغرب" },
+      { property: "og:title", content: "بوابة شركاء هيرباليفي" },
+      { name: "twitter:title", content: "بوابة شركاء هيرباليفي" },
+      { property: "og:description", content: "بوابة الموزعين الرسمية لمنتجات هيرباليفي بالمغرب" },
+      { name: "twitter:description", content: "بوابة الموزعين الرسمية لمنتجات هيرباليفي بالمغرب" },
+      { name: "twitter:card", content: "summary" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
