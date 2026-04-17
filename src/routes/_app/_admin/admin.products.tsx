@@ -907,6 +907,9 @@ function AdminProducts() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>معرض الصور ({images.length})</Label>
                   <Button
                     type="button"
                     variant="outline"
