@@ -791,9 +791,122 @@ function AdminProducts() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>معرض الصور ({images.length})</Label>
+              {/* === Wholesale pricing engine === */}
+              <div className="space-y-3 border rounded-md p-3 bg-muted/30">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="font-semibold">التسعير بالجملة</Label>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      const rrp = form.rrp_price ?? 0;
+                      if (!rrp || rrp <= 0) {
+                        toast.error("أدخل السعر الموصى به (RRP) أولاً");
+                        return;
+                      }
+                      const d = deriveWholesaleFromRRP(rrp);
+                      setForm({
+                        ...form,
+                        pharmacy_price: d.pharmacy_price,
+                        map_price: d.map_price,
+                        price_tiers: d.price_tiers,
+                      });
+                      toast.success("تم احتساب الأسعار من RRP");
+                    }}
+                  >
+                    احتساب تلقائي من RRP
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">السعر الموصى به (RRP)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.rrp_price ?? ""}
+                      onChange={(e) => {
+                        const v = e.target.value === "" ? null : Number(e.target.value);
+                        setForm({ ...form, rrp_price: v });
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">السعر الأدنى المعلن (MAP)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.map_price ?? ""}
+                      onChange={(e) => {
+                        const v = e.target.value === "" ? null : Number(e.target.value);
+                        setForm({ ...form, map_price: v });
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">سعر الصيدلية</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.pharmacy_price ?? ""}
+                      onChange={(e) => {
+                        const v = e.target.value === "" ? null : Number(e.target.value);
+                        setForm({ ...form, pharmacy_price: v });
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">الحد الأدنى للطلب</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={form.minimum_order}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          minimum_order: Math.max(1, Number(e.target.value) || 1),
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs">طبقات الأسعار حسب الكمية</Label>
+                  <div className="space-y-2">
+                    {form.price_tiers.map((t, idx) => (
+                      <div key={idx} className="grid grid-cols-2 gap-2 items-center">
+                        <div className="text-xs text-muted-foreground">
+                          {t.min_qty}+ وحدة
+                        </div>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={t.price}
+                          onChange={(e) => {
+                            const next = [...form.price_tiers];
+                            next[idx] = { ...t, price: Number(e.target.value) || 0 };
+                            setForm({ ...form, price_tiers: next });
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    الموزع الرئيسي يحصل دائمًا على سعر الطبقة الأعلى. التعديلات
+                    اليدوية مسموحة بعد الاحتساب التلقائي.
+                  </p>
+                </div>
+              </div>
+
                   <Button
                     type="button"
                     variant="outline"
