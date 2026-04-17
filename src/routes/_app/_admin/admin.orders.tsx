@@ -131,6 +131,7 @@ function AdminOrders() {
       return;
     }
     const headers = [
+      "Order Number",
       "Order ID",
       "Created At",
       "Status",
@@ -147,6 +148,7 @@ function AdminOrders() {
       return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const rows = filtered.map((o) => [
+      o.order_number,
       o.id,
       new Date(o.created_at).toISOString(),
       o.status,
