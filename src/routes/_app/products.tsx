@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
+import { getUnitPrice, parseTiers, type PriceTier } from "@/lib/pricing";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/products")({
@@ -23,10 +25,16 @@ interface Product {
   image_url: string | null;
   category: string | null;
   stock: number;
+  rrp_price: number | null;
+  pharmacy_price: number | null;
+  map_price: number | null;
+  minimum_order: number;
+  price_tiers: PriceTier[];
 }
 
 function ProductsPage() {
   const { addItem } = useCart();
+  const { partnerType } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
 
@@ -37,7 +45,11 @@ function ProductsPage() {
         .select("*")
         .eq("active", true)
         .order("name_ar");
-      setProducts(data ?? []);
+      const rows = (data ?? []).map((p) => ({
+        ...p,
+        price_tiers: parseTiers((p as { price_tiers?: unknown }).price_tiers),
+      })) as Product[];
+      setProducts(rows);
     })();
   }, []);
 
@@ -53,14 +65,28 @@ function ProductsPage() {
   );
 
   const addToCart = (p: Product) => {
+    const qty = Math.max(1, p.minimum_order || 1);
     addItem(
-      { id: p.id, name_ar: p.name_ar, price_mad: p.price_mad, image_url: p.image_url, stock: p.stock },
-      1,
+      {
+        id: p.id,
+        name_ar: p.name_ar,
+        price_mad: p.price_mad,
+        image_url: p.image_url,
+        stock: p.stock,
+        rrp_price: p.rrp_price,
+        pharmacy_price: p.pharmacy_price,
+        map_price: p.map_price,
+        minimum_order: p.minimum_order,
+        price_tiers: p.price_tiers,
+      },
+      qty,
     );
-    toast.success("تمت إضافة المنتج إلى السلة");
+    toast.success(
+      qty === 1
+        ? "تمت إضافة المنتج إلى السلة"
+        : `تمت إضافة ${qty} وحدات (الحد الأدنى) إلى السلة`,
+    );
   };
-
-
 
   return (
     <div className="space-y-6">
@@ -86,42 +112,64 @@ function ProductsPage() {
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((p) => (
-            <Card key={p.id} className="overflow-hidden flex flex-col shadow-soft hover:shadow-elegant transition-shadow group">
-              <Link
-                to="/products/$productId"
-                params={{ productId: p.id }}
-                className="aspect-square bg-muted overflow-hidden block"
+          {filtered.map((p) => {
+            // Show "starting from" wholesale price for distributors
+            const startingQty = Math.max(p.minimum_order || 1, 6);
+            const { unitPrice } = getUnitPrice(p, partnerType, startingQty);
+            return (
+              <Card
+                key={p.id}
+                className="overflow-hidden flex flex-col shadow-soft hover:shadow-elegant transition-shadow group"
               >
-                <img
-                  src={p.image_url ?? ""}
-                  alt={p.name_ar}
-                  loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </Link>
-              <div className="p-4 flex flex-col flex-1 gap-2">
-                {p.category && (
-                  <Badge variant="secondary" className="w-fit text-xs">{p.category}</Badge>
-                )}
                 <Link
                   to="/products/$productId"
                   params={{ productId: p.id }}
-                  className="font-semibold leading-snug line-clamp-2 hover:text-primary transition-colors"
+                  className="aspect-square bg-muted overflow-hidden block"
                 >
-                  {p.name_ar}
+                  <img
+                    src={p.image_url ?? ""}
+                    alt={p.name_ar}
+                    loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                 </Link>
-                <p className="text-xs text-muted-foreground line-clamp-2 flex-1">{p.description_ar}</p>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-lg font-bold text-primary">{formatMAD(p.price_mad)}</span>
-                  <Button size="sm" onClick={() => addToCart(p)} className="gap-1">
-                    <Plus className="h-3.5 w-3.5" />
-                    إضافة
-                  </Button>
+                <div className="p-4 flex flex-col flex-1 gap-2">
+                  {p.category && (
+                    <Badge variant="secondary" className="w-fit text-xs">
+                      {p.category}
+                    </Badge>
+                  )}
+                  <Link
+                    to="/products/$productId"
+                    params={{ productId: p.id }}
+                    className="font-semibold leading-snug line-clamp-2 hover:text-primary transition-colors"
+                  >
+                    {p.name_ar}
+                  </Link>
+                  <p className="text-xs text-muted-foreground line-clamp-2 flex-1">
+                    {p.description_ar}
+                  </p>
+                  <div className="flex items-end justify-between mt-2">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-muted-foreground">يبدأ من</span>
+                      <span className="text-lg font-bold text-primary leading-tight">
+                        {formatMAD(unitPrice)}
+                      </span>
+                      {p.rrp_price != null && p.rrp_price > unitPrice && (
+                        <span className="text-[10px] text-muted-foreground line-through">
+                          {formatMAD(p.rrp_price)}
+                        </span>
+                      )}
+                    </div>
+                    <Button size="sm" onClick={() => addToCart(p)} className="gap-1">
+                      <Plus className="h-3.5 w-3.5" />
+                      إضافة
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
