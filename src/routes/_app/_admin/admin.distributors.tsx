@@ -201,6 +201,76 @@ function AdminDistributors() {
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map((d) => d.id)));
+  };
+
+  const runBulkSetActive = async (makeActive: boolean) => {
+    if (selected.size === 0) return;
+    setBulkBusy(true);
+    let ok = 0;
+    let fail = 0;
+    for (const id of selected) {
+      const { data, error } = await supabase.functions.invoke("create-distributor", {
+        body: { action: "set_active", userId: id, isActive: makeActive },
+      });
+      if (error || data?.error) fail++;
+      else ok++;
+    }
+    setBulkBusy(false);
+    setBulkConfirm(null);
+    setSelected(new Set());
+    if (fail === 0) toast.success(`تمت العملية على ${ok} موزع`);
+    else toast.error(`نجاح: ${ok} — فشل: ${fail}`);
+    load();
+  };
+
+  const exportCsv = () => {
+    const rows = selected.size > 0 ? filtered.filter((d) => selected.has(d.id)) : filtered;
+    if (rows.length === 0) return toast.error("لا توجد بيانات للتصدير");
+    const headers = ["الاسم", "الهاتف", "المدينة", "المستوى", "النقاط", "المبيعات الشهرية", "الحالة"];
+    const escape = (v: string | number | null | undefined) => {
+      const s = String(v ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [
+      headers.join(","),
+      ...rows.map((d) =>
+        [
+          d.full_name,
+          d.phone,
+          d.city,
+          LEVEL_LABELS[d.level] ?? d.level,
+          d.loyalty_points,
+          d.monthly_sales,
+          d.is_active ? "مفعل" : "معطل",
+        ]
+          .map(escape)
+          .join(","),
+      ),
+    ].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `distributors-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`تم تصدير ${rows.length} موزع`);
+  };
+
+  const allSelected = filtered.length > 0 && selected.size === filtered.length;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
