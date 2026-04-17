@@ -204,7 +204,7 @@ function AdminOrders() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث باسم الموزع، المدينة، أو رقم الطلب…"
+            placeholder="بحث برقم الطلب، اسم الموزع، أو المدينة…"
             className="pr-9 pl-9"
           />
           {search && (
