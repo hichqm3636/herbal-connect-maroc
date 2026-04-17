@@ -141,6 +141,7 @@ function AdminProducts() {
         category: form.category || null,
         stock: form.stock,
         active: form.active,
+        points_per_unit: form.points_per_unit,
       })
       .select("*")
       .single();
