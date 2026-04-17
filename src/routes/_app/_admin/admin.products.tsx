@@ -10,6 +10,7 @@ import {
   StarOff,
   ArrowUp,
   ArrowDown,
+  FileSpreadsheet,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ interface Product {
   category: string | null;
   stock: number;
   active: boolean;
+  points_per_unit: number;
 }
 
 interface ProductImage {
@@ -61,6 +63,7 @@ const empty: Omit<Product, "id" | "image_url"> = {
   category: "",
   stock: 0,
   active: true,
+  points_per_unit: 0,
 };
 
 function AdminProducts() {
@@ -71,7 +74,14 @@ function AdminProducts() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    created: number;
+    failed: number;
+    errors: string[];
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     const { data } = await supabase
@@ -110,6 +120,7 @@ function AdminProducts() {
       category: p.category ?? "",
       stock: p.stock,
       active: p.active,
+      points_per_unit: p.points_per_unit ?? 0,
     });
     await loadImages(p.id);
     setOpen(true);
@@ -130,6 +141,7 @@ function AdminProducts() {
         category: form.category || null,
         stock: form.stock,
         active: form.active,
+        points_per_unit: form.points_per_unit,
       })
       .select("*")
       .single();
@@ -274,6 +286,7 @@ function AdminProducts() {
       category: form.category || null,
       stock: form.stock,
       active: form.active,
+      points_per_unit: form.points_per_unit,
     };
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
@@ -299,20 +312,164 @@ function AdminProducts() {
     load();
   };
 
+  const parseCsv = (text: string): Record<string, string>[] => {
+    const lines = text
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    if (lines.length < 2) return [];
+    const splitRow = (row: string): string[] => {
+      const out: string[] = [];
+      let cur = "";
+      let inQuotes = false;
+      for (let i = 0; i < row.length; i++) {
+        const c = row[i];
+        if (c === '"') {
+          if (inQuotes && row[i + 1] === '"') {
+            cur += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (c === "," && !inQuotes) {
+          out.push(cur);
+          cur = "";
+        } else {
+          cur += c;
+        }
+      }
+      out.push(cur);
+      return out.map((s) => s.trim());
+    };
+    const headers = splitRow(lines[0]).map((h) => h.toLowerCase());
+    return lines.slice(1).map((line) => {
+      const cells = splitRow(line);
+      const row: Record<string, string> = {};
+      headers.forEach((h, i) => {
+        row[h] = cells[i] ?? "";
+      });
+      return row;
+    });
+  };
+
+  const handleCsvImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (csvInputRef.current) csvInputRef.current.value = "";
+
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const text = await file.text();
+      const rows = parseCsv(text);
+      if (rows.length === 0) {
+        toast.error("ملف CSV فارغ أو غير صالح");
+        setImporting(false);
+        return;
+      }
+
+      const errors: string[] = [];
+      const payloads: {
+        name_ar: string;
+        description_ar: string;
+        price_mad: number;
+        stock: number;
+        points_per_unit: number;
+        image_url: string | null;
+        active: boolean;
+      }[] = [];
+
+      rows.forEach((row, idx) => {
+        const lineNum = idx + 2;
+        const name = (row.name ?? row.name_ar ?? "").trim();
+        if (!name) {
+          errors.push(`السطر ${lineNum}: اسم المنتج مطلوب`);
+          return;
+        }
+        const price = Number(row.price ?? row.price_mad);
+        if (!Number.isFinite(price) || price < 0) {
+          errors.push(`السطر ${lineNum}: سعر غير صالح`);
+          return;
+        }
+        const points = Number(row.points ?? row.points_per_unit ?? 0);
+        const stock = Number(row.stock ?? 0);
+        const imageUrl = (row.image_url ?? "").trim() || null;
+        payloads.push({
+          name_ar: name,
+          description_ar: "",
+          price_mad: price,
+          stock: Number.isFinite(stock) ? stock : 0,
+          points_per_unit: Number.isFinite(points) ? points : 0,
+          image_url: imageUrl,
+          active: true,
+        });
+      });
+
+      let created = 0;
+      if (payloads.length > 0) {
+        const { data, error } = await supabase
+          .from("products")
+          .insert(payloads)
+          .select("id");
+        if (error) {
+          errors.push(`خطأ في الإدراج: ${error.message}`);
+        } else {
+          created = data?.length ?? 0;
+        }
+      }
+
+      setImportResult({ created, failed: errors.length, errors: errors.slice(0, 10) });
+      if (created > 0) {
+        toast.success(`تم استيراد ${created} منتج`);
+        load();
+      }
+      if (errors.length > 0 && created === 0) {
+        toast.error("فشل الاستيراد");
+      }
+    } catch (err) {
+      toast.error("تعذر قراءة الملف");
+      console.error(err);
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">إدارة المنتجات</h1>
           <p className="text-sm text-muted-foreground mt-1">{products.length} منتج</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openNew} className="gap-2">
-              <Plus className="h-4 w-4" />
-              منتج جديد
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            ref={csvInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={handleCsvImport}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => csvInputRef.current?.click()}
+            disabled={importing}
+            className="gap-2"
+          >
+            {importing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="h-4 w-4" />
+            )}
+            استيراد المنتجات (CSV)
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openNew} className="gap-2">
+                <Plus className="h-4 w-4" />
+                منتج جديد
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" dir="rtl">
             <DialogHeader>
               <DialogTitle>{editing ? "تعديل منتج" : "منتج جديد"}</DialogTitle>
@@ -354,12 +511,25 @@ function AdminProducts() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>التصنيف</Label>
-                <Input
-                  value={form.category ?? ""}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>التصنيف</Label>
+                  <Input
+                    value={form.category ?? ""}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>النقاط لكل وحدة</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={form.points_per_unit}
+                    onChange={(e) =>
+                      setForm({ ...form, points_per_unit: Number(e.target.value) })
+                    }
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -479,7 +649,34 @@ function AdminProducts() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      {importResult && (
+        <Card className="p-4 shadow-soft space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">نتيجة الاستيراد</h3>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setImportResult(null)}
+            >
+              إغلاق
+            </Button>
+          </div>
+          <p className="text-sm">
+            تم إنشاء <span className="font-bold text-primary">{importResult.created}</span> منتج،
+            فشل <span className="font-bold text-destructive">{importResult.failed}</span> سطر.
+          </p>
+          {importResult.errors.length > 0 && (
+            <ul className="text-xs text-muted-foreground list-disc pr-4 space-y-1">
+              {importResult.errors.map((e, i) => (
+                <li key={i}>{e}</li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      )}
 
       <div className="grid gap-3">
         {products.map((p) => (

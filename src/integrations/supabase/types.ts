@@ -193,6 +193,7 @@ export type Database = {
           id: string
           image_url: string | null
           name_ar: string
+          points_per_unit: number
           price_mad: number
           stock: number
           updated_at: string
@@ -205,6 +206,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           name_ar: string
+          points_per_unit?: number
           price_mad: number
           stock?: number
           updated_at?: string
@@ -217,6 +219,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           name_ar?: string
+          points_per_unit?: number
           price_mad?: number
           stock?: number
           updated_at?: string
