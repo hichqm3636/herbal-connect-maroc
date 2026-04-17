@@ -39,7 +39,10 @@ function AppLayout() {
             <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b bg-background/80 backdrop-blur px-4">
               <SidebarTrigger />
               <Separator orientation="vertical" className="h-5" />
-              <span className="text-sm font-medium text-muted-foreground">بوابة شركاء هيرباليفي</span>
+              <div className="flex flex-col leading-tight min-w-0">
+                <span className="text-sm font-bold truncate">Herbialife Partner Hub</span>
+                <span className="text-[11px] text-muted-foreground truncate">منصة إدارة الموزعين والطلبات</span>
+              </div>
               <div className="ms-auto">
                 <CartButton />
               </div>
