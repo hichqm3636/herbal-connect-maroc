@@ -10,15 +10,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TerritorySelect } from "@/components/admin/TerritorySelect";
+import { PARTNER_TYPE_LABELS, type PartnerType } from "@/lib/pricing";
 
 interface DistributorEditable {
   id: string;
   full_name: string;
   phone: string | null;
   territory_id: string | null;
+  partner_type?: PartnerType | null;
 }
 
 interface Props {
@@ -28,7 +37,12 @@ interface Props {
 }
 
 export function EditDistributorDialog({ distributor, onClose, onSaved }: Props) {
-  const [form, setForm] = useState({ full_name: "", phone: "", territory_id: "" });
+  const [form, setForm] = useState({
+    full_name: "",
+    phone: "",
+    territory_id: "",
+    partner_type: "distributor" as PartnerType,
+  });
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -37,6 +51,7 @@ export function EditDistributorDialog({ distributor, onClose, onSaved }: Props) 
         full_name: distributor.full_name ?? "",
         phone: distributor.phone ?? "",
         territory_id: distributor.territory_id ?? "",
+        partner_type: (distributor.partner_type as PartnerType) ?? "distributor",
       });
     }
   }, [distributor]);
@@ -53,6 +68,7 @@ export function EditDistributorDialog({ distributor, onClose, onSaved }: Props) 
         full_name: form.full_name.trim(),
         phone: form.phone.trim(),
         territory_id: form.territory_id,
+        partner_type: form.partner_type,
       })
       .eq("id", distributor.id);
     setBusy(false);
@@ -85,6 +101,24 @@ export function EditDistributorDialog({ distributor, onClose, onSaved }: Props) 
                 onChange={(id) => setForm({ ...form, territory_id: id })}
               />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>نوع الشريك</Label>
+            <Select
+              value={form.partner_type}
+              onValueChange={(v) => setForm({ ...form, partner_type: v as PartnerType })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(PARTNER_TYPE_LABELS) as PartnerType[]).map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {PARTNER_TYPE_LABELS[k]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <DialogFooter className="flex-col sm:flex-row gap-2">
