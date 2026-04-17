@@ -85,7 +85,8 @@ interface CsvPreviewRow {
   tier_6: number | null;
   tier_12: number | null;
   tier_24: number | null;
-  status: "ok" | "missing_sku" | "missing_name" | "invalid_price";
+  minimum_order: number;
+  status: "ok" | "missing_sku" | "missing_name" | "invalid_price" | "invalid_min_order";
   statusLabel: string;
   willUpdate: boolean;
 }
@@ -546,6 +547,19 @@ function AdminProducts() {
           stock = Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
         }
 
+        // minimum_order: empty → default 1; must be integer >= 1
+        const rawMin = (row.minimum_order ?? "").toString().trim();
+        let minimum_order = 1;
+        let minOrderInvalid = false;
+        if (rawMin !== "") {
+          const mn = Number(rawMin);
+          if (!Number.isFinite(mn) || !Number.isInteger(mn) || mn < 1) {
+            minOrderInvalid = true;
+          } else {
+            minimum_order = mn;
+          }
+        }
+
         let status: CsvPreviewRow["status"] = "ok";
         let statusLabel = "OK";
         if (!sku) {
@@ -557,6 +571,9 @@ function AdminProducts() {
         } else if (!Number.isFinite(price) || price < 0) {
           status = "invalid_price";
           statusLabel = "Invalid price";
+        } else if (minOrderInvalid) {
+          status = "invalid_min_order";
+          statusLabel = "Invalid minimum_order";
         }
 
         return {
@@ -573,6 +590,7 @@ function AdminProducts() {
           tier_6: numOrNull(row.distributor_6),
           tier_12: numOrNull(row.distributor_12),
           tier_24: numOrNull(row.distributor_24),
+          minimum_order,
           status,
           statusLabel,
           willUpdate: !!sku && existingSet.has(sku),
@@ -651,6 +669,7 @@ function AdminProducts() {
         pharmacy_price: r.pharmacy_price ?? derived?.pharmacy_price ?? null,
         map_price: r.map_price ?? derived?.map_price ?? null,
         price_tiers: tiers,
+        minimum_order: r.minimum_order,
       };
 
       const existingId = existingMap.get(r.sku);
@@ -856,6 +875,7 @@ function AdminProducts() {
                 "distributor_12",
                 "distributor_24",
                 "map_price",
+                "minimum_order",
               ];
               const sample = [
                 "Magnesium glycinate",
@@ -869,6 +889,7 @@ function AdminProducts() {
                 "117",
                 "108",
                 "162",
+                "1",
               ];
               const csv = `\uFEFF${headers.join(",")}\n${sample.join(",")}\n`;
               const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -1334,7 +1355,7 @@ function AdminProducts() {
                   "name","sku","price","category","stock",
                   "rrp_price","pharmacy_price",
                   "distributor_6","distributor_12","distributor_24",
-                  "map_price","_error",
+                  "map_price","minimum_order","_error",
                 ];
                 const escape = (v: unknown) => {
                   const s = v == null || (typeof v === "number" && !Number.isFinite(v)) ? "" : String(v);
@@ -1346,7 +1367,7 @@ function AdminProducts() {
                     r.name, r.sku, r.price, r.category, r.stockStatus || r.stock,
                     r.rrp_price, r.pharmacy_price,
                     r.tier_6, r.tier_12, r.tier_24,
-                    r.map_price, r.statusLabel,
+                    r.map_price, r.minimum_order, r.statusLabel,
                   ].map(escape).join(","));
                 }
                 const csv = "\uFEFF" + lines.join("\n") + "\n";
