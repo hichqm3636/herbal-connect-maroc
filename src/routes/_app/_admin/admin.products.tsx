@@ -676,11 +676,21 @@ function AdminProducts() {
       }
     }
 
+    const failedSkus = new Set<string>();
+    for (const e of errors) {
+      const m = e.match(/\(([^)]+)\)/);
+      if (m && m[1] !== "—") failedSkus.add(m[1]);
+    }
+    const failedRows = previewRows.filter(
+      (r) => r.status !== "ok" || failedSkus.has(r.sku),
+    );
+
     setImportResult({
       created,
       updated,
       failed: errors.length,
       errors: errors.slice(0, 20),
+      failedRows,
     });
     setPreviewOpen(false);
     setPreviewRows(null);
