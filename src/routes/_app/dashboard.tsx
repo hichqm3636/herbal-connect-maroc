@@ -40,6 +40,7 @@ function Dashboard() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [totalOrders, setTotalOrders] = useState(0);
   const [monthlySales, setMonthlySales] = useState(0);
+  const [revenue30d, setRevenue30d] = useState<{ created_at: string; total_mad: number }[]>([]);
 
   useEffect(() => {
     if (!user) return;
