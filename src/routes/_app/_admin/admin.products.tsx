@@ -32,12 +32,18 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMAD } from "@/lib/format";
+import { deriveWholesaleFromRRP, parseTiers } from "@/lib/pricing";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/_admin/admin/products")({
   component: AdminProducts,
   head: () => ({ meta: [{ title: "إدارة المنتجات — هيرباليفي" }] }),
 });
+
+interface PriceTier {
+  min_qty: number;
+  price: number;
+}
 
 interface Product {
   id: string;
@@ -49,6 +55,11 @@ interface Product {
   stock: number;
   active: boolean;
   points_per_unit: number;
+  rrp_price: number | null;
+  pharmacy_price: number | null;
+  map_price: number | null;
+  minimum_order: number;
+  price_tiers: PriceTier[];
 }
 
 interface ProductImage {
@@ -67,6 +78,15 @@ const empty: Omit<Product, "id" | "image_url"> = {
   stock: 0,
   active: true,
   points_per_unit: 0,
+  rrp_price: null,
+  pharmacy_price: null,
+  map_price: null,
+  minimum_order: 1,
+  price_tiers: [
+    { min_qty: 6, price: 0 },
+    { min_qty: 12, price: 0 },
+    { min_qty: 24, price: 0 },
+  ],
 };
 
 function AdminProducts() {
@@ -132,7 +152,11 @@ function AdminProducts() {
       .from("products")
       .select("*")
       .order("created_at", { ascending: false });
-    setProducts(data ?? []);
+    const rows = (data ?? []).map((p) => ({
+      ...p,
+      price_tiers: parseTiers((p as { price_tiers?: unknown }).price_tiers),
+    })) as Product[];
+    setProducts(rows);
   };
 
   useEffect(() => {
@@ -165,6 +189,18 @@ function AdminProducts() {
       stock: p.stock,
       active: p.active,
       points_per_unit: p.points_per_unit ?? 0,
+      rrp_price: p.rrp_price,
+      pharmacy_price: p.pharmacy_price,
+      map_price: p.map_price,
+      minimum_order: p.minimum_order ?? 1,
+      price_tiers:
+        p.price_tiers && p.price_tiers.length > 0
+          ? p.price_tiers
+          : [
+              { min_qty: 6, price: 0 },
+              { min_qty: 12, price: 0 },
+              { min_qty: 24, price: 0 },
+            ],
     });
     await loadImages(p.id);
     setOpen(true);
@@ -193,7 +229,7 @@ function AdminProducts() {
       toast.error("تعذر إنشاء المنتج");
       return null;
     }
-    setEditing(data as Product);
+    setEditing({ ...(data as unknown as Omit<Product, "price_tiers">), price_tiers: parseTiers((data as { price_tiers?: unknown }).price_tiers) });
     return data.id;
   };
 
@@ -322,6 +358,30 @@ function AdminProducts() {
       toast.error("اسم المنتج والسعر مطلوبان");
       return;
     }
+    if (form.minimum_order < 1) {
+      toast.error("الحد الأدنى للطلب يجب أن يكون 1 على الأقل");
+      return;
+    }
+    // MAP guardrail: prevent admin from saving any wholesale tier below MAP
+    // when MAP is set. (MAP at runtime is only enforced for pharmacy partners,
+    // but we warn the admin upfront for any tier.)
+    if (form.map_price != null && form.map_price > 0) {
+      const offending = form.price_tiers.find((t) => t.price > 0 && t.price < form.map_price!);
+      if (offending) {
+        toast.error(
+          `سعر الطبقة (${offending.min_qty}+) أقل من السعر الأدنى المعلن (MAP)`,
+        );
+        return;
+      }
+      if (
+        form.pharmacy_price != null &&
+        form.pharmacy_price > 0 &&
+        form.pharmacy_price < form.map_price
+      ) {
+        toast.error("سعر الصيدلية أقل من السعر الأدنى المعلن (MAP)");
+        return;
+      }
+    }
     setSaving(true);
     const payload = {
       name_ar: form.name_ar,
@@ -331,10 +391,15 @@ function AdminProducts() {
       stock: form.stock,
       active: form.active,
       points_per_unit: form.points_per_unit,
+      rrp_price: form.rrp_price,
+      pharmacy_price: form.pharmacy_price,
+      map_price: form.map_price,
+      minimum_order: form.minimum_order,
+      price_tiers: form.price_tiers,
     };
     const { error } = editing
-      ? await supabase.from("products").update(payload).eq("id", editing.id)
-      : await supabase.from("products").insert(payload);
+      ? await supabase.from("products").update(payload as never).eq("id", editing.id)
+      : await supabase.from("products").insert(payload as never);
     setSaving(false);
     if (error) {
       toast.error("تعذر الحفظ");
@@ -723,6 +788,122 @@ function AdminProducts() {
                       setForm({ ...form, points_per_unit: Number(e.target.value) })
                     }
                   />
+                </div>
+              </div>
+
+              {/* === Wholesale pricing engine === */}
+              <div className="space-y-3 border rounded-md p-3 bg-muted/30">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="font-semibold">التسعير بالجملة</Label>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      const rrp = form.rrp_price ?? 0;
+                      if (!rrp || rrp <= 0) {
+                        toast.error("أدخل السعر الموصى به (RRP) أولاً");
+                        return;
+                      }
+                      const d = deriveWholesaleFromRRP(rrp);
+                      setForm({
+                        ...form,
+                        pharmacy_price: d.pharmacy_price,
+                        map_price: d.map_price,
+                        price_tiers: d.price_tiers,
+                      });
+                      toast.success("تم احتساب الأسعار من RRP");
+                    }}
+                  >
+                    احتساب تلقائي من RRP
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">السعر الموصى به (RRP)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.rrp_price ?? ""}
+                      onChange={(e) => {
+                        const v = e.target.value === "" ? null : Number(e.target.value);
+                        setForm({ ...form, rrp_price: v });
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">السعر الأدنى المعلن (MAP)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.map_price ?? ""}
+                      onChange={(e) => {
+                        const v = e.target.value === "" ? null : Number(e.target.value);
+                        setForm({ ...form, map_price: v });
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">سعر الصيدلية</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.pharmacy_price ?? ""}
+                      onChange={(e) => {
+                        const v = e.target.value === "" ? null : Number(e.target.value);
+                        setForm({ ...form, pharmacy_price: v });
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">الحد الأدنى للطلب</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={form.minimum_order}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          minimum_order: Math.max(1, Number(e.target.value) || 1),
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs">طبقات الأسعار حسب الكمية</Label>
+                  <div className="space-y-2">
+                    {form.price_tiers.map((t, idx) => (
+                      <div key={idx} className="grid grid-cols-2 gap-2 items-center">
+                        <div className="text-xs text-muted-foreground">
+                          {t.min_qty}+ وحدة
+                        </div>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={t.price}
+                          onChange={(e) => {
+                            const next = [...form.price_tiers];
+                            next[idx] = { ...t, price: Number(e.target.value) || 0 };
+                            setForm({ ...form, price_tiers: next });
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    الموزع الرئيسي يحصل دائمًا على سعر الطبقة الأعلى. التعديلات
+                    اليدوية مسموحة بعد الاحتساب التلقائي.
+                  </p>
                 </div>
               </div>
 

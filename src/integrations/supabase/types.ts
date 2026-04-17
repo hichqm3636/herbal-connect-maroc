@@ -192,9 +192,14 @@ export type Database = {
           description_ar: string
           id: string
           image_url: string | null
+          map_price: number | null
+          minimum_order: number
           name_ar: string
+          pharmacy_price: number | null
           points_per_unit: number
           price_mad: number
+          price_tiers: Json
+          rrp_price: number | null
           sku: string | null
           stock: number
           updated_at: string
@@ -206,9 +211,14 @@ export type Database = {
           description_ar?: string
           id?: string
           image_url?: string | null
+          map_price?: number | null
+          minimum_order?: number
           name_ar: string
+          pharmacy_price?: number | null
           points_per_unit?: number
           price_mad: number
+          price_tiers?: Json
+          rrp_price?: number | null
           sku?: string | null
           stock?: number
           updated_at?: string
@@ -220,9 +230,14 @@ export type Database = {
           description_ar?: string
           id?: string
           image_url?: string | null
+          map_price?: number | null
+          minimum_order?: number
           name_ar?: string
+          pharmacy_price?: number | null
           points_per_unit?: number
           price_mad?: number
+          price_tiers?: Json
+          rrp_price?: number | null
           sku?: string | null
           stock?: number
           updated_at?: string
@@ -239,6 +254,7 @@ export type Database = {
           level: Database["public"]["Enums"]["distributor_level"]
           loyalty_points: number
           monthly_sales: number
+          partner_type: Database["public"]["Enums"]["partner_type"]
           phone: string | null
           territory_id: string
           updated_at: string
@@ -252,6 +268,7 @@ export type Database = {
           level?: Database["public"]["Enums"]["distributor_level"]
           loyalty_points?: number
           monthly_sales?: number
+          partner_type?: Database["public"]["Enums"]["partner_type"]
           phone?: string | null
           territory_id: string
           updated_at?: string
@@ -265,6 +282,7 @@ export type Database = {
           level?: Database["public"]["Enums"]["distributor_level"]
           loyalty_points?: number
           monthly_sales?: number
+          partner_type?: Database["public"]["Enums"]["partner_type"]
           phone?: string | null
           territory_id?: string
           updated_at?: string
@@ -367,6 +385,11 @@ export type Database = {
         | "shipped"
         | "delivered"
         | "cancelled"
+      partner_type:
+        | "pharmacy"
+        | "parapharmacy"
+        | "distributor"
+        | "master_distributor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -508,6 +531,12 @@ export const Constants = {
         "shipped",
         "delivered",
         "cancelled",
+      ],
+      partner_type: [
+        "pharmacy",
+        "parapharmacy",
+        "distributor",
+        "master_distributor",
       ],
     },
   },

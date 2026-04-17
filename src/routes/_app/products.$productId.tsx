@@ -1,12 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ArrowRight, Plus, Minus, Loader2, PackageX } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, Plus, Minus, Loader2, PackageX, Info } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
+import {
+  getUnitPrice,
+  parseTiers,
+  validateLine,
+  type PriceTier,
+} from "@/lib/pricing";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/products/$productId")({
@@ -23,6 +30,11 @@ interface Product {
   category: string | null;
   stock: number;
   active: boolean;
+  rrp_price: number | null;
+  pharmacy_price: number | null;
+  map_price: number | null;
+  minimum_order: number;
+  price_tiers: PriceTier[];
 }
 
 interface ProductImage {
@@ -35,6 +47,7 @@ interface ProductImage {
 function ProductDetail() {
   const { productId } = Route.useParams();
   const { addItem, openCart } = useCart();
+  const { partnerType } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -53,16 +66,36 @@ function ProductDetail() {
           .order("is_primary", { ascending: false })
           .order("position", { ascending: true }),
       ]);
-      setProduct(p as Product | null);
+      const rawProduct = p as (Product & { price_tiers?: unknown }) | null;
+      const parsed = rawProduct
+        ? { ...rawProduct, price_tiers: parseTiers(rawProduct.price_tiers) }
+        : null;
+      setProduct(parsed);
       setImages((imgs as ProductImage[] | null) ?? []);
       setActiveIdx(0);
-      setQty(1);
+      setQty(Math.max(1, parsed?.minimum_order ?? 1));
       setLoading(false);
     })();
   }, [productId]);
 
+  const pricing = useMemo(() => {
+    if (!product) return null;
+    return getUnitPrice(product, partnerType, qty);
+  }, [product, partnerType, qty]);
+
   const handleAdd = () => {
-    if (!product) return;
+    if (!product || !pricing) return;
+    const validation = validateLine(
+      product,
+      partnerType,
+      qty,
+      pricing.unitPrice,
+      product.name_ar,
+    );
+    if (!validation.ok) {
+      toast.error(validation.message);
+      return;
+    }
     addItem(
       {
         id: product.id,
@@ -70,11 +103,16 @@ function ProductDetail() {
         price_mad: product.price_mad,
         image_url: product.image_url,
         stock: product.stock,
+        rrp_price: product.rrp_price,
+        pharmacy_price: product.pharmacy_price,
+        map_price: product.map_price,
+        minimum_order: product.minimum_order,
+        price_tiers: product.price_tiers,
       },
       qty,
     );
     toast.success(`تمت إضافة ${qty} ${qty === 1 ? "منتج" : "منتجات"} إلى السلة`);
-    setQty(1);
+    setQty(Math.max(1, product.minimum_order));
     openCart();
   };
 
@@ -106,8 +144,15 @@ function ProductDetail() {
         ? [{ id: "fallback", url: fallbackUrl }]
         : [];
   const mainUrl = gallery[activeIdx]?.url ?? "";
-  const maxQty = product.stock > 0 ? product.stock : 1;
+  const minQty = Math.max(1, product.minimum_order);
+  const maxQty = product.stock > 0 ? product.stock : minQty;
   const outOfStock = product.stock === 0 || !product.active;
+  const showDistributorPricing =
+    partnerType === "distributor" || partnerType === "master_distributor";
+  const showPharmacyPricing =
+    partnerType === "pharmacy" || partnerType === "parapharmacy";
+  const tiers = product.price_tiers;
+  const sortedTiers = [...tiers].sort((a, b) => a.min_qty - b.min_qty);
 
   return (
     <div className="space-y-6">
@@ -171,15 +216,82 @@ function ProductDetail() {
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
               {product.name_ar}
             </h1>
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-bold text-primary">
-                {formatMAD(product.price_mad)}
-              </span>
+            <div className="flex items-baseline gap-3 flex-wrap">
+              {pricing && (
+                <span className="text-3xl font-bold text-primary">
+                  {formatMAD(pricing.unitPrice)}
+                </span>
+              )}
+              {product.rrp_price != null &&
+                pricing &&
+                product.rrp_price > pricing.unitPrice && (
+                  <span className="text-sm text-muted-foreground line-through">
+                    {formatMAD(product.rrp_price)}
+                  </span>
+                )}
               <span className="text-sm text-muted-foreground">
                 المخزون: {product.stock}
               </span>
             </div>
           </div>
+
+          {/* Wholesale pricing table */}
+          <Card className="p-4 shadow-soft space-y-3">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Info className="h-4 w-4 text-primary" />
+              الأسعار
+            </h2>
+            {product.rrp_price != null && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  السعر الموصى به للبيع (RRP)
+                </span>
+                <span className="font-medium">{formatMAD(product.rrp_price)}</span>
+              </div>
+            )}
+            {showPharmacyPricing && product.pharmacy_price != null && (
+              <div className="flex items-center justify-between text-sm border-t pt-2">
+                <span className="text-muted-foreground">سعر الصيدلية</span>
+                <span className="font-bold text-primary">
+                  {formatMAD(product.pharmacy_price)}
+                </span>
+              </div>
+            )}
+            {showDistributorPricing && sortedTiers.length > 0 && (
+              <div className="space-y-1.5 border-t pt-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  أسعار الجملة حسب الكمية
+                </p>
+                {sortedTiers.map((t, i) => {
+                  const next = sortedTiers[i + 1];
+                  const range = next
+                    ? `${t.min_qty}–${next.min_qty - 1} وحدة`
+                    : `${t.min_qty}+ وحدة`;
+                  const isActive =
+                    pricing?.tier?.min_qty === t.min_qty &&
+                    (pricing.source === "tier" ||
+                      pricing.source === "deepest_tier");
+                  return (
+                    <div
+                      key={t.min_qty}
+                      className={`flex items-center justify-between text-sm rounded-md px-2 py-1 ${
+                        isActive ? "bg-accent/60 font-semibold" : ""
+                      }`}
+                    >
+                      <span>{range}</span>
+                      <span>{formatMAD(t.price)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {product.minimum_order > 1 && (
+              <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-2">
+                <span>الحد الأدنى للطلب</span>
+                <span>{product.minimum_order} وحدة</span>
+              </div>
+            )}
+          </Card>
 
           <Card className="p-4 shadow-soft">
             <h2 className="font-semibold mb-2">الوصف</h2>
@@ -189,7 +301,7 @@ function ProductDetail() {
           </Card>
 
           {!outOfStock && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm font-medium">الكمية:</span>
               <div className="flex items-center gap-1 border rounded-md">
                 <Button
@@ -210,9 +322,10 @@ function ProductDetail() {
                   value={qty}
                   onChange={(e) => {
                     const n = Number(e.target.value);
-                    if (Number.isFinite(n)) setQty(Math.min(maxQty, Math.max(1, Math.floor(n))));
+                    if (Number.isFinite(n))
+                      setQty(Math.min(maxQty, Math.max(1, Math.floor(n))));
                   }}
-                  className="w-12 text-center bg-transparent outline-none font-medium tabular-nums"
+                  className="w-14 text-center bg-transparent outline-none font-medium tabular-nums"
                   aria-label="الكمية"
                 />
                 <Button
@@ -227,10 +340,18 @@ function ProductDetail() {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <span className="text-xs text-muted-foreground">
-                الإجمالي: {formatMAD(product.price_mad * qty)}
-              </span>
+              {pricing && (
+                <span className="text-xs text-muted-foreground">
+                  الإجمالي: {formatMAD(pricing.unitPrice * qty)}
+                </span>
+              )}
             </div>
+          )}
+
+          {qty < minQty && !outOfStock && (
+            <p className="text-xs text-destructive">
+              الحد الأدنى للطلب: {minQty} وحدة
+            </p>
           )}
 
           <Button

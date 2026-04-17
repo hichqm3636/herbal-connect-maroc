@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import type { PartnerType } from "@/lib/pricing";
 
 type AppRole = "admin" | "distributor";
 
@@ -9,6 +10,7 @@ interface AuthContextValue {
   user: User | null;
   roles: AppRole[];
   isAdmin: boolean;
+  partnerType: PartnerType;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshRoles: () => Promise<void>;
@@ -20,15 +22,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const [partnerType, setPartnerType] = useState<PartnerType>("distributor");
   const [loading, setLoading] = useState(true);
 
-  const loadRoles = async (uid: string | undefined) => {
+  const loadProfile = async (uid: string | undefined) => {
     if (!uid) {
       setRoles([]);
+      setPartnerType("distributor");
       return;
     }
-    const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid);
-    setRoles((data ?? []).map((r) => r.role as AppRole));
+    const [{ data: roleRows }, { data: profile }] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", uid),
+      supabase.from("profiles").select("partner_type").eq("id", uid).maybeSingle(),
+    ]);
+    setRoles((roleRows ?? []).map((r) => r.role as AppRole));
+    setPartnerType((profile?.partner_type as PartnerType | undefined) ?? "distributor");
   };
 
   useEffect(() => {
@@ -38,9 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(newSession?.user ?? null);
       // defer to avoid deadlock
       if (newSession?.user) {
-        setTimeout(() => loadRoles(newSession.user.id), 0);
+        setTimeout(() => loadProfile(newSession.user.id), 0);
       } else {
         setRoles([]);
+        setPartnerType("distributor");
       }
     });
 
@@ -49,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(existing);
       setUser(existing?.user ?? null);
       if (existing?.user) {
-        loadRoles(existing.user.id).finally(() => setLoading(false));
+        loadProfile(existing.user.id).finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
@@ -63,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshRoles = async () => {
-    await loadRoles(user?.id);
+    await loadProfile(user?.id);
   };
 
   return (
@@ -73,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         roles,
         isAdmin: roles.includes("admin"),
+        partnerType,
         loading,
         signOut,
         refreshRoles,

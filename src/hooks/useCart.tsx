@@ -1,20 +1,31 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import type { PriceTier } from "@/lib/pricing";
 
 export interface CartProduct {
   id: string;
   name_ar: string;
+  /** Legacy fallback price; used when wholesale fields are absent. */
   price_mad: number;
   image_url: string | null;
   stock: number;
+  // Wholesale fields (optional for backward compat)
+  rrp_price?: number | null;
+  pharmacy_price?: number | null;
+  map_price?: number | null;
+  minimum_order?: number;
+  price_tiers?: PriceTier[];
 }
 
 export interface CartItem extends CartProduct {
   qty: number;
+  /** Computed by the cart consumer based on partner_type + qty before checkout. */
+  unit_price?: number;
 }
 
 interface CartContextValue {
   items: CartItem[];
   totalQty: number;
+  /** Sum based on legacy price_mad for backwards compatibility (header badge etc.). */
   total: number;
   addItem: (product: CartProduct, qty?: number) => void;
   updateQty: (id: string, delta: number) => void;
@@ -28,7 +39,7 @@ interface CartContextValue {
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
-const STORAGE_KEY = "herbalife_cart_v1";
+const STORAGE_KEY = "herbalife_cart_v2";
 
 function loadInitial(): CartItem[] {
   if (typeof window === "undefined") return [];
@@ -79,8 +90,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === product.id);
       if (existing) {
+        // Refresh wholesale snapshot in case product was edited between adds
         return prev.map((i) =>
-          i.id === product.id ? { ...i, qty: i.qty + qty } : i,
+          i.id === product.id ? { ...i, ...product, qty: i.qty + qty } : i,
         );
       }
       return [...prev, { ...product, qty }];
