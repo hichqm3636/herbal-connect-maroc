@@ -226,6 +226,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      level_for_points: {
+        Args: { pts: number }
+        Returns: Database["public"]["Enums"]["distributor_level"]
+      }
       reset_monthly_sales: { Args: never; Returns: undefined }
     }
     Enums: {
