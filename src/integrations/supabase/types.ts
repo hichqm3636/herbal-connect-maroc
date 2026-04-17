@@ -117,6 +117,7 @@ export type Database = {
           distributor_id: string
           id: string
           notes: string | null
+          order_number: string
           points_earned: number
           status: Database["public"]["Enums"]["order_status"]
           total_mad: number
@@ -128,6 +129,7 @@ export type Database = {
           distributor_id: string
           id?: string
           notes?: string | null
+          order_number: string
           points_earned?: number
           status?: Database["public"]["Enums"]["order_status"]
           total_mad?: number
@@ -139,6 +141,7 @@ export type Database = {
           distributor_id?: string
           id?: string
           notes?: string | null
+          order_number?: string
           points_earned?: number
           status?: Database["public"]["Enums"]["order_status"]
           total_mad?: number
