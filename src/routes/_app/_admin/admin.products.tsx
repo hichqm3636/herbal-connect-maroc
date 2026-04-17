@@ -85,7 +85,8 @@ interface CsvPreviewRow {
   tier_6: number | null;
   tier_12: number | null;
   tier_24: number | null;
-  status: "ok" | "missing_sku" | "missing_name" | "invalid_price";
+  minimum_order: number;
+  status: "ok" | "missing_sku" | "missing_name" | "invalid_price" | "invalid_min_order";
   statusLabel: string;
   willUpdate: boolean;
 }
