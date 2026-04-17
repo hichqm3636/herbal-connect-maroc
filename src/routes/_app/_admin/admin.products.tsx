@@ -120,6 +120,7 @@ function AdminProducts() {
       category: p.category ?? "",
       stock: p.stock,
       active: p.active,
+      points_per_unit: p.points_per_unit ?? 0,
     });
     await loadImages(p.id);
     setOpen(true);
