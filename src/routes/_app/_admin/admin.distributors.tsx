@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Award,
+  Download,
   Loader2,
   MoreVertical,
   Pencil,
@@ -11,6 +12,7 @@ import {
   UserPlus,
   KeyRound,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
