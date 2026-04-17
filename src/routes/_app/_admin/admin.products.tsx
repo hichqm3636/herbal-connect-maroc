@@ -547,6 +547,19 @@ function AdminProducts() {
           stock = Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
         }
 
+        // minimum_order: empty → default 1; must be integer >= 1
+        const rawMin = (row.minimum_order ?? "").toString().trim();
+        let minimum_order = 1;
+        let minOrderInvalid = false;
+        if (rawMin !== "") {
+          const mn = Number(rawMin);
+          if (!Number.isFinite(mn) || !Number.isInteger(mn) || mn < 1) {
+            minOrderInvalid = true;
+          } else {
+            minimum_order = mn;
+          }
+        }
+
         let status: CsvPreviewRow["status"] = "ok";
         let statusLabel = "OK";
         if (!sku) {
@@ -558,6 +571,9 @@ function AdminProducts() {
         } else if (!Number.isFinite(price) || price < 0) {
           status = "invalid_price";
           statusLabel = "Invalid price";
+        } else if (minOrderInvalid) {
+          status = "invalid_min_order";
+          statusLabel = "Invalid minimum_order";
         }
 
         return {
@@ -574,6 +590,7 @@ function AdminProducts() {
           tier_6: numOrNull(row.distributor_6),
           tier_12: numOrNull(row.distributor_12),
           tier_24: numOrNull(row.distributor_24),
+          minimum_order,
           status,
           statusLabel,
           willUpdate: !!sku && existingSet.has(sku),
