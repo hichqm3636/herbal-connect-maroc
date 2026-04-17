@@ -76,9 +76,48 @@ function Dashboard() {
         .gte("created_at", startOfMonth.toISOString())
         .neq("status", "cancelled");
       setMonthlySales((monthOrders ?? []).reduce((s, o) => s + Number(o.total_mad), 0));
+
+      const start30 = new Date();
+      start30.setDate(start30.getDate() - 29);
+      start30.setHours(0, 0, 0, 0);
+      const { data: rev } = await supabase
+        .from("orders")
+        .select("created_at, total_mad")
+        .eq("distributor_id", user.id)
+        .gte("created_at", start30.toISOString())
+        .neq("status", "cancelled");
+      setRevenue30d(rev ?? []);
     })();
   }, [user]);
 
+  const chartData = useMemo(() => {
+    const days: { date: string; label: string; revenue: number }[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      days.push({
+        date: key,
+        label: d.toLocaleDateString("ar-MA", { day: "numeric", month: "short" }),
+        revenue: 0,
+      });
+    }
+    const map = new Map(days.map((d) => [d.date, d]));
+    for (const r of revenue30d) {
+      const key = new Date(r.created_at).toISOString().slice(0, 10);
+      const day = map.get(key);
+      if (day) day.revenue += Number(r.total_mad);
+    }
+    return days;
+  }, [revenue30d]);
+
+  const total30d = useMemo(() => chartData.reduce((s, d) => s + d.revenue, 0), [chartData]);
+
+  const chartConfig = {
+    revenue: { label: "الإيرادات", color: "hsl(var(--primary))" },
+  } satisfies ChartConfig;
   return (
     <div className="space-y-6">
       <div>
