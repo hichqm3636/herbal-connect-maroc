@@ -1,6 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Plus, Pencil, Trash2, Loader2, Upload, X } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Loader2,
+  Upload,
+  Star,
+  StarOff,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,11 +46,18 @@ interface Product {
   active: boolean;
 }
 
-const empty: Omit<Product, "id"> = {
+interface ProductImage {
+  id: string;
+  product_id: string;
+  url: string;
+  position: number;
+  is_primary: boolean;
+}
+
+const empty: Omit<Product, "id" | "image_url"> = {
   name_ar: "",
   description_ar: "",
   price_mad: 0,
-  image_url: "",
   category: "",
   stock: 0,
   active: true,
@@ -49,44 +66,18 @@ const empty: Omit<Product, "id"> = {
 function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState<Omit<Product, "id">>(empty);
+  const [form, setForm] = useState<Omit<Product, "id" | "image_url">>(empty);
+  const [images, setImages] = useState<ProductImage[]>([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("الرجاء اختيار صورة صالحة");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("حجم الصورة يجب أن يكون أقل من 5 ميغابايت");
-      return;
-    }
-    setUploading(true);
-    const ext = file.name.split(".").pop() || "jpg";
-    const path = `${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from("product-images").upload(path, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
-    if (error) {
-      setUploading(false);
-      toast.error("تعذر رفع الصورة");
-      return;
-    }
-    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-    setForm((f) => ({ ...f, image_url: data.publicUrl }));
-    setUploading(false);
-    toast.success("تم رفع الصورة");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
   const load = async () => {
-    const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false });
     setProducts(data ?? []);
   };
 
@@ -94,16 +85,180 @@ function AdminProducts() {
     load();
   }, []);
 
+  const loadImages = async (productId: string) => {
+    const { data } = await supabase
+      .from("product_images")
+      .select("*")
+      .eq("product_id", productId)
+      .order("position", { ascending: true });
+    setImages(data ?? []);
+  };
+
   const openNew = () => {
     setEditing(null);
     setForm(empty);
+    setImages([]);
     setOpen(true);
   };
 
-  const openEdit = (p: Product) => {
+  const openEdit = async (p: Product) => {
     setEditing(p);
-    setForm({ ...p });
+    setForm({
+      name_ar: p.name_ar,
+      description_ar: p.description_ar,
+      price_mad: p.price_mad,
+      category: p.category ?? "",
+      stock: p.stock,
+      active: p.active,
+    });
+    await loadImages(p.id);
     setOpen(true);
+  };
+
+  const ensureProductId = async (): Promise<string | null> => {
+    if (editing) return editing.id;
+    if (!form.name_ar.trim()) {
+      toast.error("أدخل اسم المنتج أولاً قبل رفع الصور");
+      return null;
+    }
+    const { data, error } = await supabase
+      .from("products")
+      .insert({
+        name_ar: form.name_ar,
+        description_ar: form.description_ar,
+        price_mad: form.price_mad,
+        category: form.category || null,
+        stock: form.stock,
+        active: form.active,
+      })
+      .select("*")
+      .single();
+    if (error || !data) {
+      toast.error("تعذر إنشاء المنتج");
+      return null;
+    }
+    setEditing(data as Product);
+    return data.id;
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+
+    const productId = await ensureProductId();
+    if (!productId) {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setUploading(true);
+    let nextPosition = images.length > 0 ? Math.max(...images.map((i) => i.position)) + 1 : 0;
+    const hasPrimary = images.some((i) => i.is_primary);
+    const newRows: ProductImage[] = [];
+
+    for (const file of files) {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name}: ليس صورة`);
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name}: حجم أكبر من 5MB`);
+        continue;
+      }
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${productId}/${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("product-images")
+        .upload(path, file, { cacheControl: "3600", upsert: false });
+      if (upErr) {
+        toast.error(`تعذر رفع ${file.name}`);
+        continue;
+      }
+      const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(path);
+      const { data: row, error: insErr } = await supabase
+        .from("product_images")
+        .insert({
+          product_id: productId,
+          url: urlData.publicUrl,
+          position: nextPosition,
+          is_primary: !hasPrimary && newRows.length === 0 && images.length === 0,
+        })
+        .select("*")
+        .single();
+      if (insErr || !row) {
+        toast.error(`تعذر حفظ ${file.name}`);
+        continue;
+      }
+      newRows.push(row as ProductImage);
+      nextPosition++;
+    }
+
+    setImages((prev) => [...prev, ...newRows]);
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (newRows.length > 0) toast.success(`تم رفع ${newRows.length} صورة`);
+  };
+
+  const setPrimary = async (img: ProductImage) => {
+    const { error: clearErr } = await supabase
+      .from("product_images")
+      .update({ is_primary: false })
+      .eq("product_id", img.product_id)
+      .eq("is_primary", true);
+    if (clearErr) {
+      toast.error("تعذر تحديث الصورة الرئيسية");
+      return;
+    }
+    const { error } = await supabase
+      .from("product_images")
+      .update({ is_primary: true })
+      .eq("id", img.id);
+    if (error) {
+      toast.error("تعذر تعيين الصورة الرئيسية");
+      return;
+    }
+    setImages((prev) =>
+      prev.map((i) => ({ ...i, is_primary: i.id === img.id })),
+    );
+    toast.success("تم تعيين الصورة الرئيسية");
+  };
+
+  const moveImage = async (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= images.length) return;
+    const a = images[index];
+    const b = images[target];
+    const reordered = [...images];
+    reordered[index] = b;
+    reordered[target] = a;
+    setImages(reordered);
+    await Promise.all([
+      supabase.from("product_images").update({ position: b.position }).eq("id", a.id),
+      supabase.from("product_images").update({ position: a.position }).eq("id", b.id),
+    ]);
+  };
+
+  const removeImage = async (img: ProductImage) => {
+    if (!confirm("حذف هذه الصورة؟")) return;
+    const { error } = await supabase.from("product_images").delete().eq("id", img.id);
+    if (error) {
+      toast.error("تعذر حذف الصورة");
+      return;
+    }
+    // Best-effort delete from storage
+    try {
+      const url = new URL(img.url);
+      const marker = "/product-images/";
+      const idx = url.pathname.indexOf(marker);
+      if (idx >= 0) {
+        const path = url.pathname.slice(idx + marker.length);
+        await supabase.storage.from("product-images").remove([path]);
+      }
+    } catch {
+      // ignore
+    }
+    setImages((prev) => prev.filter((i) => i.id !== img.id));
+    toast.success("تم الحذف");
   };
 
   const save = async () => {
@@ -112,7 +267,14 @@ function AdminProducts() {
       return;
     }
     setSaving(true);
-    const payload = { ...form, image_url: form.image_url || null, category: form.category || null };
+    const payload = {
+      name_ar: form.name_ar,
+      description_ar: form.description_ar,
+      price_mad: form.price_mad,
+      category: form.category || null,
+      stock: form.stock,
+      active: form.active,
+    };
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
       : await supabase.from("products").insert(payload);
@@ -151,81 +313,161 @@ function AdminProducts() {
               منتج جديد
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg" dir="rtl">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" dir="rtl">
             <DialogHeader>
               <DialogTitle>{editing ? "تعديل منتج" : "منتج جديد"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>اسم المنتج</Label>
-                <Input value={form.name_ar} onChange={(e) => setForm({ ...form, name_ar: e.target.value })} />
+                <Input
+                  value={form.name_ar}
+                  onChange={(e) => setForm({ ...form, name_ar: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>الوصف</Label>
-                <Textarea value={form.description_ar} onChange={(e) => setForm({ ...form, description_ar: e.target.value })} rows={3} />
+                <Textarea
+                  value={form.description_ar}
+                  onChange={(e) => setForm({ ...form, description_ar: e.target.value })}
+                  rows={3}
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>السعر (درهم)</Label>
-                  <Input type="number" min="0" step="0.01" value={form.price_mad} onChange={(e) => setForm({ ...form, price_mad: Number(e.target.value) })} />
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.price_mad}
+                    onChange={(e) => setForm({ ...form, price_mad: Number(e.target.value) })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>المخزون</Label>
-                  <Input type="number" min="0" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
+                  <Input
+                    type="number"
+                    min="0"
+                    value={form.stock}
+                    onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>التصنيف</Label>
-                <Input value={form.category ?? ""} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+                <Input
+                  value={form.category ?? ""}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                />
               </div>
+
               <div className="space-y-2">
-                <Label>صورة المنتج</Label>
-                {form.image_url ? (
-                  <div className="relative inline-block">
-                    <img
-                      src={form.image_url}
-                      alt=""
-                      className="h-32 w-32 rounded-md object-cover border"
-                    />
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="destructive"
-                      className="absolute -top-2 -left-2 h-6 w-6 rounded-full"
-                      onClick={() => setForm({ ...form, image_url: "" })}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      className="gap-2"
-                    >
-                      {uploading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Upload className="h-4 w-4" />
-                      )}
-                      {uploading ? "جارٍ الرفع..." : "رفع صورة"}
-                    </Button>
-                    <span className="text-xs text-muted-foreground">PNG, JPG حتى 5MB</span>
-                  </div>
-                )}
+                <div className="flex items-center justify-between">
+                  <Label>معرض الصور ({images.length})</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="gap-2"
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    {uploading ? "جارٍ الرفع..." : "رفع صور"}
+                  </Button>
+                </div>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
                   onChange={handleImageUpload}
                 />
+                {images.length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-4 text-center border rounded-md">
+                    لا توجد صور بعد. PNG/JPG حتى 5MB لكل صورة.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    {images.map((img, idx) => (
+                      <div
+                        key={img.id}
+                        className="relative group border rounded-md overflow-hidden bg-muted"
+                      >
+                        <img
+                          src={img.url}
+                          alt=""
+                          className="w-full aspect-square object-cover"
+                        />
+                        {img.is_primary && (
+                          <Badge className="absolute top-1 right-1 text-[10px] gap-1 px-1.5">
+                            <Star className="h-3 w-3 fill-current" />
+                            رئيسية
+                          </Badge>
+                        )}
+                        <div className="absolute inset-x-0 bottom-0 bg-background/90 backdrop-blur-sm p-1 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6"
+                            onClick={() => setPrimary(img)}
+                            disabled={img.is_primary}
+                            title="تعيين كرئيسية"
+                          >
+                            {img.is_primary ? (
+                              <Star className="h-3 w-3 fill-current" />
+                            ) : (
+                              <StarOff className="h-3 w-3" />
+                            )}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6"
+                            onClick={() => moveImage(idx, -1)}
+                            disabled={idx === 0}
+                          >
+                            <ArrowUp className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6"
+                            onClick={() => moveImage(idx, 1)}
+                            disabled={idx === images.length - 1}
+                          >
+                            <ArrowDown className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 text-destructive"
+                            onClick={() => removeImage(img)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+
               <div className="flex items-center gap-2">
-                <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
+                <Switch
+                  checked={form.active}
+                  onCheckedChange={(v) => setForm({ ...form, active: v })}
+                />
                 <Label>منتج نشط</Label>
               </div>
             </div>
@@ -242,14 +484,20 @@ function AdminProducts() {
       <div className="grid gap-3">
         {products.map((p) => (
           <Card key={p.id} className="p-4 shadow-soft flex items-center gap-4">
-            <img src={p.image_url ?? ""} alt="" className="h-16 w-16 rounded-md object-cover bg-muted shrink-0" />
+            <img
+              src={p.image_url ?? ""}
+              alt=""
+              className="h-16 w-16 rounded-md object-cover bg-muted shrink-0"
+            />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-semibold truncate">{p.name_ar}</h3>
                 {!p.active && <Badge variant="secondary">معطّل</Badge>}
                 {p.category && <Badge variant="outline">{p.category}</Badge>}
               </div>
-              <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{p.description_ar}</p>
+              <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
+                {p.description_ar}
+              </p>
               <div className="flex items-center gap-3 mt-2 text-sm">
                 <span className="font-bold text-primary">{formatMAD(p.price_mad)}</span>
                 <span className="text-muted-foreground">المخزون: {p.stock}</span>
@@ -259,7 +507,12 @@ function AdminProducts() {
               <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
                 <Pencil className="h-4 w-4" />
               </Button>
-              <Button size="icon" variant="ghost" className="text-destructive" onClick={() => remove(p.id)}>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="text-destructive"
+                onClick={() => remove(p.id)}
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
