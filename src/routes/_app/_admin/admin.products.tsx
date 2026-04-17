@@ -436,18 +436,40 @@ function AdminProducts() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">إدارة المنتجات</h1>
           <p className="text-sm text-muted-foreground mt-1">{products.length} منتج</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openNew} className="gap-2">
-              <Plus className="h-4 w-4" />
-              منتج جديد
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            ref={csvInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={handleCsvImport}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => csvInputRef.current?.click()}
+            disabled={importing}
+            className="gap-2"
+          >
+            {importing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="h-4 w-4" />
+            )}
+            استيراد المنتجات (CSV)
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openNew} className="gap-2">
+                <Plus className="h-4 w-4" />
+                منتج جديد
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" dir="rtl">
             <DialogHeader>
               <DialogTitle>{editing ? "تعديل منتج" : "منتج جديد"}</DialogTitle>
