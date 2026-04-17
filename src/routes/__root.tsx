@@ -32,6 +32,7 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Herbialife Partner Hub — منصة إدارة الموزعين والطلبات" },
+
       { name: "description", content: "منصة إدارة الموزعين والطلبات" },
       { property: "og:title", content: "Herbialife Partner Hub" },
       { name: "twitter:title", content: "Herbialife Partner Hub" },
