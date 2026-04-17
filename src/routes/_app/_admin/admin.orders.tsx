@@ -121,7 +121,8 @@ function AdminOrders() {
     if (!q) return true;
     const name = o.profiles?.full_name?.toLowerCase() ?? "";
     const city = o.profiles?.city?.toLowerCase() ?? "";
-    return name.includes(q) || city.includes(q) || o.id.toLowerCase().startsWith(q);
+    const num = o.order_number?.toLowerCase() ?? "";
+    return name.includes(q) || city.includes(q) || num.includes(q) || o.id.toLowerCase().startsWith(q);
   });
 
   const exportCsv = () => {
