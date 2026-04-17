@@ -95,6 +95,25 @@ function LoyaltyPage() {
         <p className="text-sm text-muted-foreground mt-1">تتبع مكافآتك ومستواك</p>
       </div>
 
+      {adminExists === false && !isAdmin && (
+        <Card className="p-5 border-2 border-primary/30 bg-primary/5 shadow-soft">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="h-6 w-6 text-primary shrink-0 mt-0.5" />
+            <div className="flex-1 space-y-3">
+              <div>
+                <h3 className="font-bold">إعداد المسؤول الأول</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  لا يوجد مسؤول بعد. يمكنك تعيين نفسك كمسؤول للنظام بنقرة واحدة.
+                </p>
+              </div>
+              <Button onClick={claimAdmin} disabled={claiming}>
+                {claiming ? "جاري التعيين..." : "عيّنّي كمسؤول"}
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <Card className="p-6 bg-gradient-primary text-primary-foreground shadow-elegant overflow-hidden relative">
         <Sparkles className="absolute -top-4 -left-4 h-32 w-32 opacity-10" />
         <div className="relative">
