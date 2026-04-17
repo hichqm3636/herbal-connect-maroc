@@ -63,8 +63,8 @@ function LoginPage() {
             <Leaf className="h-6 w-6 text-primary-foreground" />
           </div>
           <div className="text-right">
-            <h1 className="text-xl font-extrabold leading-tight">هيرباليفي</h1>
-            <p className="text-xs text-muted-foreground">بوابة الشركاء</p>
+            <h1 className="text-xl font-extrabold leading-tight">Herbialife Partner Hub</h1>
+            <p className="text-xs text-muted-foreground">منصة إدارة الموزعين والطلبات</p>
           </div>
         </Link>
 
