@@ -26,6 +26,7 @@ interface OrderItem {
 
 interface Order {
   id: string;
+  order_number: string;
   status: string;
   total_mad: number;
   points_earned: number;
