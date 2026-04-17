@@ -511,12 +511,25 @@ function AdminProducts() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>التصنيف</Label>
-                <Input
-                  value={form.category ?? ""}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>التصنيف</Label>
+                  <Input
+                    value={form.category ?? ""}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>النقاط لكل وحدة</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={form.points_per_unit}
+                    onChange={(e) =>
+                      setForm({ ...form, points_per_unit: Number(e.target.value) })
+                    }
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
