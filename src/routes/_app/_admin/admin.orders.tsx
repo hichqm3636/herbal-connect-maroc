@@ -297,10 +297,29 @@ function AdminOrders() {
                     <p className="text-sm font-medium">
                       {o.profiles?.full_name || "—"}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {o.profiles?.territories?.name || o.profiles?.city || "—"} •{" "}
-                      {formatDateTimeAr(o.created_at)}
-                    </p>
+                    <div className="flex items-center gap-x-3 gap-y-1 flex-wrap text-xs text-muted-foreground">
+                      {o.profiles?.phone && (
+                        <a
+                          href={`tel:${o.profiles.phone}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                          dir="ltr"
+                        >
+                          <Phone className="h-3 w-3" />
+                          {o.profiles.phone}
+                        </a>
+                      )}
+                      {o.profiles?.city && (
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {o.profiles.city}
+                        </span>
+                      )}
+                      {o.profiles?.territories?.name && (
+                        <span>{o.profiles.territories.name}</span>
+                      )}
+                      <span>{formatDateTimeAr(o.created_at)}</span>
+                    </div>
                   </div>
                   <div className="text-left shrink-0">
                     <p className="font-bold">{formatMAD(o.total_mad)}</p>
