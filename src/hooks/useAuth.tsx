@@ -26,6 +26,28 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   refreshRoles: () => Promise<void>;
   refreshCompany: () => Promise<void>;
+  setActiveCompany: (companyId: string | null) => void;
+}
+
+const ACTIVE_COMPANY_KEY = "active_company_id";
+
+function readActiveCompany(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(ACTIVE_COMPANY_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeActiveCompany(id: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (id) window.sessionStorage.setItem(ACTIVE_COMPANY_KEY, id);
+    else window.sessionStorage.removeItem(ACTIVE_COMPANY_KEY);
+  } catch {
+    /* ignore */
+  }
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
