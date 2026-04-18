@@ -402,7 +402,7 @@ export type Database = {
       reset_monthly_sales: { Args: never; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "distributor"
+      app_role: "admin" | "distributor" | "super_admin"
       distributor_level:
         | "distributor"
         | "senior_consultant"
@@ -547,7 +547,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "distributor"],
+      app_role: ["admin", "distributor", "super_admin"],
       distributor_level: [
         "distributor",
         "senior_consultant",
