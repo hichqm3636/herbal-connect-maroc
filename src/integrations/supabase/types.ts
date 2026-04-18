@@ -528,6 +528,17 @@ export type Database = {
         }
         Returns: string
       }
+      provision_company_with_admin: {
+        Args: {
+          _admin_email: string
+          _admin_full_name: string
+          _admin_password: string
+          _brand_color?: string
+          _display_name: string
+          _name: string
+        }
+        Returns: Json
+      }
       reset_monthly_sales: { Args: never; Returns: undefined }
     }
     Enums: {
