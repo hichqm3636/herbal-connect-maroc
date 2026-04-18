@@ -141,6 +141,28 @@ function AdminProducts() {
   const csvInputRef = useRef<HTMLInputElement>(null);
   const catalogInputRef = useRef<HTMLInputElement>(null);
   const syncWoo = useServerFn(syncWooCommerceProducts);
+  const [costDialogOpen, setCostDialogOpen] = useState(false);
+  const [costInput, setCostInput] = useState<string>("");
+
+  const applyCostPricing = () => {
+    const cost = Number(costInput);
+    if (!Number.isFinite(cost) || cost <= 0) {
+      toast.error("أدخل تكلفة صالحة");
+      return;
+    }
+    const d = deriveFromCost(cost);
+    setForm({
+      ...form,
+      price_mad: d.distributor_price,
+      rrp_price: d.rrp_price,
+      pharmacy_price: d.pharmacy_price,
+      map_price: d.map_price,
+      price_tiers: d.price_tiers,
+    });
+    setCostDialogOpen(false);
+    setCostInput("");
+    toast.success("تم احتساب جميع الأسعار من التكلفة");
+  };
 
   const handleWooSync = async () => {
     setSyncing(true);
