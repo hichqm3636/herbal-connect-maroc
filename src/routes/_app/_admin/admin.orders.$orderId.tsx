@@ -346,7 +346,13 @@ function OrderDetails() {
                   size="sm"
                   className="shrink-0"
                   disabled={disabled}
-                  onClick={() => updateStatus(a.status)}
+                  onClick={() => {
+                    if (a.status === "cancelled") {
+                      setConfirmCancel(true);
+                    } else {
+                      updateStatus(a.status);
+                    }
+                  }}
                 >
                   {saving === a.status ? (
                     <Loader2 className="h-4 w-4 animate-spin ml-1" />
