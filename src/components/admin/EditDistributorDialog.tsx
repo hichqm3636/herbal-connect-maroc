@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TerritorySelect } from "@/components/admin/TerritorySelect";
 import { PARTNER_TYPE_LABELS, type PartnerType } from "@/lib/pricing";
+import { PricingTierSelect } from "@/components/admin/PricingTierSelect";
 
 interface DistributorEditable {
   id: string;
@@ -28,6 +29,7 @@ interface DistributorEditable {
   phone: string | null;
   territory_id: string | null;
   partner_type?: PartnerType | null;
+  pricing_tier_id?: string | null;
 }
 
 interface Props {
@@ -42,6 +44,7 @@ export function EditDistributorDialog({ distributor, onClose, onSaved }: Props) 
     phone: "",
     territory_id: "",
     partner_type: "distributor" as PartnerType,
+    pricing_tier_id: "" as string,
   });
   const [busy, setBusy] = useState(false);
 
@@ -52,6 +55,7 @@ export function EditDistributorDialog({ distributor, onClose, onSaved }: Props) 
         phone: distributor.phone ?? "",
         territory_id: distributor.territory_id ?? "",
         partner_type: (distributor.partner_type as PartnerType) ?? "distributor",
+        pricing_tier_id: distributor.pricing_tier_id ?? "",
       });
     }
   }, [distributor]);
@@ -69,6 +73,7 @@ export function EditDistributorDialog({ distributor, onClose, onSaved }: Props) 
         phone: form.phone.trim(),
         territory_id: form.territory_id,
         partner_type: form.partner_type,
+        pricing_tier_id: form.pricing_tier_id || null,
       })
       .eq("id", distributor.id);
     setBusy(false);
@@ -119,6 +124,13 @@ export function EditDistributorDialog({ distributor, onClose, onSaved }: Props) 
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>فئة التسعير</Label>
+            <PricingTierSelect
+              value={form.pricing_tier_id || null}
+              onChange={(id) => setForm({ ...form, pricing_tier_id: id ?? "" })}
+            />
           </div>
         </div>
         <DialogFooter className="flex-col sm:flex-row gap-2">
