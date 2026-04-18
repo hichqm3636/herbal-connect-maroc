@@ -81,7 +81,9 @@ function AdminDashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-semibold text-sm">{formatMAD(o.total_mad)}</span>
-                  <Badge variant={STATUS_VARIANTS[o.status]}>{STATUS_LABELS[o.status]}</Badge>
+                  <Badge variant={STATUS_VARIANTS[o.status]} className={STATUS_CLASSES[o.status]}>
+                    {STATUS_LABELS[o.status]}
+                  </Badge>
                 </div>
               </div>
             ))}
