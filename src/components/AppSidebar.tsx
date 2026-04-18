@@ -15,6 +15,7 @@ import {
   Zap,
   Palette,
   Building2,
+  Tag,
 } from "lucide-react";
 import {
   Sidebar,
@@ -45,6 +46,7 @@ const adminItems = [
   { title: "لوحة الإدارة", url: "/admin", icon: ShieldCheck },
   { title: "إدارة المنتجات", url: "/admin/products", icon: Boxes },
   { title: "إدارة الموزعين", url: "/admin/distributors", icon: Users },
+  { title: "فئات التسعير", url: "/admin/pricing-tiers", icon: Tag },
   { title: "إدارة المناطق", url: "/admin/territories", icon: MapPin },
   { title: "إدارة الطلبات", url: "/admin/orders", icon: ClipboardList },
   { title: "هوية الشركة", url: "/admin/branding", icon: Palette },

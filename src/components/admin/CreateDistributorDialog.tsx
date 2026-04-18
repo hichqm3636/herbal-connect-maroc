@@ -13,6 +13,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TerritorySelect } from "@/components/admin/TerritorySelect";
+import { PricingTierSelect } from "@/components/admin/PricingTierSelect";
 
 interface Props {
   open: boolean;
@@ -24,6 +25,7 @@ const empty = {
   fullName: "",
   phone: "",
   territoryId: "",
+  pricingTierId: "" as string,
   email: "",
   password: "",
   initialPoints: 0,
@@ -122,6 +124,12 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
               />
             </Field>
           </div>
+          <Field label="فئة التسعير">
+            <PricingTierSelect
+              value={form.pricingTierId || null}
+              onChange={(id) => setForm({ ...form, pricingTierId: id ?? "" })}
+            />
+          </Field>
           <Field label="البريد الإلكتروني" error={errors.email}>
             <Input
               type="email"

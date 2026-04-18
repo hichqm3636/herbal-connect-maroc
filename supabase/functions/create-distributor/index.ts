@@ -19,6 +19,7 @@ interface Payload {
   fullName?: string;
   phone?: string;
   territoryId?: string;
+  pricingTierId?: string | null;
   initialPoints?: number;
   // reset_password / set_active
   userId?: string;
@@ -100,6 +101,7 @@ Deno.serve(async (req) => {
     const fullName = body.fullName?.trim() ?? "";
     const phone = body.phone?.trim() ?? "";
     const territoryId = body.territoryId?.trim() ?? "";
+    const pricingTierId = body.pricingTierId?.trim() || null;
     const initialPoints = Math.max(0, Math.floor(body.initialPoints ?? 0));
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return bad("بريد غير صالح");
@@ -118,6 +120,16 @@ Deno.serve(async (req) => {
     if (tErr) return bad(tErr.message, 500);
     if (!territory) return bad("المنطقة غير موجودة", 400);
     if (territory.company_id !== callerCompanyId) return bad("المنطقة لا تنتمي لشركتك", 403);
+
+    if (pricingTierId) {
+      const { data: tier } = await admin
+        .from("pricing_tiers")
+        .select("id, company_id")
+        .eq("id", pricingTierId)
+        .maybeSingle();
+      if (!tier || tier.company_id !== callerCompanyId)
+        return bad("فئة التسعير غير صالحة", 400);
+    }
 
     const { data: dup } = await admin
       .from("profiles")
@@ -148,6 +160,7 @@ Deno.serve(async (req) => {
       .update({
         territory_id: territoryId,
         company_id: callerCompanyId,
+        pricing_tier_id: pricingTierId,
         ...(initialPoints > 0 ? { loyalty_points: initialPoints } : {}),
       })
       .eq("id", created.user.id);

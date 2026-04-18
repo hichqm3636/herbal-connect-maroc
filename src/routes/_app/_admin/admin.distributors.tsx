@@ -69,6 +69,7 @@ interface Distributor {
   phone: string | null;
   city: string | null;
   territory_id: string | null;
+  pricing_tier_id: string | null;
   level: string;
   loyalty_points: number;
   monthly_sales: number;
@@ -78,6 +79,12 @@ interface Distributor {
 interface TerritoryLite {
   id: string;
   name: string;
+}
+
+interface PricingTierLite {
+  id: string;
+  name: string;
+  discount_percentage: number;
 }
 
 const LEVELS = ["distributor", "senior_consultant", "success_builder", "supervisor", "world_team"];
@@ -108,14 +115,15 @@ function AdminDistributors() {
   const [territoryFilter, setTerritoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [territories, setTerritories] = useState<TerritoryLite[]>([]);
+  const [tiers, setTiers] = useState<PricingTierLite[]>([]);
 
   const load = async () => {
     if (!companyId) return;
     setLoading(true);
-    const [{ data: profs }, { data: terrs }] = await Promise.all([
+    const [{ data: profs }, { data: terrs }, { data: pTiers }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("id, full_name, phone, city, territory_id, level, loyalty_points, monthly_sales, is_active")
+        .select("id, full_name, phone, city, territory_id, pricing_tier_id, level, loyalty_points, monthly_sales, is_active")
         .eq("company_id", companyId)
         .order("created_at", { ascending: false }),
       supabase
@@ -123,9 +131,15 @@ function AdminDistributors() {
         .select("id, name")
         .eq("company_id", companyId)
         .order("name"),
+      supabase
+        .from("pricing_tiers")
+        .select("id, name, discount_percentage")
+        .eq("company_id", companyId)
+        .order("discount_percentage", { ascending: true }),
     ]);
     setList((profs ?? []) as Distributor[]);
     setTerritories((terrs ?? []) as TerritoryLite[]);
+    setTiers((pTiers ?? []) as PricingTierLite[]);
     setLoading(false);
   };
 
@@ -138,6 +152,12 @@ function AdminDistributors() {
     territories.forEach((t) => m.set(t.id, t.name));
     return m;
   }, [territories]);
+
+  const tierById = useMemo(() => {
+    const m = new Map<string, PricingTierLite>();
+    tiers.forEach((t) => m.set(t.id, t));
+    return m;
+  }, [tiers]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -421,11 +441,16 @@ function AdminDistributors() {
                     <p className="text-xs text-muted-foreground mt-0.5 truncate" dir="ltr">
                       {d.phone || "—"}
                     </p>
-                    <div className="mt-1">
+                    <div className="mt-1 flex flex-wrap gap-1">
                       <Badge variant="outline" className="gap-1 text-[10px] border-primary/40 text-primary">
                         <MapPin className="h-3 w-3" />
                         {d.territory_id ? (territoryById.get(d.territory_id) ?? d.city ?? "—") : (d.city || "—")}
                       </Badge>
+                      {d.pricing_tier_id && tierById.get(d.pricing_tier_id) && (
+                        <Badge className="gap-1 text-[10px] bg-primary/15 text-primary border border-primary/30 hover:bg-primary/20">
+                          {tierById.get(d.pricing_tier_id)!.name} — {tierById.get(d.pricing_tier_id)!.discount_percentage}%
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
