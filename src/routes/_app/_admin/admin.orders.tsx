@@ -68,7 +68,7 @@ function AdminOrders() {
     let query = supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, distributor_id, notes, admin_notes, profiles(full_name, city, territory_id, territories(name)), order_items(quantity, unit_price_mad, products(name_ar))",
+        "id, order_number, status, total_mad, points_earned, created_at, distributor_id, company_id, notes, admin_notes, companies(display_name, name), profiles(full_name, city, territory_id, territories(name)), order_items(quantity, unit_price_mad, products(name_ar))",
       )
       .order("created_at", { ascending: false });
     if (isSuperAdmin) {
