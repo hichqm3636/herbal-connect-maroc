@@ -69,9 +69,11 @@ function AdminOrders() {
         "id, order_number, status, total_mad, points_earned, created_at, distributor_id, notes, admin_notes, profiles(full_name, city, territory_id, territories(name)), order_items(quantity, unit_price_mad, products(name_ar))",
       )
       .order("created_at", { ascending: false });
-    if (companyId) {
+    if (isSuperAdmin) {
+      // Super admins see ALL orders across every company.
+    } else if (companyId) {
       query = query.eq("company_id", companyId);
-    } else if (!isSuperAdmin) {
+    } else {
       // Non-super admin without a company: nothing to show
       setOrders([]);
       return;
@@ -79,6 +81,7 @@ function AdminOrders() {
     const { data, error } = await query;
     if (error) {
       console.error("[admin.orders] load failed", error);
+      toast.error(`تعذر تحميل الطلبات: ${error.message}`);
     }
     setOrders((data as unknown as OrderRow[]) ?? []);
   };
