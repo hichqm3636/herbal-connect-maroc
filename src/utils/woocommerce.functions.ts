@@ -26,9 +26,22 @@ const WOO_SITE_URL = "https://herbialife.com";
 const PER_PAGE = 100;
 
 export const syncWooCommerceProducts = createServerFn({ method: "POST" })
-  .handler(async (): Promise<SyncResult> => {
+  .inputValidator((input: { companyId: string }) => input)
+  .handler(async ({ data }): Promise<SyncResult> => {
+    const companyId = data.companyId;
     const key = process.env.WOOCOMMERCE_CONSUMER_KEY;
     const secret = process.env.WOOCOMMERCE_CONSUMER_SECRET;
+
+    if (!companyId) {
+      return {
+        ok: false,
+        created: 0,
+        updated: 0,
+        failed: 0,
+        errors: [],
+        message: "Missing companyId.",
+      };
+    }
 
     if (!key || !secret) {
       return {
@@ -144,7 +157,7 @@ export const syncWooCommerceProducts = createServerFn({ method: "POST" })
         } else {
           const { error } = await supabaseAdmin
             .from("products")
-            .insert({ ...payload, description_ar: "", active: true });
+            .insert({ ...payload, description_ar: "", active: true, company_id: companyId });
           if (error) {
             failed++;
             errors.push(`SKU ${sku}: ${error.message}`);
