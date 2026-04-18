@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Loader2, User, KeyRound } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, User, KeyRound, Camera, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -22,6 +23,9 @@ function SettingsPage() {
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const email = user?.email ?? "";
 
   const [currentPw, setCurrentPw] = useState("");
@@ -33,15 +37,78 @@ function SettingsPage() {
       if (!user?.id) return;
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, phone")
+        .select("full_name, phone, avatar_url")
         .eq("id", user.id)
         .maybeSingle();
       setFullName(data?.full_name ?? "");
       setPhone(data?.phone ?? "");
+      setAvatarUrl((data as { avatar_url?: string | null } | null)?.avatar_url ?? null);
       setLoading(false);
     };
     load();
   }, [user?.id]);
+
+  const onPickAvatar = () => fileInputRef.current?.click();
+
+  const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user?.id) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("يرجى اختيار ملف صورة");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("الحد الأقصى لحجم الصورة 5 ميغابايت");
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { cacheControl: "3600", upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      const url = pub.publicUrl;
+      const { error: dbErr } = await supabase
+        .from("profiles")
+        .update({ avatar_url: url } as never)
+        .eq("id", user.id);
+      if (dbErr) throw dbErr;
+      setAvatarUrl(url);
+      toast.success("تم تحديث الصورة");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "تعذر رفع الصورة");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const removeAvatar = async () => {
+    if (!user?.id || !avatarUrl) return;
+    setUploadingAvatar(true);
+    try {
+      const marker = "/avatars/";
+      const idx = avatarUrl.indexOf(marker);
+      if (idx !== -1) {
+        const path = avatarUrl.slice(idx + marker.length);
+        await supabase.storage.from("avatars").remove([path]);
+      }
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: null } as never)
+        .eq("id", user.id);
+      if (error) throw error;
+      setAvatarUrl(null);
+      toast.success("تم حذف الصورة");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "تعذر حذف الصورة");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const saveProfile = async () => {
     if (!user?.id) return;
