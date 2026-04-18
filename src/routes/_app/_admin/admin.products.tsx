@@ -209,9 +209,11 @@ function AdminProducts() {
   };
 
   const load = async () => {
+    if (!companyId) return;
     const { data } = await supabase
       .from("products")
       .select("*")
+      .eq("company_id", companyId)
       .order("created_at", { ascending: false });
     const rows = (data ?? []).map((p) => ({
       ...p,
@@ -222,7 +224,7 @@ function AdminProducts() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [companyId]);
 
   const loadImages = async (productId: string) => {
     const { data } = await supabase

@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { formatMAD, formatDateTimeAr, STATUS_LABELS, STATUS_VARIANTS } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -44,6 +45,7 @@ interface OrderRow {
 const STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 
 function AdminOrders() {
+  const { companyId } = useAuth();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -53,16 +55,18 @@ function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const load = async () => {
+    if (!companyId) return;
     const { data } = await supabase
       .from("orders")
       .select("id, order_number, status, total_mad, points_earned, created_at, distributor_id, notes, admin_notes, profiles(full_name, city), order_items(quantity, products(name_ar))")
+      .eq("company_id", companyId)
       .order("created_at", { ascending: false });
     setOrders((data as unknown as OrderRow[]) ?? []);
   };
 
   useEffect(() => {
     load();
-  }, []);
+  }, [companyId]);
 
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase

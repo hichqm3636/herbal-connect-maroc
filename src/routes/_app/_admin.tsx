@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_app/_admin")({
@@ -9,14 +9,16 @@ export const Route = createFileRoute("/_app/_admin")({
 });
 
 function AdminGuard() {
-  const { isAdmin, loading } = useAuth();
+  const { isAdmin, isSuperAdmin, companyId, loading } = useAuth();
   const navigate = useNavigate();
 
+  // If super admin hasn't picked a company yet, send them to the selector.
   useEffect(() => {
-    if (!loading && !isAdmin) {
-      // stay on page but show message; user can navigate away
+    if (loading) return;
+    if (isSuperAdmin && !companyId) {
+      navigate({ to: "/super-admin/companies" });
     }
-  }, [loading, isAdmin, navigate]);
+  }, [loading, isSuperAdmin, companyId, navigate]);
 
   if (loading) return null;
 
@@ -30,6 +32,14 @@ function AdminGuard() {
             هذه الصفحة مخصصة للمسؤولين فقط. تواصل مع الإدارة لمنحك الصلاحية.
           </p>
         </Card>
+      </div>
+    );
+  }
+
+  if (!companyId) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }

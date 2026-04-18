@@ -14,6 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 
@@ -35,11 +36,10 @@ function CompaniesPage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const { setActiveCompany } = useAuth();
 
   const selectCompany = (companyId: string) => {
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("super_admin_selected_company", companyId);
-    }
+    setActiveCompany(companyId);
     navigate({ to: "/admin" });
   };
 

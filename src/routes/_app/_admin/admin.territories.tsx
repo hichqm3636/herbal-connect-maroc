@@ -66,13 +66,18 @@ function AdminTerritories() {
   const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
+    if (!companyId) return;
     setLoading(true);
     const [{ data: ts }, { data: profs }] = await Promise.all([
       supabase
         .from("territories")
         .select("id, name, slug, created_at")
+        .eq("company_id", companyId)
         .order("name"),
-      supabase.from("profiles").select("territory_id"),
+      supabase
+        .from("profiles")
+        .select("territory_id")
+        .eq("company_id", companyId),
     ]);
     const counts = new Map<string, number>();
     (profs ?? []).forEach((p) => {
@@ -90,7 +95,7 @@ function AdminTerritories() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [companyId]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();

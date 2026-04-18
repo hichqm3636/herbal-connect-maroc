@@ -5,6 +5,7 @@ import { StatCard } from "@/components/StatCard";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { formatMAD, formatDateAr, STATUS_LABELS, STATUS_VARIANTS } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/_admin/admin/")({
@@ -13,14 +14,17 @@ export const Route = createFileRoute("/_app/_admin/admin/")({
 });
 
 function AdminDashboard() {
+  const { companyId } = useAuth();
   const [stats, setStats] = useState({ sales: 0, orders: 0, distributors: 0, pending: 0 });
   const [recent, setRecent] = useState<{ id: string; order_number: string; status: string; total_mad: number; created_at: string }[]>([]);
 
   useEffect(() => {
+    if (!companyId) return;
     (async () => {
       const { data: allOrders } = await supabase
         .from("orders")
-        .select("total_mad, status");
+        .select("total_mad, status")
+        .eq("company_id", companyId);
       const totalSales = (allOrders ?? [])
         .filter((o) => o.status !== "cancelled")
         .reduce((s, o) => s + Number(o.total_mad), 0);
@@ -29,11 +33,13 @@ function AdminDashboard() {
       const { count: distCount } = await supabase
         .from("user_roles")
         .select("id", { count: "exact", head: true })
-        .eq("role", "distributor");
+        .eq("role", "distributor")
+        .eq("company_id", companyId);
 
       const { data: r } = await supabase
         .from("orders")
         .select("id, order_number, status, total_mad, created_at")
+        .eq("company_id", companyId)
         .order("created_at", { ascending: false })
         .limit(8);
       setRecent(r ?? []);
@@ -45,7 +51,7 @@ function AdminDashboard() {
         pending,
       });
     })();
-  }, []);
+  }, [companyId]);
 
   return (
     <div className="space-y-6">
