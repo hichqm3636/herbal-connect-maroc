@@ -117,7 +117,6 @@ export function CartSheet() {
         points_earned: points,
         status: "pending",
         notes: trimmedNotes ? trimmedNotes : null,
-        order_number: `ORD-${Date.now().toString().slice(-8)}`,
       } as never)
       .select("id")
       .single();
