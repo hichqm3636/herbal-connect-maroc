@@ -90,8 +90,19 @@ export function TemplatesMenu({ currentItems, onLoad }: Props) {
       setSaving(false);
       return;
     }
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("company_id")
+      .eq("id", userData.user.id)
+      .maybeSingle();
+    if (!profile?.company_id) {
+      toast.error("لا توجد شركة مرتبطة بحسابك");
+      setSaving(false);
+      return;
+    }
     const { error } = await supabase.from("quick_order_templates").insert({
       user_id: userData.user.id,
+      company_id: profile.company_id,
       name: trimmed,
       items: items as unknown as never,
     });

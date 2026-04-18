@@ -164,6 +164,10 @@ function AdminDistributors() {
 
   const adjustPoints = async () => {
     if (!pointsTarget || !user || pointsDelta === 0) return;
+    if (!companyId) {
+      toast.error("لا توجد شركة مرتبطة بحسابك");
+      return;
+    }
     setPointsSaving(true);
     const newPoints = Math.max(0, pointsTarget.loyalty_points + pointsDelta);
     const { error: e1 } = await supabase
@@ -172,6 +176,7 @@ function AdminDistributors() {
       .eq("id", pointsTarget.id);
     const { error: e2 } = await supabase.from("loyalty_transactions").insert({
       distributor_id: pointsTarget.id,
+      company_id: companyId,
       points: pointsDelta,
       reason: pointsReason || "تعديل يدوي من الإدارة",
       admin_id: user.id,
