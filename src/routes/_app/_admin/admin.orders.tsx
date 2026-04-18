@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Download, ExternalLink, MapPin, Phone, Search, X } from "lucide-react";
+import { CheckCircle2, Download, ExternalLink, Loader2, MapPin, Package, PackageCheck, Phone, Search, X, XCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,34 @@ function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [distributorFilter, setDistributorFilter] = useState<string>("all");
   const [territoryFilter, setTerritoryFilter] = useState<string>("all");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const QUICK_ACTIONS: {
+    status: "confirmed" | "preparing" | "delivered" | "cancelled";
+    label: string;
+    icon: typeof CheckCircle2;
+    variant: "default" | "outline" | "destructive";
+  }[] = [
+    { status: "confirmed", label: "موافقة", icon: CheckCircle2, variant: "default" },
+    { status: "preparing", label: "تحضير", icon: Package, variant: "outline" },
+    { status: "delivered", label: "تم التسليم", icon: PackageCheck, variant: "outline" },
+    { status: "cancelled", label: "إلغاء", icon: XCircle, variant: "destructive" },
+  ];
+
+  const quickUpdate = async (
+    orderId: string,
+    status: "confirmed" | "preparing" | "delivered" | "cancelled",
+  ) => {
+    setUpdatingId(orderId);
+    const { error } = await supabase.from("orders").update({ status }).eq("id", orderId);
+    setUpdatingId(null);
+    if (error) {
+      toast.error("تعذر تحديث الحالة");
+      return;
+    }
+    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
+    toast.success(`تم تحديث الحالة: ${STATUS_LABELS[status]}`);
+  };
 
   const load = async () => {
     if (!user) return;
@@ -277,13 +305,12 @@ function AdminOrders() {
           </Card>
         ) : (
           filtered.map((o) => (
-            <Link
-              key={o.id}
-              to="/admin/orders/$orderId"
-              params={{ orderId: o.id }}
-              className="block"
-            >
-              <Card className="p-4 shadow-soft hover:bg-muted/30 transition-colors">
+            <Card key={o.id} className="p-4 shadow-soft hover:bg-muted/30 transition-colors">
+              <Link
+                to="/admin/orders/$orderId"
+                params={{ orderId: o.id }}
+                className="block"
+              >
                 <div className="flex flex-col md:flex-row md:items-center gap-3">
                   <div className="flex-1 min-w-0 space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -330,8 +357,36 @@ function AdminOrders() {
                     <p className="text-xs text-warning">+{o.points_earned} نقطة</p>
                   </div>
                 </div>
-              </Card>
-            </Link>
+              </Link>
+              <div className="mt-3 pt-3 border-t flex gap-2 overflow-x-auto">
+                {QUICK_ACTIONS.map((a) => {
+                  const Icon = a.icon;
+                  const isCurrent = o.status === a.status;
+                  const isLoading = updatingId === o.id;
+                  return (
+                    <Button
+                      key={a.status}
+                      variant={a.variant}
+                      size="sm"
+                      className="shrink-0 h-8 text-xs"
+                      disabled={isCurrent || isLoading}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        quickUpdate(o.id, a.status);
+                      }}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-3 w-3 animate-spin ml-1" />
+                      ) : (
+                        <Icon className="h-3 w-3 ml-1" />
+                      )}
+                      {a.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </Card>
           ))
         )}
       </div>
