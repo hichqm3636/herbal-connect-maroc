@@ -60,7 +60,19 @@ Deno.serve(async (req) => {
     .select("role")
     .eq("user_id", adminId);
   if (rolesErr) return bad(rolesErr.message, 500);
-  if (!(roles ?? []).some((r) => r.role === "admin")) return bad("صلاحية غير كافية", 403);
+  const isSuper = (roles ?? []).some((r) => r.role === "super_admin");
+  if (!isSuper && !(roles ?? []).some((r) => r.role === "admin")) return bad("صلاحية غير كافية", 403);
+
+  // Resolve caller's company_id (admins inherit theirs; super_admin must pass it explicitly)
+  const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: callerProfile } = await admin
+    .from("profiles")
+    .select("company_id")
+    .eq("id", adminId)
+    .maybeSingle();
+  const callerCompanyId = (callerProfile?.company_id as string | null) ?? null;
 
   let body: Payload;
   try {
@@ -68,10 +80,6 @@ Deno.serve(async (req) => {
   } catch {
     return bad("صيغة غير صالحة");
   }
-
-  const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
 
   const action: Action = body.action ?? "create";
 

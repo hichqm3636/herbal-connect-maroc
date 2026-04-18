@@ -13,6 +13,8 @@ import {
   Leaf,
   Settings,
   Zap,
+  Palette,
+  Building2,
 } from "lucide-react";
 import {
   Sidebar,
@@ -45,13 +47,18 @@ const adminItems = [
   { title: "إدارة الموزعين", url: "/admin/distributors", icon: Users },
   { title: "إدارة المناطق", url: "/admin/territories", icon: MapPin },
   { title: "إدارة الطلبات", url: "/admin/orders", icon: ClipboardList },
+  { title: "هوية الشركة", url: "/admin/branding", icon: Palette },
   { title: "سجل النشاط", url: "/admin/activity", icon: Activity },
+];
+
+const superAdminItems = [
+  { title: "الشركات", url: "/super-admin/companies", icon: Building2 },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin, signOut, user } = useAuth();
+  const { isAdmin, isSuperAdmin, signOut, user, company } = useAuth();
   const { isMobile, setOpenMobile } = useSidebar();
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
 
@@ -69,12 +76,27 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" side="right">
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-2 py-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
-            <Leaf className="h-5 w-5 text-primary-foreground" />
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-glow overflow-hidden text-primary-foreground"
+            style={company?.brand_color ? { backgroundColor: company.brand_color } : undefined}
+          >
+            {company?.logo_url ? (
+              <img src={company.logo_url} alt="logo" className="h-full w-full object-cover" />
+            ) : company?.brand_color ? (
+              <span className="text-sm font-bold">
+                {(company.display_name || company.name || "C")[0].toUpperCase()}
+              </span>
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-gradient-primary">
+                <Leaf className="h-5 w-5" />
+              </div>
+            )}
           </div>
-          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-bold leading-tight">Herbialife Partner Hub</span>
-            <span className="text-xs text-muted-foreground">منصة إدارة الموزعين والطلبات</span>
+          <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
+            <span className="text-sm font-bold leading-tight truncate">
+              {company?.display_name || company?.name || "Partner Hub"}
+            </span>
+            <span className="text-xs text-muted-foreground truncate">منصة إدارة الموزعين والطلبات</span>
           </div>
         </div>
       </SidebarHeader>
@@ -104,6 +126,26 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
+                      <Link to={item.url} onClick={handleNavClick}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {isSuperAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>المدير الأعلى</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {superAdminItems.map((item) => (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
                       <Link to={item.url} onClick={handleNavClick}>
