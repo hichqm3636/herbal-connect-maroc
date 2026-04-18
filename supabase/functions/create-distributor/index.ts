@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
     .select("company_id")
     .eq("id", adminId)
     .maybeSingle();
-  const callerCompanyId = (callerProfile?.company_id as string | null) ?? null;
+  const profileCompanyId = (callerProfile?.company_id as string | null) ?? null;
 
   let body: Payload;
   try {
@@ -85,6 +85,9 @@ Deno.serve(async (req) => {
   }
 
   const action: Action = body.action ?? "create";
+
+  // Effective company: super admin may impersonate via explicit companyId; others use their profile's.
+  const callerCompanyId = isSuper && body.companyId ? body.companyId : profileCompanyId;
 
   // Helper: log to admin_activity_log
   const log = async (a: string, targetId: string | null, meta: Record<string, unknown>) => {
