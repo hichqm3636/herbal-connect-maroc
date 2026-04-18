@@ -22,6 +22,8 @@ interface AuthContextValue {
   partnerType: PartnerType;
   companyId: string | null;
   company: Company | null;
+  pricingTierId: string | null;
+  pricingTierDiscount: number;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshRoles: () => Promise<void>;
@@ -58,6 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [partnerType, setPartnerType] = useState<PartnerType>("distributor");
   const [profileCompanyId, setProfileCompanyId] = useState<string | null>(null);
+  const [pricingTierId, setPricingTierId] = useState<string | null>(null);
+  const [pricingTierDiscount, setPricingTierDiscount] = useState<number>(0);
   const [activeCompanyId, setActiveCompanyIdState] = useState<string | null>(() =>
     readActiveCompany(),
   );
@@ -90,17 +94,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setRoles([]);
       setPartnerType("distributor");
       setProfileCompanyId(null);
+      setPricingTierId(null);
+      setPricingTierDiscount(0);
       setCompany(null);
       return;
     }
     const [{ data: roleRows }, { data: profile }] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", uid),
-      supabase.from("profiles").select("partner_type, company_id").eq("id", uid).maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("partner_type, company_id, pricing_tier_id, pricing_tiers(discount_percentage)")
+        .eq("id", uid)
+        .maybeSingle(),
     ]);
     setRoles((roleRows ?? []).map((r) => r.role as AppRole));
     setPartnerType((profile?.partner_type as PartnerType | undefined) ?? "distributor");
     const cid = (profile?.company_id as string | null | undefined) ?? null;
     setProfileCompanyId(cid);
+    setPricingTierId((profile?.pricing_tier_id as string | null | undefined) ?? null);
+    const tier = (profile as unknown as { pricing_tiers?: { discount_percentage: number } | null } | null)?.pricing_tiers;
+    setPricingTierDiscount(tier?.discount_percentage ? Number(tier.discount_percentage) : 0);
     // Non-super users always operate within their own profile company; sync sessionStorage.
     const isSuper = (roleRows ?? []).some((r) => r.role === "super_admin");
     if (!isSuper && cid) {
@@ -176,12 +189,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     partnerType,
     companyId,
     company,
+    pricingTierId,
+    pricingTierDiscount,
     loading,
     signOut,
     refreshRoles,
     refreshCompany,
     setActiveCompany,
-  }), [session, user, roles, partnerType, companyId, company, loading]);
+  }), [session, user, roles, partnerType, companyId, company, pricingTierId, pricingTierDiscount, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

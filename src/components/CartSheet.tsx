@@ -59,7 +59,7 @@ interface PricedLine {
 
 export function CartSheet() {
   const { items, isOpen, setOpen, updateQty, removeItem, clear } = useCart();
-  const { user, partnerType } = useAuth();
+  const { user, partnerType, companyId, pricingTierDiscount } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -76,7 +76,9 @@ export function CartSheet() {
           price_tiers: item.price_tiers ?? [],
           price_mad: item.price_mad,
         };
-        const { unitPrice } = getUnitPrice(pp, partnerType, item.qty);
+        const { unitPrice: base } = getUnitPrice(pp, partnerType, item.qty);
+        const factor = 1 - (pricingTierDiscount ?? 0) / 100;
+        const unitPrice = Math.round(base * factor);
         const v = validateLine(pp, partnerType, item.qty, unitPrice, item.name_ar);
         return {
           item,
@@ -86,7 +88,7 @@ export function CartSheet() {
           message: v.message,
         };
       }),
-    [items, partnerType],
+    [items, partnerType, pricingTierDiscount],
   );
 
   const total = priced.reduce((s, l) => s + l.lineTotal, 0);
@@ -95,6 +97,10 @@ export function CartSheet() {
 
   const placeOrder = async () => {
     if (!user || items.length === 0) return;
+    if (!companyId) {
+      toast.error("لا توجد شركة نشطة");
+      return;
+    }
     if (!canCheckout) {
       toast.error(blockedLines[0]?.message ?? "تعذر إتمام الطلب");
       return;
@@ -106,6 +112,7 @@ export function CartSheet() {
       .from("orders")
       .insert({
         distributor_id: user.id,
+        company_id: companyId,
         total_mad: total,
         points_earned: points,
         status: "pending",
