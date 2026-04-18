@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Award,
+  Ban,
   Download,
   Loader2,
   MapPin,
@@ -10,6 +11,7 @@ import {
   Search,
   ShieldOff,
   ShieldCheck,
+  UserCheck,
   UserPlus,
   KeyRound,
 } from "lucide-react";
@@ -104,11 +106,16 @@ function AdminDistributors() {
   const [pointsSaving, setPointsSaving] = useState(false);
   const [confirmDisable, setConfirmDisable] = useState<Distributor | null>(null);
   const [disabling, setDisabling] = useState(false);
+  const [confirmBan, setConfirmBan] = useState<Distributor | null>(null);
+  const [banning, setBanning] = useState(false);
+
+  // ban status keyed by user id (true = banned in auth.users)
+  const [bannedMap, setBannedMap] = useState<Record<string, boolean>>({});
 
   // bulk selection
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
-  const [bulkConfirm, setBulkConfirm] = useState<"enable" | "disable" | null>(null);
+  const [bulkConfirm, setBulkConfirm] = useState<"enable" | "disable" | "ban" | "unban" | null>(null);
 
   // filters
   const [search, setSearch] = useState("");
