@@ -163,21 +163,29 @@ function AdminDistributors() {
     setTiers((pTiers ?? []) as PricingTierLite[]);
     setLoading(false);
 
-    // Fetch banned status from auth.users via edge function
+    // Fetch banned status + last sign-in from auth.users via edge function
     if (profiles.length > 0) {
       try {
         const { data } = await supabase.functions.invoke("create-distributor", {
           body: { action: "get_user_status", userIds: profiles.map((p) => p.id) },
         });
-        const map: Record<string, boolean> = {};
-        const statuses = (data?.statuses ?? {}) as Record<string, { banned: boolean }>;
-        for (const id of Object.keys(statuses)) map[id] = !!statuses[id].banned;
-        setBannedMap(map);
+        const statuses = (data?.statuses ?? {}) as Record<
+          string,
+          { banned: boolean; last_sign_in_at: string | null }
+        >;
+        const map: Record<string, { banned: boolean; last_sign_in_at: string | null }> = {};
+        for (const id of Object.keys(statuses)) {
+          map[id] = {
+            banned: !!statuses[id].banned,
+            last_sign_in_at: statuses[id].last_sign_in_at ?? null,
+          };
+        }
+        setStatusMap(map);
       } catch {
-        /* ignore — banned info is best-effort */
+        /* ignore — auth info is best-effort */
       }
     } else {
-      setBannedMap({});
+      setStatusMap({});
     }
   };
 
