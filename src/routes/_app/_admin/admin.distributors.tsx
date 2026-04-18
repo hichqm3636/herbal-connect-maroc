@@ -518,8 +518,21 @@ function AdminDistributors() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold truncate">{d.full_name || "—"}</p>
                       <Badge variant="secondary" className="text-[10px]">موزع</Badge>
-                      {!d.is_active && (
-                        <Badge variant="destructive" className="text-[10px]">معطل</Badge>
+                      {bannedMap[d.id] ? (
+                        <Badge variant="destructive" className="text-[10px] gap-1">
+                          <Ban className="h-3 w-3" />
+                          محظور
+                        </Badge>
+                      ) : d.is_active ? (
+                        <Badge className="text-[10px] gap-1 bg-success/15 text-success-foreground border border-success/30 hover:bg-success/20">
+                          <ShieldCheck className="h-3 w-3" />
+                          مفعل
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] gap-1 border-muted-foreground/40 text-muted-foreground">
+                          <ShieldOff className="h-3 w-3" />
+                          معطل
+                        </Badge>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5 truncate" dir="ltr">
@@ -591,6 +604,20 @@ function AdminDistributors() {
                         <DropdownMenuItem onClick={() => toggleActive(d, true)}>
                           <ShieldCheck className="ml-2 h-4 w-4" />
                           تفعيل الحساب
+                        </DropdownMenuItem>
+                      )}
+                      {bannedMap[d.id] ? (
+                        <DropdownMenuItem onClick={() => toggleBanned(d, false)}>
+                          <UserCheck className="ml-2 h-4 w-4" />
+                          رفع الحظر
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => setConfirmBan(d)}
+                        >
+                          <Ban className="ml-2 h-4 w-4" />
+                          حظر الحساب
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
