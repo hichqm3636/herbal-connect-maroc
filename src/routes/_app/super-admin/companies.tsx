@@ -34,6 +34,14 @@ function CompaniesPage() {
   const [rows, setRows] = useState<CompanyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const selectCompany = (companyId: string) => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("super_admin_selected_company", companyId);
+    }
+    navigate({ to: "/admin" });
+  };
 
   const load = async () => {
     setLoading(true);
