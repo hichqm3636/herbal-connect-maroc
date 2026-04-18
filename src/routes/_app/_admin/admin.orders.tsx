@@ -135,13 +135,15 @@ function AdminOrders() {
     }
     const headers = [
       "Order Number",
-      "Order ID",
-      "Created At",
-      "Status",
+      "Company",
       "Distributor",
-      "Territory",
+      "Phone",
       "City",
+      "Territory",
       "Total (MAD)",
+      "Status",
+      "Created At",
+      "Order ID",
       "Points Earned",
       "Items",
     ];
@@ -151,13 +153,15 @@ function AdminOrders() {
     };
     const rows = filtered.map((o) => [
       o.order_number,
-      o.id,
-      new Date(o.created_at).toISOString(),
-      o.status,
+      o.companies?.display_name ?? o.companies?.name ?? "",
       o.profiles?.full_name ?? "",
-      o.profiles?.territories?.name ?? "",
+      o.profiles?.phone ?? "",
       o.profiles?.city ?? "",
+      o.profiles?.territories?.name ?? "",
       o.total_mad,
+      o.status,
+      new Date(o.created_at).toISOString(),
+      o.id,
       o.points_earned,
       (o.order_items ?? [])
         .map((it) => `${it.products?.name_ar ?? "?"} x${it.quantity}`)
