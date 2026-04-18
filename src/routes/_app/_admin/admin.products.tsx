@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMAD } from "@/lib/format";
-import { deriveWholesaleFromRRP, parseTiers } from "@/lib/pricing";
+import { deriveWholesaleFromRRP, deriveFromCost, parseTiers } from "@/lib/pricing";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/_admin/admin/products")({
