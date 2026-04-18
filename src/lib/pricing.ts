@@ -32,6 +32,33 @@ export const PARTNER_TYPE_LABELS: Record<PartnerType, string> = {
 const round = (n: number) => Math.round(n);
 
 /**
+ * Auto pricing engine driven by product cost.
+ * Markup chain:
+ *   distributor = cost × 1.8
+ *   pharmacy    = distributor × 1.25
+ *   rrp         = pharmacy × 1.4
+ *   map         = rrp × 0.9
+ * Bulk tiers (off distributor price): 6+ ×0.98, 12+ ×0.92, 24+ ×0.86
+ */
+export function deriveFromCost(cost: number) {
+  const distributor = cost * 1.8;
+  const pharmacy = distributor * 1.25;
+  const rrp = pharmacy * 1.4;
+  const map = rrp * 0.9;
+  return {
+    distributor_price: round(distributor),
+    pharmacy_price: round(pharmacy),
+    rrp_price: round(rrp),
+    map_price: round(map),
+    price_tiers: [
+      { min_qty: 6, price: round(distributor * 0.98) },
+      { min_qty: 12, price: round(distributor * 0.92) },
+      { min_qty: 24, price: round(distributor * 0.86) },
+    ] as PriceTier[],
+  };
+}
+
+/**
  * Default wholesale prices derived from RRP. Admin can override any field.
  */
 export function deriveWholesaleFromRRP(rrp: number) {
