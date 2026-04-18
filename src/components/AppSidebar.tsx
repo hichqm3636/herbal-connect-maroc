@@ -11,6 +11,7 @@ import {
   MapPin,
   LogOut,
   Leaf,
+  Settings,
 } from "lucide-react";
 import {
   Sidebar,
@@ -33,6 +34,7 @@ const distributorItems = [
   { title: "المنتجات", url: "/products", icon: ShoppingBag },
   { title: "طلباتي", url: "/orders", icon: ClipboardList },
   { title: "نقاط الولاء", url: "/loyalty", icon: Award },
+  { title: "الإعدادات", url: "/settings", icon: Settings },
 ];
 
 const adminItems = [
