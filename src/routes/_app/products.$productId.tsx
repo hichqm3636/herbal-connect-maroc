@@ -34,6 +34,7 @@ interface Product {
   pharmacy_price: number | null;
   map_price: number | null;
   minimum_order: number;
+  pack_size: number;
   price_tiers: PriceTier[];
 }
 
@@ -73,7 +74,9 @@ function ProductDetail() {
       setProduct(parsed);
       setImages((imgs as ProductImage[] | null) ?? []);
       setActiveIdx(0);
-      setQty(Math.max(1, parsed?.minimum_order ?? 1));
+      const pack = Math.max(1, parsed?.pack_size ?? 1);
+      const min = Math.max(1, parsed?.minimum_order ?? 1);
+      setQty(Math.max(pack, min));
       setLoading(false);
     })();
   }, [productId]);
@@ -107,12 +110,13 @@ function ProductDetail() {
         pharmacy_price: product.pharmacy_price,
         map_price: product.map_price,
         minimum_order: product.minimum_order,
+        pack_size: product.pack_size,
         price_tiers: product.price_tiers,
       },
       qty,
     );
     toast.success(`تمت إضافة ${qty} ${qty === 1 ? "منتج" : "منتجات"} إلى السلة`);
-    setQty(Math.max(1, product.minimum_order));
+    setQty(Math.max(product.pack_size || 1, product.minimum_order));
     openCart();
   };
 
@@ -144,7 +148,8 @@ function ProductDetail() {
         ? [{ id: "fallback", url: fallbackUrl }]
         : [];
   const mainUrl = gallery[activeIdx]?.url ?? "";
-  const minQty = Math.max(1, product.minimum_order);
+  const packSize = Math.max(1, product.pack_size || 1);
+  const minQty = Math.max(packSize, product.minimum_order);
   const maxQty = product.stock > 0 ? product.stock : minQty;
   const outOfStock = product.stock === 0 || !product.active;
   const showDistributorPricing =
@@ -285,6 +290,12 @@ function ProductDetail() {
                 })}
               </div>
             )}
+            {packSize > 1 && (
+              <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-2">
+                <span>حجم العبوة (Pack size)</span>
+                <span>{packSize} وحدة</span>
+              </div>
+            )}
             {product.minimum_order > 1 && (
               <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-2">
                 <span>الحد الأدنى للطلب</span>
@@ -309,21 +320,26 @@ function ProductDetail() {
                   size="icon"
                   variant="ghost"
                   className="h-9 w-9"
-                  onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  disabled={qty <= 1}
+                  onClick={() =>
+                    setQty((q) => Math.max(packSize, q - packSize))
+                  }
+                  disabled={qty <= packSize}
                   aria-label="إنقاص الكمية"
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
                 <input
                   type="number"
-                  min={1}
+                  min={packSize}
                   max={maxQty}
+                  step={packSize}
                   value={qty}
                   onChange={(e) => {
                     const n = Number(e.target.value);
-                    if (Number.isFinite(n))
-                      setQty(Math.min(maxQty, Math.max(1, Math.floor(n))));
+                    if (Number.isFinite(n)) {
+                      const rounded = Math.round(n / packSize) * packSize;
+                      setQty(Math.min(maxQty, Math.max(packSize, rounded)));
+                    }
                   }}
                   className="w-14 text-center bg-transparent outline-none font-medium tabular-nums"
                   aria-label="الكمية"
@@ -333,7 +349,7 @@ function ProductDetail() {
                   size="icon"
                   variant="ghost"
                   className="h-9 w-9"
-                  onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+                  onClick={() => setQty((q) => Math.min(maxQty, q + packSize))}
                   disabled={qty >= maxQty}
                   aria-label="زيادة الكمية"
                 >
@@ -343,6 +359,11 @@ function ProductDetail() {
               {pricing && (
                 <span className="text-xs text-muted-foreground">
                   الإجمالي: {formatMAD(pricing.unitPrice * qty)}
+                </span>
+              )}
+              {packSize > 1 && (
+                <span className="text-xs text-muted-foreground w-full">
+                  حجم العبوة: {packSize} وحدة — الكمية تزيد بمضاعفات {packSize}
                 </span>
               )}
             </div>
