@@ -148,23 +148,18 @@ function CreateCompanyDialog({
 
     setSubmitting(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      if (!accessToken) throw new Error("الجلسة منتهية، يرجى تسجيل الدخول من جديد");
-
-      const result = await createCompanyWithAdmin({
-        data: {
-          name: slug,
-          display_name: displayName.trim() || name.trim(),
-          brand_color: brandColor,
-          admin_email: email,
-          admin_password: adminPassword,
-          admin_full_name: adminFullName.trim(),
-        },
-        headers: { Authorization: `Bearer ${accessToken}` },
+      const { data, error } = await supabase.rpc("provision_company_with_admin", {
+        _name: slug,
+        _display_name: displayName.trim() || name.trim(),
+        _admin_email: email,
+        _admin_password: adminPassword,
+        _admin_full_name: adminFullName.trim(),
+        _brand_color: brandColor,
       });
+      if (error) throw error;
 
-      toast.success(`تم إنشاء الشركة. معرّف: ${result.company_id}`);
+      const companyId = (data as { company_id?: string } | null)?.company_id;
+      toast.success(`تم إنشاء الشركة. معرّف: ${companyId}`);
       reset();
       onOpenChange(false);
       onCreated();
