@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
+import { SkuAutocomplete } from "@/components/quick-order/SkuAutocomplete";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
@@ -247,12 +248,10 @@ function QuickOrderPage() {
             return (
               <div key={row.id} className="space-y-2">
                 <div className="grid grid-cols-[1fr_90px_auto] items-center gap-2 md:grid-cols-[1fr_120px_40px]">
-                  <Input
+                  <SkuAutocomplete
                     value={row.sku}
-                    onChange={(e) => updateRow(row.id, { sku: e.target.value })}
-                    placeholder="HRB-001"
-                    dir="ltr"
-                    className="font-mono"
+                    onChange={(sku) => updateRow(row.id, { sku })}
+                    placeholder="ابحث برمز المنتج أو الاسم…"
                   />
                   <Input
                     type="number"
