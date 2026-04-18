@@ -861,7 +861,7 @@ function AdminProducts() {
           />
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             onClick={() => {
               const headers = [
                 "name",
