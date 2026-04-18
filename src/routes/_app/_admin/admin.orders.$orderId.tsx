@@ -96,6 +96,9 @@ function OrderDetails() {
   const [draft, setDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [history, setHistory] = useState<
+    { id: string; created_at: string; old_status: string; new_status: string; admin_name: string | null }[]
+  >([]);
 
   const load = async () => {
     if (!companyId) return;
