@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Award,
   Ban,
+  Clock,
   Download,
   Loader2,
   MapPin,
@@ -11,10 +12,15 @@ import {
   Search,
   ShieldOff,
   ShieldCheck,
+  Users,
   UserCheck,
   UserPlus,
   KeyRound,
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { ar } from "date-fns/locale";
+import { StatCard } from "@/components/StatCard";
+import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -109,8 +115,15 @@ function AdminDistributors() {
   const [confirmBan, setConfirmBan] = useState<Distributor | null>(null);
   const [banning, setBanning] = useState(false);
 
-  // ban status keyed by user id (true = banned in auth.users)
-  const [bannedMap, setBannedMap] = useState<Record<string, boolean>>({});
+  // auth status keyed by user id
+  const [statusMap, setStatusMap] = useState<
+    Record<string, { banned: boolean; last_sign_in_at: string | null }>
+  >({});
+  const bannedMap = useMemo(() => {
+    const m: Record<string, boolean> = {};
+    for (const id of Object.keys(statusMap)) m[id] = !!statusMap[id].banned;
+    return m;
+  }, [statusMap]);
 
   // bulk selection
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -150,21 +163,29 @@ function AdminDistributors() {
     setTiers((pTiers ?? []) as PricingTierLite[]);
     setLoading(false);
 
-    // Fetch banned status from auth.users via edge function
+    // Fetch banned status + last sign-in from auth.users via edge function
     if (profiles.length > 0) {
       try {
         const { data } = await supabase.functions.invoke("create-distributor", {
           body: { action: "get_user_status", userIds: profiles.map((p) => p.id) },
         });
-        const map: Record<string, boolean> = {};
-        const statuses = (data?.statuses ?? {}) as Record<string, { banned: boolean }>;
-        for (const id of Object.keys(statuses)) map[id] = !!statuses[id].banned;
-        setBannedMap(map);
+        const statuses = (data?.statuses ?? {}) as Record<
+          string,
+          { banned: boolean; last_sign_in_at: string | null }
+        >;
+        const map: Record<string, { banned: boolean; last_sign_in_at: string | null }> = {};
+        for (const id of Object.keys(statuses)) {
+          map[id] = {
+            banned: !!statuses[id].banned,
+            last_sign_in_at: statuses[id].last_sign_in_at ?? null,
+          };
+        }
+        setStatusMap(map);
       } catch {
-        /* ignore — banned info is best-effort */
+        /* ignore — auth info is best-effort */
       }
     } else {
-      setBannedMap({});
+      setStatusMap({});
     }
   };
 
@@ -184,6 +205,18 @@ function AdminDistributors() {
     return m;
   }, [tiers]);
 
+  const summary = useMemo(() => {
+    let active = 0;
+    let inactive = 0;
+    let banned = 0;
+    for (const d of list) {
+      if (bannedMap[d.id]) banned++;
+      else if (d.is_active) active++;
+      else inactive++;
+    }
+    return { total: list.length, active, inactive, banned };
+  }, [list, bannedMap]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return list.filter((d) => {
@@ -197,6 +230,15 @@ function AdminDistributors() {
       return true;
     });
   }, [list, search, territoryFilter, statusFilter, bannedMap]);
+
+  const formatLastLogin = (iso: string | null | undefined): string => {
+    if (!iso) return "لم يسجل الدخول بعد";
+    try {
+      return formatDistanceToNow(new Date(iso), { addSuffix: true, locale: ar });
+    } catch {
+      return "—";
+    }
+  };
 
   const updateLevel = async (id: string, level: string) => {
     const { error } = await supabase
@@ -410,6 +452,49 @@ function AdminDistributors() {
         </div>
       </div>
 
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="إجمالي الموزعين" value={String(summary.total)} icon={Users} accent="primary" />
+        <StatCard label="مفعلون" value={String(summary.active)} icon={ShieldCheck} accent="success" />
+        <StatCard label="معطلون" value={String(summary.inactive)} icon={ShieldOff} accent="muted" />
+        <StatCard label="محظورون" value={String(summary.banned)} icon={Ban} accent="warning" />
+      </div>
+
+      {/* Quick filter pills */}
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            { key: "all", label: "الكل", count: summary.total },
+            { key: "active", label: "مفعلون", count: summary.active },
+            { key: "disabled", label: "معطلون", count: summary.inactive },
+            { key: "banned", label: "محظورون", count: summary.banned },
+          ] as const
+        ).map((pill) => {
+          const isActive = statusFilter === pill.key;
+          return (
+            <Button
+              key={pill.key}
+              type="button"
+              size="sm"
+              variant={isActive ? "default" : "outline"}
+              className={cn("gap-1.5", isActive && "shadow-soft")}
+              onClick={() => setStatusFilter(pill.key)}
+            >
+              <span>{pill.label}</span>
+              <Badge
+                variant="secondary"
+                className={cn(
+                  "px-1.5 py-0 text-[10px]",
+                  isActive && "bg-primary-foreground/20 text-primary-foreground",
+                )}
+              >
+                {pill.count}
+              </Badge>
+            </Button>
+          );
+        })}
+      </div>
+
       {/* Filters */}
       <Card className="p-3 shadow-soft">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -537,6 +622,10 @@ function AdminDistributors() {
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5 truncate" dir="ltr">
                       {d.phone || "—"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>آخر دخول:&nbsp;{formatLastLogin(statusMap[d.id]?.last_sign_in_at)}</span>
                     </p>
                     <div className="mt-1 flex flex-wrap gap-1">
                       <Badge variant="outline" className="gap-1 text-[10px] border-primary/40 text-primary">

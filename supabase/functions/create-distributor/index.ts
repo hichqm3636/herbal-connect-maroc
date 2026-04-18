@@ -252,18 +252,24 @@ Deno.serve(async (req) => {
     const ids = body.userIds ?? (body.userId ? [body.userId] : []);
     if (ids.length === 0) return json({ statuses: {} });
 
-    const statuses: Record<string, { banned: boolean; banned_until: string | null }> = {};
+    const statuses: Record<
+      string,
+      { banned: boolean; banned_until: string | null; last_sign_in_at: string | null }
+    > = {};
     // Process sequentially — admin.getUserById is fast enough for typical company sizes
     for (const id of ids) {
       const { data, error } = await admin.auth.admin.getUserById(id);
       if (error || !data?.user) {
-        statuses[id] = { banned: false, banned_until: null };
+        statuses[id] = { banned: false, banned_until: null, last_sign_in_at: null };
         continue;
       }
-      const u = data.user as unknown as { banned_until?: string | null };
+      const u = data.user as unknown as {
+        banned_until?: string | null;
+        last_sign_in_at?: string | null;
+      };
       const bu = u.banned_until ?? null;
       const banned = !!bu && new Date(bu).getTime() > Date.now();
-      statuses[id] = { banned, banned_until: bu };
+      statuses[id] = { banned, banned_until: bu, last_sign_in_at: u.last_sign_in_at ?? null };
     }
     return json({ statuses });
   }
