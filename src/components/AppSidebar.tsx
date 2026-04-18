@@ -48,9 +48,15 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAdmin, signOut, user } = useAuth();
+  const { isMobile, setOpenMobile } = useSidebar();
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
 
+  const handleNavClick = () => {
+    if (isMobile) setOpenMobile(false);
+  };
+
   const handleSignOut = async () => {
+    if (isMobile) setOpenMobile(false);
     await signOut();
     navigate({ to: "/login" });
   };
