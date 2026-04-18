@@ -90,6 +90,7 @@ Deno.serve(async (req) => {
       action: a,
       target_user_id: targetId,
       metadata: meta,
+      company_id: callerCompanyId,
     });
   };
 
@@ -107,20 +108,23 @@ Deno.serve(async (req) => {
     if (fullName.length < 2) return bad("الاسم قصير جداً");
     if (phone.length < 6) return bad("رقم الهاتف غير صالح");
     if (!territoryId) return bad("المنطقة مطلوبة");
+    if (!callerCompanyId) return bad("لا توجد شركة مرتبطة بحسابك", 400);
 
     const { data: territory, error: tErr } = await admin
       .from("territories")
-      .select("id, name")
+      .select("id, name, company_id")
       .eq("id", territoryId)
       .maybeSingle();
     if (tErr) return bad(tErr.message, 500);
     if (!territory) return bad("المنطقة غير موجودة", 400);
+    if (territory.company_id !== callerCompanyId) return bad("المنطقة لا تنتمي لشركتك", 403);
 
     const { data: dup } = await admin
       .from("profiles")
       .select("id")
       .eq("phone", phone)
       .eq("territory_id", territoryId)
+      .eq("company_id", callerCompanyId)
       .eq("is_active", true)
       .limit(1);
     if (dup && dup.length > 0) return bad("رقم الهاتف مستخدم بالفعل في نفس المنطقة", 409);
@@ -141,12 +145,23 @@ Deno.serve(async (req) => {
 
     const { error: updErr } = await admin
       .from("profiles")
-      .update({ territory_id: territoryId, ...(initialPoints > 0 ? { loyalty_points: initialPoints } : {}) })
+      .update({
+        territory_id: territoryId,
+        company_id: callerCompanyId,
+        ...(initialPoints > 0 ? { loyalty_points: initialPoints } : {}),
+      })
       .eq("id", created.user.id);
     if (updErr) {
       await admin.auth.admin.deleteUser(created.user.id);
       return bad(updErr.message, 400);
     }
+
+    // Assign distributor role scoped to the company
+    await admin.from("user_roles").insert({
+      user_id: created.user.id,
+      role: "distributor",
+      company_id: callerCompanyId,
+    });
 
     if (initialPoints > 0) {
       await admin.from("loyalty_transactions").insert({
@@ -154,6 +169,7 @@ Deno.serve(async (req) => {
         points: initialPoints,
         reason: "نقاط ابتدائية عند إنشاء الحساب",
         admin_id: adminId,
+        company_id: callerCompanyId,
       });
     }
 
