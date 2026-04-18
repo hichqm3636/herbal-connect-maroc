@@ -271,6 +271,34 @@ function AdminDistributors() {
     }
   };
 
+  const toggleBanned = async (target: Distributor, makeBanned: boolean) => {
+    setBanning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-distributor", {
+        body: { action: "set_banned", userId: target.id, isBanned: makeBanned },
+      });
+      if (error) {
+        let msg = error.message;
+        try {
+          const ctx = (error as { context?: Response }).context;
+          if (ctx) {
+            const j = await ctx.clone().json();
+            if (j?.error) msg = j.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
+      toast.success(makeBanned ? "تم حظر الحساب" : "تم رفع الحظر");
+      setConfirmBan(null);
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "فشلت العملية");
+    } finally {
+      setBanning(false);
+    }
+  };
+
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -293,6 +321,26 @@ function AdminDistributors() {
     for (const id of selected) {
       const { data, error } = await supabase.functions.invoke("create-distributor", {
         body: { action: "set_active", userId: id, isActive: makeActive },
+      });
+      if (error || data?.error) fail++;
+      else ok++;
+    }
+    setBulkBusy(false);
+    setBulkConfirm(null);
+    setSelected(new Set());
+    if (fail === 0) toast.success(`تمت العملية على ${ok} موزع`);
+    else toast.error(`نجاح: ${ok} — فشل: ${fail}`);
+    load();
+  };
+
+  const runBulkSetBanned = async (makeBanned: boolean) => {
+    if (selected.size === 0) return;
+    setBulkBusy(true);
+    let ok = 0;
+    let fail = 0;
+    for (const id of selected) {
+      const { data, error } = await supabase.functions.invoke("create-distributor", {
+        body: { action: "set_banned", userId: id, isBanned: makeBanned },
       });
       if (error || data?.error) fail++;
       else ok++;
