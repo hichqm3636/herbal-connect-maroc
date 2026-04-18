@@ -40,6 +40,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
 import { deriveWholesaleFromRRP, deriveFromCost, parseTiers } from "@/lib/pricing";
 import { toast } from "sonner";
@@ -119,6 +120,7 @@ const empty: Omit<Product, "id" | "image_url"> = {
 };
 
 function AdminProducts() {
+  const { companyId } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<Omit<Product, "id" | "image_url">>(empty);
@@ -168,7 +170,12 @@ function AdminProducts() {
     setSyncing(true);
     setImportResult(null);
     try {
-      const result = await syncWoo();
+      if (!companyId) {
+        toast.error("لا توجد شركة مرتبطة بحسابك");
+        setSyncing(false);
+        return;
+      }
+      const result = await syncWoo({ data: { companyId } });
       if (!result.ok) {
         toast.error(result.message ?? "تعذر مزامنة المنتجات");
         setImportResult({
@@ -266,6 +273,10 @@ function AdminProducts() {
       toast.error("أدخل اسم المنتج أولاً قبل رفع الصور");
       return null;
     }
+    if (!companyId) {
+      toast.error("لا توجد شركة مرتبطة بحسابك");
+      return null;
+    }
     const { data, error } = await supabase
       .from("products")
       .insert({
@@ -276,6 +287,7 @@ function AdminProducts() {
         stock: form.stock,
         active: form.active,
         points_per_unit: form.points_per_unit,
+        company_id: companyId,
       })
       .select("*")
       .single();
@@ -706,9 +718,13 @@ function AdminProducts() {
           updated++;
         }
       } else {
+        if (!companyId) {
+          errors.push(`السطر ${r.line} (${r.sku}): لا توجد شركة`);
+          continue;
+        }
         const { error } = await supabase
           .from("products")
-          .insert({ ...payload, description_ar: "", active: true });
+          .insert({ ...payload, description_ar: "", active: true, company_id: companyId });
         if (error) {
           errors.push(`السطر ${r.line} (${r.sku}): ${error.message}`);
         } else {
@@ -828,9 +844,13 @@ function AdminProducts() {
             updated++;
           }
         } else {
+          if (!companyId) {
+            errors.push(`السطر ${lineNum} (${sku}): لا توجد شركة`);
+            continue;
+          }
           const { error } = await supabase
             .from("products")
-            .insert({ ...payload, description_ar: "", active: true });
+            .insert({ ...payload, description_ar: "", active: true, company_id: companyId });
           if (error) {
             errors.push(`السطر ${lineNum} (${sku}): ${error.message}`);
           } else {

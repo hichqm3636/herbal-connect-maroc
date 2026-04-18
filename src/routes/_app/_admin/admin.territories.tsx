@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/_admin/admin/territories")({
@@ -52,6 +53,7 @@ function slugify(name: string): string {
 }
 
 function AdminTerritories() {
+  const { companyId } = useAuth();
   const [list, setList] = useState<Territory[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -123,7 +125,13 @@ function AdminTerritories() {
       toast.success("تم تحديث المنطقة");
       setEditing(null);
     } else {
-      const { error } = await supabase.from("territories").insert({ name, slug });
+      if (!companyId) {
+        setBusy(false);
+        return toast.error("لا توجد شركة مرتبطة بحسابك");
+      }
+      const { error } = await supabase
+        .from("territories")
+        .insert({ name, slug, company_id: companyId });
       setBusy(false);
       if (error) return toast.error(error.message);
       toast.success("تم إنشاء المنطقة");
