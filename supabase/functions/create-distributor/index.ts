@@ -230,14 +230,42 @@ Deno.serve(async (req) => {
       .eq("id", userId);
     if (pErr) return bad(pErr.message, 400);
 
-    // Also ban/unban at auth level so they can't log in while disabled
+    await log(isActive ? "enable_distributor" : "disable_distributor", userId, {});
+    return json({ ok: true });
+  }
+
+  if (action === "set_banned") {
+    const userId = body.userId ?? "";
+    const isBanned = !!body.isBanned;
+    if (!userId) return bad("معرّف المستخدم مفقود");
+
     const { error: aErr } = await admin.auth.admin.updateUserById(userId, {
-      ban_duration: isActive ? "none" : "876000h",
+      ban_duration: isBanned ? "876000h" : "none",
     });
     if (aErr) return bad(aErr.message, 400);
 
-    await log(isActive ? "enable_distributor" : "disable_distributor", userId, {});
+    await log(isBanned ? "ban_user" : "unban_user", userId, {});
     return json({ ok: true });
+  }
+
+  if (action === "get_user_status") {
+    const ids = body.userIds ?? (body.userId ? [body.userId] : []);
+    if (ids.length === 0) return json({ statuses: {} });
+
+    const statuses: Record<string, { banned: boolean; banned_until: string | null }> = {};
+    // Process sequentially — admin.getUserById is fast enough for typical company sizes
+    for (const id of ids) {
+      const { data, error } = await admin.auth.admin.getUserById(id);
+      if (error || !data?.user) {
+        statuses[id] = { banned: false, banned_until: null };
+        continue;
+      }
+      const u = data.user as unknown as { banned_until?: string | null };
+      const bu = u.banned_until ?? null;
+      const banned = !!bu && new Date(bu).getTime() > Date.now();
+      statuses[id] = { banned, banned_until: bu };
+    }
+    return json({ statuses });
   }
 
   return bad("إجراء غير معروف");
