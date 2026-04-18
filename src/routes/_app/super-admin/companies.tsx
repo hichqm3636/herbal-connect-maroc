@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Building2, Loader2, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -34,6 +34,14 @@ function CompaniesPage() {
   const [rows, setRows] = useState<CompanyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const selectCompany = (companyId: string) => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("super_admin_selected_company", companyId);
+    }
+    navigate({ to: "/admin" });
+  };
 
   const load = async () => {
     setLoading(true);
@@ -81,9 +89,11 @@ function CompaniesPage() {
           ) : (
             <div className="space-y-2">
               {rows.map((c) => (
-                <div
+                <button
                   key={c.id}
-                  className="flex items-center gap-3 rounded-lg border bg-card p-3"
+                  type="button"
+                  onClick={() => selectCompany(c.id)}
+                  className="w-full text-right flex items-center gap-3 rounded-lg border bg-card p-3 cursor-pointer hover:bg-green-50 transition-colors"
                 >
                   <div
                     className="h-10 w-10 rounded-lg flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0"
@@ -99,7 +109,7 @@ function CompaniesPage() {
                     <p className="font-semibold truncate">{c.display_name || c.name}</p>
                     <p className="text-xs text-muted-foreground truncate" dir="ltr">{c.name}</p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
