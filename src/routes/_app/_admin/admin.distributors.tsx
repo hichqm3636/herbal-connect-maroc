@@ -115,8 +115,15 @@ function AdminDistributors() {
   const [confirmBan, setConfirmBan] = useState<Distributor | null>(null);
   const [banning, setBanning] = useState(false);
 
-  // ban status keyed by user id (true = banned in auth.users)
-  const [bannedMap, setBannedMap] = useState<Record<string, boolean>>({});
+  // auth status keyed by user id
+  const [statusMap, setStatusMap] = useState<
+    Record<string, { banned: boolean; last_sign_in_at: string | null }>
+  >({});
+  const bannedMap = useMemo(() => {
+    const m: Record<string, boolean> = {};
+    for (const id of Object.keys(statusMap)) m[id] = !!statusMap[id].banned;
+    return m;
+  }, [statusMap]);
 
   // bulk selection
   const [selected, setSelected] = useState<Set<string>>(new Set());
