@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
+  Clock,
   Loader2,
   Package,
   PackageCheck,
@@ -95,6 +96,9 @@ function OrderDetails() {
   const [draft, setDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [history, setHistory] = useState<
+    { id: string; created_at: string; old_status: string; new_status: string; admin_name: string | null }[]
+  >([]);
 
   const load = async () => {
     if (!companyId) return;
@@ -110,8 +114,40 @@ function OrderDetails() {
     if (error || !data) {
       toast.error("تعذر تحميل الطلب");
       setOrder(null);
+      setHistory([]);
+      setLoading(false);
+      return;
+    }
+    setOrder(data as unknown as OrderDetail);
+
+    const { data: logs } = await supabase
+      .from("admin_activity_log")
+      .select("id, admin_id, metadata, created_at")
+      .eq("company_id", companyId)
+      .eq("action", "order_status_change")
+      .filter("metadata->>order_id", "eq", orderId)
+      .order("created_at", { ascending: true });
+
+    if (logs && logs.length > 0) {
+      const adminIds = Array.from(new Set(logs.map((l) => l.admin_id).filter(Boolean)));
+      const { data: admins } = adminIds.length
+        ? await supabase.from("profiles").select("id, full_name").in("id", adminIds)
+        : { data: [] as { id: string; full_name: string }[] };
+      const nameMap = new Map((admins ?? []).map((a) => [a.id, a.full_name]));
+      setHistory(
+        logs.map((l) => {
+          const meta = (l.metadata ?? {}) as Record<string, unknown>;
+          return {
+            id: l.id,
+            created_at: l.created_at,
+            old_status: String(meta.old_status ?? ""),
+            new_status: String(meta.new_status ?? ""),
+            admin_name: nameMap.get(l.admin_id) ?? null,
+          };
+        }),
+      );
     } else {
-      setOrder(data as unknown as OrderDetail);
+      setHistory([]);
     }
     setLoading(false);
   };
@@ -329,6 +365,43 @@ function OrderDetails() {
           <p className="text-sm whitespace-pre-wrap">{order.admin_notes}</p>
         ) : (
           <p className="text-xs text-muted-foreground italic">لا توجد ملاحظات داخلية</p>
+        )}
+      </Card>
+
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <h2 className="font-semibold text-sm text-muted-foreground">سجل تغييرات الحالة</h2>
+        </div>
+        {history.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic">لا توجد تغييرات مسجلة بعد</p>
+        ) : (
+          <ol className="relative border-r border-border pr-4 space-y-4">
+            {history.map((h) => (
+              <li key={h.id} className="relative">
+                <span className="absolute -right-[21px] top-1.5 h-3 w-3 rounded-full bg-primary ring-4 ring-background" />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge
+                    variant={STATUS_VARIANTS[h.old_status]}
+                    className={`text-xs ${STATUS_CLASSES[h.old_status] ?? ""}`}
+                  >
+                    {STATUS_LABELS[h.old_status] ?? h.old_status}
+                  </Badge>
+                  <ArrowRight className="h-3 w-3 text-muted-foreground rotate-180" />
+                  <Badge
+                    variant={STATUS_VARIANTS[h.new_status]}
+                    className={`text-xs ${STATUS_CLASSES[h.new_status] ?? ""}`}
+                  >
+                    {STATUS_LABELS[h.new_status] ?? h.new_status}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formatDateTimeAr(h.created_at)}
+                  {h.admin_name ? ` — ${h.admin_name}` : ""}
+                </p>
+              </li>
+            ))}
+          </ol>
         )}
       </Card>
 
