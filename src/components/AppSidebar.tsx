@@ -23,6 +23,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -47,9 +48,15 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAdmin, signOut, user } = useAuth();
+  const { isMobile, setOpenMobile } = useSidebar();
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
 
+  const handleNavClick = () => {
+    if (isMobile) setOpenMobile(false);
+  };
+
   const handleSignOut = async () => {
+    if (isMobile) setOpenMobile(false);
     await signOut();
     navigate({ to: "/login" });
   };
@@ -76,7 +83,7 @@ export function AppSidebar() {
               {distributorItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                    <Link to={item.url}>
+                    <Link to={item.url} onClick={handleNavClick}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </Link>
@@ -95,7 +102,7 @@ export function AppSidebar() {
                 {adminItems.map((item) => (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                      <Link to={item.url}>
+                      <Link to={item.url} onClick={handleNavClick}>
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
                       </Link>
