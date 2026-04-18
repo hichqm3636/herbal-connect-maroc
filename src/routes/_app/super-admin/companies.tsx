@@ -149,6 +149,10 @@ function CreateCompanyDialog({
 
     setSubmitting(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) throw new Error("الجلسة منتهية، يرجى تسجيل الدخول من جديد");
+
       const result = await createCompanyWithAdmin({
         data: {
           name: slug,
@@ -158,6 +162,7 @@ function CreateCompanyDialog({
           admin_password: adminPassword,
           admin_full_name: adminFullName.trim(),
         },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       toast.success(`تم إنشاء الشركة. معرّف: ${result.company_id}`);
