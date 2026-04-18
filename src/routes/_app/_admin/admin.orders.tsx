@@ -305,13 +305,12 @@ function AdminOrders() {
           </Card>
         ) : (
           filtered.map((o) => (
-            <Link
-              key={o.id}
-              to="/admin/orders/$orderId"
-              params={{ orderId: o.id }}
-              className="block"
-            >
-              <Card className="p-4 shadow-soft hover:bg-muted/30 transition-colors">
+            <Card key={o.id} className="p-4 shadow-soft hover:bg-muted/30 transition-colors">
+              <Link
+                to="/admin/orders/$orderId"
+                params={{ orderId: o.id }}
+                className="block"
+              >
                 <div className="flex flex-col md:flex-row md:items-center gap-3">
                   <div className="flex-1 min-w-0 space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -358,8 +357,36 @@ function AdminOrders() {
                     <p className="text-xs text-warning">+{o.points_earned} نقطة</p>
                   </div>
                 </div>
-              </Card>
-            </Link>
+              </Link>
+              <div className="mt-3 pt-3 border-t flex gap-2 overflow-x-auto">
+                {QUICK_ACTIONS.map((a) => {
+                  const Icon = a.icon;
+                  const isCurrent = o.status === a.status;
+                  const isLoading = updatingId === o.id;
+                  return (
+                    <Button
+                      key={a.status}
+                      variant={a.variant}
+                      size="sm"
+                      className="shrink-0 h-8 text-xs"
+                      disabled={isCurrent || isLoading}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        quickUpdate(o.id, a.status);
+                      }}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-3 w-3 animate-spin ml-1" />
+                      ) : (
+                        <Icon className="h-3 w-3 ml-1" />
+                      )}
+                      {a.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </Card>
           ))
         )}
       </div>
