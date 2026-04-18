@@ -441,6 +441,7 @@ function AdminDistributors() {
               <SelectItem value="all">كل الحالات</SelectItem>
               <SelectItem value="active">مفعل</SelectItem>
               <SelectItem value="disabled">معطل</SelectItem>
+              <SelectItem value="banned">محظور</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -465,9 +466,17 @@ function AdminDistributors() {
               <ShieldCheck className="h-4 w-4" />
               تفعيل
             </Button>
-            <Button size="sm" variant="destructive" className="gap-1" onClick={() => setBulkConfirm("disable")} disabled={bulkBusy}>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setBulkConfirm("disable")} disabled={bulkBusy}>
               <ShieldOff className="h-4 w-4" />
               تعطيل
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setBulkConfirm("unban")} disabled={bulkBusy}>
+              <UserCheck className="h-4 w-4" />
+              رفع الحظر
+            </Button>
+            <Button size="sm" variant="destructive" className="gap-1" onClick={() => setBulkConfirm("ban")} disabled={bulkBusy}>
+              <Ban className="h-4 w-4" />
+              حظر
             </Button>
           </div>
         </Card>
