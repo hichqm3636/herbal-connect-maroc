@@ -33,6 +33,7 @@ export const LEVEL_LABELS: Record<string, string> = {
 export const STATUS_LABELS: Record<string, string> = {
   pending: "قيد الانتظار",
   confirmed: "مؤكد",
+  preparing: "قيد التحضير",
   shipped: "تم الشحن",
   delivered: "تم التسليم",
   cancelled: "ملغي",
@@ -41,7 +42,17 @@ export const STATUS_LABELS: Record<string, string> = {
 export const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   pending: "secondary",
   confirmed: "outline",
+  preparing: "outline",
   shipped: "default",
   delivered: "default",
   cancelled: "destructive",
 };
+
+export const ORDER_STATUSES = [
+  "pending",
+  "confirmed",
+  "preparing",
+  "shipped",
+  "delivered",
+  "cancelled",
+] as const;
