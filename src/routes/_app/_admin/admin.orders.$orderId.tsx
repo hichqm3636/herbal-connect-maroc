@@ -368,6 +368,43 @@ function OrderDetails() {
         )}
       </Card>
 
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <h2 className="font-semibold text-sm text-muted-foreground">سجل تغييرات الحالة</h2>
+        </div>
+        {history.length === 0 ? (
+          <p className="text-xs text-muted-foreground italic">لا توجد تغييرات مسجلة بعد</p>
+        ) : (
+          <ol className="relative border-r border-border pr-4 space-y-4">
+            {history.map((h) => (
+              <li key={h.id} className="relative">
+                <span className="absolute -right-[21px] top-1.5 h-3 w-3 rounded-full bg-primary ring-4 ring-background" />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge
+                    variant={STATUS_VARIANTS[h.old_status]}
+                    className={`text-xs ${STATUS_CLASSES[h.old_status] ?? ""}`}
+                  >
+                    {STATUS_LABELS[h.old_status] ?? h.old_status}
+                  </Badge>
+                  <ArrowRight className="h-3 w-3 text-muted-foreground rotate-180" />
+                  <Badge
+                    variant={STATUS_VARIANTS[h.new_status]}
+                    className={`text-xs ${STATUS_CLASSES[h.new_status] ?? ""}`}
+                  >
+                    {STATUS_LABELS[h.new_status] ?? h.new_status}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formatDateTimeAr(h.created_at)}
+                  {h.admin_name ? ` — ${h.admin_name}` : ""}
+                </p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </Card>
+
       <div className="fixed bottom-0 inset-x-0 z-30 border-t bg-background/95 backdrop-blur p-3 shadow-lg md:static md:border-0 md:bg-transparent md:p-0 md:shadow-none">
         <div className="container mx-auto md:p-0">
           <p className="text-xs text-muted-foreground mb-2 hidden md:block">إجراءات الطلب</p>
