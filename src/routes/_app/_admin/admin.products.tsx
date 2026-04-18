@@ -69,6 +69,7 @@ interface Product {
   pharmacy_price: number | null;
   map_price: number | null;
   minimum_order: number;
+  pack_size: number;
   price_tiers: PriceTier[];
   low_stock_threshold: number;
 }
@@ -113,6 +114,7 @@ const empty: Omit<Product, "id" | "image_url"> = {
   pharmacy_price: null,
   map_price: null,
   minimum_order: 1,
+  pack_size: 1,
   price_tiers: [
     { min_qty: 6, price: 0 },
     { min_qty: 12, price: 0 },
@@ -258,6 +260,7 @@ function AdminProducts() {
       pharmacy_price: p.pharmacy_price,
       map_price: p.map_price,
       minimum_order: p.minimum_order ?? 1,
+      pack_size: p.pack_size ?? 1,
       low_stock_threshold: p.low_stock_threshold ?? 5,
       price_tiers:
         p.price_tiers && p.price_tiers.length > 0
@@ -466,6 +469,7 @@ function AdminProducts() {
       pharmacy_price: form.pharmacy_price,
       map_price: form.map_price,
       minimum_order: form.minimum_order,
+      pack_size: Math.max(1, form.pack_size || 1),
       price_tiers: form.price_tiers,
       low_stock_threshold: form.low_stock_threshold,
     };
@@ -1231,6 +1235,23 @@ function AdminProducts() {
                         })
                       }
                     />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">حجم العبوة (Pack size)</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={form.pack_size}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          pack_size: Math.max(1, Number(e.target.value) || 1),
+                        })
+                      }
+                    />
+                    <p className="text-[10px] text-muted-foreground">
+                      الكمية ستزيد بمضاعفات هذا الرقم في السلة
+                    </p>
                   </div>
                 </div>
 

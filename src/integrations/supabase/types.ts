@@ -302,6 +302,7 @@ export type Database = {
           map_price: number | null
           minimum_order: number
           name_ar: string
+          pack_size: number
           pharmacy_price: number | null
           points_per_unit: number
           price_mad: number
@@ -323,6 +324,7 @@ export type Database = {
           map_price?: number | null
           minimum_order?: number
           name_ar: string
+          pack_size?: number
           pharmacy_price?: number | null
           points_per_unit?: number
           price_mad: number
@@ -344,6 +346,7 @@ export type Database = {
           map_price?: number | null
           minimum_order?: number
           name_ar?: string
+          pack_size?: number
           pharmacy_price?: number | null
           points_per_unit?: number
           price_mad?: number
