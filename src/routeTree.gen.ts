@@ -13,7 +13,6 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiEnvcheckRouteImport } from './routes/api/_envcheck'
 import { Route as AppSuperAdminRouteImport } from './routes/_app/super-admin'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppQuickOrderRouteImport } from './routes/_app/quick-order'
@@ -49,11 +48,6 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiEnvcheckRoute = ApiEnvcheckRouteImport.update({
-  id: '/api/_envcheck',
-  path: '/api',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppSuperAdminRoute = AppSuperAdminRouteImport.update({
@@ -154,7 +148,6 @@ export interface FileRoutesByFullPath {
   '/quick-order': typeof AppQuickOrderRoute
   '/settings': typeof AppSettingsRoute
   '/super-admin': typeof AppSuperAdminRouteWithChildren
-  '/api': typeof ApiEnvcheckRoute
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/admin/activity': typeof AppAdminAdminActivityRoute
@@ -176,7 +169,6 @@ export interface FileRoutesByTo {
   '/quick-order': typeof AppQuickOrderRoute
   '/settings': typeof AppSettingsRoute
   '/super-admin': typeof AppSuperAdminRouteWithChildren
-  '/api': typeof ApiEnvcheckRoute
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/admin/activity': typeof AppAdminAdminActivityRoute
@@ -201,7 +193,6 @@ export interface FileRoutesById {
   '/_app/quick-order': typeof AppQuickOrderRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/super-admin': typeof AppSuperAdminRouteWithChildren
-  '/api/_envcheck': typeof ApiEnvcheckRoute
   '/_app/products/$productId': typeof AppProductsProductIdRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/_app/_admin/admin/activity': typeof AppAdminAdminActivityRoute
@@ -225,7 +216,6 @@ export interface FileRouteTypes {
     | '/quick-order'
     | '/settings'
     | '/super-admin'
-    | '/api'
     | '/products/$productId'
     | '/super-admin/companies'
     | '/admin/activity'
@@ -247,7 +237,6 @@ export interface FileRouteTypes {
     | '/quick-order'
     | '/settings'
     | '/super-admin'
-    | '/api'
     | '/products/$productId'
     | '/super-admin/companies'
     | '/admin/activity'
@@ -271,7 +260,6 @@ export interface FileRouteTypes {
     | '/_app/quick-order'
     | '/_app/settings'
     | '/_app/super-admin'
-    | '/api/_envcheck'
     | '/_app/products/$productId'
     | '/_app/super-admin/companies'
     | '/_app/_admin/admin/activity'
@@ -288,7 +276,6 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
-  ApiEnvcheckRoute: typeof ApiEnvcheckRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -319,13 +306,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/_envcheck': {
-      id: '/api/_envcheck'
-      path: '/api'
-      fullPath: '/api'
-      preLoaderRoute: typeof ApiEnvcheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/super-admin': {
@@ -527,7 +507,6 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
-  ApiEnvcheckRoute: ApiEnvcheckRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
