@@ -58,7 +58,7 @@ interface PricedLine {
 }
 
 export function CartSheet() {
-  const { items, isOpen, setOpen, updateQty, removeItem, clear } = useCart();
+  const { items, isOpen, setOpen, updateQty, setQty, removeItem, clear } = useCart();
   const { user, partnerType, companyId, pricingTierDiscount } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
@@ -192,33 +192,52 @@ export function CartSheet() {
                       </p>
                     )}
                     <div className="flex items-center gap-2 mt-2">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-7 w-7"
-                        onClick={() => updateQty(item.id, -1)}
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="text-sm font-medium w-6 text-center">
-                        {item.qty}
-                      </span>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-7 w-7"
-                        onClick={() => updateQty(item.id, 1)}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 mr-auto text-destructive"
-                        onClick={() => removeItem(item.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                      {(() => {
+                        const pack = Math.max(1, item.pack_size ?? 1);
+                        const minStep = Math.max(pack, item.minimum_order ?? 1);
+                        return (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="h-7 w-7"
+                              onClick={() => {
+                                const next = item.qty - pack;
+                                if (next < minStep) removeItem(item.id);
+                                else setQty(item.id, next);
+                              }}
+                              aria-label="إنقاص"
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="text-sm font-medium w-8 text-center tabular-nums">
+                              {item.qty}
+                            </span>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="h-7 w-7"
+                              onClick={() => updateQty(item.id, pack)}
+                              aria-label="زيادة"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                            {pack > 1 && (
+                              <span className="text-[10px] text-muted-foreground">
+                                ×{pack}
+                              </span>
+                            )}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 mr-auto text-destructive"
+                              onClick={() => removeItem(item.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

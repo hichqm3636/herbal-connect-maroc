@@ -165,6 +165,11 @@ function ProductsPage() {
                           {formatMAD(p.rrp_price)}
                         </span>
                       )}
+                      {p.pack_size > 1 && (
+                        <span className="text-[10px] text-muted-foreground mt-0.5">
+                          حجم العبوة: {p.pack_size} وحدة
+                        </span>
+                      )}
                       {p.minimum_order > 1 && (
                         <span className="text-[10px] text-muted-foreground mt-0.5">
                           الحد الأدنى: {p.minimum_order}
