@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Download, ExternalLink, Search, X } from "lucide-react";
+import { Download, ExternalLink, MapPin, Phone, Search, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,7 @@ interface OrderRow {
   companies: { display_name: string | null; name: string } | null;
   profiles: {
     full_name: string;
+    phone: string | null;
     city: string | null;
     territory_id: string | null;
     territories: { name: string } | null;
@@ -69,7 +70,7 @@ function AdminOrders() {
     let query = supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, distributor_id, company_id, notes, admin_notes, companies(display_name, name), profiles(full_name, city, territory_id, territories(name)), order_items(quantity, unit_price_mad, products(name_ar))",
+        "id, order_number, status, total_mad, points_earned, created_at, distributor_id, company_id, notes, admin_notes, companies(display_name, name), profiles(full_name, phone, city, territory_id, territories(name)), order_items(quantity, unit_price_mad, products(name_ar))",
       )
       .order("created_at", { ascending: false });
     if (isSuperAdmin) {
@@ -296,10 +297,29 @@ function AdminOrders() {
                     <p className="text-sm font-medium">
                       {o.profiles?.full_name || "—"}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {o.profiles?.territories?.name || o.profiles?.city || "—"} •{" "}
-                      {formatDateTimeAr(o.created_at)}
-                    </p>
+                    <div className="flex items-center gap-x-3 gap-y-1 flex-wrap text-xs text-muted-foreground">
+                      {o.profiles?.phone && (
+                        <a
+                          href={`tel:${o.profiles.phone}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 hover:text-foreground"
+                          dir="ltr"
+                        >
+                          <Phone className="h-3 w-3" />
+                          {o.profiles.phone}
+                        </a>
+                      )}
+                      {o.profiles?.city && (
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {o.profiles.city}
+                        </span>
+                      )}
+                      {o.profiles?.territories?.name && (
+                        <span>{o.profiles.territories.name}</span>
+                      )}
+                      <span>{formatDateTimeAr(o.created_at)}</span>
+                    </div>
                   </div>
                   <div className="text-left shrink-0">
                     <p className="font-bold">{formatMAD(o.total_mad)}</p>
