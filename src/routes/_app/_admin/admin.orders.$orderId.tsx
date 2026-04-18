@@ -15,6 +15,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -84,6 +94,7 @@ function OrderDetails() {
   const [editingNotes, setEditingNotes] = useState(false);
   const [draft, setDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   const load = async () => {
     if (!companyId) return;
@@ -335,7 +346,13 @@ function OrderDetails() {
                   size="sm"
                   className="shrink-0"
                   disabled={disabled}
-                  onClick={() => updateStatus(a.status)}
+                  onClick={() => {
+                    if (a.status === "cancelled") {
+                      setConfirmCancel(true);
+                    } else {
+                      updateStatus(a.status);
+                    }
+                  }}
                 >
                   {saving === a.status ? (
                     <Loader2 className="h-4 w-4 animate-spin ml-1" />
@@ -349,6 +366,27 @@ function OrderDetails() {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>إلغاء الطلب</AlertDialogTitle>
+            <AlertDialogDescription>هل أنت متأكد أنك تريد إلغاء هذا الطلب؟</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>تراجع</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setConfirmCancel(false);
+                updateStatus("cancelled");
+              }}
+            >
+              نعم، ألغِ الطلب
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

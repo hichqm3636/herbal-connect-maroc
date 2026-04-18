@@ -12,6 +12,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -65,6 +75,7 @@ function AdminOrders() {
   const [distributorFilter, setDistributorFilter] = useState<string>("all");
   const [territoryFilter, setTerritoryFilter] = useState<string>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
   const QUICK_ACTIONS: {
     status: "confirmed" | "preparing" | "delivered" | "cancelled";
@@ -373,7 +384,11 @@ function AdminOrders() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        quickUpdate(o.id, a.status);
+                        if (a.status === "cancelled") {
+                          setCancelTarget(o.id);
+                        } else {
+                          quickUpdate(o.id, a.status);
+                        }
                       }}
                     >
                       {isLoading ? (
@@ -390,6 +405,30 @@ function AdminOrders() {
           ))
         )}
       </div>
+
+      <AlertDialog open={cancelTarget !== null} onOpenChange={(open) => !open && setCancelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>إلغاء الطلب</AlertDialogTitle>
+            <AlertDialogDescription>هل أنت متأكد أنك تريد إلغاء هذا الطلب؟</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>تراجع</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (cancelTarget) {
+                  const id = cancelTarget;
+                  setCancelTarget(null);
+                  quickUpdate(id, "cancelled");
+                }
+              }}
+            >
+              نعم، ألغِ الطلب
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
