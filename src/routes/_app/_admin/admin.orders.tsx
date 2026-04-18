@@ -75,6 +75,7 @@ function AdminOrders() {
   const [distributorFilter, setDistributorFilter] = useState<string>("all");
   const [territoryFilter, setTerritoryFilter] = useState<string>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
   const QUICK_ACTIONS: {
     status: "confirmed" | "preparing" | "delivered" | "cancelled";
