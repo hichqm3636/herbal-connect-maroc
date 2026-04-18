@@ -40,6 +40,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
 import { deriveWholesaleFromRRP, deriveFromCost, parseTiers } from "@/lib/pricing";
 import { toast } from "sonner";
@@ -119,6 +120,7 @@ const empty: Omit<Product, "id" | "image_url"> = {
 };
 
 function AdminProducts() {
+  const { companyId } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<Omit<Product, "id" | "image_url">>(empty);
