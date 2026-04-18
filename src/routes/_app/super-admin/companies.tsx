@@ -14,6 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { createCompanyWithAdmin } from "@/server/companies";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/super-admin/companies")({
