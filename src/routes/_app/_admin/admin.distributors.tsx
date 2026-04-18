@@ -205,6 +205,18 @@ function AdminDistributors() {
     return m;
   }, [tiers]);
 
+  const summary = useMemo(() => {
+    let active = 0;
+    let inactive = 0;
+    let banned = 0;
+    for (const d of list) {
+      if (bannedMap[d.id]) banned++;
+      else if (d.is_active) active++;
+      else inactive++;
+    }
+    return { total: list.length, active, inactive, banned };
+  }, [list, bannedMap]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return list.filter((d) => {
@@ -218,6 +230,15 @@ function AdminDistributors() {
       return true;
     });
   }, [list, search, territoryFilter, statusFilter, bannedMap]);
+
+  const formatLastLogin = (iso: string | null | undefined): string => {
+    if (!iso) return "لم يسجل الدخول بعد";
+    try {
+      return formatDistanceToNow(new Date(iso), { addSuffix: true, locale: ar });
+    } catch {
+      return "—";
+    }
+  };
 
   const updateLevel = async (id: string, level: string) => {
     const { error } = await supabase
