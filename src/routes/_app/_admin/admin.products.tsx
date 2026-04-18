@@ -1421,7 +1421,7 @@ function AdminProducts() {
                 </span>
               </div>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 shrink-0">
               <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
                 <Pencil className="h-4 w-4" />
               </Button>
