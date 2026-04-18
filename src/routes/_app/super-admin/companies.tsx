@@ -149,29 +149,18 @@ function CreateCompanyDialog({
 
     setSubmitting(true);
     try {
-      // 1) Create the admin auth user via public signUp
-      const { data: created, error: createErr } = await supabase.auth.signUp({
-        email,
-        password: adminPassword,
-        options: {
-          emailRedirectTo: `${window.location.origin}/login`,
-          data: { full_name: adminFullName.trim() },
+      const result = await createCompanyWithAdmin({
+        data: {
+          name: slug,
+          display_name: displayName.trim() || name.trim(),
+          brand_color: brandColor,
+          admin_email: email,
+          admin_password: adminPassword,
+          admin_full_name: adminFullName.trim(),
         },
       });
-      if (createErr) throw createErr;
-      const newUserId = created.user?.id;
-      if (!newUserId) throw new Error("تعذر إنشاء حساب المسؤول");
 
-      // 2) Provision the company (RPC, super-admin only)
-      const { data: companyId, error: rpcErr } = await supabase.rpc("provision_company", {
-        _name: slug,
-        _display_name: displayName.trim() || name.trim(),
-        _admin_user_id: newUserId,
-        _brand_color: brandColor,
-      });
-      if (rpcErr) throw rpcErr;
-
-      toast.success(`تم إنشاء الشركة. معرّف: ${companyId}`);
+      toast.success(`تم إنشاء الشركة. معرّف: ${result.company_id}`);
       reset();
       onOpenChange(false);
       onCreated();
