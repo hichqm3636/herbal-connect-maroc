@@ -53,9 +53,9 @@ export const STATUS_CLASSES: Record<string, string> = {
   pending:
     "border-yellow-500/30 bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",
   confirmed:
-    "border-sky-500/30 bg-sky-500/15 text-sky-700 dark:text-sky-300",
-  preparing:
     "border-blue-500/30 bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  preparing:
+    "border-orange-500/30 bg-orange-500/15 text-orange-700 dark:text-orange-300",
   shipped:
     "border-purple-500/30 bg-purple-500/15 text-purple-700 dark:text-purple-300",
   delivered:
