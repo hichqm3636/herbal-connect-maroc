@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TerritorySelect } from "@/components/admin/TerritorySelect";
 import { PricingTierSelect } from "@/components/admin/PricingTierSelect";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Props {
   open: boolean;
@@ -32,6 +33,7 @@ const empty = {
 };
 
 export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props) {
+  const { companyId } = useAuth();
   const [form, setForm] = useState(empty);
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -62,7 +64,7 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
         return;
       }
       const { data, error } = await supabase.functions.invoke("create-distributor", {
-        body: { action: "create", ...form },
+        body: { action: "create", companyId, ...form },
       });
       if (error) {
         let msg = error.message;
