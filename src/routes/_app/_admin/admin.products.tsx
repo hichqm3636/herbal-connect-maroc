@@ -170,7 +170,12 @@ function AdminProducts() {
     setSyncing(true);
     setImportResult(null);
     try {
-      const result = await syncWoo();
+      if (!companyId) {
+        toast.error("لا توجد شركة مرتبطة بحسابك");
+        setSyncing(false);
+        return;
+      }
+      const result = await syncWoo({ data: { companyId } });
       if (!result.ok) {
         toast.error(result.message ?? "تعذر مزامنة المنتجات");
         setImportResult({
