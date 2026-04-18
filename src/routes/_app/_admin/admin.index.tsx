@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { formatMAD, formatDateAr, STATUS_LABELS, STATUS_VARIANTS } from "@/lib/format";
+import { formatMAD, formatDateAr, STATUS_LABELS, STATUS_VARIANTS, STATUS_CLASSES } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/_admin/admin/")({
   component: AdminDashboard,
@@ -81,7 +81,9 @@ function AdminDashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-semibold text-sm">{formatMAD(o.total_mad)}</span>
-                  <Badge variant={STATUS_VARIANTS[o.status]}>{STATUS_LABELS[o.status]}</Badge>
+                  <Badge variant={STATUS_VARIANTS[o.status]} className={STATUS_CLASSES[o.status]}>
+                    {STATUS_LABELS[o.status]}
+                  </Badge>
                 </div>
               </div>
             ))}

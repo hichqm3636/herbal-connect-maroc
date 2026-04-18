@@ -22,6 +22,7 @@ import {
   formatDateTimeAr,
   STATUS_LABELS,
   STATUS_VARIANTS,
+  STATUS_CLASSES,
 } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -191,7 +192,10 @@ function OrderDetails() {
             {formatDateTimeAr(order.created_at)}
           </p>
         </div>
-        <Badge variant={STATUS_VARIANTS[order.status]} className="text-sm py-1.5 px-3 self-start">
+        <Badge
+          variant={STATUS_VARIANTS[order.status]}
+          className={`text-sm py-1.5 px-3 self-start ${STATUS_CLASSES[order.status] ?? ""}`}
+        >
           {STATUS_LABELS[order.status]}
         </Badge>
       </div>

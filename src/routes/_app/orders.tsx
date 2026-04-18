@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { formatMAD, formatDateTimeAr, STATUS_LABELS, STATUS_VARIANTS } from "@/lib/format";
+import { formatMAD, formatDateTimeAr, STATUS_LABELS, STATUS_VARIANTS, STATUS_CLASSES } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/orders")({
   component: OrdersPage,
@@ -122,7 +122,9 @@ function OrdersPage() {
                       <p className="font-bold">{formatMAD(o.total_mad)}</p>
                       <p className="text-xs text-warning">+{o.points_earned} نقطة</p>
                     </div>
-                    <Badge variant={STATUS_VARIANTS[o.status]}>{STATUS_LABELS[o.status]}</Badge>
+                    <Badge variant={STATUS_VARIANTS[o.status]} className={STATUS_CLASSES[o.status]}>
+                      {STATUS_LABELS[o.status]}
+                    </Badge>
                   </div>
                 </CollapsibleTrigger>
                 <CollapsibleContent>

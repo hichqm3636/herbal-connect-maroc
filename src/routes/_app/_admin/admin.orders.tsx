@@ -19,6 +19,7 @@ import {
   formatDateTimeAr,
   STATUS_LABELS,
   STATUS_VARIANTS,
+  STATUS_CLASSES,
   ORDER_STATUSES,
 } from "@/lib/format";
 import { toast } from "sonner";
@@ -282,7 +283,9 @@ function AdminOrders() {
                   <div className="flex-1 min-w-0 space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold">{o.order_number}</p>
-                      <Badge variant={STATUS_VARIANTS[o.status]}>{STATUS_LABELS[o.status]}</Badge>
+                      <Badge variant={STATUS_VARIANTS[o.status]} className={STATUS_CLASSES[o.status]}>
+                        {STATUS_LABELS[o.status]}
+                      </Badge>
                       {isSuperAdmin && (
                         <Badge variant="outline" className="font-normal">
                           {o.companies?.display_name || o.companies?.name || "—"}
