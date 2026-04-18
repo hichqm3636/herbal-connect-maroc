@@ -29,6 +29,7 @@ interface Product {
   pharmacy_price: number | null;
   map_price: number | null;
   minimum_order: number;
+  pack_size: number;
   price_tiers: PriceTier[];
 }
 
@@ -65,7 +66,8 @@ function ProductsPage() {
   );
 
   const addToCart = (p: Product) => {
-    const qty = Math.max(1, p.minimum_order || 1);
+    const pack = Math.max(1, p.pack_size || 1);
+    const qty = Math.max(pack, p.minimum_order || 1);
     addItem(
       {
         id: p.id,
@@ -77,14 +79,17 @@ function ProductsPage() {
         pharmacy_price: p.pharmacy_price,
         map_price: p.map_price,
         minimum_order: p.minimum_order,
+        pack_size: p.pack_size,
         price_tiers: p.price_tiers,
       },
       qty,
     );
     toast.success(
-      qty === 1
-        ? "تمت إضافة المنتج إلى السلة"
-        : `تمت إضافة ${qty} وحدات (الحد الأدنى) إلى السلة`,
+      pack > 1
+        ? `تمت إضافة عبوة ${qty} وحدة إلى السلة`
+        : qty === 1
+          ? "تمت إضافة المنتج إلى السلة"
+          : `تمت إضافة ${qty} وحدات إلى السلة`,
     );
   };
 
