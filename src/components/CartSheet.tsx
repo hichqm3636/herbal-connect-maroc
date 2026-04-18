@@ -108,20 +108,23 @@ export function CartSheet() {
     setSubmitting(true);
     const points = Math.floor(total / 100);
     const trimmedNotes = notes.trim();
+    const orderPayload = {
+      distributor_id: user.id,
+      company_id: companyId,
+      total_mad: total,
+      points_earned: points,
+      status: "pending" as const,
+      notes: trimmedNotes ? trimmedNotes : null,
+    };
+    console.log("[placeOrder] inserting order", orderPayload);
     const { data: order, error } = await supabase
       .from("orders")
-      .insert({
-        distributor_id: user.id,
-        company_id: companyId,
-        total_mad: total,
-        points_earned: points,
-        status: "pending",
-        notes: trimmedNotes ? trimmedNotes : null,
-      } as never)
+      .insert(orderPayload as never)
       .select("id")
       .single();
     if (error || !order) {
-      toast.error("تعذر إنشاء الطلب");
+      console.error("[placeOrder] order insert failed", { error, payload: orderPayload });
+      toast.error(`تعذر إنشاء الطلب: ${error?.message ?? "خطأ غير معروف"}`);
       setSubmitting(false);
       return;
     }
@@ -133,7 +136,8 @@ export function CartSheet() {
     }));
     const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);
     if (itemsErr) {
-      toast.error("تعذر حفظ عناصر الطلب");
+      console.error("[placeOrder] order_items insert failed", { itemsErr, orderItems });
+      toast.error(`تعذر حفظ عناصر الطلب: ${itemsErr.message}`);
       setSubmitting(false);
       return;
     }
