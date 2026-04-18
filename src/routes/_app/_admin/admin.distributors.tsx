@@ -452,6 +452,49 @@ function AdminDistributors() {
         </div>
       </div>
 
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="إجمالي الموزعين" value={String(summary.total)} icon={Users} accent="primary" />
+        <StatCard label="مفعلون" value={String(summary.active)} icon={ShieldCheck} accent="success" />
+        <StatCard label="معطلون" value={String(summary.inactive)} icon={ShieldOff} accent="muted" />
+        <StatCard label="محظورون" value={String(summary.banned)} icon={Ban} accent="warning" />
+      </div>
+
+      {/* Quick filter pills */}
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            { key: "all", label: "الكل", count: summary.total },
+            { key: "active", label: "مفعلون", count: summary.active },
+            { key: "disabled", label: "معطلون", count: summary.inactive },
+            { key: "banned", label: "محظورون", count: summary.banned },
+          ] as const
+        ).map((pill) => {
+          const isActive = statusFilter === pill.key;
+          return (
+            <Button
+              key={pill.key}
+              type="button"
+              size="sm"
+              variant={isActive ? "default" : "outline"}
+              className={cn("gap-1.5", isActive && "shadow-soft")}
+              onClick={() => setStatusFilter(pill.key)}
+            >
+              <span>{pill.label}</span>
+              <Badge
+                variant="secondary"
+                className={cn(
+                  "px-1.5 py-0 text-[10px]",
+                  isActive && "bg-primary-foreground/20 text-primary-foreground",
+                )}
+              >
+                {pill.count}
+              </Badge>
+            </Button>
+          );
+        })}
+      </div>
+
       {/* Filters */}
       <Card className="p-3 shadow-soft">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
