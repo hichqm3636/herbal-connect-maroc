@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Loader2, User, KeyRound, Camera, Trash2 } from "lucide-react";
+import { Loader2, User, KeyRound, Camera, Trash2, Mail } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -267,6 +267,8 @@ function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ChangeEmailCard currentEmail={email} />
 
       <Card className="shadow-soft">
         <CardHeader>
