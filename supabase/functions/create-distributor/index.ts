@@ -21,6 +21,8 @@ interface Payload {
   territoryId?: string;
   pricingTierId?: string | null;
   initialPoints?: number;
+  // super admin impersonation: explicit company target
+  companyId?: string;
   // reset_password / set_active
   userId?: string;
   newPassword?: string;
