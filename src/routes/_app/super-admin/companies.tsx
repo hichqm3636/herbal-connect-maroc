@@ -14,7 +14,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { createCompanyWithAdmin } from "@/server/companies";
 import { toast } from "sonner";
 
 
