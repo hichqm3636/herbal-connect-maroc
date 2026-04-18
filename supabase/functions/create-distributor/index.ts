@@ -162,13 +162,17 @@ Deno.serve(async (req) => {
 
     const { error: updErr } = await admin
       .from("profiles")
-      .update({
+      .upsert({
+        id: created.user.id,
+        full_name: fullName,
+        phone,
+        city: territory.name,
         territory_id: territoryId,
         company_id: callerCompanyId,
         pricing_tier_id: pricingTierId,
+        is_active: true,
         ...(initialPoints > 0 ? { loyalty_points: initialPoints } : {}),
-      })
-      .eq("id", created.user.id);
+      }, { onConflict: "id" });
     if (updErr) {
       await admin.auth.admin.deleteUser(created.user.id);
       return bad(updErr.message, 400);
