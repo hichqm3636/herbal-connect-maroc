@@ -144,10 +144,28 @@ function AdminDistributors() {
         .eq("company_id", companyId)
         .order("discount_percentage", { ascending: true }),
     ]);
-    setList((profs ?? []) as Distributor[]);
+    const profiles = (profs ?? []) as Distributor[];
+    setList(profiles);
     setTerritories((terrs ?? []) as TerritoryLite[]);
     setTiers((pTiers ?? []) as PricingTierLite[]);
     setLoading(false);
+
+    // Fetch banned status from auth.users via edge function
+    if (profiles.length > 0) {
+      try {
+        const { data } = await supabase.functions.invoke("create-distributor", {
+          body: { action: "get_user_status", userIds: profiles.map((p) => p.id) },
+        });
+        const map: Record<string, boolean> = {};
+        const statuses = (data?.statuses ?? {}) as Record<string, { banned: boolean }>;
+        for (const id of Object.keys(statuses)) map[id] = !!statuses[id].banned;
+        setBannedMap(map);
+      } catch {
+        /* ignore — banned info is best-effort */
+      }
+    } else {
+      setBannedMap({});
+    }
   };
 
   useEffect(() => {
@@ -172,11 +190,13 @@ function AdminDistributors() {
       if (q && !(d.full_name?.toLowerCase().includes(q) || d.phone?.toLowerCase().includes(q)))
         return false;
       if (territoryFilter !== "all" && d.territory_id !== territoryFilter) return false;
-      if (statusFilter === "active" && !d.is_active) return false;
-      if (statusFilter === "disabled" && d.is_active) return false;
+      const isBanned = !!bannedMap[d.id];
+      if (statusFilter === "active" && (!d.is_active || isBanned)) return false;
+      if (statusFilter === "disabled" && (d.is_active || isBanned)) return false;
+      if (statusFilter === "banned" && !isBanned) return false;
       return true;
     });
-  }, [list, search, territoryFilter, statusFilter]);
+  }, [list, search, territoryFilter, statusFilter, bannedMap]);
 
   const updateLevel = async (id: string, level: string) => {
     const { error } = await supabase
