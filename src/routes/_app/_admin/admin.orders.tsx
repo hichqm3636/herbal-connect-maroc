@@ -49,6 +49,7 @@ interface OrderRow {
   companies: { display_name: string | null; name: string } | null;
   profiles: {
     full_name: string;
+    phone: string | null;
     city: string | null;
     territory_id: string | null;
     territories: { name: string } | null;
