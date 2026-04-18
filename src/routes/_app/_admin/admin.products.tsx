@@ -1042,31 +1042,96 @@ function AdminProducts() {
 
               {/* === Wholesale pricing engine === */}
               <div className="space-y-3 border rounded-md p-3 bg-muted/30">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <Label className="font-semibold">التسعير بالجملة</Label>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      const rrp = form.rrp_price ?? 0;
-                      if (!rrp || rrp <= 0) {
-                        toast.error("أدخل السعر الموصى به (RRP) أولاً");
-                        return;
-                      }
-                      const d = deriveWholesaleFromRRP(rrp);
-                      setForm({
-                        ...form,
-                        pharmacy_price: d.pharmacy_price,
-                        map_price: d.map_price,
-                        price_tiers: d.price_tiers,
-                      });
-                      toast.success("تم احتساب الأسعار من RRP");
-                    }}
-                  >
-                    احتساب تلقائي من RRP
-                  </Button>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      onClick={() => {
+                        setCostInput("");
+                        setCostDialogOpen(true);
+                      }}
+                    >
+                      تسعير تلقائي (من التكلفة)
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        const rrp = form.rrp_price ?? 0;
+                        if (!rrp || rrp <= 0) {
+                          toast.error("أدخل السعر الموصى به (RRP) أولاً");
+                          return;
+                        }
+                        const d = deriveWholesaleFromRRP(rrp);
+                        setForm({
+                          ...form,
+                          pharmacy_price: d.pharmacy_price,
+                          map_price: d.map_price,
+                          price_tiers: d.price_tiers,
+                        });
+                        toast.success("تم احتساب الأسعار من RRP");
+                      }}
+                    >
+                      احتساب من RRP
+                    </Button>
+                  </div>
                 </div>
+
+                <Dialog open={costDialogOpen} onOpenChange={setCostDialogOpen}>
+                  <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                      <DialogTitle>تسعير تلقائي من التكلفة</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">تكلفة المنتج (MAD)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          autoFocus
+                          value={costInput}
+                          onChange={(e) => setCostInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              applyCostPricing();
+                            }
+                          }}
+                          placeholder="مثال: 50"
+                        />
+                      </div>
+                      {Number(costInput) > 0 && (() => {
+                        const d = deriveFromCost(Number(costInput));
+                        return (
+                          <div className="text-xs space-y-1 bg-muted/50 rounded p-2">
+                            <div className="flex justify-between"><span>سعر الموزع:</span><span className="font-medium">{formatMAD(d.distributor_price)}</span></div>
+                            <div className="flex justify-between"><span>سعر الصيدلية:</span><span className="font-medium">{formatMAD(d.pharmacy_price)}</span></div>
+                            <div className="flex justify-between"><span>RRP:</span><span className="font-medium">{formatMAD(d.rrp_price)}</span></div>
+                            <div className="flex justify-between"><span>MAP:</span><span className="font-medium">{formatMAD(d.map_price)}</span></div>
+                            <div className="border-t pt-1 mt-1 space-y-0.5">
+                              {d.price_tiers.map((t) => (
+                                <div key={t.min_qty} className="flex justify-between">
+                                  <span>{t.min_qty}+ وحدة:</span>
+                                  <span className="font-medium">{formatMAD(t.price)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                    <DialogFooter>
+                      <Button type="button" variant="ghost" onClick={() => setCostDialogOpen(false)}>إلغاء</Button>
+                      <Button type="button" onClick={applyCostPricing}>تطبيق</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
