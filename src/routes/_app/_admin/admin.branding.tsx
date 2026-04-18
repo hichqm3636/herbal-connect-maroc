@@ -114,9 +114,9 @@ function BrandingPage() {
           <CardDescription>PNG/JPG، حتى 2MB</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col items-center gap-4 py-2">
             <div
-              className="h-20 w-20 rounded-xl flex items-center justify-center text-white text-2xl font-bold overflow-hidden shrink-0"
+              className="h-32 w-32 rounded-2xl flex items-center justify-center text-white text-4xl font-bold overflow-hidden shrink-0 shadow-soft"
               style={{ backgroundColor: brandColor }}
             >
               {logoUrl ? (
@@ -125,17 +125,16 @@ function BrandingPage() {
                 (displayName || "C")[0].toUpperCase()
               )}
             </div>
-            <div className="flex flex-col gap-2">
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={onLogoChange}
-              />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={onLogoChange}
+            />
+            <div className="flex flex-col items-center gap-1">
               <Button
                 type="button"
-                variant="outline"
                 size="sm"
                 onClick={onPickLogo}
                 disabled={uploading}
@@ -145,17 +144,15 @@ function BrandingPage() {
                 {logoUrl ? "تغيير الشعار" : "رفع شعار"}
               </Button>
               {logoUrl && (
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
                   onClick={removeLogo}
                   disabled={uploading}
-                  className="gap-2 text-destructive hover:text-destructive"
+                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3 w-3" />
                   حذف الشعار
-                </Button>
+                </button>
               )}
             </div>
           </div>
