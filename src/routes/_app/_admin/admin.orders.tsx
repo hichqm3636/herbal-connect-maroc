@@ -384,7 +384,11 @@ function AdminOrders() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        quickUpdate(o.id, a.status);
+                        if (a.status === "cancelled") {
+                          setCancelTarget(o.id);
+                        } else {
+                          quickUpdate(o.id, a.status);
+                        }
                       }}
                     >
                       {isLoading ? (
