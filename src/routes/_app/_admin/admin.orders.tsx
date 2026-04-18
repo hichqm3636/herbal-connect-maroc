@@ -54,7 +54,7 @@ interface OrderRow {
 }
 
 function AdminOrders() {
-  const { companyId } = useAuth();
+  const { companyId, isSuperAdmin, user } = useAuth();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -62,20 +62,30 @@ function AdminOrders() {
   const [territoryFilter, setTerritoryFilter] = useState<string>("all");
 
   const load = async () => {
-    if (!companyId) return;
-    const { data } = await supabase
+    if (!user) return;
+    let query = supabase
       .from("orders")
       .select(
         "id, order_number, status, total_mad, points_earned, created_at, distributor_id, notes, admin_notes, profiles(full_name, city, territory_id, territories(name)), order_items(quantity, unit_price_mad, products(name_ar))",
       )
-      .eq("company_id", companyId)
       .order("created_at", { ascending: false });
+    if (companyId) {
+      query = query.eq("company_id", companyId);
+    } else if (!isSuperAdmin) {
+      // Non-super admin without a company: nothing to show
+      setOrders([]);
+      return;
+    }
+    const { data, error } = await query;
+    if (error) {
+      console.error("[admin.orders] load failed", error);
+    }
     setOrders((data as unknown as OrderRow[]) ?? []);
   };
 
   useEffect(() => {
     load();
-  }, [companyId]);
+  }, [companyId, isSuperAdmin, user?.id]);
 
   const distributors = useMemo(() => {
     const map = new Map<string, string>();
