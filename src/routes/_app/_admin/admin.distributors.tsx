@@ -716,17 +716,47 @@ function AdminDistributors() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Confirm ban */}
+      <AlertDialog open={!!confirmBan} onOpenChange={(o) => !o && setConfirmBan(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>حظر حساب {confirmBan?.full_name}؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم منع المستخدم نهائيًا من تسجيل الدخول حتى يتم رفع الحظر يدويًا. لا يؤثر هذا
+              على بياناته أو طلباته.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel disabled={banning}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={banning}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmBan) toggleBanned(confirmBan, true);
+              }}
+            >
+              {banning && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+              حظر
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Bulk confirm */}
       <AlertDialog open={!!bulkConfirm} onOpenChange={(o) => !o && setBulkConfirm(null)}>
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {bulkConfirm === "disable" ? "تعطيل" : "تفعيل"} {selected.size} موزع؟
+              {bulkConfirm === "disable" && `تعطيل ${selected.size} موزع؟`}
+              {bulkConfirm === "enable" && `تفعيل ${selected.size} موزع؟`}
+              {bulkConfirm === "ban" && `حظر ${selected.size} موزع؟`}
+              {bulkConfirm === "unban" && `رفع الحظر عن ${selected.size} موزع؟`}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {bulkConfirm === "disable"
-                ? "سيتم تعطيل دخول جميع الموزعين المحددين. يمكن إعادة تفعيلهم لاحقًا."
-                : "سيتم إعادة تفعيل دخول جميع الموزعين المحددين."}
+              {bulkConfirm === "disable" && "سيتم تعطيل جميع الموزعين المحددين. يمكن إعادة تفعيلهم لاحقًا."}
+              {bulkConfirm === "enable" && "سيتم إعادة تفعيل جميع الموزعين المحددين."}
+              {bulkConfirm === "ban" && "سيتم منع جميع الموزعين المحددين من تسجيل الدخول حتى رفع الحظر."}
+              {bulkConfirm === "unban" && "سيتم رفع الحظر عن جميع الموزعين المحددين."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
@@ -735,7 +765,11 @@ function AdminDistributors() {
               disabled={bulkBusy}
               onClick={(e) => {
                 e.preventDefault();
-                runBulkSetActive(bulkConfirm === "enable");
+                if (bulkConfirm === "enable" || bulkConfirm === "disable") {
+                  runBulkSetActive(bulkConfirm === "enable");
+                } else if (bulkConfirm === "ban" || bulkConfirm === "unban") {
+                  runBulkSetBanned(bulkConfirm === "ban");
+                }
               }}
             >
               {bulkBusy && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
