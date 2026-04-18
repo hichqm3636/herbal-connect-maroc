@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Loader2, User, KeyRound, Camera, Trash2 } from "lucide-react";
+import { Loader2, User, KeyRound, Camera, Trash2, Mail } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -247,7 +247,7 @@ function SettingsPage() {
           <div className="space-y-2">
             <Label htmlFor="email">البريد الإلكتروني</Label>
             <Input id="email" value={email} disabled dir="ltr" />
-            <p className="text-xs text-muted-foreground">لا يمكن تغيير البريد الإلكتروني من هنا</p>
+            <p className="text-xs text-muted-foreground">لتغيير البريد الإلكتروني، استخدم القسم أدناه</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone">رقم الهاتف</Label>
@@ -267,6 +267,8 @@ function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ChangeEmailCard currentEmail={email} />
 
       <Card className="shadow-soft">
         <CardHeader>
@@ -325,5 +327,83 @@ function SettingsPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function ChangeEmailCard({ currentEmail }: { currentEmail: string }) {
+  const [newEmail, setNewEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [pending, setPending] = useState(false);
+
+  const submit = async () => {
+    const trimmed = newEmail.trim().toLowerCase();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error("يرجى إدخال بريد إلكتروني صحيح");
+      return;
+    }
+    if (trimmed === currentEmail.toLowerCase()) {
+      toast.error("هذا هو بريدك الحالي");
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.auth.updateUser(
+      { email: trimmed },
+      { emailRedirectTo: `${window.location.origin}/settings` },
+    );
+    setSubmitting(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setPending(true);
+    setNewEmail("");
+    toast.success("تم إرسال رابط التأكيد إلى البريدين القديم والجديد");
+  };
+
+  return (
+    <Card className="shadow-soft">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Mail className="h-5 w-5 text-primary" />
+          تغيير البريد الإلكتروني
+        </CardTitle>
+        <CardDescription>
+          سنرسل رابط تأكيد إلى بريدك الحالي والجديد. لن يتم تغيير البريد إلا بعد
+          تأكيد كلا الرابطين.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label>البريد الحالي</Label>
+          <Input value={currentEmail} disabled dir="ltr" />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="newEmail">البريد الإلكتروني الجديد</Label>
+          <Input
+            id="newEmail"
+            type="email"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            dir="ltr"
+            placeholder="name@example.com"
+            autoComplete="email"
+            maxLength={255}
+          />
+        </div>
+        {pending && (
+          <p className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3 text-xs text-muted-foreground">
+            تحقق من صندوق الوارد لكلا البريدين وانقر على رابط التأكيد لإكمال
+            التغيير. قد ينتهي صلاحية الرابط بعد فترة، ويمكنك إعادة الإرسال في أي
+            وقت.
+          </p>
+        )}
+        <div className="flex justify-end">
+          <Button onClick={submit} disabled={submitting || !newEmail.trim()}>
+            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+            إرسال رابط التأكيد
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
