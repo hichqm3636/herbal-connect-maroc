@@ -1540,7 +1540,7 @@ function AdminProducts() {
                 {p.stock === 0 ? (
                   <Badge variant="destructive" className="shrink-0">نفد المخزون</Badge>
                 ) : p.stock <= (p.low_stock_threshold ?? 5) ? (
-                  <Badge variant="destructive" className="shrink-0 bg-amber-500 hover:bg-amber-500">مخزون منخفض</Badge>
+                  <Badge variant="outline" className="shrink-0 border-destructive text-destructive">مخزون منخفض</Badge>
                 ) : null}
                 {p.category && <Badge variant="outline" className="shrink-0 hidden sm:inline-flex">{p.category}</Badge>}
               </div>
