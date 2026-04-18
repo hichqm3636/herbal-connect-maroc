@@ -623,6 +623,10 @@ function AdminDistributors() {
                     <p className="text-xs text-muted-foreground mt-0.5 truncate" dir="ltr">
                       {d.phone || "—"}
                     </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>آخر دخول:&nbsp;{formatLastLogin(statusMap[d.id]?.last_sign_in_at)}</span>
+                    </p>
                     <div className="mt-1 flex flex-wrap gap-1">
                       <Badge variant="outline" className="gap-1 text-[10px] border-primary/40 text-primary">
                         <MapPin className="h-3 w-3" />
