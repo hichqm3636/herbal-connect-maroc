@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Award,
+  Ban,
   Download,
   Loader2,
   MapPin,
@@ -10,6 +11,7 @@ import {
   Search,
   ShieldOff,
   ShieldCheck,
+  UserCheck,
   UserPlus,
   KeyRound,
 } from "lucide-react";
@@ -104,11 +106,16 @@ function AdminDistributors() {
   const [pointsSaving, setPointsSaving] = useState(false);
   const [confirmDisable, setConfirmDisable] = useState<Distributor | null>(null);
   const [disabling, setDisabling] = useState(false);
+  const [confirmBan, setConfirmBan] = useState<Distributor | null>(null);
+  const [banning, setBanning] = useState(false);
+
+  // ban status keyed by user id (true = banned in auth.users)
+  const [bannedMap, setBannedMap] = useState<Record<string, boolean>>({});
 
   // bulk selection
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
-  const [bulkConfirm, setBulkConfirm] = useState<"enable" | "disable" | null>(null);
+  const [bulkConfirm, setBulkConfirm] = useState<"enable" | "disable" | "ban" | "unban" | null>(null);
 
   // filters
   const [search, setSearch] = useState("");
@@ -137,10 +144,28 @@ function AdminDistributors() {
         .eq("company_id", companyId)
         .order("discount_percentage", { ascending: true }),
     ]);
-    setList((profs ?? []) as Distributor[]);
+    const profiles = (profs ?? []) as Distributor[];
+    setList(profiles);
     setTerritories((terrs ?? []) as TerritoryLite[]);
     setTiers((pTiers ?? []) as PricingTierLite[]);
     setLoading(false);
+
+    // Fetch banned status from auth.users via edge function
+    if (profiles.length > 0) {
+      try {
+        const { data } = await supabase.functions.invoke("create-distributor", {
+          body: { action: "get_user_status", userIds: profiles.map((p) => p.id) },
+        });
+        const map: Record<string, boolean> = {};
+        const statuses = (data?.statuses ?? {}) as Record<string, { banned: boolean }>;
+        for (const id of Object.keys(statuses)) map[id] = !!statuses[id].banned;
+        setBannedMap(map);
+      } catch {
+        /* ignore — banned info is best-effort */
+      }
+    } else {
+      setBannedMap({});
+    }
   };
 
   useEffect(() => {
@@ -165,11 +190,13 @@ function AdminDistributors() {
       if (q && !(d.full_name?.toLowerCase().includes(q) || d.phone?.toLowerCase().includes(q)))
         return false;
       if (territoryFilter !== "all" && d.territory_id !== territoryFilter) return false;
-      if (statusFilter === "active" && !d.is_active) return false;
-      if (statusFilter === "disabled" && d.is_active) return false;
+      const isBanned = !!bannedMap[d.id];
+      if (statusFilter === "active" && (!d.is_active || isBanned)) return false;
+      if (statusFilter === "disabled" && (d.is_active || isBanned)) return false;
+      if (statusFilter === "banned" && !isBanned) return false;
       return true;
     });
-  }, [list, search, territoryFilter, statusFilter]);
+  }, [list, search, territoryFilter, statusFilter, bannedMap]);
 
   const updateLevel = async (id: string, level: string) => {
     const { error } = await supabase
@@ -244,6 +271,34 @@ function AdminDistributors() {
     }
   };
 
+  const toggleBanned = async (target: Distributor, makeBanned: boolean) => {
+    setBanning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-distributor", {
+        body: { action: "set_banned", userId: target.id, isBanned: makeBanned },
+      });
+      if (error) {
+        let msg = error.message;
+        try {
+          const ctx = (error as { context?: Response }).context;
+          if (ctx) {
+            const j = await ctx.clone().json();
+            if (j?.error) msg = j.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
+      toast.success(makeBanned ? "تم حظر الحساب" : "تم رفع الحظر");
+      setConfirmBan(null);
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "فشلت العملية");
+    } finally {
+      setBanning(false);
+    }
+  };
+
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -266,6 +321,26 @@ function AdminDistributors() {
     for (const id of selected) {
       const { data, error } = await supabase.functions.invoke("create-distributor", {
         body: { action: "set_active", userId: id, isActive: makeActive },
+      });
+      if (error || data?.error) fail++;
+      else ok++;
+    }
+    setBulkBusy(false);
+    setBulkConfirm(null);
+    setSelected(new Set());
+    if (fail === 0) toast.success(`تمت العملية على ${ok} موزع`);
+    else toast.error(`نجاح: ${ok} — فشل: ${fail}`);
+    load();
+  };
+
+  const runBulkSetBanned = async (makeBanned: boolean) => {
+    if (selected.size === 0) return;
+    setBulkBusy(true);
+    let ok = 0;
+    let fail = 0;
+    for (const id of selected) {
+      const { data, error } = await supabase.functions.invoke("create-distributor", {
+        body: { action: "set_banned", userId: id, isBanned: makeBanned },
       });
       if (error || data?.error) fail++;
       else ok++;
@@ -366,6 +441,7 @@ function AdminDistributors() {
               <SelectItem value="all">كل الحالات</SelectItem>
               <SelectItem value="active">مفعل</SelectItem>
               <SelectItem value="disabled">معطل</SelectItem>
+              <SelectItem value="banned">محظور</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -390,9 +466,17 @@ function AdminDistributors() {
               <ShieldCheck className="h-4 w-4" />
               تفعيل
             </Button>
-            <Button size="sm" variant="destructive" className="gap-1" onClick={() => setBulkConfirm("disable")} disabled={bulkBusy}>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setBulkConfirm("disable")} disabled={bulkBusy}>
               <ShieldOff className="h-4 w-4" />
               تعطيل
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setBulkConfirm("unban")} disabled={bulkBusy}>
+              <UserCheck className="h-4 w-4" />
+              رفع الحظر
+            </Button>
+            <Button size="sm" variant="destructive" className="gap-1" onClick={() => setBulkConfirm("ban")} disabled={bulkBusy}>
+              <Ban className="h-4 w-4" />
+              حظر
             </Button>
           </div>
         </Card>
@@ -434,8 +518,21 @@ function AdminDistributors() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold truncate">{d.full_name || "—"}</p>
                       <Badge variant="secondary" className="text-[10px]">موزع</Badge>
-                      {!d.is_active && (
-                        <Badge variant="destructive" className="text-[10px]">معطل</Badge>
+                      {bannedMap[d.id] ? (
+                        <Badge variant="destructive" className="text-[10px] gap-1">
+                          <Ban className="h-3 w-3" />
+                          محظور
+                        </Badge>
+                      ) : d.is_active ? (
+                        <Badge className="text-[10px] gap-1 bg-success/15 text-success-foreground border border-success/30 hover:bg-success/20">
+                          <ShieldCheck className="h-3 w-3" />
+                          مفعل
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] gap-1 border-muted-foreground/40 text-muted-foreground">
+                          <ShieldOff className="h-3 w-3" />
+                          معطل
+                        </Badge>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5 truncate" dir="ltr">
@@ -507,6 +604,20 @@ function AdminDistributors() {
                         <DropdownMenuItem onClick={() => toggleActive(d, true)}>
                           <ShieldCheck className="ml-2 h-4 w-4" />
                           تفعيل الحساب
+                        </DropdownMenuItem>
+                      )}
+                      {bannedMap[d.id] ? (
+                        <DropdownMenuItem onClick={() => toggleBanned(d, false)}>
+                          <UserCheck className="ml-2 h-4 w-4" />
+                          رفع الحظر
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => setConfirmBan(d)}
+                        >
+                          <Ban className="ml-2 h-4 w-4" />
+                          حظر الحساب
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
@@ -605,17 +716,47 @@ function AdminDistributors() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Confirm ban */}
+      <AlertDialog open={!!confirmBan} onOpenChange={(o) => !o && setConfirmBan(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>حظر حساب {confirmBan?.full_name}؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم منع المستخدم نهائيًا من تسجيل الدخول حتى يتم رفع الحظر يدويًا. لا يؤثر هذا
+              على بياناته أو طلباته.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel disabled={banning}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={banning}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmBan) toggleBanned(confirmBan, true);
+              }}
+            >
+              {banning && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+              حظر
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Bulk confirm */}
       <AlertDialog open={!!bulkConfirm} onOpenChange={(o) => !o && setBulkConfirm(null)}>
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {bulkConfirm === "disable" ? "تعطيل" : "تفعيل"} {selected.size} موزع؟
+              {bulkConfirm === "disable" && `تعطيل ${selected.size} موزع؟`}
+              {bulkConfirm === "enable" && `تفعيل ${selected.size} موزع؟`}
+              {bulkConfirm === "ban" && `حظر ${selected.size} موزع؟`}
+              {bulkConfirm === "unban" && `رفع الحظر عن ${selected.size} موزع؟`}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {bulkConfirm === "disable"
-                ? "سيتم تعطيل دخول جميع الموزعين المحددين. يمكن إعادة تفعيلهم لاحقًا."
-                : "سيتم إعادة تفعيل دخول جميع الموزعين المحددين."}
+              {bulkConfirm === "disable" && "سيتم تعطيل جميع الموزعين المحددين. يمكن إعادة تفعيلهم لاحقًا."}
+              {bulkConfirm === "enable" && "سيتم إعادة تفعيل جميع الموزعين المحددين."}
+              {bulkConfirm === "ban" && "سيتم منع جميع الموزعين المحددين من تسجيل الدخول حتى رفع الحظر."}
+              {bulkConfirm === "unban" && "سيتم رفع الحظر عن جميع الموزعين المحددين."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
@@ -624,7 +765,11 @@ function AdminDistributors() {
               disabled={bulkBusy}
               onClick={(e) => {
                 e.preventDefault();
-                runBulkSetActive(bulkConfirm === "enable");
+                if (bulkConfirm === "enable" || bulkConfirm === "disable") {
+                  runBulkSetActive(bulkConfirm === "enable");
+                } else if (bulkConfirm === "ban" || bulkConfirm === "unban") {
+                  runBulkSetBanned(bulkConfirm === "ban");
+                }
               }}
             >
               {bulkBusy && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
