@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { SkuAutocomplete } from "@/components/quick-order/SkuAutocomplete";
+import { TemplatesMenu } from "@/components/quick-order/TemplatesMenu";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
@@ -232,10 +233,26 @@ function QuickOrderPage() {
             <CardTitle className="text-lg">المنتجات</CardTitle>
             <CardDescription>أدخل رمز المنتج والكمية لكل سطر</CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={addRow}>
-            <Plus className="ml-2 h-4 w-4" />
-            إضافة سطر
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <TemplatesMenu
+              currentItems={rows.map((r) => ({ sku: r.sku, qty: r.qty }))}
+              onLoad={(items) => {
+                if (items.length === 0) return;
+                setRows(
+                  items.map((it) => ({
+                    id: crypto.randomUUID(),
+                    sku: it.sku,
+                    qty: it.qty > 0 ? it.qty : 1,
+                  })),
+                );
+                setResolved(null);
+              }}
+            />
+            <Button variant="outline" size="sm" onClick={addRow}>
+              <Plus className="ml-2 h-4 w-4" />
+              إضافة سطر
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="hidden gap-3 px-1 text-xs font-medium text-muted-foreground md:grid md:grid-cols-[1fr_120px_40px]">
