@@ -161,7 +161,7 @@ export function TemplatesMenu({ currentItems, onLoad }: Props) {
             قوالبي
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" dir="rtl" className="w-72">
+        <DropdownMenuContent align="end" className="w-72">
           <DropdownMenuLabel>القوالب المحفوظة</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {loading && (
