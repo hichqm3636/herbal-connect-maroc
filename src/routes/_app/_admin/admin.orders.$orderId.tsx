@@ -94,6 +94,7 @@ function OrderDetails() {
   const [editingNotes, setEditingNotes] = useState(false);
   const [draft, setDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   const load = async () => {
     if (!companyId) return;
