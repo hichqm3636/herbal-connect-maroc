@@ -110,13 +110,19 @@ function AdminDistributors() {
   const [territories, setTerritories] = useState<TerritoryLite[]>([]);
 
   const load = async () => {
+    if (!companyId) return;
     setLoading(true);
     const [{ data: profs }, { data: terrs }] = await Promise.all([
       supabase
         .from("profiles")
         .select("id, full_name, phone, city, territory_id, level, loyalty_points, monthly_sales, is_active")
+        .eq("company_id", companyId)
         .order("created_at", { ascending: false }),
-      supabase.from("territories").select("id, name").order("name"),
+      supabase
+        .from("territories")
+        .select("id, name")
+        .eq("company_id", companyId)
+        .order("name"),
     ]);
     setList((profs ?? []) as Distributor[]);
     setTerritories((terrs ?? []) as TerritoryLite[]);
@@ -125,7 +131,7 @@ function AdminDistributors() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [companyId]);
 
   const territoryById = useMemo(() => {
     const m = new Map<string, string>();
