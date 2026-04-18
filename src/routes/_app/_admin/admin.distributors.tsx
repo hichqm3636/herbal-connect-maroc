@@ -83,7 +83,7 @@ interface TerritoryLite {
 const LEVELS = ["distributor", "senior_consultant", "success_builder", "supervisor", "world_team"];
 
 function AdminDistributors() {
-  const { user } = useAuth();
+  const { user, companyId } = useAuth();
   const [list, setList] = useState<Distributor[]>([]);
   const [loading, setLoading] = useState(true);
 
