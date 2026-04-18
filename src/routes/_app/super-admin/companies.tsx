@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { createCompanyWithAdmin } from "@/server/companies";
 import { toast } from "sonner";
 
+
 export const Route = createFileRoute("/_app/super-admin/companies")({
   component: CompaniesPage,
 });
@@ -187,7 +188,7 @@ function CreateCompanyDialog({
         <DialogHeader>
           <DialogTitle>إنشاء شركة جديدة</DialogTitle>
           <DialogDescription>
-            ستُنشأ الشركة مع حساب مسؤول (Admin). سيُطلب من المسؤول تأكيد بريده قبل تسجيل الدخول.
+            ستُنشأ الشركة مع حساب مسؤول (Admin) مفعّل مباشرةً ويستطيع تسجيل الدخول فوراً.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
