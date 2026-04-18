@@ -55,8 +55,9 @@ export const createCompanyWithAdmin = createServerFn({ method: "POST" })
     const newUserId = created.user?.id;
     if (!newUserId) throw new Error("تعذر إنشاء حساب المسؤول");
 
-    // 2-4) Provision company, attach profile + admin role (RPC handles all atomically)
-    const { data: companyId, error: rpcErr } = await supabaseAdmin.rpc("provision_company", {
+    // 2-4) Provision company via the user's authenticated client so auth.uid() resolves
+    // for the is_super_admin check inside provision_company.
+    const { data: companyId, error: rpcErr } = await context.supabase.rpc("provision_company", {
       _name: data.name,
       _display_name: data.display_name,
       _admin_user_id: newUserId,
