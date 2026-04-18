@@ -844,7 +844,7 @@ function AdminProducts() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">إدارة المنتجات</h1>
           <p className="text-sm text-muted-foreground mt-1">{products.length} منتج</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap [&>button]:flex-1 sm:[&>button]:flex-none [&>button]:min-w-0">
+        <div className="grid grid-cols-2 sm:flex sm:items-center sm:flex-wrap gap-2 [&>button]:min-w-0 [&>button]:w-full sm:[&>button]:w-auto">
           <input
             ref={csvInputRef}
             type="file"
@@ -1421,7 +1421,7 @@ function AdminProducts() {
                 </span>
               </div>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 shrink-0">
               <Button size="icon" variant="ghost" onClick={() => openEdit(p)}>
                 <Pencil className="h-4 w-4" />
               </Button>
