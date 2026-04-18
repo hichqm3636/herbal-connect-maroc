@@ -212,6 +212,41 @@ export type Database = {
           },
         ]
       }
+      pricing_tiers: {
+        Row: {
+          company_id: string
+          created_at: string
+          discount_percentage: number
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          discount_percentage?: number
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          discount_percentage?: number
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_tiers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_images: {
         Row: {
           created_at: string
@@ -332,6 +367,7 @@ export type Database = {
           monthly_sales: number
           partner_type: Database["public"]["Enums"]["partner_type"]
           phone: string | null
+          pricing_tier_id: string | null
           territory_id: string
           updated_at: string
         }
@@ -348,6 +384,7 @@ export type Database = {
           monthly_sales?: number
           partner_type?: Database["public"]["Enums"]["partner_type"]
           phone?: string | null
+          pricing_tier_id?: string | null
           territory_id: string
           updated_at?: string
         }
@@ -364,6 +401,7 @@ export type Database = {
           monthly_sales?: number
           partner_type?: Database["public"]["Enums"]["partner_type"]
           phone?: string | null
+          pricing_tier_id?: string | null
           territory_id?: string
           updated_at?: string
         }
@@ -373,6 +411,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_pricing_tier_id_fkey"
+            columns: ["pricing_tier_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_tiers"
             referencedColumns: ["id"]
           },
           {
