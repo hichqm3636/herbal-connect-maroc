@@ -64,6 +64,34 @@ function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [distributorFilter, setDistributorFilter] = useState<string>("all");
   const [territoryFilter, setTerritoryFilter] = useState<string>("all");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const QUICK_ACTIONS: {
+    status: "confirmed" | "preparing" | "delivered" | "cancelled";
+    label: string;
+    icon: typeof CheckCircle2;
+    variant: "default" | "outline" | "destructive";
+  }[] = [
+    { status: "confirmed", label: "موافقة", icon: CheckCircle2, variant: "default" },
+    { status: "preparing", label: "تحضير", icon: Package, variant: "outline" },
+    { status: "delivered", label: "تم التسليم", icon: PackageCheck, variant: "outline" },
+    { status: "cancelled", label: "إلغاء", icon: XCircle, variant: "destructive" },
+  ];
+
+  const quickUpdate = async (
+    orderId: string,
+    status: "confirmed" | "preparing" | "delivered" | "cancelled",
+  ) => {
+    setUpdatingId(orderId);
+    const { error } = await supabase.from("orders").update({ status }).eq("id", orderId);
+    setUpdatingId(null);
+    if (error) {
+      toast.error("تعذر تحديث الحالة");
+      return;
+    }
+    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
+    toast.success(`تم تحديث الحالة: ${STATUS_LABELS[status]}`);
+  };
 
   const load = async () => {
     if (!user) return;
