@@ -1405,10 +1405,10 @@ function AdminProducts() {
               className="h-14 w-14 sm:h-16 sm:w-16 rounded-md object-cover bg-muted shrink-0"
             />
             <div className="flex-1 min-w-0 overflow-hidden">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-semibold truncate">{p.name_ar}</h3>
-                {!p.active && <Badge variant="secondary">معطّل</Badge>}
-                {p.category && <Badge variant="outline">{p.category}</Badge>}
+              <div className="flex items-center gap-2 min-w-0">
+                <h3 className="font-semibold truncate min-w-0 flex-1">{p.name_ar}</h3>
+                {!p.active && <Badge variant="secondary" className="shrink-0">معطّل</Badge>}
+                {p.category && <Badge variant="outline" className="shrink-0 hidden sm:inline-flex">{p.category}</Badge>}
               </div>
               <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
                 {p.description_ar}
