@@ -42,8 +42,10 @@ interface OrderRow {
   points_earned: number;
   created_at: string;
   distributor_id: string;
+  company_id: string;
   notes: string | null;
   admin_notes: string | null;
+  companies: { display_name: string | null; name: string } | null;
   profiles: {
     full_name: string;
     city: string | null;
@@ -66,7 +68,7 @@ function AdminOrders() {
     let query = supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, distributor_id, notes, admin_notes, profiles(full_name, city, territory_id, territories(name)), order_items(quantity, unit_price_mad, products(name_ar))",
+        "id, order_number, status, total_mad, points_earned, created_at, distributor_id, company_id, notes, admin_notes, companies(display_name, name), profiles(full_name, city, territory_id, territories(name)), order_items(quantity, unit_price_mad, products(name_ar))",
       )
       .order("created_at", { ascending: false });
     if (isSuperAdmin) {
@@ -277,19 +279,26 @@ function AdminOrders() {
             >
               <Card className="p-4 shadow-soft hover:bg-muted/30 transition-colors">
                 <div className="flex flex-col md:flex-row md:items-center gap-3">
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold">{o.order_number}</p>
                       <Badge variant={STATUS_VARIANTS[o.status]}>{STATUS_LABELS[o.status]}</Badge>
+                      {isSuperAdmin && (
+                        <Badge variant="outline" className="font-normal">
+                          {o.companies?.display_name || o.companies?.name || "—"}
+                        </Badge>
+                      )}
                       <ExternalLink className="h-3 w-3 text-muted-foreground" />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {o.profiles?.full_name || "—"} •{" "}
+                    <p className="text-sm font-medium">
+                      {o.profiles?.full_name || "—"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
                       {o.profiles?.territories?.name || o.profiles?.city || "—"} •{" "}
                       {formatDateTimeAr(o.created_at)}
                     </p>
                   </div>
-                  <div className="text-left">
+                  <div className="text-left shrink-0">
                     <p className="font-bold">{formatMAD(o.total_mad)}</p>
                     <p className="text-xs text-warning">+{o.points_earned} نقطة</p>
                   </div>
