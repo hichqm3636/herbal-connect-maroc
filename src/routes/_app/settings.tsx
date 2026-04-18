@@ -185,9 +185,56 @@ function SettingsPage() {
             <User className="h-5 w-5 text-primary" />
             معلومات الحساب
           </CardTitle>
-          <CardDescription>قم بتحديث اسمك ورقم هاتفك</CardDescription>
+          <CardDescription>قم بتحديث صورتك واسمك ورقم هاتفك</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-20 w-20">
+              <AvatarImage src={avatarUrl ?? undefined} alt={fullName || email} />
+              <AvatarFallback className="text-lg">
+                {(fullName || email)[0]?.toUpperCase() ?? "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={onAvatarChange}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onPickAvatar}
+                disabled={uploadingAvatar}
+                className="gap-2"
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
+                {avatarUrl ? "تغيير الصورة" : "رفع صورة"}
+              </Button>
+              {avatarUrl && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={removeAvatar}
+                  disabled={uploadingAvatar}
+                  className="gap-2 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  حذف الصورة
+                </Button>
+              )}
+              <p className="text-xs text-muted-foreground">PNG/JPG، حتى 5MB</p>
+            </div>
+          </div>
+          <Separator />
           <div className="space-y-2">
             <Label htmlFor="fullName">الاسم الكامل</Label>
             <Input
