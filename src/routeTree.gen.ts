@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppQuickOrderRouteImport } from './routes/_app/quick-order'
 import { Route as AppProductsRouteImport } from './routes/_app/products'
 import { Route as AppOrdersRouteImport } from './routes/_app/orders'
 import { Route as AppLoyaltyRouteImport } from './routes/_app/loyalty'
@@ -43,6 +44,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppQuickOrderRoute = AppQuickOrderRouteImport.update({
+  id: '/quick-order',
+  path: '/quick-order',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProductsRoute = AppProductsRouteImport.update({
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/loyalty': typeof AppLoyaltyRoute
   '/orders': typeof AppOrdersRoute
   '/products': typeof AppProductsRouteWithChildren
+  '/quick-order': typeof AppQuickOrderRoute
   '/settings': typeof AppSettingsRoute
   '/products/$productId': typeof AppProductsProductIdRoute
   '/admin/activity': typeof AppAdminAdminActivityRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/loyalty': typeof AppLoyaltyRoute
   '/orders': typeof AppOrdersRoute
   '/products': typeof AppProductsRouteWithChildren
+  '/quick-order': typeof AppQuickOrderRoute
   '/settings': typeof AppSettingsRoute
   '/products/$productId': typeof AppProductsProductIdRoute
   '/admin/activity': typeof AppAdminAdminActivityRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/_app/loyalty': typeof AppLoyaltyRoute
   '/_app/orders': typeof AppOrdersRoute
   '/_app/products': typeof AppProductsRouteWithChildren
+  '/_app/quick-order': typeof AppQuickOrderRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/products/$productId': typeof AppProductsProductIdRoute
   '/_app/_admin/admin/activity': typeof AppAdminAdminActivityRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/loyalty'
     | '/orders'
     | '/products'
+    | '/quick-order'
     | '/settings'
     | '/products/$productId'
     | '/admin/activity'
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
     | '/loyalty'
     | '/orders'
     | '/products'
+    | '/quick-order'
     | '/settings'
     | '/products/$productId'
     | '/admin/activity'
@@ -201,6 +212,7 @@ export interface FileRouteTypes {
     | '/_app/loyalty'
     | '/_app/orders'
     | '/_app/products'
+    | '/_app/quick-order'
     | '/_app/settings'
     | '/_app/products/$productId'
     | '/_app/_admin/admin/activity'
@@ -245,6 +257,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/quick-order': {
+      id: '/_app/quick-order'
+      path: '/quick-order'
+      fullPath: '/quick-order'
+      preLoaderRoute: typeof AppQuickOrderRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/products': {
@@ -374,6 +393,7 @@ interface AppRouteChildren {
   AppLoyaltyRoute: typeof AppLoyaltyRoute
   AppOrdersRoute: typeof AppOrdersRoute
   AppProductsRoute: typeof AppProductsRouteWithChildren
+  AppQuickOrderRoute: typeof AppQuickOrderRoute
   AppSettingsRoute: typeof AppSettingsRoute
 }
 
@@ -383,6 +403,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLoyaltyRoute: AppLoyaltyRoute,
   AppOrdersRoute: AppOrdersRoute,
   AppProductsRoute: AppProductsRouteWithChildren,
+  AppQuickOrderRoute: AppQuickOrderRoute,
   AppSettingsRoute: AppSettingsRoute,
 }
 

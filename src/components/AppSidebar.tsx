@@ -12,6 +12,7 @@ import {
   LogOut,
   Leaf,
   Settings,
+  Zap,
 } from "lucide-react";
 import {
   Sidebar,
@@ -32,6 +33,7 @@ import { Button } from "@/components/ui/button";
 const distributorItems = [
   { title: "لوحة التحكم", url: "/dashboard", icon: LayoutDashboard },
   { title: "المنتجات", url: "/products", icon: ShoppingBag },
+  { title: "طلب سريع", url: "/quick-order", icon: Zap },
   { title: "طلباتي", url: "/orders", icon: ClipboardList },
   { title: "نقاط الولاء", url: "/loyalty", icon: Award },
   { title: "الإعدادات", url: "/settings", icon: Settings },
