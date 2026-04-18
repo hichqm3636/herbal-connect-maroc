@@ -114,8 +114,40 @@ function OrderDetails() {
     if (error || !data) {
       toast.error("تعذر تحميل الطلب");
       setOrder(null);
+      setHistory([]);
+      setLoading(false);
+      return;
+    }
+    setOrder(data as unknown as OrderDetail);
+
+    const { data: logs } = await supabase
+      .from("admin_activity_log")
+      .select("id, admin_id, metadata, created_at")
+      .eq("company_id", companyId)
+      .eq("action", "order_status_change")
+      .filter("metadata->>order_id", "eq", orderId)
+      .order("created_at", { ascending: true });
+
+    if (logs && logs.length > 0) {
+      const adminIds = Array.from(new Set(logs.map((l) => l.admin_id).filter(Boolean)));
+      const { data: admins } = adminIds.length
+        ? await supabase.from("profiles").select("id, full_name").in("id", adminIds)
+        : { data: [] as { id: string; full_name: string }[] };
+      const nameMap = new Map((admins ?? []).map((a) => [a.id, a.full_name]));
+      setHistory(
+        logs.map((l) => {
+          const meta = (l.metadata ?? {}) as Record<string, unknown>;
+          return {
+            id: l.id,
+            created_at: l.created_at,
+            old_status: String(meta.old_status ?? ""),
+            new_status: String(meta.new_status ?? ""),
+            admin_name: nameMap.get(l.admin_id) ?? null,
+          };
+        }),
+      );
     } else {
-      setOrder(data as unknown as OrderDetail);
+      setHistory([]);
     }
     setLoading(false);
   };
