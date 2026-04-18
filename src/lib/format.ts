@@ -32,7 +32,7 @@ export const LEVEL_LABELS: Record<string, string> = {
 
 export const STATUS_LABELS: Record<string, string> = {
   pending: "قيد الانتظار",
-  confirmed: "مؤكد",
+  confirmed: "تمت الموافقة",
   preparing: "قيد التحضير",
   shipped: "تم الشحن",
   delivered: "تم التسليم",
