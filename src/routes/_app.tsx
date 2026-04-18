@@ -36,8 +36,8 @@ function AppLayout() {
         <div className="flex min-h-screen w-full bg-background" dir="rtl">
           <AppSidebar />
           <SidebarInset className="flex flex-col">
-            <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b bg-background/80 backdrop-blur px-4">
-              <SidebarTrigger />
+            <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/95 backdrop-blur px-4">
+              <SidebarTrigger className="text-foreground hover:text-primary shrink-0" />
               <Separator orientation="vertical" className="h-5" />
               <div className="flex flex-col leading-tight min-w-0">
                 <span className="text-sm font-bold truncate">Herbialife Partner Hub</span>
