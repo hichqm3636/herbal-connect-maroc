@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, ChevronDown, ClipboardList, Copy } from "lucide-react";
+import { Check, ChevronDown, ClipboardList, Copy, Loader2, Repeat2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useRepeatOrder } from "@/hooks/useRepeatOrder";
 import {
   Collapsible,
   CollapsibleContent,
@@ -38,8 +40,18 @@ interface Order {
 
 function OrdersPage() {
   const { user } = useAuth();
+  const { repeat, loading: repeating } = useRepeatOrder();
   const [orders, setOrders] = useState<Order[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [repeatingId, setRepeatingId] = useState<string | null>(null);
+
+  const handleRepeat = async (e: React.MouseEvent, orderId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setRepeatingId(orderId);
+    await repeat(orderId, { replaceCart: true });
+    setRepeatingId(null);
+  };
 
   const copyOrderNumber = async (e: React.MouseEvent, orderNumber: string, orderId: string) => {
     e.stopPropagation();
@@ -115,6 +127,21 @@ function OrdersPage() {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="border-t divide-y">
+                    <div className="p-3 bg-muted/30 flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => handleRepeat(e, o.id)}
+                        disabled={repeating && repeatingId === o.id}
+                      >
+                        {repeating && repeatingId === o.id ? (
+                          <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Repeat2 className="ml-2 h-4 w-4" />
+                        )}
+                        إعادة هذا الطلب
+                      </Button>
+                    </div>
                     {o.order_items.map((item) => (
                       <div key={item.id} className="flex items-center gap-3 p-3">
                         <img

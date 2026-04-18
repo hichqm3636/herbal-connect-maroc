@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Wallet, ShoppingCart, Award, TrendingUp } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { StatCard } from "@/components/StatCard";
+import { RepeatLastOrderCard } from "@/components/RepeatLastOrderCard";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -157,6 +158,8 @@ function Dashboard() {
           accent="muted"
         />
       </div>
+
+      <RepeatLastOrderCard />
 
       <Card className="p-5 shadow-soft">
         <div className="flex items-center justify-between mb-4">
