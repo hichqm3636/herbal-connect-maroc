@@ -147,11 +147,7 @@ function CreateCompanyDialog({
 
     setSubmitting(true);
     try {
-      // 1) Create the admin auth user
-      const { data: signUp, error: suErr } = await supabase.auth.admin
-        ? { data: null, error: { message: "use signUp" } as { message: string } }
-        : { data: null, error: { message: "n/a" } };
-      // We can't use admin from client; use signUp instead
+      // 1) Create the admin auth user via public signUp
       const { data: created, error: createErr } = await supabase.auth.signUp({
         email,
         password: adminPassword,
@@ -177,9 +173,6 @@ function CreateCompanyDialog({
       reset();
       onOpenChange(false);
       onCreated();
-      // Suppress unused warnings
-      void signUp;
-      void suErr;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "تعذر إنشاء الشركة");
     } finally {
