@@ -9,7 +9,12 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type Action = "create" | "reset_password" | "set_active";
+type Action =
+  | "create"
+  | "reset_password"
+  | "set_active"
+  | "set_banned"
+  | "get_user_status";
 
 interface Payload {
   action?: Action;
@@ -25,8 +30,10 @@ interface Payload {
   companyId?: string;
   // reset_password / set_active
   userId?: string;
+  userIds?: string[];
   newPassword?: string;
   isActive?: boolean;
+  isBanned?: boolean;
 }
 
 function json(body: unknown, status = 200) {
