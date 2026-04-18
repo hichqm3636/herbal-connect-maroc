@@ -298,6 +298,7 @@ export type Database = {
           description_ar: string
           id: string
           image_url: string | null
+          low_stock_threshold: number
           map_price: number | null
           minimum_order: number
           name_ar: string
@@ -318,6 +319,7 @@ export type Database = {
           description_ar?: string
           id?: string
           image_url?: string | null
+          low_stock_threshold?: number
           map_price?: number | null
           minimum_order?: number
           name_ar: string
@@ -338,6 +340,7 @@ export type Database = {
           description_ar?: string
           id?: string
           image_url?: string | null
+          low_stock_threshold?: number
           map_price?: number | null
           minimum_order?: number
           name_ar?: string

@@ -70,6 +70,7 @@ interface Product {
   map_price: number | null;
   minimum_order: number;
   price_tiers: PriceTier[];
+  low_stock_threshold: number;
 }
 
 interface CsvPreviewRow {
@@ -117,6 +118,7 @@ const empty: Omit<Product, "id" | "image_url"> = {
     { min_qty: 12, price: 0 },
     { min_qty: 24, price: 0 },
   ],
+  low_stock_threshold: 5,
 };
 
 function AdminProducts() {
@@ -256,6 +258,7 @@ function AdminProducts() {
       pharmacy_price: p.pharmacy_price,
       map_price: p.map_price,
       minimum_order: p.minimum_order ?? 1,
+      low_stock_threshold: p.low_stock_threshold ?? 5,
       price_tiers:
         p.price_tiers && p.price_tiers.length > 0
           ? p.price_tiers
@@ -464,6 +467,7 @@ function AdminProducts() {
       map_price: form.map_price,
       minimum_order: form.minimum_order,
       price_tiers: form.price_tiers,
+      low_stock_threshold: form.low_stock_threshold,
     };
     const { error } = editing
       ? await supabase.from("products").update(payload as never).eq("id", editing.id)
@@ -1043,6 +1047,22 @@ function AdminProducts() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
+                  <Label>حد التنبيه للمخزون المنخفض</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={form.low_stock_threshold}
+                    onChange={(e) =>
+                      setForm({ ...form, low_stock_threshold: Number(e.target.value) })
+                    }
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    سيظهر تنبيه عندما يصبح المخزون أقل من أو يساوي هذا الرقم
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
                   <Label>التصنيف</Label>
                   <Input
                     value={form.category ?? ""}
@@ -1517,6 +1537,11 @@ function AdminProducts() {
               <div className="flex items-center gap-2 min-w-0">
                 <h3 className="font-semibold truncate min-w-0 flex-1">{p.name_ar}</h3>
                 {!p.active && <Badge variant="secondary" className="shrink-0">معطّل</Badge>}
+                {p.stock === 0 ? (
+                  <Badge variant="destructive" className="shrink-0">نفد المخزون</Badge>
+                ) : p.stock <= (p.low_stock_threshold ?? 5) ? (
+                  <Badge variant="outline" className="shrink-0 border-destructive text-destructive">مخزون منخفض</Badge>
+                ) : null}
                 {p.category && <Badge variant="outline" className="shrink-0 hidden sm:inline-flex">{p.category}</Badge>}
               </div>
               <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
