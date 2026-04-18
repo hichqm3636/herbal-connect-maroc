@@ -67,7 +67,7 @@ const ACTIONS: {
   icon: typeof CheckCircle2;
   variant: "default" | "outline" | "destructive";
 }[] = [
-  { status: "confirmed", label: "تأكيد الطلب", icon: CheckCircle2, variant: "default" },
+  { status: "confirmed", label: "الموافقة على الطلب", icon: CheckCircle2, variant: "default" },
   { status: "preparing", label: "قيد التحضير", icon: Package, variant: "outline" },
   { status: "shipped", label: "تم الشحن", icon: Truck, variant: "outline" },
   { status: "delivered", label: "تم التسليم", icon: PackageCheck, variant: "default" },
