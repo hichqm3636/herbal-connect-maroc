@@ -13,6 +13,7 @@ export interface CartProduct {
   pharmacy_price?: number | null;
   map_price?: number | null;
   minimum_order?: number;
+  pack_size?: number;
   price_tiers?: PriceTier[];
 }
 
