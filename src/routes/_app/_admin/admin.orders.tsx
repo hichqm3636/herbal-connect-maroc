@@ -1,11 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Download, Loader2, Pencil, Search, X } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { Download, ExternalLink, Search, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -15,7 +14,13 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { formatMAD, formatDateTimeAr, STATUS_LABELS, STATUS_VARIANTS } from "@/lib/format";
+import {
+  formatMAD,
+  formatDateTimeAr,
+  STATUS_LABELS,
+  STATUS_VARIANTS,
+  ORDER_STATUSES,
+} from "@/lib/format";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/_admin/admin/orders")({
@@ -25,6 +30,7 @@ export const Route = createFileRoute("/_app/_admin/admin/orders")({
 
 interface OrderItem {
   quantity: number;
+  unit_price_mad: number;
   products: { name_ar: string } | null;
 }
 
@@ -38,27 +44,30 @@ interface OrderRow {
   distributor_id: string;
   notes: string | null;
   admin_notes: string | null;
-  profiles: { full_name: string; city: string | null } | null;
+  profiles: {
+    full_name: string;
+    city: string | null;
+    territory_id: string | null;
+    territories: { name: string } | null;
+  } | null;
   order_items: OrderItem[];
 }
-
-const STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 
 function AdminOrders() {
   const { companyId } = useAuth();
   const [orders, setOrders] = useState<OrderRow[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
-  const [appendMode, setAppendMode] = useState(false);
-  const [savingId, setSavingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [distributorFilter, setDistributorFilter] = useState<string>("all");
+  const [territoryFilter, setTerritoryFilter] = useState<string>("all");
 
   const load = async () => {
     if (!companyId) return;
     const { data } = await supabase
       .from("orders")
-      .select("id, order_number, status, total_mad, points_earned, created_at, distributor_id, notes, admin_notes, profiles(full_name, city), order_items(quantity, products(name_ar))")
+      .select(
+        "id, order_number, status, total_mad, points_earned, created_at, distributor_id, notes, admin_notes, profiles(full_name, city, territory_id, territories(name)), order_items(quantity, unit_price_mad, products(name_ar))",
+      )
       .eq("company_id", companyId)
       .order("created_at", { ascending: false });
     setOrders((data as unknown as OrderRow[]) ?? []);
@@ -68,66 +77,39 @@ function AdminOrders() {
     load();
   }, [companyId]);
 
-  const updateStatus = async (id: string, status: string) => {
-    const { error } = await supabase
-      .from("orders")
-      .update({ status: status as "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" })
-      .eq("id", id);
-    if (error) {
-      toast.error("تعذر التحديث");
-      return;
-    }
-    toast.success("تم تحديث حالة الطلب");
-    load();
-  };
-
-  const startEdit = (o: OrderRow, append: boolean) => {
-    setEditingId(o.id);
-    setAppendMode(append);
-    setDraft(append ? "" : (o.admin_notes ?? ""));
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setDraft("");
-    setAppendMode(false);
-  };
-
-  const saveAdminNotes = async (o: OrderRow) => {
-    const trimmed = draft.trim();
-    let next: string | null;
-    if (appendMode) {
-      if (!trimmed) {
-        cancelEdit();
-        return;
+  const distributors = useMemo(() => {
+    const map = new Map<string, string>();
+    orders.forEach((o) => {
+      if (o.distributor_id && o.profiles?.full_name) {
+        map.set(o.distributor_id, o.profiles.full_name);
       }
-      const stamp = new Date().toLocaleString("ar-MA");
-      const entry = `[${stamp}] ${trimmed}`;
-      next = o.admin_notes ? `${o.admin_notes}\n${entry}` : entry;
-    } else {
-      next = trimmed ? trimmed : null;
-    }
-    setSavingId(o.id);
-    const { error } = await supabase.from("orders").update({ admin_notes: next }).eq("id", o.id);
-    setSavingId(null);
-    if (error) {
-      toast.error("تعذر حفظ الملاحظة");
-      return;
-    }
-    toast.success("تم حفظ الملاحظة الداخلية");
-    cancelEdit();
-    load();
-  };
+    });
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1], "ar"));
+  }, [orders]);
+
+  const territories = useMemo(() => {
+    const map = new Map<string, string>();
+    orders.forEach((o) => {
+      const tid = o.profiles?.territory_id;
+      const tname = o.profiles?.territories?.name;
+      if (tid && tname) map.set(tid, tname);
+    });
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1], "ar"));
+  }, [orders]);
 
   const q = search.trim().toLowerCase();
   const filtered = orders.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
+    if (distributorFilter !== "all" && o.distributor_id !== distributorFilter) return false;
+    if (territoryFilter !== "all" && o.profiles?.territory_id !== territoryFilter) return false;
     if (!q) return true;
     const name = o.profiles?.full_name?.toLowerCase() ?? "";
     const city = o.profiles?.city?.toLowerCase() ?? "";
     const num = o.order_number?.toLowerCase() ?? "";
-    return name.includes(q) || city.includes(q) || num.includes(q) || o.id.toLowerCase().startsWith(q);
+    return name.includes(q) || city.includes(q) || num.includes(q);
   });
+
+  const totalValue = filtered.reduce((s, o) => s + Number(o.total_mad ?? 0), 0);
 
   const exportCsv = () => {
     if (filtered.length === 0) {
@@ -140,12 +122,11 @@ function AdminOrders() {
       "Created At",
       "Status",
       "Distributor",
+      "Territory",
       "City",
       "Total (MAD)",
       "Points Earned",
       "Items",
-      "Delivery Notes",
-      "Admin Notes",
     ];
     const escape = (v: unknown) => {
       const s = v == null ? "" : String(v);
@@ -157,18 +138,16 @@ function AdminOrders() {
       new Date(o.created_at).toISOString(),
       o.status,
       o.profiles?.full_name ?? "",
+      o.profiles?.territories?.name ?? "",
       o.profiles?.city ?? "",
       o.total_mad,
       o.points_earned,
       (o.order_items ?? [])
         .map((it) => `${it.products?.name_ar ?? "?"} x${it.quantity}`)
         .join("; "),
-      o.notes ?? "",
-      o.admin_notes ?? "",
     ]);
     const csv =
-      "\uFEFF" +
-      [headers, ...rows].map((r) => r.map(escape).join(",")).join("\r\n");
+      "\uFEFF" + [headers, ...rows].map((r) => r.map(escape).join(",")).join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -202,13 +181,20 @@ function AdminOrders() {
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1">
+      <Card className="p-4 bg-primary/5 border-primary/20">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">القيمة الإجمالية للطلبات المعروضة</span>
+          <span className="text-2xl font-bold text-primary">{formatMAD(totalValue)}</span>
+        </div>
+      </Card>
+
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="relative sm:col-span-2 lg:col-span-1">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث برقم الطلب، اسم الموزع، أو المدينة…"
+            placeholder="بحث برقم الطلب أو الاسم…"
             className="pr-9 pl-9"
           />
           {search && (
@@ -223,14 +209,40 @@ function AdminOrders() {
           )}
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue />
+          <SelectTrigger>
+            <SelectValue placeholder="الحالة" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">كل الحالات</SelectItem>
-            {STATUSES.map((s) => (
+            {ORDER_STATUSES.map((s) => (
               <SelectItem key={s} value={s}>
                 {STATUS_LABELS[s]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={distributorFilter} onValueChange={setDistributorFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="الموزع" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">كل الموزعين</SelectItem>
+            {distributors.map(([id, name]) => (
+              <SelectItem key={id} value={id}>
+                {name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={territoryFilter} onValueChange={setTerritoryFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="المنطقة" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">كل المناطق</SelectItem>
+            {territories.map(([id, name]) => (
+              <SelectItem key={id} value={id}>
+                {name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -242,98 +254,37 @@ function AdminOrders() {
           <Card className="p-8 text-center text-sm text-muted-foreground">
             لا توجد طلبات مطابقة
           </Card>
-        ) : filtered.map((o) => (
-          <Card key={o.id} className="p-4 shadow-soft">
-            <div className="flex flex-col md:flex-row md:items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold">{o.order_number}</p>
-                  <Badge variant={STATUS_VARIANTS[o.status]}>{STATUS_LABELS[o.status]}</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {o.profiles?.full_name || "—"} • {o.profiles?.city || "—"} • {formatDateTimeAr(o.created_at)}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="text-left">
-                  <p className="font-bold">{formatMAD(o.total_mad)}</p>
-                  <p className="text-xs text-warning">+{o.points_earned} نقطة</p>
-                </div>
-                <Select value={o.status} onValueChange={(v) => updateStatus(o.id, v)}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUSES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {STATUS_LABELS[s]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            {o.notes && (
-              <div className="mt-3 pt-3 border-t">
-                <p className="text-xs font-medium text-muted-foreground mb-1">ملاحظات التوصيل</p>
-                <p className="text-sm whitespace-pre-wrap">{o.notes}</p>
-              </div>
-            )}
-            <div className="mt-3 pt-3 border-t bg-muted/30 -mx-4 -mb-4 px-4 pb-4 rounded-b-lg">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-medium text-muted-foreground">
-                  ملاحظات داخلية (للإدارة فقط)
-                </p>
-                {editingId !== o.id && (
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs"
-                      onClick={() => startEdit(o, true)}
-                    >
-                      إضافة
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs"
-                      onClick={() => startEdit(o, false)}
-                    >
-                      <Pencil className="h-3 w-3 mr-1" />
-                      تعديل
-                    </Button>
+        ) : (
+          filtered.map((o) => (
+            <Link
+              key={o.id}
+              to="/admin/orders/$orderId"
+              params={{ orderId: o.id }}
+              className="block"
+            >
+              <Card className="p-4 shadow-soft hover:bg-muted/30 transition-colors">
+                <div className="flex flex-col md:flex-row md:items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold">{o.order_number}</p>
+                      <Badge variant={STATUS_VARIANTS[o.status]}>{STATUS_LABELS[o.status]}</Badge>
+                      <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {o.profiles?.full_name || "—"} •{" "}
+                      {o.profiles?.territories?.name || o.profiles?.city || "—"} •{" "}
+                      {formatDateTimeAr(o.created_at)}
+                    </p>
                   </div>
-                )}
-              </div>
-              {editingId === o.id ? (
-                <div className="space-y-2">
-                  <Textarea
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    placeholder={appendMode ? "إضافة ملاحظة جديدة…" : "تعديل الملاحظات الداخلية…"}
-                    rows={3}
-                    maxLength={1000}
-                    autoFocus
-                  />
-                  <div className="flex gap-2 justify-end">
-                    <Button size="sm" variant="outline" onClick={cancelEdit} disabled={savingId === o.id}>
-                      إلغاء
-                    </Button>
-                    <Button size="sm" onClick={() => saveAdminNotes(o)} disabled={savingId === o.id}>
-                      {savingId === o.id && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
-                      حفظ
-                    </Button>
+                  <div className="text-left">
+                    <p className="font-bold">{formatMAD(o.total_mad)}</p>
+                    <p className="text-xs text-warning">+{o.points_earned} نقطة</p>
                   </div>
                 </div>
-              ) : o.admin_notes ? (
-                <p className="text-sm whitespace-pre-wrap">{o.admin_notes}</p>
-              ) : (
-                <p className="text-xs text-muted-foreground italic">لا توجد ملاحظات داخلية</p>
-              )}
-            </div>
-          </Card>
-        ))}
+              </Card>
+            </Link>
+          ))
+        )}
       </div>
     </div>
   );
