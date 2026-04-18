@@ -57,9 +57,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [partnerType, setPartnerType] = useState<PartnerType>("distributor");
-  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [profileCompanyId, setProfileCompanyId] = useState<string | null>(null);
+  const [activeCompanyId, setActiveCompanyIdState] = useState<string | null>(() =>
+    readActiveCompany(),
+  );
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Effective company: explicit active override (sessionStorage) wins, else profile.
+  const companyId = activeCompanyId ?? profileCompanyId;
+
+  const setActiveCompany = (id: string | null) => {
+    writeActiveCompany(id);
+    setActiveCompanyIdState(id);
+  };
 
   const loadCompany = async (cid: string | null) => {
     if (!cid) {
@@ -78,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!uid) {
       setRoles([]);
       setPartnerType("distributor");
-      setCompanyId(null);
+      setProfileCompanyId(null);
       setCompany(null);
       return;
     }
@@ -89,9 +100,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoles((roleRows ?? []).map((r) => r.role as AppRole));
     setPartnerType((profile?.partner_type as PartnerType | undefined) ?? "distributor");
     const cid = (profile?.company_id as string | null | undefined) ?? null;
-    setCompanyId(cid);
-    await loadCompany(cid);
+    setProfileCompanyId(cid);
+    // Non-super users always operate within their own profile company; sync sessionStorage.
+    const isSuper = (roleRows ?? []).some((r) => r.role === "super_admin");
+    if (!isSuper && cid) {
+      writeActiveCompany(cid);
+      setActiveCompanyIdState(cid);
+    }
   };
+
+  // Reload company record whenever effective companyId changes.
+  useEffect(() => {
+    loadCompany(companyId);
+  }, [companyId]);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
@@ -102,8 +123,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setRoles([]);
         setPartnerType("distributor");
-        setCompanyId(null);
+        setProfileCompanyId(null);
         setCompany(null);
+        writeActiveCompany(null);
+        setActiveCompanyIdState(null);
       }
     });
 
@@ -131,6 +154,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [company?.brand_color]);
 
   const signOut = async () => {
+    writeActiveCompany(null);
+    setActiveCompanyIdState(null);
     await supabase.auth.signOut();
   };
 
@@ -155,6 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     refreshRoles,
     refreshCompany,
+    setActiveCompany,
   }), [session, user, roles, partnerType, companyId, company, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
