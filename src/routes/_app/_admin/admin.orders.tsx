@@ -42,8 +42,10 @@ interface OrderRow {
   points_earned: number;
   created_at: string;
   distributor_id: string;
+  company_id: string;
   notes: string | null;
   admin_notes: string | null;
+  companies: { display_name: string | null; name: string } | null;
   profiles: {
     full_name: string;
     city: string | null;
