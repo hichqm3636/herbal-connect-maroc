@@ -62,7 +62,13 @@ const superAdminItems = [
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin, isSuperAdmin, signOut, user, company } = useAuth();
+  const { isAdmin, isSuperAdmin, roles, signOut, user, company } = useAuth();
+  // Platform Owner = super_admin only (not also admin of a company)
+  const isPlatformOwner = isSuperAdmin && !roles.includes("admin");
+  // Company Admin = admin role (super_admin operating inside a company also acts as admin here)
+  const isCompanyAdmin = isAdmin && !isPlatformOwner;
+  // Distributor menu only for actual distributors (not admins, not platform owner)
+  const isDistributor = !isAdmin && !isPlatformOwner;
   const { isMobile, setOpenMobile } = useSidebar();
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
 
@@ -106,25 +112,27 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>الموزع</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {distributorItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                    <Link to={item.url} onClick={handleNavClick}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {isDistributor && (
+          <SidebarGroup>
+            <SidebarGroupLabel>الموزع</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {distributorItems.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
+                      <Link to={item.url} onClick={handleNavClick}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
-        {isAdmin && (
+        {isCompanyAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel>الإدارة</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -144,9 +152,9 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {isSuperAdmin && (
+        {isPlatformOwner && (
           <SidebarGroup>
-            <SidebarGroupLabel>المدير الأعلى</SidebarGroupLabel>
+            <SidebarGroupLabel>منصة</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {superAdminItems.map((item) => (
