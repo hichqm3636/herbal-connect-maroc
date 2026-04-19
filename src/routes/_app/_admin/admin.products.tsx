@@ -189,6 +189,7 @@ function AdminProducts() {
     const d = deriveFromCost(cost);
     setForm({
       ...form,
+      cost,
       price_mad: d.distributor_price,
       rrp_price: d.rrp_price,
       pharmacy_price: d.pharmacy_price,
