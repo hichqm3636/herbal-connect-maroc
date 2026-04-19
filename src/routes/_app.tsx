@@ -33,9 +33,9 @@ function AppLayout() {
   return (
     <CartProvider>
       <SidebarProvider>
-        <div className="flex min-h-screen w-full bg-background" dir="rtl">
+        <div className="flex min-h-screen w-full overflow-x-hidden bg-background" dir="rtl">
           <AppSidebar />
-          <SidebarInset className="flex flex-col">
+          <SidebarInset className="flex flex-col min-w-0">
             <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/95 backdrop-blur px-4">
               <SidebarTrigger className="text-foreground hover:text-primary shrink-0" />
               <Separator orientation="vertical" className="h-5" />
@@ -47,7 +47,7 @@ function AppLayout() {
                 <CartButton />
               </div>
             </header>
-            <main className="flex-1 p-4 md:p-6 lg:p-8">
+            <main className="flex-1 p-4 md:p-6 lg:p-8 min-w-0 overflow-x-hidden">
               <Outlet />
             </main>
             <CartSheet />
