@@ -261,7 +261,7 @@ function AnalyticsPage() {
                 type="monotone"
                 dataKey="orders"
                 name="الطلبات"
-                stroke="hsl(var(--primary))"
+                stroke="var(--primary)"
                 strokeWidth={2}
               />
               <Line
@@ -269,7 +269,7 @@ function AnalyticsPage() {
                 type="monotone"
                 dataKey="revenue"
                 name="الإيرادات"
-                stroke="hsl(var(--accent-foreground))"
+                stroke="var(--primary-glow)"
                 strokeWidth={2}
               />
             </LineChart>
