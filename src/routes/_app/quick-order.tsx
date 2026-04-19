@@ -54,7 +54,7 @@ const newRow = (): Row => ({
 
 function QuickOrderPage() {
   const { addItem, openCart } = useCart();
-  const { partnerType, pricingTierDiscount } = useAuth();
+  const { partnerType } = useAuth();
   const [rows, setRows] = useState<Row[]>([newRow(), newRow(), newRow()]);
   const [bulkText, setBulkText] = useState("");
   const [resolved, setResolved] = useState<ResolvedRow[] | null>(null);
@@ -148,9 +148,7 @@ function QuickOrderPage() {
             message: `المخزون: ${product.stock}`,
           };
         }
-        const { unitPrice: base } = getUnitPrice(product, partnerType, r.qty);
-        const factor = 1 - (pricingTierDiscount ?? 0) / 100;
-        const unitPrice = Math.round(base * factor);
+        const { unitPrice } = getUnitPrice(product, partnerType, r.qty);
         return { ...r, status: "found", product, unitPrice };
       });
       setResolved(results);

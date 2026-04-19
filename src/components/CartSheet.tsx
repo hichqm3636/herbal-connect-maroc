@@ -59,7 +59,7 @@ interface PricedLine {
 
 export function CartSheet() {
   const { items, isOpen, setOpen, updateQty, setQty, removeItem, clear } = useCart();
-  const { user, partnerType, companyId, pricingTierDiscount } = useAuth();
+  const { user, partnerType, companyId } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -76,9 +76,7 @@ export function CartSheet() {
           price_tiers: item.price_tiers ?? [],
           price_mad: item.price_mad,
         };
-        const { unitPrice: base } = getUnitPrice(pp, partnerType, item.qty);
-        const factor = 1 - (pricingTierDiscount ?? 0) / 100;
-        const unitPrice = Math.round(base * factor);
+        const { unitPrice } = getUnitPrice(pp, partnerType, item.qty);
         const v = validateLine(pp, partnerType, item.qty, unitPrice, item.name_ar);
         return {
           item,
@@ -88,7 +86,7 @@ export function CartSheet() {
           message: v.message,
         };
       }),
-    [items, partnerType, pricingTierDiscount],
+    [items, partnerType],
   );
 
   const total = priced.reduce((s, l) => s + l.lineTotal, 0);
@@ -133,10 +131,13 @@ export function CartSheet() {
     const productIds = priced.map((l) => l.item.id);
     const { data: costRows } = await supabase
       .from("products")
-      .select("id, cost")
+      .select("id, cost_price")
       .in("id", productIds);
     const costMap = new Map<string, number | null>(
-      (costRows ?? []).map((r) => [r.id as string, (r as { cost: number | null }).cost]),
+      (costRows ?? []).map((r) => [
+        r.id as string,
+        (r as { cost_price: number | null }).cost_price,
+      ]),
     );
     const orderItems = priced.map((l) => ({
       order_id: order.id,

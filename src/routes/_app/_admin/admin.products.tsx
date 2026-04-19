@@ -65,7 +65,7 @@ interface Product {
   stock: number;
   active: boolean;
   points_per_unit: number;
-  cost: number | null;
+  cost_price: number | null;
   rrp_price: number | null;
   pharmacy_price: number | null;
   map_price: number | null;
@@ -111,7 +111,7 @@ const empty: Omit<Product, "id" | "image_url"> = {
   stock: 0,
   active: true,
   points_per_unit: 0,
-  cost: null,
+  cost_price: null,
   rrp_price: null,
   pharmacy_price: null,
   map_price: null,
@@ -189,7 +189,7 @@ function AdminProducts() {
     const d = deriveFromCost(cost);
     setForm({
       ...form,
-      cost,
+      cost_price: cost,
       price_mad: d.distributor_price,
       rrp_price: d.rrp_price,
       pharmacy_price: d.pharmacy_price,
@@ -289,7 +289,7 @@ function AdminProducts() {
       stock: p.stock,
       active: p.active,
       points_per_unit: p.points_per_unit ?? 0,
-      cost: p.cost,
+      cost_price: p.cost_price,
       rrp_price: p.rrp_price,
       pharmacy_price: p.pharmacy_price,
       map_price: p.map_price,
@@ -306,7 +306,7 @@ function AdminProducts() {
             ],
     });
     // Pre-fill the live margin reference with the persisted cost (if any).
-    setRefCost(p.cost != null ? String(p.cost) : "");
+    setRefCost(p.cost_price != null ? String(p.cost_price) : "");
     await loadImages(p.id);
     setOpen(true);
   };
@@ -510,11 +510,11 @@ function AdminProducts() {
       return;
     }
     if (
-      form.cost != null &&
-      form.cost > 0
+      form.cost_price != null &&
+      form.cost_price > 0
     ) {
       const offendingTier = form.price_tiers.find(
-        (t) => t.price > 0 && t.price <= form.cost!,
+        (t) => t.price > 0 && t.price <= form.cost_price!,
       );
       if (offendingTier) {
         toast.error(
@@ -532,7 +532,7 @@ function AdminProducts() {
       stock: form.stock,
       active: form.active,
       points_per_unit: form.points_per_unit,
-      cost: form.cost,
+      cost_price: form.cost_price,
       rrp_price: form.rrp_price,
       pharmacy_price: form.pharmacy_price,
       map_price: form.map_price,
@@ -1269,7 +1269,10 @@ function AdminProducts() {
                       const v = e.target.value;
                       setRefCost(v);
                       const n = v === "" ? null : Number(v);
-                      setForm({ ...form, cost: Number.isFinite(n as number) ? (n as number) : null });
+                      setForm({
+                        ...form,
+                        cost_price: Number.isFinite(n as number) ? (n as number) : null,
+                      });
                     }}
                     placeholder="مثال: 50 — تُحفظ مع المنتج لاحتساب الربح"
                   />

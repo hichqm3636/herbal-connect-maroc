@@ -54,7 +54,7 @@ interface ItemRow {
     image_url: string | null;
     rrp_price: number | null;
     price_mad: number;
-    cost: number | null;
+    cost_price: number | null;
   } | null;
 }
 
@@ -122,7 +122,7 @@ function OrderDetails() {
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, distributor_id, company_id, profiles(full_name, phone, city, territories(name)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost))",
+        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, distributor_id, company_id, profiles(full_name, phone, city, territories(name)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost_price))",
       )
       .eq("id", orderId)
       .eq("company_id", companyId)
@@ -545,8 +545,8 @@ function OrderDetails() {
                 const cost =
                   it.cost_snapshot != null
                     ? Number(it.cost_snapshot)
-                    : it.products?.cost != null
-                      ? Number(it.products.cost)
+                    : it.products?.cost_price != null
+                      ? Number(it.products.cost_price)
                       : null;
                 return (
                   <tr key={it.id} className="border-b last:border-0">
