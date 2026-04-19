@@ -254,10 +254,22 @@ function OrderDetails() {
     );
   }
 
+  const tierDiscount = tier?.discount_percent ?? 0;
+
+  // Subtotal at base (RRP) — falls back to price_mad when RRP is missing,
+  // then to the actual unit price as a last resort.
+  const baseFor = (it: ItemRow) =>
+    Number(it.products?.rrp_price ?? it.products?.price_mad ?? it.unit_price_mad);
+
+  const subtotalBeforeDiscount = order.order_items.reduce(
+    (s, it) => s + baseFor(it) * it.quantity,
+    0,
+  );
   const itemsTotal = order.order_items.reduce(
     (s, it) => s + Number(it.unit_price_mad) * it.quantity,
     0,
   );
+  const totalDiscount = subtotalBeforeDiscount - itemsTotal;
 
   // Profit calculations — based on cost snapshots captured at order time.
   // Items missing a snapshot are excluded from cost/profit and flagged in the UI.
@@ -274,7 +286,8 @@ function OrderDetails() {
     0,
   );
   const orderProfit = orderRevenue - orderCost;
-  const orderMargin = orderCost > 0 ? (orderProfit / orderCost) * 100 : 0;
+  // Margin as % of revenue (profit / distributor_total × 100).
+  const orderMargin = orderRevenue > 0 ? (orderProfit / orderRevenue) * 100 : 0;
 
   return (
     <div className="space-y-5 pb-24">
