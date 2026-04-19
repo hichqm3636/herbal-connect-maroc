@@ -27,7 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_app/_admin/admin/pricing-tiers")({
+export const Route = createFileRoute("/_app/super-admin/pricing-tiers")({
   component: AdminPricingTiers,
   head: () => ({ meta: [{ title: "إدارة فئات التسعير" }] }),
 });
