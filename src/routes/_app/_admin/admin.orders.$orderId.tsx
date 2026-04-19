@@ -220,6 +220,23 @@ function OrderDetails() {
     0,
   );
 
+  // Profit calculations — based on cost snapshots captured at order time.
+  // Items missing a snapshot are excluded from cost/profit and flagged in the UI.
+  const itemsWithCost = order.order_items.filter(
+    (it) => it.cost_snapshot != null && Number(it.cost_snapshot) > 0,
+  );
+  const itemsMissingCost = order.order_items.length - itemsWithCost.length;
+  const orderRevenue = itemsWithCost.reduce(
+    (s, it) => s + Number(it.unit_price_mad) * it.quantity,
+    0,
+  );
+  const orderCost = itemsWithCost.reduce(
+    (s, it) => s + Number(it.cost_snapshot ?? 0) * it.quantity,
+    0,
+  );
+  const orderProfit = orderRevenue - orderCost;
+  const orderMargin = orderCost > 0 ? (orderProfit / orderCost) * 100 : 0;
+
   return (
     <div className="space-y-5 pb-24">
       <div className="flex items-center gap-2">
