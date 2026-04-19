@@ -55,9 +55,10 @@ type ItemRow = {
 
 function AnalyticsPage() {
   const { companyId } = useAuth();
+  const [rangeDays, setRangeDays] = useState<RangeDays>(30);
   const [loading, setLoading] = useState(true);
-  const [orders30, setOrders30] = useState<OrderRow[]>([]);
-  const [items30, setItems30] = useState<ItemRow[]>([]);
+  const [ordersRange, setOrdersRange] = useState<OrderRow[]>([]);
+  const [itemsRange, setItemsRange] = useState<ItemRow[]>([]);
   const [orders6m, setOrders6m] = useState<OrderRow[]>([]);
   const [products, setProducts] = useState<Record<string, ProductRow>>({});
   const [profiles, setProfiles] = useState<Record<string, ProfileRow>>({});
