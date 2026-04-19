@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { RecomputeDistributorPricesButton } from "@/components/admin/RecomputeDistributorPricesButton";
 import {
   formatMAD,
   formatDateTimeAr,
@@ -231,15 +232,23 @@ function AdminOrders() {
             {filtered.length} من {orders.length} طلب
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={exportCsv}
-          disabled={filtered.length === 0}
-        >
-          <Download className="h-4 w-4 mr-1" />
-          تصدير CSV
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {companyId && (
+            <RecomputeDistributorPricesButton
+              companyId={companyId}
+              onComplete={load}
+            />
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportCsv}
+            disabled={filtered.length === 0}
+          >
+            <Download className="h-4 w-4 mr-1" />
+            تصدير CSV
+          </Button>
+        </div>
       </div>
 
       <Card className="p-4 bg-primary/5 border-primary/20">
