@@ -1232,7 +1232,10 @@ function AdminProducts() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs">السعر الموصى به (RRP)</Label>
+                    <Label className="text-xs flex items-center justify-between gap-2">
+                      <span>السعر الموصى به (RRP)</span>
+                      <MarginBadge price={form.rrp_price} />
+                    </Label>
                     <Input
                       type="number"
                       min="0"
