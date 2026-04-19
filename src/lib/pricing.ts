@@ -33,27 +33,30 @@ const round = (n: number) => Math.round(n);
 
 /**
  * Auto pricing engine driven by product cost.
- * Markup chain:
- *   distributor = cost × 1.8
- *   pharmacy    = distributor × 1.25
- *   rrp         = pharmacy × 1.4
- *   map         = rrp × 0.9
- * Bulk tiers (off distributor price): 6+ ×0.98, 12+ ×0.92, 24+ ×0.86
+ * Recommended multipliers:
+ *   tier_24        = cost × 1.55
+ *   tier_12        = cost × 1.70
+ *   tier_6         = cost × 1.85   (also used as base distributor price)
+ *   pharmacy_price = cost × 2.00
+ *   rrp_price      = cost × 2.80
+ *   map_price      = rrp × 0.90
  */
 export function deriveFromCost(cost: number) {
-  const distributor = cost * 1.8;
-  const pharmacy = distributor * 1.25;
-  const rrp = pharmacy * 1.4;
+  const tier6 = cost * 1.85;
+  const tier12 = cost * 1.7;
+  const tier24 = cost * 1.55;
+  const pharmacy = cost * 2;
+  const rrp = cost * 2.8;
   const map = rrp * 0.9;
   return {
-    distributor_price: round(distributor),
+    distributor_price: round(tier6),
     pharmacy_price: round(pharmacy),
     rrp_price: round(rrp),
     map_price: round(map),
     price_tiers: [
-      { min_qty: 6, price: round(distributor * 0.98) },
-      { min_qty: 12, price: round(distributor * 0.92) },
-      { min_qty: 24, price: round(distributor * 0.86) },
+      { min_qty: 6, price: round(tier6) },
+      { min_qty: 12, price: round(tier12) },
+      { min_qty: 24, price: round(tier24) },
     ] as PriceTier[],
   };
 }
