@@ -367,6 +367,42 @@ function AdminOrders() {
                   <div className="text-left shrink-0">
                     <p className="font-bold">{formatMAD(o.total_mad)}</p>
                     <p className="text-xs text-warning">+{o.points_earned} نقطة</p>
+                    {(() => {
+                      const items = o.order_items ?? [];
+                      const withCost = items.filter(
+                        (it) => it.cost_snapshot != null && Number(it.cost_snapshot) > 0,
+                      );
+                      if (withCost.length === 0) {
+                        return (
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            ربح: —
+                          </p>
+                        );
+                      }
+                      const rev = withCost.reduce(
+                        (s, it) => s + Number(it.unit_price_mad) * it.quantity,
+                        0,
+                      );
+                      const cost = withCost.reduce(
+                        (s, it) => s + Number(it.cost_snapshot ?? 0) * it.quantity,
+                        0,
+                      );
+                      const profit = rev - cost;
+                      const margin = cost > 0 ? Math.round((profit / cost) * 100) : 0;
+                      const partial = withCost.length < items.length;
+                      return (
+                        <p
+                          className={`text-[11px] font-medium mt-0.5 ${
+                            profit >= 0
+                              ? "text-emerald-700 dark:text-emerald-400"
+                              : "text-destructive"
+                          }`}
+                        >
+                          ربح: {formatMAD(profit)} ({margin}%)
+                          {partial && <span className="text-muted-foreground"> *</span>}
+                        </p>
+                      );
+                    })()}
                   </div>
                 </div>
               </Link>
