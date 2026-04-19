@@ -300,6 +300,23 @@ export function CartSheet() {
                 صحّح المنتجات المظللة قبل إرسال الطلب
               </div>
             )}
+            {rulesResult.evaluations.length > 0 && (
+              <div className="w-full space-y-1.5">
+                {rulesResult.evaluations.map((e) => (
+                  <div
+                    key={e.type}
+                    className={`text-[11px] flex items-center gap-1.5 rounded-md px-2 py-1.5 border ${
+                      e.ok
+                        ? "border-success/40 bg-success/5 text-success-foreground"
+                        : "border-warning/50 bg-warning/10 text-warning-foreground"
+                    }`}
+                  >
+                    {!e.ok && <AlertTriangle className="h-3 w-3 shrink-0" />}
+                    <span>{e.message}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="flex items-center justify-between w-full">
               <span className="text-muted-foreground">الإجمالي</span>
               <span className="text-lg font-bold">{formatMAD(total)}</span>
