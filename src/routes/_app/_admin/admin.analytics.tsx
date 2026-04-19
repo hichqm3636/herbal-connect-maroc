@@ -16,9 +16,12 @@ import {
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
+
+type RangeDays = 7 | 30 | 90;
 
 export const Route = createFileRoute("/_app/_admin/admin/analytics")({
   component: AnalyticsPage,
@@ -52,9 +55,10 @@ type ItemRow = {
 
 function AnalyticsPage() {
   const { companyId } = useAuth();
+  const [rangeDays, setRangeDays] = useState<RangeDays>(30);
   const [loading, setLoading] = useState(true);
-  const [orders30, setOrders30] = useState<OrderRow[]>([]);
-  const [items30, setItems30] = useState<ItemRow[]>([]);
+  const [ordersRange, setOrdersRange] = useState<OrderRow[]>([]);
+  const [itemsRange, setItemsRange] = useState<ItemRow[]>([]);
   const [orders6m, setOrders6m] = useState<OrderRow[]>([]);
   const [products, setProducts] = useState<Record<string, ProductRow>>({});
   const [profiles, setProfiles] = useState<Record<string, ProfileRow>>({});
@@ -65,21 +69,21 @@ function AnalyticsPage() {
     (async () => {
       setLoading(true);
       const now = new Date();
-      const d30 = new Date(now);
-      d30.setDate(d30.getDate() - 30);
+      const dRange = new Date(now);
+      dRange.setDate(dRange.getDate() - rangeDays);
       const d6m = new Date(now);
       d6m.setMonth(d6m.getMonth() - 5);
       d6m.setDate(1);
       d6m.setHours(0, 0, 0, 0);
 
-      const [{ data: o30 }, { data: o6m }, { data: prods }, { data: profs }, { data: terrs }] =
+      const [{ data: oRange }, { data: o6m }, { data: prods }, { data: profs }, { data: terrs }] =
         await Promise.all([
           supabase
             .from("orders")
             .select("id, distributor_id, total_mad, created_at, status")
             .eq("company_id", companyId)
             .in("status", VALID_STATUSES)
-            .gte("created_at", d30.toISOString()),
+            .gte("created_at", dRange.toISOString()),
           supabase
             .from("orders")
             .select("id, distributor_id, total_mad, created_at, status")
@@ -91,30 +95,30 @@ function AnalyticsPage() {
           supabase.from("territories").select("id, name").eq("company_id", companyId),
         ]);
 
-      const orderIds30 = (o30 ?? []).map((o) => o.id);
-      let it30: ItemRow[] = [];
-      if (orderIds30.length) {
+      const orderIdsRange = (oRange ?? []).map((o) => o.id);
+      let itRange: ItemRow[] = [];
+      if (orderIdsRange.length) {
         const { data } = await supabase
           .from("order_items")
           .select("order_id, product_id, quantity, unit_price_mad")
-          .in("order_id", orderIds30);
-        it30 = (data ?? []) as ItemRow[];
+          .in("order_id", orderIdsRange);
+        itRange = (data ?? []) as ItemRow[];
       }
 
-      setOrders30((o30 ?? []) as OrderRow[]);
+      setOrdersRange((oRange ?? []) as OrderRow[]);
       setOrders6m((o6m ?? []) as OrderRow[]);
-      setItems30(it30);
+      setItemsRange(itRange);
       setProducts(Object.fromEntries((prods ?? []).map((p) => [p.id, p as ProductRow])));
       setProfiles(Object.fromEntries((profs ?? []).map((p) => [p.id, p as ProfileRow])));
       setTerritories(Object.fromEntries((terrs ?? []).map((t) => [t.id, t as TerritoryRow])));
       setLoading(false);
     })();
-  }, [companyId]);
+  }, [companyId, rangeDays]);
 
-  // 1. Top selling products (30d)
+  // 1. Top selling products (selected range)
   const topProducts = useMemo(() => {
     const agg = new Map<string, { qty: number; revenue: number }>();
-    for (const it of items30) {
+    for (const it of itemsRange) {
       const cur = agg.get(it.product_id) ?? { qty: 0, revenue: 0 };
       cur.qty += Number(it.quantity);
       cur.revenue += Number(it.quantity) * Number(it.unit_price_mad);
@@ -124,27 +128,27 @@ function AnalyticsPage() {
       .map(([pid, v]) => ({ id: pid, name: products[pid]?.name_ar ?? "—", ...v }))
       .sort((a, b) => b.qty - a.qty)
       .slice(0, 10);
-  }, [items30, products]);
+  }, [itemsRange, products]);
 
-  // 4. Fastest moving (velocity)
+  // 4. Fastest moving (velocity per day over selected range)
   const fastest = useMemo(
     () =>
       topProducts
-        .map((p) => ({ ...p, velocity: p.qty / 30 }))
+        .map((p) => ({ ...p, velocity: p.qty / rangeDays }))
         .sort((a, b) => b.velocity - a.velocity)
         .slice(0, 10),
-    [topProducts],
+    [topProducts, rangeDays],
   );
 
   // 2. Demand by territory
   const territoryDemand = useMemo(() => {
     const orderTerr = new Map<string, string>(); // order_id -> territory_id
-    for (const o of orders30) {
+    for (const o of ordersRange) {
       const tid = profiles[o.distributor_id]?.territory_id;
       if (tid) orderTerr.set(o.id, tid);
     }
     const agg = new Map<string, { orders: Set<string>; qty: number }>();
-    for (const it of items30) {
+    for (const it of itemsRange) {
       const tid = orderTerr.get(it.order_id);
       if (!tid) continue;
       const cur = agg.get(tid) ?? { orders: new Set(), qty: 0 };
@@ -166,12 +170,12 @@ function AnalyticsPage() {
         qty: v.qty,
       }))
       .sort((a, b) => b.qty - a.qty);
-  }, [orders30, items30, profiles, territories]);
+  }, [ordersRange, itemsRange, profiles, territories]);
 
   // 3. Distributor performance
   const distributorPerf = useMemo(() => {
     const agg = new Map<string, { orders: number; revenue: number }>();
-    for (const o of orders30) {
+    for (const o of ordersRange) {
       const cur = agg.get(o.distributor_id) ?? { orders: 0, revenue: 0 };
       cur.orders += 1;
       cur.revenue += Number(o.total_mad);
@@ -187,7 +191,7 @@ function AnalyticsPage() {
       }))
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 15);
-  }, [orders30, profiles]);
+  }, [ordersRange, profiles]);
 
   // 5. Monthly trend (6 months)
   const monthlyTrend = useMemo(() => {
@@ -225,16 +229,34 @@ function AnalyticsPage() {
 
   return (
     <div className="space-y-6 min-w-0">
-      <header className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center gap-3">
         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <BarChart3 className="h-5 w-5" />
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-xl md:text-2xl font-bold">ذكاء السوق</h1>
           <p className="text-xs md:text-sm text-muted-foreground">
-            تحليلات أداء المنتجات والموزعين والمناطق — آخر 30 يومًا
+            تحليلات أداء المنتجات والموزعين والمناطق — آخر {rangeDays} يومًا
           </p>
         </div>
+        <ToggleGroup
+          type="single"
+          value={String(rangeDays)}
+          onValueChange={(v) => {
+            if (v === "7" || v === "30" || v === "90") setRangeDays(Number(v) as RangeDays);
+          }}
+          className="ms-auto"
+        >
+          <ToggleGroupItem value="7" aria-label="آخر 7 أيام" className="px-3 text-xs">
+            7 أيام
+          </ToggleGroupItem>
+          <ToggleGroupItem value="30" aria-label="آخر 30 يومًا" className="px-3 text-xs">
+            30 يومًا
+          </ToggleGroupItem>
+          <ToggleGroupItem value="90" aria-label="آخر 90 يومًا" className="px-3 text-xs">
+            90 يومًا
+          </ToggleGroupItem>
+        </ToggleGroup>
       </header>
 
       {/* Monthly trend */}
@@ -332,7 +354,7 @@ function AnalyticsPage() {
                   </div>
                   <div className="text-end shrink-0">
                     <div className="font-bold">{p.velocity.toFixed(2)} / يوم</div>
-                    <div className="text-xs text-muted-foreground">{p.qty} خلال 30 يوم</div>
+                    <div className="text-xs text-muted-foreground">{p.qty} خلال {rangeDays} يوم</div>
                   </div>
                 </li>
               ))}
