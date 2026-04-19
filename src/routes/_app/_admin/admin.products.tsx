@@ -301,6 +301,7 @@ function AdminProducts() {
               { min_qty: 24, price: 0 },
             ],
     });
+    setRefCost("");
     await loadImages(p.id);
     setOpen(true);
   };
