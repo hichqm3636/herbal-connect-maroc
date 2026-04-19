@@ -30,6 +30,7 @@ import { Route as AppAdminAdminPricingTiersRouteImport } from './routes/_app/_ad
 import { Route as AppAdminAdminOrdersRouteImport } from './routes/_app/_admin/admin.orders'
 import { Route as AppAdminAdminDistributorsRouteImport } from './routes/_app/_admin/admin.distributors'
 import { Route as AppAdminAdminBrandingRouteImport } from './routes/_app/_admin/admin.branding'
+import { Route as AppAdminAdminAnalyticsRouteImport } from './routes/_app/_admin/admin.analytics'
 import { Route as AppAdminAdminActivityRouteImport } from './routes/_app/_admin/admin.activity'
 import { Route as AppAdminAdminOrdersOrderIdRouteImport } from './routes/_app/_admin/admin.orders_.$orderId'
 
@@ -139,6 +140,11 @@ const AppAdminAdminBrandingRoute = AppAdminAdminBrandingRouteImport.update({
   path: '/admin/branding',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminAdminAnalyticsRoute = AppAdminAdminAnalyticsRouteImport.update({
+  id: '/admin/analytics',
+  path: '/admin/analytics',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminAdminActivityRoute = AppAdminAdminActivityRouteImport.update({
   id: '/admin/activity',
   path: '/admin/activity',
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/admin/activity': typeof AppAdminAdminActivityRoute
+  '/admin/analytics': typeof AppAdminAdminAnalyticsRoute
   '/admin/branding': typeof AppAdminAdminBrandingRoute
   '/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/admin/activity': typeof AppAdminAdminActivityRoute
+  '/admin/analytics': typeof AppAdminAdminAnalyticsRoute
   '/admin/branding': typeof AppAdminAdminBrandingRoute
   '/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
@@ -214,6 +222,7 @@ export interface FileRoutesById {
   '/_app/products_/$productId': typeof AppProductsProductIdRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/_app/_admin/admin/activity': typeof AppAdminAdminActivityRoute
+  '/_app/_admin/admin/analytics': typeof AppAdminAdminAnalyticsRoute
   '/_app/_admin/admin/branding': typeof AppAdminAdminBrandingRoute
   '/_app/_admin/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/_app/_admin/admin/orders': typeof AppAdminAdminOrdersRoute
@@ -239,6 +248,7 @@ export interface FileRouteTypes {
     | '/products/$productId'
     | '/super-admin/companies'
     | '/admin/activity'
+    | '/admin/analytics'
     | '/admin/branding'
     | '/admin/distributors'
     | '/admin/orders'
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
     | '/products/$productId'
     | '/super-admin/companies'
     | '/admin/activity'
+    | '/admin/analytics'
     | '/admin/branding'
     | '/admin/distributors'
     | '/admin/orders'
@@ -287,6 +298,7 @@ export interface FileRouteTypes {
     | '/_app/products_/$productId'
     | '/_app/super-admin/companies'
     | '/_app/_admin/admin/activity'
+    | '/_app/_admin/admin/analytics'
     | '/_app/_admin/admin/branding'
     | '/_app/_admin/admin/distributors'
     | '/_app/_admin/admin/orders'
@@ -453,6 +465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminBrandingRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/_admin/admin/analytics': {
+      id: '/_app/_admin/admin/analytics'
+      path: '/admin/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AppAdminAdminAnalyticsRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/_admin/admin/activity': {
       id: '/_app/_admin/admin/activity'
       path: '/admin/activity'
@@ -472,6 +491,7 @@ declare module '@tanstack/react-router' {
 
 interface AppAdminRouteChildren {
   AppAdminAdminActivityRoute: typeof AppAdminAdminActivityRoute
+  AppAdminAdminAnalyticsRoute: typeof AppAdminAdminAnalyticsRoute
   AppAdminAdminBrandingRoute: typeof AppAdminAdminBrandingRoute
   AppAdminAdminDistributorsRoute: typeof AppAdminAdminDistributorsRoute
   AppAdminAdminOrdersRoute: typeof AppAdminAdminOrdersRoute
@@ -484,6 +504,7 @@ interface AppAdminRouteChildren {
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminAdminActivityRoute: AppAdminAdminActivityRoute,
+  AppAdminAdminAnalyticsRoute: AppAdminAdminAnalyticsRoute,
   AppAdminAdminBrandingRoute: AppAdminAdminBrandingRoute,
   AppAdminAdminDistributorsRoute: AppAdminAdminDistributorsRoute,
   AppAdminAdminOrdersRoute: AppAdminAdminOrdersRoute,
