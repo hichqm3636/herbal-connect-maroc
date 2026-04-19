@@ -16,9 +16,12 @@ import {
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
+
+type RangeDays = 7 | 30 | 90;
 
 export const Route = createFileRoute("/_app/_admin/admin/analytics")({
   component: AnalyticsPage,
