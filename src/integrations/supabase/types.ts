@@ -217,6 +217,63 @@ export type Database = {
           },
         ]
       }
+      order_rules: {
+        Row: {
+          active: boolean
+          company_id: string | null
+          created_at: string
+          id: string
+          min_order_amount: number | null
+          min_points: number | null
+          min_products: number | null
+          name: string
+          rule_type: string
+          tier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          min_order_amount?: number | null
+          min_points?: number | null
+          min_products?: number | null
+          name: string
+          rule_type: string
+          tier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          min_order_amount?: number | null
+          min_points?: number | null
+          min_products?: number | null
+          name?: string
+          rule_type?: string
+          tier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_rules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_rules_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           admin_notes: string | null

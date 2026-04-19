@@ -23,9 +23,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useCart, type CartItem } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrderRules } from "@/hooks/useOrderRules";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMAD } from "@/lib/format";
 import { getUnitPrice, validateLine } from "@/lib/pricing";
+import { evaluateRules } from "@/lib/orderRules";
 import { toast } from "sonner";
 
 export function CartButton() {
@@ -59,7 +61,8 @@ interface PricedLine {
 
 export function CartSheet() {
   const { items, isOpen, setOpen, updateQty, setQty, removeItem, clear } = useCart();
-  const { user, partnerType, companyId } = useAuth();
+  const { user, partnerType, companyId, pricingTierId } = useAuth();
+  const { rules: orderRules } = useOrderRules();
   const [submitting, setSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -91,7 +94,19 @@ export function CartSheet() {
 
   const total = priced.reduce((s, l) => s + l.lineTotal, 0);
   const blockedLines = priced.filter((l) => l.blocked);
-  const canCheckout = items.length > 0 && blockedLines.length === 0;
+  const unitsCount = items.reduce((s, i) => s + i.qty, 0);
+  const pointsEarned = Math.floor(total / 100);
+  const rulesResult = useMemo(
+    () =>
+      evaluateRules(
+        orderRules,
+        { total, points: pointsEarned, unitsCount },
+        pricingTierId,
+      ),
+    [orderRules, total, pointsEarned, unitsCount, pricingTierId],
+  );
+  const canCheckout =
+    items.length > 0 && blockedLines.length === 0 && rulesResult.ok;
 
   const placeOrder = async () => {
     if (!user || items.length === 0) return;
@@ -100,7 +115,11 @@ export function CartSheet() {
       return;
     }
     if (!canCheckout) {
-      toast.error(blockedLines[0]?.message ?? "تعذر إتمام الطلب");
+      const msg =
+        rulesResult.failures[0]?.message ??
+        blockedLines[0]?.message ??
+        "تعذر إتمام الطلب";
+      toast.error(msg);
       return;
     }
     setSubmitting(true);
@@ -279,6 +298,23 @@ export function CartSheet() {
               <div className="text-xs text-destructive flex items-center gap-1.5 w-full">
                 <AlertTriangle className="h-3.5 w-3.5" />
                 صحّح المنتجات المظللة قبل إرسال الطلب
+              </div>
+            )}
+            {rulesResult.evaluations.length > 0 && (
+              <div className="w-full space-y-1.5">
+                {rulesResult.evaluations.map((e) => (
+                  <div
+                    key={e.type}
+                    className={`text-[11px] flex items-center gap-1.5 rounded-md px-2 py-1.5 border ${
+                      e.ok
+                        ? "border-success/40 bg-success/5 text-success-foreground"
+                        : "border-warning/50 bg-warning/10 text-warning-foreground"
+                    }`}
+                  >
+                    {!e.ok && <AlertTriangle className="h-3 w-3 shrink-0" />}
+                    <span>{e.message}</span>
+                  </div>
+                ))}
               </div>
             )}
             <div className="flex items-center justify-between w-full">
