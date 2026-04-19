@@ -510,11 +510,11 @@ function AdminProducts() {
       return;
     }
     if (
-      form.cost != null &&
-      form.cost > 0
+      form.cost_price != null &&
+      form.cost_price > 0
     ) {
       const offendingTier = form.price_tiers.find(
-        (t) => t.price > 0 && t.price <= form.cost!,
+        (t) => t.price > 0 && t.price <= form.cost_price!,
       );
       if (offendingTier) {
         toast.error(
@@ -532,7 +532,7 @@ function AdminProducts() {
       stock: form.stock,
       active: form.active,
       points_per_unit: form.points_per_unit,
-      cost: form.cost,
+      cost_price: form.cost_price,
       rrp_price: form.rrp_price,
       pharmacy_price: form.pharmacy_price,
       map_price: form.map_price,
@@ -1269,7 +1269,10 @@ function AdminProducts() {
                       const v = e.target.value;
                       setRefCost(v);
                       const n = v === "" ? null : Number(v);
-                      setForm({ ...form, cost: Number.isFinite(n as number) ? (n as number) : null });
+                      setForm({
+                        ...form,
+                        cost_price: Number.isFinite(n as number) ? (n as number) : null,
+                      });
                     }}
                     placeholder="مثال: 50 — تُحفظ مع المنتج لاحتساب الربح"
                   />
