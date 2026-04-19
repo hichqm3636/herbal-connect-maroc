@@ -65,6 +65,7 @@ interface Product {
   stock: number;
   active: boolean;
   points_per_unit: number;
+  cost: number | null;
   rrp_price: number | null;
   pharmacy_price: number | null;
   map_price: number | null;
@@ -110,6 +111,7 @@ const empty: Omit<Product, "id" | "image_url"> = {
   stock: 0,
   active: true,
   points_per_unit: 0,
+  cost: null,
   rrp_price: null,
   pharmacy_price: null,
   map_price: null,
