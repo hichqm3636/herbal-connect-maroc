@@ -17,6 +17,7 @@ import {
   Building2,
   Tag,
   BarChart3,
+  ListChecks,
 } from "lucide-react";
 import {
   Sidebar,
@@ -49,6 +50,7 @@ const adminItems = [
   { title: "إدارة الموزعين", url: "/admin/distributors", icon: Users },
   { title: "إدارة المناطق", url: "/admin/territories", icon: MapPin },
   { title: "إدارة الطلبات", url: "/admin/orders", icon: ClipboardList },
+  { title: "قواعد الطلب", url: "/admin/order-rules", icon: ListChecks },
   { title: "ذكاء السوق", url: "/admin/analytics", icon: BarChart3 },
   { title: "هوية الشركة", url: "/admin/branding", icon: Palette },
   { title: "سجل النشاط", url: "/admin/activity", icon: Activity },
@@ -58,6 +60,7 @@ const superAdminItems = [
   { title: "لوحة المنصة", url: "/super-admin", icon: LayoutDashboard },
   { title: "الشركات", url: "/super-admin/companies", icon: Building2 },
   { title: "فئات التسعير", url: "/super-admin/pricing-tiers", icon: Tag },
+  { title: "قواعد الطلب", url: "/super-admin/order-rules", icon: ListChecks },
 ];
 
 export function AppSidebar() {
