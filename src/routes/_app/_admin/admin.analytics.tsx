@@ -26,7 +26,12 @@ export const Route = createFileRoute("/_app/_admin/admin/analytics")({
 });
 
 // Orders considered "fulfilled" for analytics (exclude pending & cancelled)
-const VALID_STATUSES = ["confirmed", "preparing", "shipped", "delivered"] as const satisfies readonly ("confirmed" | "preparing" | "shipped" | "delivered")[];
+const VALID_STATUSES: ("confirmed" | "preparing" | "shipped" | "delivered")[] = [
+  "confirmed",
+  "preparing",
+  "shipped",
+  "delivered",
+];
 
 type ProductRow = { id: string; name_ar: string };
 type ProfileRow = { id: string; full_name: string; territory_id: string };
