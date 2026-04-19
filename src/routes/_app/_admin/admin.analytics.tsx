@@ -229,16 +229,34 @@ function AnalyticsPage() {
 
   return (
     <div className="space-y-6 min-w-0">
-      <header className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center gap-3">
         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <BarChart3 className="h-5 w-5" />
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-xl md:text-2xl font-bold">ذكاء السوق</h1>
           <p className="text-xs md:text-sm text-muted-foreground">
-            تحليلات أداء المنتجات والموزعين والمناطق — آخر 30 يومًا
+            تحليلات أداء المنتجات والموزعين والمناطق — آخر {rangeDays} يومًا
           </p>
         </div>
+        <ToggleGroup
+          type="single"
+          value={String(rangeDays)}
+          onValueChange={(v) => {
+            if (v === "7" || v === "30" || v === "90") setRangeDays(Number(v) as RangeDays);
+          }}
+          className="ms-auto"
+        >
+          <ToggleGroupItem value="7" aria-label="آخر 7 أيام" className="px-3 text-xs">
+            7 أيام
+          </ToggleGroupItem>
+          <ToggleGroupItem value="30" aria-label="آخر 30 يومًا" className="px-3 text-xs">
+            30 يومًا
+          </ToggleGroupItem>
+          <ToggleGroupItem value="90" aria-label="آخر 90 يومًا" className="px-3 text-xs">
+            90 يومًا
+          </ToggleGroupItem>
+        </ToggleGroup>
       </header>
 
       {/* Monthly trend */}
