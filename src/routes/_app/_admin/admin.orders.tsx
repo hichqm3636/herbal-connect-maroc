@@ -388,7 +388,7 @@ function AdminOrders() {
                         0,
                       );
                       const profit = rev - cost;
-                      const margin = cost > 0 ? Math.round((profit / cost) * 100) : 0;
+                      const margin = rev > 0 ? Math.round((profit / rev) * 100) : 0;
                       const partial = withCost.length < items.length;
                       return (
                         <p
