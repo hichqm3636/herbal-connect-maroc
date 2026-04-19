@@ -69,21 +69,21 @@ function AnalyticsPage() {
     (async () => {
       setLoading(true);
       const now = new Date();
-      const d30 = new Date(now);
-      d30.setDate(d30.getDate() - 30);
+      const dRange = new Date(now);
+      dRange.setDate(dRange.getDate() - rangeDays);
       const d6m = new Date(now);
       d6m.setMonth(d6m.getMonth() - 5);
       d6m.setDate(1);
       d6m.setHours(0, 0, 0, 0);
 
-      const [{ data: o30 }, { data: o6m }, { data: prods }, { data: profs }, { data: terrs }] =
+      const [{ data: oRange }, { data: o6m }, { data: prods }, { data: profs }, { data: terrs }] =
         await Promise.all([
           supabase
             .from("orders")
             .select("id, distributor_id, total_mad, created_at, status")
             .eq("company_id", companyId)
             .in("status", VALID_STATUSES)
-            .gte("created_at", d30.toISOString()),
+            .gte("created_at", dRange.toISOString()),
           supabase
             .from("orders")
             .select("id, distributor_id, total_mad, created_at, status")
@@ -95,30 +95,30 @@ function AnalyticsPage() {
           supabase.from("territories").select("id, name").eq("company_id", companyId),
         ]);
 
-      const orderIds30 = (o30 ?? []).map((o) => o.id);
-      let it30: ItemRow[] = [];
-      if (orderIds30.length) {
+      const orderIdsRange = (oRange ?? []).map((o) => o.id);
+      let itRange: ItemRow[] = [];
+      if (orderIdsRange.length) {
         const { data } = await supabase
           .from("order_items")
           .select("order_id, product_id, quantity, unit_price_mad")
-          .in("order_id", orderIds30);
-        it30 = (data ?? []) as ItemRow[];
+          .in("order_id", orderIdsRange);
+        itRange = (data ?? []) as ItemRow[];
       }
 
-      setOrders30((o30 ?? []) as OrderRow[]);
+      setOrdersRange((oRange ?? []) as OrderRow[]);
       setOrders6m((o6m ?? []) as OrderRow[]);
-      setItems30(it30);
+      setItemsRange(itRange);
       setProducts(Object.fromEntries((prods ?? []).map((p) => [p.id, p as ProductRow])));
       setProfiles(Object.fromEntries((profs ?? []).map((p) => [p.id, p as ProfileRow])));
       setTerritories(Object.fromEntries((terrs ?? []).map((t) => [t.id, t as TerritoryRow])));
       setLoading(false);
     })();
-  }, [companyId]);
+  }, [companyId, rangeDays]);
 
-  // 1. Top selling products (30d)
+  // 1. Top selling products (selected range)
   const topProducts = useMemo(() => {
     const agg = new Map<string, { qty: number; revenue: number }>();
-    for (const it of items30) {
+    for (const it of itemsRange) {
       const cur = agg.get(it.product_id) ?? { qty: 0, revenue: 0 };
       cur.qty += Number(it.quantity);
       cur.revenue += Number(it.quantity) * Number(it.unit_price_mad);
@@ -128,27 +128,27 @@ function AnalyticsPage() {
       .map(([pid, v]) => ({ id: pid, name: products[pid]?.name_ar ?? "—", ...v }))
       .sort((a, b) => b.qty - a.qty)
       .slice(0, 10);
-  }, [items30, products]);
+  }, [itemsRange, products]);
 
-  // 4. Fastest moving (velocity)
+  // 4. Fastest moving (velocity per day over selected range)
   const fastest = useMemo(
     () =>
       topProducts
-        .map((p) => ({ ...p, velocity: p.qty / 30 }))
+        .map((p) => ({ ...p, velocity: p.qty / rangeDays }))
         .sort((a, b) => b.velocity - a.velocity)
         .slice(0, 10),
-    [topProducts],
+    [topProducts, rangeDays],
   );
 
   // 2. Demand by territory
   const territoryDemand = useMemo(() => {
     const orderTerr = new Map<string, string>(); // order_id -> territory_id
-    for (const o of orders30) {
+    for (const o of ordersRange) {
       const tid = profiles[o.distributor_id]?.territory_id;
       if (tid) orderTerr.set(o.id, tid);
     }
     const agg = new Map<string, { orders: Set<string>; qty: number }>();
-    for (const it of items30) {
+    for (const it of itemsRange) {
       const tid = orderTerr.get(it.order_id);
       if (!tid) continue;
       const cur = agg.get(tid) ?? { orders: new Set(), qty: 0 };
@@ -170,12 +170,12 @@ function AnalyticsPage() {
         qty: v.qty,
       }))
       .sort((a, b) => b.qty - a.qty);
-  }, [orders30, items30, profiles, territories]);
+  }, [ordersRange, itemsRange, profiles, territories]);
 
   // 3. Distributor performance
   const distributorPerf = useMemo(() => {
     const agg = new Map<string, { orders: number; revenue: number }>();
-    for (const o of orders30) {
+    for (const o of ordersRange) {
       const cur = agg.get(o.distributor_id) ?? { orders: 0, revenue: 0 };
       cur.orders += 1;
       cur.revenue += Number(o.total_mad);
@@ -191,7 +191,7 @@ function AnalyticsPage() {
       }))
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 15);
-  }, [orders30, profiles]);
+  }, [ordersRange, profiles]);
 
   // 5. Monthly trend (6 months)
   const monthlyTrend = useMemo(() => {
