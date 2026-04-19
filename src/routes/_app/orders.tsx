@@ -17,7 +17,7 @@ import { formatMAD, formatDateTimeAr, STATUS_LABELS, STATUS_VARIANTS, STATUS_CLA
 
 export const Route = createFileRoute("/_app/orders")({
   component: OrdersPage,
-  head: () => ({ meta: [{ title: "طلباتي — بوابة هيرباليفي" }] }),
+  head: () => ({ meta: [{ title: "طلباتي — DistribHub" }] }),
 });
 
 interface OrderItem {

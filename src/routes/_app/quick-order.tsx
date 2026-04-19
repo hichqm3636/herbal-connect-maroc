@@ -19,7 +19,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/quick-order")({
   component: QuickOrderPage,
-  head: () => ({ meta: [{ title: "طلب سريع — بوابة هيرباليفي" }] }),
+  head: () => ({ meta: [{ title: "طلب سريع — DistribHub" }] }),
 });
 
 interface Row {
