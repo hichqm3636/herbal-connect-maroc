@@ -31,11 +31,11 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Herbialife Partner Hub — منصة إدارة الموزعين والطلبات" },
+      { title: "DistribHub — منصة إدارة الموزعين والطلبات" },
 
       { name: "description", content: "منصة إدارة الموزعين والطلبات" },
-      { property: "og:title", content: "Herbialife Partner Hub" },
-      { name: "twitter:title", content: "Herbialife Partner Hub" },
+      { property: "og:title", content: "DistribHub" },
+      { name: "twitter:title", content: "DistribHub" },
       { property: "og:description", content: "منصة إدارة الموزعين والطلبات" },
       { name: "twitter:description", content: "منصة إدارة الموزعين والطلبات" },
       { name: "twitter:card", content: "summary" },
