@@ -651,11 +651,22 @@ function AdminDistributors() {
                         <MapPin className="h-3 w-3" />
                         {d.territory_id ? (territoryById.get(d.territory_id) ?? d.city ?? "—") : (d.city || "—")}
                       </Badge>
-                      {d.pricing_tier_id && tierById.get(d.pricing_tier_id) && (
-                        <Badge className="gap-1 text-[10px] bg-primary/15 text-primary border border-primary/30 hover:bg-primary/20">
-                          {tierById.get(d.pricing_tier_id)!.name} — {tierById.get(d.pricing_tier_id)!.discount_percentage}%
-                        </Badge>
-                      )}
+                      {(() => {
+                        const cdp = pricingByDistributor[d.id];
+                        if (!cdp) return null;
+                        const tier = tierById.get(cdp.pricing_tier_id);
+                        if (!tier) return null;
+                        const effective =
+                          cdp.custom_discount_percent != null
+                            ? Number(cdp.custom_discount_percent)
+                            : tier.base_discount_percent;
+                        const isCustom = cdp.custom_discount_percent != null;
+                        return (
+                          <Badge className="gap-1 text-[10px] bg-primary/15 text-primary border border-primary/30 hover:bg-primary/20">
+                            {tier.name} — {effective}%{isCustom ? " (مخصص)" : ""}
+                          </Badge>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
