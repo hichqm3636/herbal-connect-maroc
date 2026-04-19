@@ -1210,6 +1210,26 @@ function AdminProducts() {
                 </Dialog>
 
 
+                {/* Reference cost — drives live margin badges */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs flex items-center justify-between">
+                    <span>التكلفة المرجعية (لعرض الهوامش)</span>
+                    {Number(refCost) > 0 && (
+                      <span className="text-[10px] text-muted-foreground font-normal">
+                        تكلفة: {formatMAD(Number(refCost))}
+                      </span>
+                    )}
+                  </Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={refCost}
+                    onChange={(e) => setRefCost(e.target.value)}
+                    placeholder="أدخل التكلفة لرؤية هامش كل سعر"
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-xs">السعر الموصى به (RRP)</Label>
