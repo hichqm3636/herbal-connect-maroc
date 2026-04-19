@@ -1219,13 +1219,13 @@ function AdminProducts() {
                 </Dialog>
 
 
-                {/* Reference cost — drives live margin badges */}
+                {/* Product cost — persisted; drives live margin badges */}
                 <div className="space-y-1.5">
                   <Label className="text-xs flex items-center justify-between">
-                    <span>التكلفة المرجعية (لعرض الهوامش)</span>
+                    <span>تكلفة المنتج (للهامش والربح)</span>
                     {Number(refCost) > 0 && (
                       <span className="text-[10px] text-muted-foreground font-normal">
-                        تكلفة: {formatMAD(Number(refCost))}
+                        {formatMAD(Number(refCost))}
                       </span>
                     )}
                   </Label>
@@ -1234,8 +1234,13 @@ function AdminProducts() {
                     min="0"
                     step="0.01"
                     value={refCost}
-                    onChange={(e) => setRefCost(e.target.value)}
-                    placeholder="أدخل التكلفة لرؤية هامش كل سعر"
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setRefCost(v);
+                      const n = v === "" ? null : Number(v);
+                      setForm({ ...form, cost: Number.isFinite(n as number) ? (n as number) : null });
+                    }}
+                    placeholder="مثال: 50 — تُحفظ مع المنتج لاحتساب الربح"
                   />
                 </div>
 
