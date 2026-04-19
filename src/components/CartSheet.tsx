@@ -27,6 +27,10 @@ import { useOrderRules } from "@/hooks/useOrderRules";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMAD } from "@/lib/format";
 import { getUnitPrice, validateLine } from "@/lib/pricing";
+import {
+  expectedDistributorUnitPrice,
+  isPriceDrift,
+} from "@/lib/distributorPricing";
 import { evaluateRules } from "@/lib/orderRules";
 import { toast } from "sonner";
 
@@ -61,7 +65,7 @@ interface PricedLine {
 
 export function CartSheet() {
   const { items, isOpen, setOpen, updateQty, setQty, removeItem, clear } = useCart();
-  const { user, partnerType, companyId, pricingTierId } = useAuth();
+  const { user, partnerType, companyId, pricingTierId, pricingTierDiscount } = useAuth();
   const { rules: orderRules } = useOrderRules();
   const [submitting, setSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
@@ -123,12 +127,38 @@ export function CartSheet() {
       return;
     }
     setSubmitting(true);
-    const points = Math.floor(total / 100);
+
+    // Pre-compute the authoritative tier-derived unit price for every line.
+    // This is the SINGLE source of truth used for both `orders.total_mad`
+    // and each `order_items.unit_price_mad` row.
+    const expectedLines = priced.map((l) => {
+      const product = {
+        rrp_price: l.item.rrp_price ?? null,
+        price_mad: l.item.price_mad,
+      };
+      const expected = expectedDistributorUnitPrice(product, pricingTierDiscount);
+      if (isPriceDrift(l.unitPrice, expected)) {
+        console.warn("[pricing_drift] cart vs tier mismatch", {
+          product_id: l.item.id,
+          name: l.item.name_ar,
+          cart_unit_price: l.unitPrice,
+          expected_distributor_price: expected,
+          tier_discount_percent: pricingTierDiscount,
+          base_price: product.rrp_price ?? product.price_mad,
+        });
+      }
+      return { line: l, expected };
+    });
+    const orderTotal = expectedLines.reduce(
+      (s, { line, expected }) => s + expected * line.item.qty,
+      0,
+    );
+    const points = Math.floor(orderTotal / 100);
     const trimmedNotes = notes.trim();
     const orderPayload = {
       distributor_id: user.id,
       company_id: companyId,
-      total_mad: total,
+      total_mad: orderTotal,
       points_earned: points,
       status: "pending" as const,
       notes: trimmedNotes ? trimmedNotes : null,
@@ -158,12 +188,12 @@ export function CartSheet() {
         (r as { cost_price: number | null }).cost_price,
       ]),
     );
-    const orderItems = priced.map((l) => ({
+    const orderItems = expectedLines.map(({ line, expected }) => ({
       order_id: order.id,
-      product_id: l.item.id,
-      quantity: l.item.qty,
-      unit_price_mad: l.unitPrice,
-      cost_snapshot: costMap.get(l.item.id) ?? null,
+      product_id: line.item.id,
+      quantity: line.item.qty,
+      unit_price_mad: expected,
+      cost_snapshot: costMap.get(line.item.id) ?? null,
     }));
     const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);
     if (itemsErr) {
