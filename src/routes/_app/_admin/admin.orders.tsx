@@ -42,6 +42,7 @@ export const Route = createFileRoute("/_app/_admin/admin/orders")({
 interface OrderItem {
   quantity: number;
   unit_price_mad: number;
+  cost_snapshot: number | null;
   products: { name_ar: string } | null;
 }
 
@@ -109,7 +110,7 @@ function AdminOrders() {
     let query = supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, distributor_id, company_id, notes, admin_notes, companies(display_name, name), profiles(full_name, phone, city, territory_id, territories(name)), order_items(quantity, unit_price_mad, products(name_ar))",
+        "id, order_number, status, total_mad, points_earned, created_at, distributor_id, company_id, notes, admin_notes, companies(display_name, name), profiles(full_name, phone, city, territory_id, territories(name)), order_items(quantity, unit_price_mad, cost_snapshot, products(name_ar))",
       )
       .order("created_at", { ascending: false });
     if (isSuperAdmin) {
