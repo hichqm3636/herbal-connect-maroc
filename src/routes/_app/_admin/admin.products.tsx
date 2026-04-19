@@ -272,6 +272,7 @@ function AdminProducts() {
     setEditing(null);
     setForm(empty);
     setImages([]);
+    setRefCost("");
     setOpen(true);
   };
 
