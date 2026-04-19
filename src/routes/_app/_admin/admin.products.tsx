@@ -1339,18 +1339,6 @@ function AdminProducts() {
                         />
                         <MarginBadge price={t.price} />
                       </div>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={t.price}
-                          onChange={(e) => {
-                            const next = [...form.price_tiers];
-                            next[idx] = { ...t, price: Number(e.target.value) || 0 };
-                            setForm({ ...form, price_tiers: next });
-                          }}
-                        />
-                      </div>
                     ))}
                   </div>
                   <p className="text-[11px] text-muted-foreground">
