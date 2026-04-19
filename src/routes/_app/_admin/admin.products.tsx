@@ -149,6 +149,34 @@ function AdminProducts() {
   const syncWoo = useServerFn(syncWooCommerceProducts);
   const [costDialogOpen, setCostDialogOpen] = useState(false);
   const [costInput, setCostInput] = useState<string>("");
+  // Reference cost used for live margin indicators in the pricing form.
+  // Not persisted to DB — purely an editing aid.
+  const [refCost, setRefCost] = useState<string>("");
+
+  const marginPct = (price: number | null | undefined): string | null => {
+    const c = Number(refCost);
+    if (!Number.isFinite(c) || c <= 0) return null;
+    if (price == null || !Number.isFinite(price) || price <= 0) return null;
+    const pct = ((price - c) / c) * 100;
+    return `${Math.round(pct)}%`;
+  };
+
+  const MarginBadge = ({ price }: { price: number | null | undefined }) => {
+    const m = marginPct(price);
+    if (!m) return null;
+    const c = Number(refCost);
+    const ratio = c > 0 && price != null ? (price - c) / c : 0;
+    const tone =
+      ratio >= 1 ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+      : ratio >= 0.5 ? "bg-sky-500/15 text-sky-700 dark:text-sky-400"
+      : ratio > 0 ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+      : "bg-destructive/15 text-destructive";
+    return (
+      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${tone}`}>
+        هامش {m}
+      </span>
+    );
+  };
 
   const applyCostPricing = () => {
     const cost = Number(costInput);
