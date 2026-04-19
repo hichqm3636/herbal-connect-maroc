@@ -71,7 +71,10 @@ export function AppSidebar() {
   // Distributor menu only for actual distributors (not admins, not platform owner)
   const isDistributor = !isAdmin && !isPlatformOwner;
   const { isMobile, setOpenMobile } = useSidebar();
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
+  const isActive = (path: string) => {
+    if (path === "/super-admin") return location.pathname === "/super-admin";
+    return location.pathname === path || location.pathname.startsWith(path + "/");
+  };
 
   const handleNavClick = () => {
     if (isMobile) setOpenMobile(false);
