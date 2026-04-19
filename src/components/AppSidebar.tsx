@@ -62,7 +62,13 @@ const superAdminItems = [
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin, isSuperAdmin, signOut, user, company } = useAuth();
+  const { isAdmin, isSuperAdmin, roles, signOut, user, company } = useAuth();
+  // Platform Owner = super_admin only (not also admin of a company)
+  const isPlatformOwner = isSuperAdmin && !roles.includes("admin");
+  // Company Admin = admin role (super_admin operating inside a company also acts as admin here)
+  const isCompanyAdmin = isAdmin && !isPlatformOwner;
+  // Distributor menu only for actual distributors (not admins, not platform owner)
+  const isDistributor = !isAdmin && !isPlatformOwner;
   const { isMobile, setOpenMobile } = useSidebar();
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
 
