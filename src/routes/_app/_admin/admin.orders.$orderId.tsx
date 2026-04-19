@@ -396,6 +396,7 @@ function OrderDetails() {
         )}
       </Card>
 
+      {order.notes && (
         <Card className="p-4 space-y-1">
           <h2 className="font-semibold text-sm text-muted-foreground">ملاحظات التوصيل</h2>
           <p className="text-sm whitespace-pre-wrap">{order.notes}</p>
