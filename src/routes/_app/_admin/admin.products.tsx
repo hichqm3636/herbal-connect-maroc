@@ -65,7 +65,7 @@ interface Product {
   stock: number;
   active: boolean;
   points_per_unit: number;
-  cost: number | null;
+  cost_price: number | null;
   rrp_price: number | null;
   pharmacy_price: number | null;
   map_price: number | null;
@@ -111,7 +111,7 @@ const empty: Omit<Product, "id" | "image_url"> = {
   stock: 0,
   active: true,
   points_per_unit: 0,
-  cost: null,
+  cost_price: null,
   rrp_price: null,
   pharmacy_price: null,
   map_price: null,
@@ -189,7 +189,7 @@ function AdminProducts() {
     const d = deriveFromCost(cost);
     setForm({
       ...form,
-      cost,
+      cost_price: cost,
       price_mad: d.distributor_price,
       rrp_price: d.rrp_price,
       pharmacy_price: d.pharmacy_price,
@@ -289,7 +289,7 @@ function AdminProducts() {
       stock: p.stock,
       active: p.active,
       points_per_unit: p.points_per_unit ?? 0,
-      cost: p.cost,
+      cost_price: p.cost_price,
       rrp_price: p.rrp_price,
       pharmacy_price: p.pharmacy_price,
       map_price: p.map_price,
@@ -306,7 +306,7 @@ function AdminProducts() {
             ],
     });
     // Pre-fill the live margin reference with the persisted cost (if any).
-    setRefCost(p.cost != null ? String(p.cost) : "");
+    setRefCost(p.cost_price != null ? String(p.cost_price) : "");
     await loadImages(p.id);
     setOpen(true);
   };
