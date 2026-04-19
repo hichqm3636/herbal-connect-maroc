@@ -73,13 +73,13 @@ function AnalyticsPage() {
             .from("orders")
             .select("id, distributor_id, total_mad, created_at, status")
             .eq("company_id", companyId)
-            .in("status", VALID_STATUSES as unknown as string[])
+            .in("status", VALID_STATUSES)
             .gte("created_at", d30.toISOString()),
           supabase
             .from("orders")
             .select("id, distributor_id, total_mad, created_at, status")
             .eq("company_id", companyId)
-            .in("status", VALID_STATUSES as unknown as string[])
+            .in("status", VALID_STATUSES)
             .gte("created_at", d6m.toISOString()),
           supabase.from("products").select("id, name_ar").eq("company_id", companyId),
           supabase.from("profiles").select("id, full_name, territory_id").eq("company_id", companyId),
