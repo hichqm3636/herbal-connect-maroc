@@ -288,6 +288,7 @@ function AdminProducts() {
       stock: p.stock,
       active: p.active,
       points_per_unit: p.points_per_unit ?? 0,
+      cost: p.cost,
       rrp_price: p.rrp_price,
       pharmacy_price: p.pharmacy_price,
       map_price: p.map_price,
@@ -303,7 +304,8 @@ function AdminProducts() {
               { min_qty: 24, price: 0 },
             ],
     });
-    setRefCost("");
+    // Pre-fill the live margin reference with the persisted cost (if any).
+    setRefCost(p.cost != null ? String(p.cost) : "");
     await loadImages(p.id);
     setOpen(true);
   };
