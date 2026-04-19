@@ -128,11 +128,22 @@ export function CartSheet() {
       setSubmitting(false);
       return;
     }
+    // Snapshot product cost at order time so historical profit reports stay
+    // accurate even if the admin updates cost later.
+    const productIds = priced.map((l) => l.item.id);
+    const { data: costRows } = await supabase
+      .from("products")
+      .select("id, cost")
+      .in("id", productIds);
+    const costMap = new Map<string, number | null>(
+      (costRows ?? []).map((r) => [r.id as string, (r as { cost: number | null }).cost]),
+    );
     const orderItems = priced.map((l) => ({
       order_id: order.id,
       product_id: l.item.id,
       quantity: l.item.qty,
       unit_price_mad: l.unitPrice,
+      cost_snapshot: costMap.get(l.item.id) ?? null,
     }));
     const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);
     if (itemsErr) {

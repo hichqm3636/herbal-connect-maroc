@@ -65,6 +65,7 @@ interface Product {
   stock: number;
   active: boolean;
   points_per_unit: number;
+  cost: number | null;
   rrp_price: number | null;
   pharmacy_price: number | null;
   map_price: number | null;
@@ -110,6 +111,7 @@ const empty: Omit<Product, "id" | "image_url"> = {
   stock: 0,
   active: true,
   points_per_unit: 0,
+  cost: null,
   rrp_price: null,
   pharmacy_price: null,
   map_price: null,
@@ -187,6 +189,7 @@ function AdminProducts() {
     const d = deriveFromCost(cost);
     setForm({
       ...form,
+      cost,
       price_mad: d.distributor_price,
       rrp_price: d.rrp_price,
       pharmacy_price: d.pharmacy_price,
@@ -286,6 +289,7 @@ function AdminProducts() {
       stock: p.stock,
       active: p.active,
       points_per_unit: p.points_per_unit ?? 0,
+      cost: p.cost,
       rrp_price: p.rrp_price,
       pharmacy_price: p.pharmacy_price,
       map_price: p.map_price,
@@ -301,7 +305,8 @@ function AdminProducts() {
               { min_qty: 24, price: 0 },
             ],
     });
-    setRefCost("");
+    // Pre-fill the live margin reference with the persisted cost (if any).
+    setRefCost(p.cost != null ? String(p.cost) : "");
     await loadImages(p.id);
     setOpen(true);
   };
@@ -496,6 +501,7 @@ function AdminProducts() {
       stock: form.stock,
       active: form.active,
       points_per_unit: form.points_per_unit,
+      cost: form.cost,
       rrp_price: form.rrp_price,
       pharmacy_price: form.pharmacy_price,
       map_price: form.map_price,
@@ -1213,13 +1219,13 @@ function AdminProducts() {
                 </Dialog>
 
 
-                {/* Reference cost — drives live margin badges */}
+                {/* Product cost — persisted; drives live margin badges */}
                 <div className="space-y-1.5">
                   <Label className="text-xs flex items-center justify-between">
-                    <span>التكلفة المرجعية (لعرض الهوامش)</span>
+                    <span>تكلفة المنتج (للهامش والربح)</span>
                     {Number(refCost) > 0 && (
                       <span className="text-[10px] text-muted-foreground font-normal">
-                        تكلفة: {formatMAD(Number(refCost))}
+                        {formatMAD(Number(refCost))}
                       </span>
                     )}
                   </Label>
@@ -1228,8 +1234,13 @@ function AdminProducts() {
                     min="0"
                     step="0.01"
                     value={refCost}
-                    onChange={(e) => setRefCost(e.target.value)}
-                    placeholder="أدخل التكلفة لرؤية هامش كل سعر"
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setRefCost(v);
+                      const n = v === "" ? null : Number(v);
+                      setForm({ ...form, cost: Number.isFinite(n as number) ? (n as number) : null });
+                    }}
+                    placeholder="مثال: 50 — تُحفظ مع المنتج لاحتساب الربح"
                   />
                 </div>
 

@@ -46,6 +46,7 @@ interface ItemRow {
   id: string;
   quantity: number;
   unit_price_mad: number;
+  cost_snapshot: number | null;
   products: { id: string; name_ar: string; sku: string | null; image_url: string | null } | null;
 }
 
@@ -106,7 +107,7 @@ function OrderDetails() {
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, distributor_id, company_id, profiles(full_name, phone, city, territories(name), pricing_tiers(name, discount_percentage)), order_items(id, quantity, unit_price_mad, products(id, name_ar, sku, image_url))",
+        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, distributor_id, company_id, profiles(full_name, phone, city, territories(name), pricing_tiers(name, discount_percentage)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url))",
       )
       .eq("id", orderId)
       .eq("company_id", companyId)
@@ -219,6 +220,23 @@ function OrderDetails() {
     0,
   );
 
+  // Profit calculations — based on cost snapshots captured at order time.
+  // Items missing a snapshot are excluded from cost/profit and flagged in the UI.
+  const itemsWithCost = order.order_items.filter(
+    (it) => it.cost_snapshot != null && Number(it.cost_snapshot) > 0,
+  );
+  const itemsMissingCost = order.order_items.length - itemsWithCost.length;
+  const orderRevenue = itemsWithCost.reduce(
+    (s, it) => s + Number(it.unit_price_mad) * it.quantity,
+    0,
+  );
+  const orderCost = itemsWithCost.reduce(
+    (s, it) => s + Number(it.cost_snapshot ?? 0) * it.quantity,
+    0,
+  );
+  const orderProfit = orderRevenue - orderCost;
+  const orderMargin = orderCost > 0 ? (orderProfit / orderCost) * 100 : 0;
+
   return (
     <div className="space-y-5 pb-24">
       <div className="flex items-center gap-2">
@@ -317,6 +335,65 @@ function OrderDetails() {
           <span className="text-xl font-bold text-primary">{formatMAD(order.total_mad)}</span>
         </div>
         <p className="text-xs text-warning text-left">+{order.points_earned} نقطة ولاء</p>
+      </Card>
+
+      {/* Profit summary — admin-only insight based on cost snapshots */}
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-sm text-muted-foreground">الربحية</h2>
+          {itemsMissingCost > 0 && (
+            <span className="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded">
+              {itemsMissingCost} منتج بدون تكلفة مسجلة
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-md border bg-muted/30 p-3">
+            <p className="text-[11px] text-muted-foreground">الإيرادات</p>
+            <p className="text-sm font-semibold">{formatMAD(orderRevenue)}</p>
+          </div>
+          <div className="rounded-md border bg-muted/30 p-3">
+            <p className="text-[11px] text-muted-foreground">التكلفة</p>
+            <p className="text-sm font-semibold">{formatMAD(orderCost)}</p>
+          </div>
+          <div
+            className={`rounded-md border p-3 ${
+              orderProfit >= 0
+                ? "bg-emerald-500/10 border-emerald-500/30"
+                : "bg-destructive/10 border-destructive/30"
+            }`}
+          >
+            <p className="text-[11px] text-muted-foreground">الربح</p>
+            <p
+              className={`text-sm font-semibold ${
+                orderProfit >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-destructive"
+              }`}
+            >
+              {formatMAD(orderProfit)}
+            </p>
+          </div>
+          <div
+            className={`rounded-md border p-3 ${
+              orderMargin >= 50
+                ? "bg-emerald-500/10 border-emerald-500/30"
+                : orderMargin >= 20
+                  ? "bg-sky-500/10 border-sky-500/30"
+                  : orderMargin >= 0
+                    ? "bg-amber-500/10 border-amber-500/30"
+                    : "bg-destructive/10 border-destructive/30"
+            }`}
+          >
+            <p className="text-[11px] text-muted-foreground">الهامش</p>
+            <p className="text-sm font-semibold">
+              {orderCost > 0 ? `${Math.round(orderMargin)}%` : "—"}
+            </p>
+          </div>
+        </div>
+        {orderCost === 0 && (
+          <p className="text-[11px] text-muted-foreground">
+            لم يتم تسجيل تكلفة لأي منتج في هذا الطلب — أضف تكلفة المنتجات في صفحة الإدارة لرؤية الربحية.
+          </p>
+        )}
       </Card>
 
       {order.notes && (
