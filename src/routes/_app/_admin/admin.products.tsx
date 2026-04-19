@@ -193,6 +193,7 @@ function AdminProducts() {
       map_price: d.map_price,
       price_tiers: d.price_tiers,
     });
+    setRefCost(String(cost));
     setCostDialogOpen(false);
     setCostInput("");
     toast.success("تم احتساب جميع الأسعار من التكلفة");
