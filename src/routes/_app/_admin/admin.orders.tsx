@@ -317,7 +317,7 @@ function AdminOrders() {
           </Card>
         ) : (
           filtered.map((o) => (
-            <Card key={o.id} className="p-4 shadow-soft hover:bg-muted/30 transition-colors">
+            <Card key={o.id} className="p-4 shadow-soft hover:bg-muted/30 transition-colors overflow-hidden">
               <Link
                 to="/admin/orders/$orderId"
                 params={{ orderId: o.id }}
@@ -406,7 +406,7 @@ function AdminOrders() {
                   </div>
                 </div>
               </Link>
-              <div className="mt-3 pt-3 border-t flex gap-2 overflow-x-auto">
+              <div className="mt-3 pt-3 border-t flex flex-wrap gap-2">
                 {QUICK_ACTIONS.map((a) => {
                   const Icon = a.icon;
                   const isCurrent = o.status === a.status;
