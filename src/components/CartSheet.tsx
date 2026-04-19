@@ -23,9 +23,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useCart, type CartItem } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrderRules } from "@/hooks/useOrderRules";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMAD } from "@/lib/format";
 import { getUnitPrice, validateLine } from "@/lib/pricing";
+import { evaluateRules } from "@/lib/orderRules";
 import { toast } from "sonner";
 
 export function CartButton() {
@@ -59,7 +61,8 @@ interface PricedLine {
 
 export function CartSheet() {
   const { items, isOpen, setOpen, updateQty, setQty, removeItem, clear } = useCart();
-  const { user, partnerType, companyId } = useAuth();
+  const { user, partnerType, companyId, pricingTierId } = useAuth();
+  const { rules: orderRules } = useOrderRules();
   const [submitting, setSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -91,7 +94,19 @@ export function CartSheet() {
 
   const total = priced.reduce((s, l) => s + l.lineTotal, 0);
   const blockedLines = priced.filter((l) => l.blocked);
-  const canCheckout = items.length > 0 && blockedLines.length === 0;
+  const unitsCount = items.reduce((s, i) => s + i.qty, 0);
+  const pointsEarned = Math.floor(total / 100);
+  const rulesResult = useMemo(
+    () =>
+      evaluateRules(
+        orderRules,
+        { total, points: pointsEarned, unitsCount },
+        pricingTierId,
+      ),
+    [orderRules, total, pointsEarned, unitsCount, pricingTierId],
+  );
+  const canCheckout =
+    items.length > 0 && blockedLines.length === 0 && rulesResult.ok;
 
   const placeOrder = async () => {
     if (!user || items.length === 0) return;
