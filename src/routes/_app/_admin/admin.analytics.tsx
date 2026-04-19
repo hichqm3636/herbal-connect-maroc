@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, TrendingUp, MapPin, Users, Zap, LineChart as LineIcon } from "lucide-react";
+import { BarChart3, TrendingUp, MapPin, Users, Zap, LineChart as LineIcon, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   ResponsiveContainer,
   BarChart,
@@ -214,6 +215,25 @@ function AnalyticsPage() {
     return [...buckets.values()];
   }, [orders6m]);
 
+  // CSV export helper
+  const downloadCSV = (filename: string, headers: string[], rows: (string | number)[][]) => {
+    const escape = (v: string | number) => {
+      const s = String(v ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [headers, ...rows].map((r) => r.map(escape).join(",")).join("\n");
+    // Prepend BOM so Excel renders Arabic correctly
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${filename}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -264,6 +284,21 @@ function AnalyticsPage() {
         <div className="flex items-center gap-2 mb-4">
           <LineIcon className="h-4 w-4 text-primary" />
           <h2 className="font-bold">اتجاه المبيعات الشهري (آخر 6 أشهر)</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ms-auto h-8 px-2"
+            onClick={() =>
+              downloadCSV(
+                "monthly-trend",
+                ["الشهر", "الطلبات", "الإيرادات (MAD)"],
+                monthlyTrend.map((m) => [m.label, m.orders, m.revenue.toFixed(2)]),
+              )
+            }
+          >
+            <Download className="h-4 w-4 me-1" />
+            <span className="text-xs">CSV</span>
+          </Button>
         </div>
         <div className="h-64 w-full" dir="ltr">
           <ResponsiveContainer width="100%" height="100%">
@@ -305,6 +340,22 @@ function AnalyticsPage() {
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="h-4 w-4 text-primary" />
             <h2 className="font-bold">المنتجات الأكثر مبيعًا</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ms-auto h-8 px-2"
+              disabled={topProducts.length === 0}
+              onClick={() =>
+                downloadCSV(
+                  "top-products",
+                  ["#", "المنتج", "الكمية", "الإيرادات (MAD)"],
+                  topProducts.map((p, i) => [i + 1, p.name, p.qty, p.revenue.toFixed(2)]),
+                )
+              }
+            >
+              <Download className="h-4 w-4 me-1" />
+              <span className="text-xs">CSV</span>
+            </Button>
           </div>
           {topProducts.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">لا توجد بيانات بعد</p>
@@ -336,6 +387,22 @@ function AnalyticsPage() {
           <div className="flex items-center gap-2 mb-4">
             <Zap className="h-4 w-4 text-primary" />
             <h2 className="font-bold">الأسرع حركة (سرعة يومية)</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ms-auto h-8 px-2"
+              disabled={fastest.length === 0}
+              onClick={() =>
+                downloadCSV(
+                  "fastest-moving",
+                  ["#", "المنتج", "السرعة (وحدة/يوم)", `الكمية خلال ${rangeDays} يوم`],
+                  fastest.map((p, i) => [i + 1, p.name, p.velocity.toFixed(2), p.qty]),
+                )
+              }
+            >
+              <Download className="h-4 w-4 me-1" />
+              <span className="text-xs">CSV</span>
+            </Button>
           </div>
           {fastest.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">لا توجد بيانات بعد</p>
@@ -368,6 +435,22 @@ function AnalyticsPage() {
         <div className="flex items-center gap-2 mb-4">
           <MapPin className="h-4 w-4 text-primary" />
           <h2 className="font-bold">الطلب حسب المنطقة</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ms-auto h-8 px-2"
+            disabled={territoryDemand.length === 0}
+            onClick={() =>
+              downloadCSV(
+                "territory-demand",
+                ["المنطقة", "الطلبات", "الكمية"],
+                territoryDemand.map((t) => [t.name, t.orders, t.qty]),
+              )
+            }
+          >
+            <Download className="h-4 w-4 me-1" />
+            <span className="text-xs">CSV</span>
+          </Button>
         </div>
         {territoryDemand.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">لا توجد بيانات بعد</p>
@@ -420,6 +503,22 @@ function AnalyticsPage() {
         <div className="flex items-center gap-2 mb-4">
           <Users className="h-4 w-4 text-primary" />
           <h2 className="font-bold">أداء الموزعين</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ms-auto h-8 px-2"
+            disabled={distributorPerf.length === 0}
+            onClick={() =>
+              downloadCSV(
+                "distributor-performance",
+                ["الموزع", "الطلبات", "الإيرادات (MAD)", "متوسط الطلب (MAD)"],
+                distributorPerf.map((d) => [d.name, d.orders, d.revenue.toFixed(2), d.aov.toFixed(2)]),
+              )
+            }
+          >
+            <Download className="h-4 w-4 me-1" />
+            <span className="text-xs">CSV</span>
+          </Button>
         </div>
         {distributorPerf.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">لا توجد بيانات بعد</p>
