@@ -515,6 +515,60 @@ function OrderDetails() {
         )}
       </Card>
 
+      {/* Debug section — temporary, helps verify pricing/profit math per item. */}
+      <Card className="p-4 space-y-3 border-dashed">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-sm text-muted-foreground">تشخيص الحساب (مؤقت)</h2>
+          <Badge variant="outline" className="text-[10px]">debug</Badge>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          tier_discount = {tierDiscount}% — distributor_price = base_price × (1 − tier_discount)
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-muted-foreground border-b">
+                <th className="text-right py-1.5 font-medium">المنتج</th>
+                <th className="text-left py-1.5 font-medium">base_price</th>
+                <th className="text-left py-1.5 font-medium">distributor_price</th>
+                <th className="text-left py-1.5 font-medium">unit_price (محفوظ)</th>
+                <th className="text-left py-1.5 font-medium">cost_price</th>
+                <th className="text-center py-1.5 font-medium">qty</th>
+              </tr>
+            </thead>
+            <tbody className="font-mono">
+              {order.order_items.map((it) => {
+                const base = baseFor(it);
+                const expected = base * (1 - tierDiscount / 100);
+                const stored = Number(it.unit_price_mad);
+                const drift = Math.abs(expected - stored) > 0.5;
+                const cost =
+                  it.cost_snapshot != null
+                    ? Number(it.cost_snapshot)
+                    : it.products?.cost != null
+                      ? Number(it.products.cost)
+                      : null;
+                return (
+                  <tr key={it.id} className="border-b last:border-0">
+                    <td className="py-1.5 font-sans">{it.products?.name_ar ?? "—"}</td>
+                    <td className="text-left py-1.5">{base.toFixed(2)}</td>
+                    <td className="text-left py-1.5">{expected.toFixed(2)}</td>
+                    <td className={`text-left py-1.5 ${drift ? "text-destructive font-bold" : ""}`}>
+                      {stored.toFixed(2)}
+                    </td>
+                    <td className="text-left py-1.5">{cost != null ? cost.toFixed(2) : "—"}</td>
+                    <td className="text-center py-1.5">{it.quantity}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          إذا اختلف unit_price المحفوظ عن distributor_price المتوقع فهذا يعني أن السعر تم تطبيقه بشريحة مختلفة وقت إنشاء الطلب.
+        </p>
+      </Card>
+
       {order.notes && (
         <Card className="p-4 space-y-1">
           <h2 className="font-semibold text-sm text-muted-foreground">ملاحظات التوصيل</h2>
