@@ -77,7 +77,6 @@ interface Distributor {
   phone: string | null;
   city: string | null;
   territory_id: string | null;
-  pricing_tier_id: string | null;
   level: string;
   loyalty_points: number;
   monthly_sales: number;
@@ -92,7 +91,13 @@ interface TerritoryLite {
 interface PricingTierLite {
   id: string;
   name: string;
-  discount_percentage: number;
+  base_discount_percent: number;
+}
+
+interface DistributorPricingLite {
+  distributor_id: string;
+  pricing_tier_id: string;
+  custom_discount_percent: number | null;
 }
 
 const LEVELS = ["distributor", "senior_consultant", "success_builder", "supervisor", "world_team"];
@@ -136,31 +141,45 @@ function AdminDistributors() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [territories, setTerritories] = useState<TerritoryLite[]>([]);
   const [tiers, setTiers] = useState<PricingTierLite[]>([]);
+  const [pricingByDistributor, setPricingByDistributor] = useState<
+    Record<string, DistributorPricingLite>
+  >({});
 
   const load = async () => {
     if (!companyId) return;
     setLoading(true);
-    const [{ data: profs }, { data: terrs }, { data: pTiers }] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id, full_name, phone, city, territory_id, pricing_tier_id, level, loyalty_points, monthly_sales, is_active")
-        .eq("company_id", companyId)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("territories")
-        .select("id, name")
-        .eq("company_id", companyId)
-        .order("name"),
-      supabase
-        .from("pricing_tiers")
-        .select("id, name, discount_percentage")
-        .eq("company_id", companyId)
-        .order("discount_percentage", { ascending: true }),
-    ]);
+    const [{ data: profs }, { data: terrs }, { data: pTiers }, { data: cdpRows }] =
+      await Promise.all([
+        supabase
+          .from("profiles")
+          .select(
+            "id, full_name, phone, city, territory_id, level, loyalty_points, monthly_sales, is_active",
+          )
+          .eq("company_id", companyId)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("territories")
+          .select("id, name")
+          .eq("company_id", companyId)
+          .order("name"),
+        supabase
+          .from("pricing_tiers")
+          .select("id, name, base_discount_percent")
+          .order("base_discount_percent", { ascending: true }),
+        supabase
+          .from("company_distributor_pricing")
+          .select("distributor_id, pricing_tier_id, custom_discount_percent")
+          .eq("company_id", companyId),
+      ]);
     const profiles = (profs ?? []) as Distributor[];
     setList(profiles);
     setTerritories((terrs ?? []) as TerritoryLite[]);
     setTiers((pTiers ?? []) as PricingTierLite[]);
+    const cdpMap: Record<string, DistributorPricingLite> = {};
+    for (const row of (cdpRows ?? []) as DistributorPricingLite[]) {
+      cdpMap[row.distributor_id] = row;
+    }
+    setPricingByDistributor(cdpMap);
     setLoading(false);
 
     // Fetch banned status + last sign-in from auth.users via edge function
