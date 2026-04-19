@@ -336,23 +336,31 @@ function OrderDetails() {
             <p className="text-xs text-muted-foreground">المدينة</p>
             <p className="font-medium">{order.profiles?.city || "—"}</p>
           </div>
-          {order.profiles?.pricing_tiers && (
-            <div className="col-span-2">
-              <p className="text-xs text-muted-foreground">شريحة الأسعار</p>
-              <Badge className="bg-success/15 text-success border-success/30 hover:bg-success/20">
-                {order.profiles.pricing_tiers.name} —{" "}
-                {Number(order.profiles.pricing_tiers.discount_percentage)}%
-              </Badge>
-            </div>
-          )}
+          <div className="col-span-2">
+            <p className="text-xs text-muted-foreground">شريحة الأسعار</p>
+            {tier ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge className="bg-success/15 text-success border-success/30 hover:bg-success/20">
+                  {tier.name} — {tier.discount_percent}%
+                </Badge>
+                {tier.custom && (
+                  <Badge variant="outline" className="text-[10px]">خصم مخصص</Badge>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">لا توجد شريحة مُعيَّنة</p>
+            )}
+          </div>
         </div>
       </Card>
 
       <Card className="p-4 space-y-3">
         <h2 className="font-semibold text-sm text-muted-foreground">المنتجات</h2>
-        <div className="space-y-2">
+        {/* Mobile cards */}
+        <div className="space-y-2 md:hidden">
           {order.order_items.map((it) => {
-            const subtotal = Number(it.unit_price_mad) * it.quantity;
+            const base = baseFor(it);
+            const lineTotal = Number(it.unit_price_mad) * it.quantity;
             return (
               <div key={it.id} className="flex items-center gap-3 py-2 border-b last:border-0">
                 {it.products?.image_url ? (
@@ -369,22 +377,81 @@ function OrderDetails() {
                     {it.products?.name_ar ?? "منتج محذوف"}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {formatMAD(it.unit_price_mad)} × {it.quantity}
+                    <span className="line-through">{formatMAD(base)}</span>{" "}
+                    → {formatMAD(it.unit_price_mad)} × {it.quantity}
                   </p>
                 </div>
-                <p className="text-sm font-semibold">{formatMAD(subtotal)}</p>
+                <p className="text-sm font-semibold">{formatMAD(lineTotal)}</p>
               </div>
             );
           })}
         </div>
-        <Separator />
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">المجموع الفرعي</span>
-          <span>{formatMAD(itemsTotal)}</span>
+
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs text-muted-foreground border-b">
+                <th className="text-right py-2 font-medium">المنتج</th>
+                <th className="text-center py-2 font-medium">الكمية</th>
+                <th className="text-left py-2 font-medium">السعر الأساسي (RRP)</th>
+                <th className="text-left py-2 font-medium">سعر الموزع</th>
+                <th className="text-left py-2 font-medium">إجمالي السطر</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.order_items.map((it) => {
+                const base = baseFor(it);
+                const lineTotal = Number(it.unit_price_mad) * it.quantity;
+                return (
+                  <tr key={it.id} className="border-b last:border-0">
+                    <td className="py-2">
+                      <div className="flex items-center gap-2">
+                        {it.products?.image_url ? (
+                          <img
+                            src={it.products.image_url}
+                            alt={it.products.name_ar}
+                            className="h-8 w-8 rounded object-cover bg-muted shrink-0"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 rounded bg-muted shrink-0" />
+                        )}
+                        <span className="font-medium truncate">
+                          {it.products?.name_ar ?? "منتج محذوف"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="text-center py-2">{it.quantity}</td>
+                    <td className="text-left py-2 text-muted-foreground line-through">
+                      {formatMAD(base)}
+                    </td>
+                    <td className="text-left py-2 font-medium">
+                      {formatMAD(it.unit_price_mad)}
+                    </td>
+                    <td className="text-left py-2 font-semibold">{formatMAD(lineTotal)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="font-semibold">الإجمالي</span>
-          <span className="text-xl font-bold text-primary">{formatMAD(order.total_mad)}</span>
+
+        <Separator />
+        <div className="space-y-1.5 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">المجموع قبل الخصم</span>
+            <span>{formatMAD(subtotalBeforeDiscount)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">
+              إجمالي الخصم {tierDiscount > 0 ? `(${tierDiscount}%)` : ""}
+            </span>
+            <span className="text-success">−{formatMAD(totalDiscount)}</span>
+          </div>
+          <div className="flex items-center justify-between pt-1">
+            <span className="font-semibold">إجمالي طلب الموزع</span>
+            <span className="text-xl font-bold text-primary">{formatMAD(order.total_mad)}</span>
+          </div>
         </div>
         <p className="text-xs text-warning text-left">+{order.points_earned} نقطة ولاء</p>
       </Card>
