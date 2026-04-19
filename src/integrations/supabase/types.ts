@@ -122,6 +122,7 @@ export type Database = {
       }
       order_items: {
         Row: {
+          cost_snapshot: number | null
           created_at: string
           id: string
           order_id: string
@@ -130,6 +131,7 @@ export type Database = {
           unit_price_mad: number
         }
         Insert: {
+          cost_snapshot?: number | null
           created_at?: string
           id?: string
           order_id: string
@@ -138,6 +140,7 @@ export type Database = {
           unit_price_mad: number
         }
         Update: {
+          cost_snapshot?: number | null
           created_at?: string
           id?: string
           order_id?: string
@@ -294,6 +297,7 @@ export type Database = {
           active: boolean
           category: string | null
           company_id: string
+          cost: number | null
           created_at: string
           description_ar: string
           id: string
@@ -316,6 +320,7 @@ export type Database = {
           active?: boolean
           category?: string | null
           company_id: string
+          cost?: number | null
           created_at?: string
           description_ar?: string
           id?: string
@@ -338,6 +343,7 @@ export type Database = {
           active?: boolean
           category?: string | null
           company_id?: string
+          cost?: number | null
           created_at?: string
           description_ar?: string
           id?: string
