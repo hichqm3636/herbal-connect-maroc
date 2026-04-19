@@ -112,11 +112,11 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>الموزع</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-      <SidebarContent>
+        {isDistributor && (
+          <SidebarGroup>
+            <SidebarGroupLabel>الموزع</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
         {isDistributor && (
           <SidebarGroup>
             <SidebarGroupLabel>الموزع</SidebarGroupLabel>
