@@ -115,7 +115,11 @@ export function CartSheet() {
       return;
     }
     if (!canCheckout) {
-      toast.error(blockedLines[0]?.message ?? "تعذر إتمام الطلب");
+      const msg =
+        rulesResult.failures[0]?.message ??
+        blockedLines[0]?.message ??
+        "تعذر إتمام الطلب";
+      toast.error(msg);
       return;
     }
     setSubmitting(true);
