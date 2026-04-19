@@ -337,7 +337,65 @@ function OrderDetails() {
         <p className="text-xs text-warning text-left">+{order.points_earned} نقطة ولاء</p>
       </Card>
 
-      {order.notes && (
+      {/* Profit summary — admin-only insight based on cost snapshots */}
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-sm text-muted-foreground">الربحية</h2>
+          {itemsMissingCost > 0 && (
+            <span className="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded">
+              {itemsMissingCost} منتج بدون تكلفة مسجلة
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-md border bg-muted/30 p-3">
+            <p className="text-[11px] text-muted-foreground">الإيرادات</p>
+            <p className="text-sm font-semibold">{formatMAD(orderRevenue)}</p>
+          </div>
+          <div className="rounded-md border bg-muted/30 p-3">
+            <p className="text-[11px] text-muted-foreground">التكلفة</p>
+            <p className="text-sm font-semibold">{formatMAD(orderCost)}</p>
+          </div>
+          <div
+            className={`rounded-md border p-3 ${
+              orderProfit >= 0
+                ? "bg-emerald-500/10 border-emerald-500/30"
+                : "bg-destructive/10 border-destructive/30"
+            }`}
+          >
+            <p className="text-[11px] text-muted-foreground">الربح</p>
+            <p
+              className={`text-sm font-semibold ${
+                orderProfit >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-destructive"
+              }`}
+            >
+              {formatMAD(orderProfit)}
+            </p>
+          </div>
+          <div
+            className={`rounded-md border p-3 ${
+              orderMargin >= 50
+                ? "bg-emerald-500/10 border-emerald-500/30"
+                : orderMargin >= 20
+                  ? "bg-sky-500/10 border-sky-500/30"
+                  : orderMargin >= 0
+                    ? "bg-amber-500/10 border-amber-500/30"
+                    : "bg-destructive/10 border-destructive/30"
+            }`}
+          >
+            <p className="text-[11px] text-muted-foreground">الهامش</p>
+            <p className="text-sm font-semibold">
+              {orderCost > 0 ? `${Math.round(orderMargin)}%` : "—"}
+            </p>
+          </div>
+        </div>
+        {orderCost === 0 && (
+          <p className="text-[11px] text-muted-foreground">
+            لم يتم تسجيل تكلفة لأي منتج في هذا الطلب — أضف تكلفة المنتجات في صفحة الإدارة لرؤية الربحية.
+          </p>
+        )}
+      </Card>
+
         <Card className="p-4 space-y-1">
           <h2 className="font-semibold text-sm text-muted-foreground">ملاحظات التوصيل</h2>
           <p className="text-sm whitespace-pre-wrap">{order.notes}</p>
