@@ -338,7 +338,7 @@ export type Database = {
           active: boolean
           category: string | null
           company_id: string
-          cost: number | null
+          cost_price: number | null
           created_at: string
           description_ar: string
           id: string
@@ -361,7 +361,7 @@ export type Database = {
           active?: boolean
           category?: string | null
           company_id: string
-          cost?: number | null
+          cost_price?: number | null
           created_at?: string
           description_ar?: string
           id?: string
@@ -384,7 +384,7 @@ export type Database = {
           active?: boolean
           category?: string | null
           company_id?: string
-          cost?: number | null
+          cost_price?: number | null
           created_at?: string
           description_ar?: string
           id?: string

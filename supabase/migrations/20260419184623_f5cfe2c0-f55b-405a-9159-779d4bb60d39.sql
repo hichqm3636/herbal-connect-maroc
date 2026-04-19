@@ -1,0 +1,1 @@
+ALTER TABLE public.products RENAME COLUMN cost TO cost_price;
