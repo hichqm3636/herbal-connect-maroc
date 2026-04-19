@@ -65,7 +65,7 @@ interface PricedLine {
 
 export function CartSheet() {
   const { items, isOpen, setOpen, updateQty, setQty, removeItem, clear } = useCart();
-  const { user, partnerType, companyId, pricingTierId } = useAuth();
+  const { user, partnerType, companyId, pricingTierId, pricingTierDiscount } = useAuth();
   const { rules: orderRules } = useOrderRules();
   const [submitting, setSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
