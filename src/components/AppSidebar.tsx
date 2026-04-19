@@ -16,6 +16,7 @@ import {
   Palette,
   Building2,
   Tag,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
@@ -49,6 +50,7 @@ const adminItems = [
   { title: "فئات التسعير", url: "/admin/pricing-tiers", icon: Tag },
   { title: "إدارة المناطق", url: "/admin/territories", icon: MapPin },
   { title: "إدارة الطلبات", url: "/admin/orders", icon: ClipboardList },
+  { title: "ذكاء السوق", url: "/admin/analytics", icon: BarChart3 },
   { title: "هوية الشركة", url: "/admin/branding", icon: Palette },
   { title: "سجل النشاط", url: "/admin/activity", icon: Activity },
 ];
