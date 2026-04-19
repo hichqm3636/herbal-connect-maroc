@@ -215,6 +215,25 @@ function AnalyticsPage() {
     return [...buckets.values()];
   }, [orders6m]);
 
+  // CSV export helper
+  const downloadCSV = (filename: string, headers: string[], rows: (string | number)[][]) => {
+    const escape = (v: string | number) => {
+      const s = String(v ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [headers, ...rows].map((r) => r.map(escape).join(",")).join("\n");
+    // Prepend BOM so Excel renders Arabic correctly
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${filename}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
