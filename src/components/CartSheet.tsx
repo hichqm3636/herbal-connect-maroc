@@ -127,12 +127,38 @@ export function CartSheet() {
       return;
     }
     setSubmitting(true);
-    const points = Math.floor(total / 100);
+
+    // Pre-compute the authoritative tier-derived unit price for every line.
+    // This is the SINGLE source of truth used for both `orders.total_mad`
+    // and each `order_items.unit_price_mad` row.
+    const expectedLines = priced.map((l) => {
+      const product = {
+        rrp_price: l.item.rrp_price ?? null,
+        price_mad: l.item.price_mad,
+      };
+      const expected = expectedDistributorUnitPrice(product, pricingTierDiscount);
+      if (isPriceDrift(l.unitPrice, expected)) {
+        console.warn("[pricing_drift] cart vs tier mismatch", {
+          product_id: l.item.id,
+          name: l.item.name_ar,
+          cart_unit_price: l.unitPrice,
+          expected_distributor_price: expected,
+          tier_discount_percent: pricingTierDiscount,
+          base_price: product.rrp_price ?? product.price_mad,
+        });
+      }
+      return { line: l, expected };
+    });
+    const orderTotal = expectedLines.reduce(
+      (s, { line, expected }) => s + expected * line.item.qty,
+      0,
+    );
+    const points = Math.floor(orderTotal / 100);
     const trimmedNotes = notes.trim();
     const orderPayload = {
       distributor_id: user.id,
       company_id: companyId,
-      total_mad: total,
+      total_mad: orderTotal,
       points_earned: points,
       status: "pending" as const,
       notes: trimmedNotes ? trimmedNotes : null,
@@ -162,37 +188,13 @@ export function CartSheet() {
         (r as { cost_price: number | null }).cost_price,
       ]),
     );
-    // CRITICAL: Always recompute unit_price from the current pricing tier at
-    // order-creation time. Never reuse cart-derived or stored prices — they
-    // can drift if the tier discount or base price changed between cart
-    // hydration and checkout.
-    const orderItems = priced.map((l) => {
-      const product = {
-        rrp_price: l.item.rrp_price ?? null,
-        price_mad: l.item.price_mad,
-      };
-      const expected = expectedDistributorUnitPrice(product, pricingTierDiscount);
-      if (isPriceDrift(l.unitPrice, expected)) {
-        // Cart engine produced a different price than the tier formula.
-        // We log it (drift may still be legitimate if a quantity tier kicked
-        // in) but we always persist the tier-formula price for consistency.
-        console.warn("[pricing_drift] cart vs tier mismatch", {
-          product_id: l.item.id,
-          name: l.item.name_ar,
-          cart_unit_price: l.unitPrice,
-          expected_distributor_price: expected,
-          tier_discount_percent: pricingTierDiscount,
-          base_price: product.rrp_price ?? product.price_mad,
-        });
-      }
-      return {
-        order_id: order.id,
-        product_id: l.item.id,
-        quantity: l.item.qty,
-        unit_price_mad: expected,
-        cost_snapshot: costMap.get(l.item.id) ?? null,
-      };
-    });
+    const orderItems = expectedLines.map(({ line, expected }) => ({
+      order_id: order.id,
+      product_id: line.item.id,
+      quantity: line.item.qty,
+      unit_price_mad: expected,
+      cost_snapshot: costMap.get(line.item.id) ?? null,
+    }));
     const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);
     if (itemsErr) {
       console.error("[placeOrder] order_items insert failed", { itemsErr, orderItems });
