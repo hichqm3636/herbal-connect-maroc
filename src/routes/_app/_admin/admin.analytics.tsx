@@ -354,7 +354,7 @@ function AnalyticsPage() {
                   </div>
                   <div className="text-end shrink-0">
                     <div className="font-bold">{p.velocity.toFixed(2)} / يوم</div>
-                    <div className="text-xs text-muted-foreground">{p.qty} خلال 30 يوم</div>
+                    <div className="text-xs text-muted-foreground">{p.qty} خلال {rangeDays} يوم</div>
                   </div>
                 </li>
               ))}
