@@ -19,7 +19,7 @@ import { formatMAD, formatDateAr, LEVEL_LABELS, STATUS_LABELS, STATUS_VARIANTS, 
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: Dashboard,
-  head: () => ({ meta: [{ title: "لوحة التحكم — بوابة هيرباليفي" }] }),
+  head: () => ({ meta: [{ title: "لوحة التحكم — DistribHub" }] }),
 });
 
 interface Profile {

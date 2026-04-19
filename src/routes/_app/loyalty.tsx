@@ -12,7 +12,7 @@ import { formatDateTimeAr, LEVEL_LABELS } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/loyalty")({
   component: LoyaltyPage,
-  head: () => ({ meta: [{ title: "نقاط الولاء — بوابة هيرباليفي" }] }),
+  head: () => ({ meta: [{ title: "نقاط الولاء — DistribHub" }] }),
 });
 
 interface Tx {

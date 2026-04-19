@@ -18,7 +18,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/products_/$productId")({
   component: ProductDetail,
-  head: () => ({ meta: [{ title: "تفاصيل المنتج — بوابة هيرباليفي" }] }),
+  head: () => ({ meta: [{ title: "تفاصيل المنتج — DistribHub" }] }),
 });
 
 interface Product {

@@ -60,7 +60,7 @@ function AppLayout() {
               <SidebarTrigger className="text-foreground hover:text-primary shrink-0" />
               <Separator orientation="vertical" className="h-5" />
               <div className="flex flex-col leading-tight min-w-0">
-                <span className="text-sm font-bold truncate">Herbialife Partner Hub</span>
+                <span className="text-sm font-bold truncate">DistribHub</span>
                 <span className="text-[11px] text-muted-foreground truncate">منصة إدارة الموزعين والطلبات</span>
               </div>
               <div className="ms-auto">

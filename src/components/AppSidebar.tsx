@@ -108,7 +108,7 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
             <span className="text-sm font-bold leading-tight truncate">
-              {company?.display_name || company?.name || "Partner Hub"}
+              {company?.display_name || company?.name || "DistribHub"}
             </span>
             <span className="text-xs text-muted-foreground truncate">منصة إدارة الموزعين والطلبات</span>
           </div>
