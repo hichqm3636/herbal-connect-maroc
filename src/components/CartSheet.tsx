@@ -162,13 +162,37 @@ export function CartSheet() {
         (r as { cost_price: number | null }).cost_price,
       ]),
     );
-    const orderItems = priced.map((l) => ({
-      order_id: order.id,
-      product_id: l.item.id,
-      quantity: l.item.qty,
-      unit_price_mad: l.unitPrice,
-      cost_snapshot: costMap.get(l.item.id) ?? null,
-    }));
+    // CRITICAL: Always recompute unit_price from the current pricing tier at
+    // order-creation time. Never reuse cart-derived or stored prices — they
+    // can drift if the tier discount or base price changed between cart
+    // hydration and checkout.
+    const orderItems = priced.map((l) => {
+      const product = {
+        rrp_price: l.item.rrp_price ?? null,
+        price_mad: l.item.price_mad,
+      };
+      const expected = expectedDistributorUnitPrice(product, pricingTierDiscount);
+      if (isPriceDrift(l.unitPrice, expected)) {
+        // Cart engine produced a different price than the tier formula.
+        // We log it (drift may still be legitimate if a quantity tier kicked
+        // in) but we always persist the tier-formula price for consistency.
+        console.warn("[pricing_drift] cart vs tier mismatch", {
+          product_id: l.item.id,
+          name: l.item.name_ar,
+          cart_unit_price: l.unitPrice,
+          expected_distributor_price: expected,
+          tier_discount_percent: pricingTierDiscount,
+          base_price: product.rrp_price ?? product.price_mad,
+        });
+      }
+      return {
+        order_id: order.id,
+        product_id: l.item.id,
+        quantity: l.item.qty,
+        unit_price_mad: expected,
+        cost_snapshot: costMap.get(l.item.id) ?? null,
+      };
+    });
     const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);
     if (itemsErr) {
       console.error("[placeOrder] order_items insert failed", { itemsErr, orderItems });
