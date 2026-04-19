@@ -149,6 +149,34 @@ function AdminProducts() {
   const syncWoo = useServerFn(syncWooCommerceProducts);
   const [costDialogOpen, setCostDialogOpen] = useState(false);
   const [costInput, setCostInput] = useState<string>("");
+  // Reference cost used for live margin indicators in the pricing form.
+  // Not persisted to DB — purely an editing aid.
+  const [refCost, setRefCost] = useState<string>("");
+
+  const marginPct = (price: number | null | undefined): string | null => {
+    const c = Number(refCost);
+    if (!Number.isFinite(c) || c <= 0) return null;
+    if (price == null || !Number.isFinite(price) || price <= 0) return null;
+    const pct = ((price - c) / c) * 100;
+    return `${Math.round(pct)}%`;
+  };
+
+  const MarginBadge = ({ price }: { price: number | null | undefined }) => {
+    const m = marginPct(price);
+    if (!m) return null;
+    const c = Number(refCost);
+    const ratio = c > 0 && price != null ? (price - c) / c : 0;
+    const tone =
+      ratio >= 1 ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+      : ratio >= 0.5 ? "bg-sky-500/15 text-sky-700 dark:text-sky-400"
+      : ratio > 0 ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+      : "bg-destructive/15 text-destructive";
+    return (
+      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${tone}`}>
+        هامش {m}
+      </span>
+    );
+  };
 
   const applyCostPricing = () => {
     const cost = Number(costInput);
@@ -165,6 +193,7 @@ function AdminProducts() {
       map_price: d.map_price,
       price_tiers: d.price_tiers,
     });
+    setRefCost(String(cost));
     setCostDialogOpen(false);
     setCostInput("");
     toast.success("تم احتساب جميع الأسعار من التكلفة");
@@ -243,6 +272,7 @@ function AdminProducts() {
     setEditing(null);
     setForm(empty);
     setImages([]);
+    setRefCost("");
     setOpen(true);
   };
 
@@ -271,6 +301,7 @@ function AdminProducts() {
               { min_qty: 24, price: 0 },
             ],
     });
+    setRefCost("");
     await loadImages(p.id);
     setOpen(true);
   };
@@ -1030,7 +1061,10 @@ function AdminProducts() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>السعر (درهم)</Label>
+                  <Label className="flex items-center justify-between gap-2">
+                    <span>السعر (درهم)</span>
+                    <MarginBadge price={form.price_mad} />
+                  </Label>
                   <Input
                     type="number"
                     min="0"
@@ -1179,9 +1213,32 @@ function AdminProducts() {
                 </Dialog>
 
 
+                {/* Reference cost — drives live margin badges */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs flex items-center justify-between">
+                    <span>التكلفة المرجعية (لعرض الهوامش)</span>
+                    {Number(refCost) > 0 && (
+                      <span className="text-[10px] text-muted-foreground font-normal">
+                        تكلفة: {formatMAD(Number(refCost))}
+                      </span>
+                    )}
+                  </Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={refCost}
+                    onChange={(e) => setRefCost(e.target.value)}
+                    placeholder="أدخل التكلفة لرؤية هامش كل سعر"
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs">السعر الموصى به (RRP)</Label>
+                    <Label className="text-xs flex items-center justify-between gap-2">
+                      <span>السعر الموصى به (RRP)</span>
+                      <MarginBadge price={form.rrp_price} />
+                    </Label>
                     <Input
                       type="number"
                       min="0"
@@ -1194,7 +1251,10 @@ function AdminProducts() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">السعر الأدنى المعلن (MAP)</Label>
+                    <Label className="text-xs flex items-center justify-between gap-2">
+                      <span>السعر الأدنى المعلن (MAP)</span>
+                      <MarginBadge price={form.map_price} />
+                    </Label>
                     <Input
                       type="number"
                       min="0"
@@ -1210,7 +1270,10 @@ function AdminProducts() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs">سعر الصيدلية</Label>
+                    <Label className="text-xs flex items-center justify-between gap-2">
+                      <span>سعر الصيدلية</span>
+                      <MarginBadge price={form.pharmacy_price} />
+                    </Label>
                     <Input
                       type="number"
                       min="0"
@@ -1259,8 +1322,8 @@ function AdminProducts() {
                   <Label className="text-xs">طبقات الأسعار حسب الكمية</Label>
                   <div className="space-y-2">
                     {form.price_tiers.map((t, idx) => (
-                      <div key={idx} className="grid grid-cols-2 gap-2 items-center">
-                        <div className="text-xs text-muted-foreground">
+                      <div key={idx} className="grid grid-cols-[auto_1fr_auto] gap-2 items-center">
+                        <div className="text-xs text-muted-foreground whitespace-nowrap">
                           {t.min_qty}+ وحدة
                         </div>
                         <Input
@@ -1274,6 +1337,7 @@ function AdminProducts() {
                             setForm({ ...form, price_tiers: next });
                           }}
                         />
+                        <MarginBadge price={t.price} />
                       </div>
                     ))}
                   </div>
