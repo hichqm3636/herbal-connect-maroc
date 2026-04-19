@@ -1061,7 +1061,10 @@ function AdminProducts() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>السعر (درهم)</Label>
+                  <Label className="flex items-center justify-between gap-2">
+                    <span>السعر (درهم)</span>
+                    <MarginBadge price={form.price_mad} />
+                  </Label>
                   <Input
                     type="number"
                     min="0"
@@ -1319,10 +1322,23 @@ function AdminProducts() {
                   <Label className="text-xs">طبقات الأسعار حسب الكمية</Label>
                   <div className="space-y-2">
                     {form.price_tiers.map((t, idx) => (
-                      <div key={idx} className="grid grid-cols-2 gap-2 items-center">
-                        <div className="text-xs text-muted-foreground">
+                      <div key={idx} className="grid grid-cols-[auto_1fr_auto] gap-2 items-center">
+                        <div className="text-xs text-muted-foreground whitespace-nowrap">
                           {t.min_qty}+ وحدة
                         </div>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={t.price}
+                          onChange={(e) => {
+                            const next = [...form.price_tiers];
+                            next[idx] = { ...t, price: Number(e.target.value) || 0 };
+                            setForm({ ...form, price_tiers: next });
+                          }}
+                        />
+                        <MarginBadge price={t.price} />
+                      </div>
                         <Input
                           type="number"
                           min="0"
