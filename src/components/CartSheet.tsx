@@ -27,6 +27,10 @@ import { useOrderRules } from "@/hooks/useOrderRules";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMAD } from "@/lib/format";
 import { getUnitPrice, validateLine } from "@/lib/pricing";
+import {
+  expectedDistributorUnitPrice,
+  isPriceDrift,
+} from "@/lib/distributorPricing";
 import { evaluateRules } from "@/lib/orderRules";
 import { toast } from "sonner";
 
