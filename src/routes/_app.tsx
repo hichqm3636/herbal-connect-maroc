@@ -35,7 +35,7 @@ function AppLayout() {
       const onAdminRoute = path === "/admin" || path.startsWith("/admin/");
       const onSettings = path === "/settings";
       if (onDistributorRoute || onAdminRoute || onSettings) {
-        navigate({ to: "/super-admin/companies" });
+        navigate({ to: "/super-admin" });
       }
     }
   }, [session, loading, isPlatformOwner, location.pathname, navigate]);
