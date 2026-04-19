@@ -16,7 +16,7 @@ import {
 } from "@/lib/pricing";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_app/products/$productId")({
+export const Route = createFileRoute("/_app/products_/$productId")({
   component: ProductDetail,
   head: () => ({ meta: [{ title: "تفاصيل المنتج — بوابة هيرباليفي" }] }),
 });

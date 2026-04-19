@@ -37,7 +37,7 @@ import {
 } from "@/lib/format";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_app/_admin/admin/orders/$orderId")({
+export const Route = createFileRoute("/_app/_admin/admin/orders_/$orderId")({
   component: OrderDetails,
   head: () => ({ meta: [{ title: "تفاصيل الطلب — هيرباليفي" }] }),
 });
