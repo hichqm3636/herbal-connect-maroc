@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("user_roles").select("role").eq("user_id", uid),
       supabase
         .from("profiles")
-        .select("partner_type, company_id, pricing_tier_id, pricing_tiers(discount_percentage)")
+        .select("partner_type, company_id")
         .eq("id", uid)
         .maybeSingle(),
     ]);
@@ -111,9 +111,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPartnerType((profile?.partner_type as PartnerType | undefined) ?? "distributor");
     const cid = (profile?.company_id as string | null | undefined) ?? null;
     setProfileCompanyId(cid);
-    setPricingTierId((profile?.pricing_tier_id as string | null | undefined) ?? null);
-    const tier = (profile as unknown as { pricing_tiers?: { discount_percentage: number } | null } | null)?.pricing_tiers;
-    setPricingTierDiscount(tier?.discount_percentage ? Number(tier.discount_percentage) : 0);
+
+    // Fetch this distributor's pricing assignment from the new table.
+    let tierId: string | null = null;
+    let discount = 0;
+    if (cid) {
+      const { data: cdp } = await supabase
+        .from("company_distributor_pricing")
+        .select("pricing_tier_id, custom_discount_percent, pricing_tiers(base_discount_percent)")
+        .eq("company_id", cid)
+        .eq("distributor_id", uid)
+        .maybeSingle();
+      if (cdp) {
+        tierId = (cdp as { pricing_tier_id: string }).pricing_tier_id;
+        const custom = (cdp as { custom_discount_percent: number | null }).custom_discount_percent;
+        const base = (cdp as unknown as { pricing_tiers?: { base_discount_percent: number } | null })
+          .pricing_tiers?.base_discount_percent;
+        discount = custom != null ? Number(custom) : base != null ? Number(base) : 0;
+      }
+    }
+    setPricingTierId(tierId);
+    setPricingTierDiscount(discount);
     // Non-super users always operate within their own profile company; sync sessionStorage.
     const isSuper = (roleRows ?? []).some((r) => r.role === "super_admin");
     if (!isSuper && cid) {

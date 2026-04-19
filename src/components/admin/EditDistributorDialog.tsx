@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { TerritorySelect } from "@/components/admin/TerritorySelect";
 import { PARTNER_TYPE_LABELS, type PartnerType } from "@/lib/pricing";
 import { PricingTierSelect } from "@/components/admin/PricingTierSelect";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DistributorEditable {
   id: string;
@@ -29,7 +30,6 @@ interface DistributorEditable {
   phone: string | null;
   territory_id: string | null;
   partner_type?: PartnerType | null;
-  pricing_tier_id?: string | null;
 }
 
 interface Props {
@@ -39,45 +39,111 @@ interface Props {
 }
 
 export function EditDistributorDialog({ distributor, onClose, onSaved }: Props) {
+  const { companyId } = useAuth();
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
     territory_id: "",
     partner_type: "distributor" as PartnerType,
     pricing_tier_id: "" as string,
+    custom_discount: "" as string, // empty string means "use base"
   });
   const [busy, setBusy] = useState(false);
+  const [loadingPricing, setLoadingPricing] = useState(false);
 
   useEffect(() => {
-    if (distributor) {
-      setForm({
-        full_name: distributor.full_name ?? "",
-        phone: distributor.phone ?? "",
-        territory_id: distributor.territory_id ?? "",
-        partner_type: (distributor.partner_type as PartnerType) ?? "distributor",
-        pricing_tier_id: distributor.pricing_tier_id ?? "",
+    if (!distributor) return;
+    setForm((f) => ({
+      ...f,
+      full_name: distributor.full_name ?? "",
+      phone: distributor.phone ?? "",
+      territory_id: distributor.territory_id ?? "",
+      partner_type: (distributor.partner_type as PartnerType) ?? "distributor",
+      pricing_tier_id: "",
+      custom_discount: "",
+    }));
+    if (!companyId) return;
+    setLoadingPricing(true);
+    supabase
+      .from("company_distributor_pricing")
+      .select("pricing_tier_id, custom_discount_percent")
+      .eq("company_id", companyId)
+      .eq("distributor_id", distributor.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setForm((f) => ({
+          ...f,
+          pricing_tier_id: data?.pricing_tier_id ?? "",
+          custom_discount:
+            data?.custom_discount_percent != null
+              ? String(data.custom_discount_percent)
+              : "",
+        }));
+        setLoadingPricing(false);
       });
-    }
-  }, [distributor]);
+  }, [distributor, companyId]);
 
   const save = async () => {
     if (!distributor) return;
     if (form.full_name.trim().length < 2) return toast.error("الاسم قصير جداً");
     if (form.phone.trim().length < 6) return toast.error("رقم هاتف غير صالح");
     if (!form.territory_id) return toast.error("المنطقة مطلوبة");
+    if (!companyId) return toast.error("الشركة غير محددة");
+
+    let customNum: number | null = null;
+    if (form.custom_discount.trim() !== "") {
+      const n = Number(form.custom_discount);
+      if (!Number.isFinite(n) || n < 0 || n > 100)
+        return toast.error("نسبة الخصم المخصصة يجب أن تكون بين 0 و 100");
+      customNum = n;
+    }
+
     setBusy(true);
-    const { error } = await supabase
+
+    const { error: profErr } = await supabase
       .from("profiles")
       .update({
         full_name: form.full_name.trim(),
         phone: form.phone.trim(),
         territory_id: form.territory_id,
         partner_type: form.partner_type,
-        pricing_tier_id: form.pricing_tier_id || null,
       })
       .eq("id", distributor.id);
+    if (profErr) {
+      setBusy(false);
+      return toast.error(profErr.message);
+    }
+
+    if (form.pricing_tier_id) {
+      const { error: cdpErr } = await supabase
+        .from("company_distributor_pricing")
+        .upsert(
+          {
+            company_id: companyId,
+            distributor_id: distributor.id,
+            pricing_tier_id: form.pricing_tier_id,
+            custom_discount_percent: customNum,
+          },
+          { onConflict: "company_id,distributor_id" },
+        );
+      if (cdpErr) {
+        setBusy(false);
+        return toast.error(cdpErr.message);
+      }
+    } else {
+      // No tier selected → remove any existing assignment
+      const { error: delErr } = await supabase
+        .from("company_distributor_pricing")
+        .delete()
+        .eq("company_id", companyId)
+        .eq("distributor_id", distributor.id);
+      if (delErr) {
+        setBusy(false);
+        return toast.error(delErr.message);
+      }
+    }
+
     setBusy(false);
-    if (error) return toast.error(error.message);
     toast.success("تم التحديث");
     onSaved();
     onClose();
@@ -131,6 +197,22 @@ export function EditDistributorDialog({ distributor, onClose, onSaved }: Props) 
               value={form.pricing_tier_id || null}
               onChange={(id) => setForm({ ...form, pricing_tier_id: id ?? "" })}
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label>نسبة خصم مخصصة (%) — اختيارية</Label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              step="0.01"
+              placeholder="اتركه فارغاً لاستخدام نسبة الفئة"
+              value={form.custom_discount}
+              disabled={loadingPricing || !form.pricing_tier_id}
+              onChange={(e) => setForm({ ...form, custom_discount: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">
+              عند تعبئتها، تستخدم هذه النسبة بدلاً من نسبة الفئة الأساسية لهذا الموزع فقط.
+            </p>
           </div>
         </div>
         <DialogFooter className="flex-col sm:flex-row gap-2">
