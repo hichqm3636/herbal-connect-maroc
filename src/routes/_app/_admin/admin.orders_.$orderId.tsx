@@ -47,7 +47,15 @@ interface ItemRow {
   quantity: number;
   unit_price_mad: number;
   cost_snapshot: number | null;
-  products: { id: string; name_ar: string; sku: string | null; image_url: string | null } | null;
+  products: {
+    id: string;
+    name_ar: string;
+    sku: string | null;
+    image_url: string | null;
+    rrp_price: number | null;
+    price_mad: number;
+    cost: number | null;
+  } | null;
 }
 
 interface OrderDetail {
@@ -66,9 +74,14 @@ interface OrderDetail {
     phone: string | null;
     city: string | null;
     territories: { name: string } | null;
-    pricing_tiers: { name: string; discount_percentage: number } | null;
   } | null;
   order_items: ItemRow[];
+}
+
+interface TierInfo {
+  name: string;
+  discount_percent: number;
+  custom: boolean;
 }
 
 type StatusKey = "confirmed" | "preparing" | "shipped" | "delivered" | "cancelled";
@@ -101,13 +114,15 @@ function OrderDetails() {
     { id: string; created_at: string; old_status: string; new_status: string; admin_name: string | null }[]
   >([]);
 
+  const [tier, setTier] = useState<TierInfo | null>(null);
+
   const load = async () => {
     if (!companyId) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, distributor_id, company_id, profiles(full_name, phone, city, territories(name), pricing_tiers(name, discount_percentage)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url))",
+        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, distributor_id, company_id, profiles(full_name, phone, city, territories(name)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost))",
       )
       .eq("id", orderId)
       .eq("company_id", companyId)
@@ -116,10 +131,34 @@ function OrderDetails() {
       toast.error("تعذر تحميل الطلب");
       setOrder(null);
       setHistory([]);
+      setTier(null);
       setLoading(false);
       return;
     }
     setOrder(data as unknown as OrderDetail);
+
+    // Resolve the distributor's effective pricing tier for this company.
+    const { data: cdp } = await supabase
+      .from("company_distributor_pricing")
+      .select("custom_discount_percent, pricing_tiers(name, base_discount_percent)")
+      .eq("company_id", (data as { company_id: string }).company_id)
+      .eq("distributor_id", (data as { distributor_id: string }).distributor_id)
+      .maybeSingle();
+    if (cdp) {
+      const row = cdp as unknown as {
+        custom_discount_percent: number | null;
+        pricing_tiers: { name: string; base_discount_percent: number } | null;
+      };
+      const base = row.pricing_tiers?.base_discount_percent ?? 0;
+      const custom = row.custom_discount_percent;
+      setTier({
+        name: row.pricing_tiers?.name ?? "—",
+        discount_percent: custom != null ? Number(custom) : Number(base),
+        custom: custom != null,
+      });
+    } else {
+      setTier(null);
+    }
 
     const { data: logs } = await supabase
       .from("admin_activity_log")
@@ -215,10 +254,22 @@ function OrderDetails() {
     );
   }
 
+  const tierDiscount = tier?.discount_percent ?? 0;
+
+  // Subtotal at base (RRP) — falls back to price_mad when RRP is missing,
+  // then to the actual unit price as a last resort.
+  const baseFor = (it: ItemRow) =>
+    Number(it.products?.rrp_price ?? it.products?.price_mad ?? it.unit_price_mad);
+
+  const subtotalBeforeDiscount = order.order_items.reduce(
+    (s, it) => s + baseFor(it) * it.quantity,
+    0,
+  );
   const itemsTotal = order.order_items.reduce(
     (s, it) => s + Number(it.unit_price_mad) * it.quantity,
     0,
   );
+  const totalDiscount = subtotalBeforeDiscount - itemsTotal;
 
   // Profit calculations — based on cost snapshots captured at order time.
   // Items missing a snapshot are excluded from cost/profit and flagged in the UI.
@@ -235,7 +286,8 @@ function OrderDetails() {
     0,
   );
   const orderProfit = orderRevenue - orderCost;
-  const orderMargin = orderCost > 0 ? (orderProfit / orderCost) * 100 : 0;
+  // Margin as % of revenue (profit / distributor_total × 100).
+  const orderMargin = orderRevenue > 0 ? (orderProfit / orderRevenue) * 100 : 0;
 
   return (
     <div className="space-y-5 pb-24">
@@ -284,23 +336,31 @@ function OrderDetails() {
             <p className="text-xs text-muted-foreground">المدينة</p>
             <p className="font-medium">{order.profiles?.city || "—"}</p>
           </div>
-          {order.profiles?.pricing_tiers && (
-            <div className="col-span-2">
-              <p className="text-xs text-muted-foreground">شريحة الأسعار</p>
-              <Badge className="bg-success/15 text-success border-success/30 hover:bg-success/20">
-                {order.profiles.pricing_tiers.name} —{" "}
-                {Number(order.profiles.pricing_tiers.discount_percentage)}%
-              </Badge>
-            </div>
-          )}
+          <div className="col-span-2">
+            <p className="text-xs text-muted-foreground">شريحة الأسعار</p>
+            {tier ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge className="bg-success/15 text-success border-success/30 hover:bg-success/20">
+                  {tier.name} — {tier.discount_percent}%
+                </Badge>
+                {tier.custom && (
+                  <Badge variant="outline" className="text-[10px]">خصم مخصص</Badge>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">لا توجد شريحة مُعيَّنة</p>
+            )}
+          </div>
         </div>
       </Card>
 
       <Card className="p-4 space-y-3">
         <h2 className="font-semibold text-sm text-muted-foreground">المنتجات</h2>
-        <div className="space-y-2">
+        {/* Mobile cards */}
+        <div className="space-y-2 md:hidden">
           {order.order_items.map((it) => {
-            const subtotal = Number(it.unit_price_mad) * it.quantity;
+            const base = baseFor(it);
+            const lineTotal = Number(it.unit_price_mad) * it.quantity;
             return (
               <div key={it.id} className="flex items-center gap-3 py-2 border-b last:border-0">
                 {it.products?.image_url ? (
@@ -317,22 +377,81 @@ function OrderDetails() {
                     {it.products?.name_ar ?? "منتج محذوف"}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {formatMAD(it.unit_price_mad)} × {it.quantity}
+                    <span className="line-through">{formatMAD(base)}</span>{" "}
+                    → {formatMAD(it.unit_price_mad)} × {it.quantity}
                   </p>
                 </div>
-                <p className="text-sm font-semibold">{formatMAD(subtotal)}</p>
+                <p className="text-sm font-semibold">{formatMAD(lineTotal)}</p>
               </div>
             );
           })}
         </div>
-        <Separator />
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">المجموع الفرعي</span>
-          <span>{formatMAD(itemsTotal)}</span>
+
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs text-muted-foreground border-b">
+                <th className="text-right py-2 font-medium">المنتج</th>
+                <th className="text-center py-2 font-medium">الكمية</th>
+                <th className="text-left py-2 font-medium">السعر الأساسي (RRP)</th>
+                <th className="text-left py-2 font-medium">سعر الموزع</th>
+                <th className="text-left py-2 font-medium">إجمالي السطر</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.order_items.map((it) => {
+                const base = baseFor(it);
+                const lineTotal = Number(it.unit_price_mad) * it.quantity;
+                return (
+                  <tr key={it.id} className="border-b last:border-0">
+                    <td className="py-2">
+                      <div className="flex items-center gap-2">
+                        {it.products?.image_url ? (
+                          <img
+                            src={it.products.image_url}
+                            alt={it.products.name_ar}
+                            className="h-8 w-8 rounded object-cover bg-muted shrink-0"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 rounded bg-muted shrink-0" />
+                        )}
+                        <span className="font-medium truncate">
+                          {it.products?.name_ar ?? "منتج محذوف"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="text-center py-2">{it.quantity}</td>
+                    <td className="text-left py-2 text-muted-foreground line-through">
+                      {formatMAD(base)}
+                    </td>
+                    <td className="text-left py-2 font-medium">
+                      {formatMAD(it.unit_price_mad)}
+                    </td>
+                    <td className="text-left py-2 font-semibold">{formatMAD(lineTotal)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="font-semibold">الإجمالي</span>
-          <span className="text-xl font-bold text-primary">{formatMAD(order.total_mad)}</span>
+
+        <Separator />
+        <div className="space-y-1.5 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">المجموع قبل الخصم</span>
+            <span>{formatMAD(subtotalBeforeDiscount)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">
+              إجمالي الخصم {tierDiscount > 0 ? `(${tierDiscount}%)` : ""}
+            </span>
+            <span className="text-success">−{formatMAD(totalDiscount)}</span>
+          </div>
+          <div className="flex items-center justify-between pt-1">
+            <span className="font-semibold">إجمالي طلب الموزع</span>
+            <span className="text-xl font-bold text-primary">{formatMAD(order.total_mad)}</span>
+          </div>
         </div>
         <p className="text-xs text-warning text-left">+{order.points_earned} نقطة ولاء</p>
       </Card>
@@ -394,6 +513,60 @@ function OrderDetails() {
             لم يتم تسجيل تكلفة لأي منتج في هذا الطلب — أضف تكلفة المنتجات في صفحة الإدارة لرؤية الربحية.
           </p>
         )}
+      </Card>
+
+      {/* Debug section — temporary, helps verify pricing/profit math per item. */}
+      <Card className="p-4 space-y-3 border-dashed">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-sm text-muted-foreground">تشخيص الحساب (مؤقت)</h2>
+          <Badge variant="outline" className="text-[10px]">debug</Badge>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          tier_discount = {tierDiscount}% — distributor_price = base_price × (1 − tier_discount)
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-muted-foreground border-b">
+                <th className="text-right py-1.5 font-medium">المنتج</th>
+                <th className="text-left py-1.5 font-medium">base_price</th>
+                <th className="text-left py-1.5 font-medium">distributor_price</th>
+                <th className="text-left py-1.5 font-medium">unit_price (محفوظ)</th>
+                <th className="text-left py-1.5 font-medium">cost_price</th>
+                <th className="text-center py-1.5 font-medium">qty</th>
+              </tr>
+            </thead>
+            <tbody className="font-mono">
+              {order.order_items.map((it) => {
+                const base = baseFor(it);
+                const expected = base * (1 - tierDiscount / 100);
+                const stored = Number(it.unit_price_mad);
+                const drift = Math.abs(expected - stored) > 0.5;
+                const cost =
+                  it.cost_snapshot != null
+                    ? Number(it.cost_snapshot)
+                    : it.products?.cost != null
+                      ? Number(it.products.cost)
+                      : null;
+                return (
+                  <tr key={it.id} className="border-b last:border-0">
+                    <td className="py-1.5 font-sans">{it.products?.name_ar ?? "—"}</td>
+                    <td className="text-left py-1.5">{base.toFixed(2)}</td>
+                    <td className="text-left py-1.5">{expected.toFixed(2)}</td>
+                    <td className={`text-left py-1.5 ${drift ? "text-destructive font-bold" : ""}`}>
+                      {stored.toFixed(2)}
+                    </td>
+                    <td className="text-left py-1.5">{cost != null ? cost.toFixed(2) : "—"}</td>
+                    <td className="text-center py-1.5">{it.quantity}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          إذا اختلف unit_price المحفوظ عن distributor_price المتوقع فهذا يعني أن السعر تم تطبيقه بشريحة مختلفة وقت إنشاء الطلب.
+        </p>
       </Card>
 
       {order.notes && (
