@@ -261,7 +261,7 @@ function AnalyticsPage() {
                 type="monotone"
                 dataKey="orders"
                 name="الطلبات"
-                stroke="hsl(var(--primary))"
+                stroke="var(--primary)"
                 strokeWidth={2}
               />
               <Line
@@ -269,7 +269,7 @@ function AnalyticsPage() {
                 type="monotone"
                 dataKey="revenue"
                 name="الإيرادات"
-                stroke="hsl(var(--accent-foreground))"
+                stroke="var(--primary-glow)"
                 strokeWidth={2}
               />
             </LineChart>
@@ -359,11 +359,11 @@ function AnalyticsPage() {
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="qty" name="الكمية" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="qty" name="الكمية" fill="var(--primary)" radius={[6, 6, 0, 0]} />
                   <Bar
                     dataKey="orders"
                     name="الطلبات"
-                    fill="hsl(var(--accent-foreground))"
+                    fill="var(--primary-glow)"
                     radius={[6, 6, 0, 0]}
                   />
                 </BarChart>
