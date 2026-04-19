@@ -117,11 +117,6 @@ export function AppSidebar() {
             <SidebarGroupLabel>الموزع</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-        {isDistributor && (
-          <SidebarGroup>
-            <SidebarGroupLabel>الموزع</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
                 {distributorItems.map((item) => (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
