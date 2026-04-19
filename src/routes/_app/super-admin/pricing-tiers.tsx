@@ -24,68 +24,63 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_app/_admin/admin/pricing-tiers")({
-  component: AdminPricingTiers,
-  head: () => ({ meta: [{ title: "إدارة فئات التسعير" }] }),
+export const Route = createFileRoute("/_app/super-admin/pricing-tiers")({
+  component: SuperAdminPricingTiers,
+  head: () => ({ meta: [{ title: "فئات التسعير العالمية — DistribHub" }] }),
 });
 
 interface PricingTier {
   id: string;
   name: string;
-  discount_percentage: number;
+  base_discount_percent: number;
   created_at: string;
 }
 
-function AdminPricingTiers() {
-  const { companyId } = useAuth();
+function SuperAdminPricingTiers() {
   const [tiers, setTiers] = useState<PricingTier[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [editing, setEditing] = useState<PricingTier | null>(null);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ name: "", discount_percentage: 0 });
+  const [form, setForm] = useState({ name: "", base_discount_percent: 0 });
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<PricingTier | null>(null);
 
   const load = async () => {
-    if (!companyId) return;
     setLoading(true);
     const { data } = await supabase
       .from("pricing_tiers")
-      .select("id, name, discount_percentage, created_at")
-      .eq("company_id", companyId)
-      .order("discount_percentage", { ascending: true });
+      .select("id, name, base_discount_percent, created_at")
+      .order("base_discount_percent", { ascending: true });
     setTiers((data ?? []) as PricingTier[]);
     setLoading(false);
   };
 
   useEffect(() => {
     load();
-  }, [companyId]);
+  }, []);
 
   const openCreate = () => {
-    setForm({ name: "", discount_percentage: 0 });
+    setForm({ name: "", base_discount_percent: 0 });
     setCreating(true);
   };
 
   const openEdit = (t: PricingTier) => {
-    setForm({ name: t.name, discount_percentage: t.discount_percentage });
+    setForm({ name: t.name, base_discount_percent: t.base_discount_percent });
     setEditing(t);
   };
 
   const closeDialog = () => {
     setCreating(false);
     setEditing(null);
-    setForm({ name: "", discount_percentage: 0 });
+    setForm({ name: "", base_discount_percent: 0 });
   };
 
   const save = async () => {
-    if (!companyId) return;
     if (form.name.trim().length < 2) return toast.error("الاسم قصير جداً");
-    if (form.discount_percentage < 0 || form.discount_percentage > 100)
+    if (form.base_discount_percent < 0 || form.base_discount_percent > 100)
       return toast.error("نسبة الخصم يجب أن تكون بين 0 و 100");
     setBusy(true);
     if (editing) {
@@ -93,7 +88,7 @@ function AdminPricingTiers() {
         .from("pricing_tiers")
         .update({
           name: form.name.trim(),
-          discount_percentage: form.discount_percentage,
+          base_discount_percent: form.base_discount_percent,
         })
         .eq("id", editing.id);
       setBusy(false);
@@ -101,9 +96,8 @@ function AdminPricingTiers() {
       toast.success("تم تحديث الفئة");
     } else {
       const { error } = await supabase.from("pricing_tiers").insert({
-        company_id: companyId,
         name: form.name.trim(),
-        discount_percentage: form.discount_percentage,
+        base_discount_percent: form.base_discount_percent,
       });
       setBusy(false);
       if (error) return toast.error(error.message);
@@ -128,9 +122,9 @@ function AdminPricingTiers() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">فئات التسعير</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">فئات التسعير العالمية</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {tiers.length} فئة — مثال: Retail 20%، Gold 30%، Master 40%
+            {tiers.length} فئة — تُستخدم من قبل جميع الشركات على المنصة. مثال: Retail 20%، Gold 30%، Master 40%
           </p>
         </div>
         <Button className="gap-2 self-start" onClick={openCreate}>
@@ -160,9 +154,9 @@ function AdminPricingTiers() {
                     </Badge>
                   </div>
                   <p className="mt-3 text-2xl font-bold text-primary">
-                    {t.discount_percentage}%
+                    {t.base_discount_percent}%
                   </p>
-                  <p className="text-xs text-muted-foreground">نسبة الخصم</p>
+                  <p className="text-xs text-muted-foreground">نسبة الخصم الأساسية</p>
                 </div>
                 <div className="flex flex-col gap-1">
                   <Button
@@ -204,17 +198,17 @@ function AdminPricingTiers() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>نسبة الخصم (%)</Label>
+              <Label>نسبة الخصم الأساسية (%)</Label>
               <Input
                 type="number"
                 min={0}
                 max={100}
                 step="0.01"
-                value={form.discount_percentage}
+                value={form.base_discount_percent}
                 onChange={(e) =>
                   setForm({
                     ...form,
-                    discount_percentage: Math.max(0, Math.min(100, Number(e.target.value) || 0)),
+                    base_discount_percent: Math.max(0, Math.min(100, Number(e.target.value) || 0)),
                   })
                 }
               />
@@ -237,7 +231,7 @@ function AdminPricingTiers() {
           <AlertDialogHeader>
             <AlertDialogTitle>حذف فئة التسعير</AlertDialogTitle>
             <AlertDialogDescription>
-              سيتم إلغاء ربط هذه الفئة من جميع الموزعين. هل أنت متأكد؟
+              لا يمكن الحذف إذا كانت الفئة مستخدمة من قبل أي شركة. هل أنت متأكد؟
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

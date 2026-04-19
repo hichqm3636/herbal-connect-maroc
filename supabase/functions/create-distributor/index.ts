@@ -136,11 +136,10 @@ Deno.serve(async (req) => {
     if (pricingTierId) {
       const { data: tier } = await admin
         .from("pricing_tiers")
-        .select("id, company_id")
+        .select("id")
         .eq("id", pricingTierId)
         .maybeSingle();
-      if (!tier || tier.company_id !== callerCompanyId)
-        return bad("فئة التسعير غير صالحة", 400);
+      if (!tier) return bad("فئة التسعير غير صالحة", 400);
     }
 
     const { data: dup } = await admin
@@ -176,13 +175,20 @@ Deno.serve(async (req) => {
         city: territory.name,
         territory_id: territoryId,
         company_id: callerCompanyId,
-        pricing_tier_id: pricingTierId,
         is_active: true,
         ...(initialPoints > 0 ? { loyalty_points: initialPoints } : {}),
       }, { onConflict: "id" });
     if (updErr) {
       await admin.auth.admin.deleteUser(created.user.id);
       return bad(updErr.message, 400);
+    }
+
+    if (pricingTierId) {
+      await admin.from("company_distributor_pricing").insert({
+        company_id: callerCompanyId,
+        distributor_id: created.user.id,
+        pricing_tier_id: pricingTierId,
+      });
     }
 
     // Assign distributor role scoped to the company

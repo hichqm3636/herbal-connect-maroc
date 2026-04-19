@@ -22,12 +22,12 @@ import { Route as AppLoyaltyRouteImport } from './routes/_app/loyalty'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppAdminRouteImport } from './routes/_app/_admin'
 import { Route as AppSuperAdminIndexRouteImport } from './routes/_app/super-admin/index'
+import { Route as AppSuperAdminPricingTiersRouteImport } from './routes/_app/super-admin/pricing-tiers'
 import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-admin/companies'
 import { Route as AppProductsProductIdRouteImport } from './routes/_app/products_.$productId'
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
 import { Route as AppAdminAdminTerritoriesRouteImport } from './routes/_app/_admin/admin.territories'
 import { Route as AppAdminAdminProductsRouteImport } from './routes/_app/_admin/admin.products'
-import { Route as AppAdminAdminPricingTiersRouteImport } from './routes/_app/_admin/admin.pricing-tiers'
 import { Route as AppAdminAdminOrdersRouteImport } from './routes/_app/_admin/admin.orders'
 import { Route as AppAdminAdminDistributorsRouteImport } from './routes/_app/_admin/admin.distributors'
 import { Route as AppAdminAdminBrandingRouteImport } from './routes/_app/_admin/admin.branding'
@@ -98,6 +98,12 @@ const AppSuperAdminIndexRoute = AppSuperAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppSuperAdminRoute,
 } as any)
+const AppSuperAdminPricingTiersRoute =
+  AppSuperAdminPricingTiersRouteImport.update({
+    id: '/pricing-tiers',
+    path: '/pricing-tiers',
+    getParentRoute: () => AppSuperAdminRoute,
+  } as any)
 const AppSuperAdminCompaniesRoute = AppSuperAdminCompaniesRouteImport.update({
   id: '/companies',
   path: '/companies',
@@ -124,12 +130,6 @@ const AppAdminAdminProductsRoute = AppAdminAdminProductsRouteImport.update({
   path: '/admin/products',
   getParentRoute: () => AppAdminRoute,
 } as any)
-const AppAdminAdminPricingTiersRoute =
-  AppAdminAdminPricingTiersRouteImport.update({
-    id: '/admin/pricing-tiers',
-    path: '/admin/pricing-tiers',
-    getParentRoute: () => AppAdminRoute,
-  } as any)
 const AppAdminAdminOrdersRoute = AppAdminAdminOrdersRouteImport.update({
   id: '/admin/orders',
   path: '/admin/orders',
@@ -176,13 +176,13 @@ export interface FileRoutesByFullPath {
   '/super-admin': typeof AppSuperAdminRouteWithChildren
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
+  '/super-admin/pricing-tiers': typeof AppSuperAdminPricingTiersRoute
   '/super-admin/': typeof AppSuperAdminIndexRoute
   '/admin/activity': typeof AppAdminAdminActivityRoute
   '/admin/analytics': typeof AppAdminAdminAnalyticsRoute
   '/admin/branding': typeof AppAdminAdminBrandingRoute
   '/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
-  '/admin/pricing-tiers': typeof AppAdminAdminPricingTiersRoute
   '/admin/products': typeof AppAdminAdminProductsRoute
   '/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/admin/': typeof AppAdminAdminIndexRoute
@@ -200,13 +200,13 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
+  '/super-admin/pricing-tiers': typeof AppSuperAdminPricingTiersRoute
   '/super-admin': typeof AppSuperAdminIndexRoute
   '/admin/activity': typeof AppAdminAdminActivityRoute
   '/admin/analytics': typeof AppAdminAdminAnalyticsRoute
   '/admin/branding': typeof AppAdminAdminBrandingRoute
   '/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
-  '/admin/pricing-tiers': typeof AppAdminAdminPricingTiersRoute
   '/admin/products': typeof AppAdminAdminProductsRoute
   '/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/admin': typeof AppAdminAdminIndexRoute
@@ -228,13 +228,13 @@ export interface FileRoutesById {
   '/_app/super-admin': typeof AppSuperAdminRouteWithChildren
   '/_app/products_/$productId': typeof AppProductsProductIdRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
+  '/_app/super-admin/pricing-tiers': typeof AppSuperAdminPricingTiersRoute
   '/_app/super-admin/': typeof AppSuperAdminIndexRoute
   '/_app/_admin/admin/activity': typeof AppAdminAdminActivityRoute
   '/_app/_admin/admin/analytics': typeof AppAdminAdminAnalyticsRoute
   '/_app/_admin/admin/branding': typeof AppAdminAdminBrandingRoute
   '/_app/_admin/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/_app/_admin/admin/orders': typeof AppAdminAdminOrdersRoute
-  '/_app/_admin/admin/pricing-tiers': typeof AppAdminAdminPricingTiersRoute
   '/_app/_admin/admin/products': typeof AppAdminAdminProductsRoute
   '/_app/_admin/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/_app/_admin/admin/': typeof AppAdminAdminIndexRoute
@@ -255,13 +255,13 @@ export interface FileRouteTypes {
     | '/super-admin'
     | '/products/$productId'
     | '/super-admin/companies'
+    | '/super-admin/pricing-tiers'
     | '/super-admin/'
     | '/admin/activity'
     | '/admin/analytics'
     | '/admin/branding'
     | '/admin/distributors'
     | '/admin/orders'
-    | '/admin/pricing-tiers'
     | '/admin/products'
     | '/admin/territories'
     | '/admin/'
@@ -279,13 +279,13 @@ export interface FileRouteTypes {
     | '/settings'
     | '/products/$productId'
     | '/super-admin/companies'
+    | '/super-admin/pricing-tiers'
     | '/super-admin'
     | '/admin/activity'
     | '/admin/analytics'
     | '/admin/branding'
     | '/admin/distributors'
     | '/admin/orders'
-    | '/admin/pricing-tiers'
     | '/admin/products'
     | '/admin/territories'
     | '/admin'
@@ -306,13 +306,13 @@ export interface FileRouteTypes {
     | '/_app/super-admin'
     | '/_app/products_/$productId'
     | '/_app/super-admin/companies'
+    | '/_app/super-admin/pricing-tiers'
     | '/_app/super-admin/'
     | '/_app/_admin/admin/activity'
     | '/_app/_admin/admin/analytics'
     | '/_app/_admin/admin/branding'
     | '/_app/_admin/admin/distributors'
     | '/_app/_admin/admin/orders'
-    | '/_app/_admin/admin/pricing-tiers'
     | '/_app/_admin/admin/products'
     | '/_app/_admin/admin/territories'
     | '/_app/_admin/admin/'
@@ -419,6 +419,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSuperAdminIndexRouteImport
       parentRoute: typeof AppSuperAdminRoute
     }
+    '/_app/super-admin/pricing-tiers': {
+      id: '/_app/super-admin/pricing-tiers'
+      path: '/pricing-tiers'
+      fullPath: '/super-admin/pricing-tiers'
+      preLoaderRoute: typeof AppSuperAdminPricingTiersRouteImport
+      parentRoute: typeof AppSuperAdminRoute
+    }
     '/_app/super-admin/companies': {
       id: '/_app/super-admin/companies'
       path: '/companies'
@@ -452,13 +459,6 @@ declare module '@tanstack/react-router' {
       path: '/admin/products'
       fullPath: '/admin/products'
       preLoaderRoute: typeof AppAdminAdminProductsRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/_admin/admin/pricing-tiers': {
-      id: '/_app/_admin/admin/pricing-tiers'
-      path: '/admin/pricing-tiers'
-      fullPath: '/admin/pricing-tiers'
-      preLoaderRoute: typeof AppAdminAdminPricingTiersRouteImport
       parentRoute: typeof AppAdminRoute
     }
     '/_app/_admin/admin/orders': {
@@ -512,7 +512,6 @@ interface AppAdminRouteChildren {
   AppAdminAdminBrandingRoute: typeof AppAdminAdminBrandingRoute
   AppAdminAdminDistributorsRoute: typeof AppAdminAdminDistributorsRoute
   AppAdminAdminOrdersRoute: typeof AppAdminAdminOrdersRoute
-  AppAdminAdminPricingTiersRoute: typeof AppAdminAdminPricingTiersRoute
   AppAdminAdminProductsRoute: typeof AppAdminAdminProductsRoute
   AppAdminAdminTerritoriesRoute: typeof AppAdminAdminTerritoriesRoute
   AppAdminAdminIndexRoute: typeof AppAdminAdminIndexRoute
@@ -525,7 +524,6 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminAdminBrandingRoute: AppAdminAdminBrandingRoute,
   AppAdminAdminDistributorsRoute: AppAdminAdminDistributorsRoute,
   AppAdminAdminOrdersRoute: AppAdminAdminOrdersRoute,
-  AppAdminAdminPricingTiersRoute: AppAdminAdminPricingTiersRoute,
   AppAdminAdminProductsRoute: AppAdminAdminProductsRoute,
   AppAdminAdminTerritoriesRoute: AppAdminAdminTerritoriesRoute,
   AppAdminAdminIndexRoute: AppAdminAdminIndexRoute,
@@ -538,11 +536,13 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 
 interface AppSuperAdminRouteChildren {
   AppSuperAdminCompaniesRoute: typeof AppSuperAdminCompaniesRoute
+  AppSuperAdminPricingTiersRoute: typeof AppSuperAdminPricingTiersRoute
   AppSuperAdminIndexRoute: typeof AppSuperAdminIndexRoute
 }
 
 const AppSuperAdminRouteChildren: AppSuperAdminRouteChildren = {
   AppSuperAdminCompaniesRoute: AppSuperAdminCompaniesRoute,
+  AppSuperAdminPricingTiersRoute: AppSuperAdminPricingTiersRoute,
   AppSuperAdminIndexRoute: AppSuperAdminIndexRoute,
 }
 
@@ -585,12 +585,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
