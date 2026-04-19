@@ -114,13 +114,15 @@ function OrderDetails() {
     { id: string; created_at: string; old_status: string; new_status: string; admin_name: string | null }[]
   >([]);
 
+  const [tier, setTier] = useState<TierInfo | null>(null);
+
   const load = async () => {
     if (!companyId) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, distributor_id, company_id, profiles(full_name, phone, city, territories(name), pricing_tiers(name, discount_percentage)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url))",
+        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, distributor_id, company_id, profiles(full_name, phone, city, territories(name)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost))",
       )
       .eq("id", orderId)
       .eq("company_id", companyId)
@@ -129,10 +131,34 @@ function OrderDetails() {
       toast.error("تعذر تحميل الطلب");
       setOrder(null);
       setHistory([]);
+      setTier(null);
       setLoading(false);
       return;
     }
     setOrder(data as unknown as OrderDetail);
+
+    // Resolve the distributor's effective pricing tier for this company.
+    const { data: cdp } = await supabase
+      .from("company_distributor_pricing")
+      .select("custom_discount_percent, pricing_tiers(name, base_discount_percent)")
+      .eq("company_id", (data as { company_id: string }).company_id)
+      .eq("distributor_id", (data as { distributor_id: string }).distributor_id)
+      .maybeSingle();
+    if (cdp) {
+      const row = cdp as unknown as {
+        custom_discount_percent: number | null;
+        pricing_tiers: { name: string; base_discount_percent: number } | null;
+      };
+      const base = row.pricing_tiers?.base_discount_percent ?? 0;
+      const custom = row.custom_discount_percent;
+      setTier({
+        name: row.pricing_tiers?.name ?? "—",
+        discount_percent: custom != null ? Number(custom) : Number(base),
+        custom: custom != null,
+      });
+    } else {
+      setTier(null);
+    }
 
     const { data: logs } = await supabase
       .from("admin_activity_log")
