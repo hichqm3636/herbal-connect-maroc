@@ -1248,7 +1248,10 @@ function AdminProducts() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">السعر الأدنى المعلن (MAP)</Label>
+                    <Label className="text-xs flex items-center justify-between gap-2">
+                      <span>السعر الأدنى المعلن (MAP)</span>
+                      <MarginBadge price={form.map_price} />
+                    </Label>
                     <Input
                       type="number"
                       min="0"
@@ -1264,7 +1267,10 @@ function AdminProducts() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs">سعر الصيدلية</Label>
+                    <Label className="text-xs flex items-center justify-between gap-2">
+                      <span>سعر الصيدلية</span>
+                      <MarginBadge price={form.pharmacy_price} />
+                    </Label>
                     <Input
                       type="number"
                       min="0"
