@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, TrendingUp, MapPin, Users, Zap, LineChart as LineIcon } from "lucide-react";
+import { BarChart3, TrendingUp, MapPin, Users, Zap, LineChart as LineIcon, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   ResponsiveContainer,
   BarChart,
