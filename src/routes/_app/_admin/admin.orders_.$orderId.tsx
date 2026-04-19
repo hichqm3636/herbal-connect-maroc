@@ -47,7 +47,15 @@ interface ItemRow {
   quantity: number;
   unit_price_mad: number;
   cost_snapshot: number | null;
-  products: { id: string; name_ar: string; sku: string | null; image_url: string | null } | null;
+  products: {
+    id: string;
+    name_ar: string;
+    sku: string | null;
+    image_url: string | null;
+    rrp_price: number | null;
+    price_mad: number;
+    cost: number | null;
+  } | null;
 }
 
 interface OrderDetail {
@@ -66,9 +74,14 @@ interface OrderDetail {
     phone: string | null;
     city: string | null;
     territories: { name: string } | null;
-    pricing_tiers: { name: string; discount_percentage: number } | null;
   } | null;
   order_items: ItemRow[];
+}
+
+interface TierInfo {
+  name: string;
+  discount_percent: number;
+  custom: boolean;
 }
 
 type StatusKey = "confirmed" | "preparing" | "shipped" | "delivered" | "cancelled";
