@@ -107,7 +107,7 @@ function OrderDetails() {
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, distributor_id, company_id, profiles(full_name, phone, city, territories(name), pricing_tiers(name, discount_percentage)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url))",ers(name, discount_percentage)), order_items(id, quantity, unit_price_mad, products(id, name_ar, sku, image_url))",
+        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, distributor_id, company_id, profiles(full_name, phone, city, territories(name), pricing_tiers(name, discount_percentage)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url))",
       )
       .eq("id", orderId)
       .eq("company_id", companyId)
