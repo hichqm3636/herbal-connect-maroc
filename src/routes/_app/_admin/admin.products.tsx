@@ -472,23 +472,54 @@ function AdminProducts() {
       toast.error("الحد الأدنى للطلب يجب أن يكون 1 على الأقل");
       return;
     }
-    // MAP guardrail: prevent admin from saving any wholesale tier below MAP
-    // when MAP is set. (MAP at runtime is only enforced for pharmacy partners,
-    // but we warn the admin upfront for any tier.)
-    if (form.map_price != null && form.map_price > 0) {
-      const offending = form.price_tiers.find((t) => t.price > 0 && t.price < form.map_price!);
-      if (offending) {
+    // Pricing hierarchy guardrails:
+    //   Cost < Distributor tier < Pharmacy < MAP < RRP
+    // Distributor tiers are wholesale and are NOT validated against MAP.
+    if (
+      form.pharmacy_price != null &&
+      form.pharmacy_price > 0
+    ) {
+      const offendingTier = form.price_tiers.find(
+        (t) => t.price > 0 && t.price >= form.pharmacy_price!,
+      );
+      if (offendingTier) {
         toast.error(
-          `سعر الطبقة (${offending.min_qty}+) أقل من السعر الأدنى المعلن (MAP)`,
+          `سعر الموزع (${offendingTier.min_qty}+) يجب أن يكون أقل من سعر الصيدلية`,
         );
         return;
       }
-      if (
-        form.pharmacy_price != null &&
-        form.pharmacy_price > 0 &&
-        form.pharmacy_price < form.map_price
-      ) {
-        toast.error("سعر الصيدلية أقل من السعر الأدنى المعلن (MAP)");
+    }
+    if (
+      form.pharmacy_price != null &&
+      form.pharmacy_price > 0 &&
+      form.map_price != null &&
+      form.map_price > 0 &&
+      form.pharmacy_price >= form.map_price
+    ) {
+      toast.error("سعر الصيدلية يجب أن يكون أقل من السعر الأدنى المعلن (MAP)");
+      return;
+    }
+    if (
+      form.map_price != null &&
+      form.map_price > 0 &&
+      form.rrp_price != null &&
+      form.rrp_price > 0 &&
+      form.map_price >= form.rrp_price
+    ) {
+      toast.error("السعر الأدنى المعلن (MAP) يجب أن يكون أقل من السعر الموصى به (RRP)");
+      return;
+    }
+    if (
+      form.cost != null &&
+      form.cost > 0
+    ) {
+      const offendingTier = form.price_tiers.find(
+        (t) => t.price > 0 && t.price <= form.cost!,
+      );
+      if (offendingTier) {
+        toast.error(
+          `سعر الموزع (${offendingTier.min_qty}+) يجب أن يكون أعلى من التكلفة`,
+        );
         return;
       }
     }
