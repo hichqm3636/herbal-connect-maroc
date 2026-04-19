@@ -500,6 +500,7 @@ function AdminProducts() {
       stock: form.stock,
       active: form.active,
       points_per_unit: form.points_per_unit,
+      cost: form.cost,
       rrp_price: form.rrp_price,
       pharmacy_price: form.pharmacy_price,
       map_price: form.map_price,
