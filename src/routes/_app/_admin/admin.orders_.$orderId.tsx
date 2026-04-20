@@ -4,10 +4,13 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
+  Download,
+  FileText,
   Loader2,
   Package,
   PackageCheck,
   Pencil,
+  Receipt,
   Truck,
   XCircle,
 } from "lucide-react";
@@ -38,10 +41,17 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   formatMAD,
   formatDateTimeAr,
+  formatDateAr,
   STATUS_LABELS,
   STATUS_VARIANTS,
   STATUS_CLASSES,
 } from "@/lib/format";
+import {
+  createInvoiceForOrder,
+  downloadInvoicePdf,
+  INVOICE_STATUS_CLASSES,
+  INVOICE_STATUS_LABELS,
+} from "@/lib/invoices";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/_admin/admin/orders_/$orderId")({
@@ -131,6 +141,17 @@ function OrderDetails() {
 
   const [tier, setTier] = useState<TierInfo | null>(null);
 
+  const [invoice, setInvoice] = useState<{
+    id: string;
+    invoice_number: string;
+    status: string;
+    issue_date: string;
+    total_mad: number;
+    pdf_path: string | null;
+  } | null>(null);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+
   const load = async () => {
     if (!companyId) return;
     setLoading(true);
@@ -204,6 +225,15 @@ function OrderDetails() {
     } else {
       setHistory([]);
     }
+
+    // Load existing invoice for this order (one-to-one).
+    const { data: inv } = await supabase
+      .from("invoices")
+      .select("id, invoice_number, status, issue_date, total_mad, pdf_path")
+      .eq("order_id", orderId)
+      .maybeSingle();
+    setInvoice(inv as typeof invoice);
+
     setLoading(false);
   };
 
@@ -225,6 +255,35 @@ function OrderDetails() {
     }
     toast.success(`تم تحديث الحالة: ${STATUS_LABELS[status]}`);
     load();
+  };
+
+  const handleGenerateInvoice = async () => {
+    if (!order) return;
+    setGeneratingInvoice(true);
+    try {
+      await createInvoiceForOrder({ orderId: order.id });
+      toast.success("تم إصدار الفاتورة");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "تعذر إصدار الفاتورة");
+    } finally {
+      setGeneratingInvoice(false);
+    }
+  };
+
+  const handleDownloadInvoice = async () => {
+    if (!invoice?.pdf_path) {
+      toast.error("لا يوجد ملف PDF");
+      return;
+    }
+    setDownloadingInvoice(true);
+    try {
+      await downloadInvoicePdf(invoice.pdf_path, `${invoice.invoice_number}.pdf`);
+    } catch {
+      toast.error("تعذر تنزيل الفاتورة");
+    } finally {
+      setDownloadingInvoice(false);
+    }
   };
 
   const startEditNotes = () => {
@@ -621,6 +680,40 @@ function OrderDetails() {
         <p className="text-[10px] text-muted-foreground">
           إذا اختلف unit_price المحفوظ عن distributor_price المتوقع فهذا يعني أن السعر تم تطبيقه بشريحة مختلفة وقت إنشاء الطلب.
         </p>
+      </Card>
+
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+            <h2 className="font-semibold text-sm text-muted-foreground">الفاتورة</h2>
+          </div>
+          {invoice ? (
+            <Button size="sm" variant="outline" onClick={handleDownloadInvoice} disabled={!invoice.pdf_path || downloadingInvoice}>
+              {downloadingInvoice ? <Loader2 className="h-3.5 w-3.5 animate-spin ml-1" /> : <Download className="h-3.5 w-3.5 ml-1" />}
+              تنزيل PDF
+            </Button>
+          ) : (
+            <Button size="sm" onClick={handleGenerateInvoice} disabled={generatingInvoice}>
+              {generatingInvoice ? <Loader2 className="h-3.5 w-3.5 animate-spin ml-1" /> : <FileText className="h-3.5 w-3.5 ml-1" />}
+              إصدار فاتورة
+            </Button>
+          )}
+        </div>
+        {invoice ? (
+          <div className="flex items-center justify-between flex-wrap gap-2 text-sm">
+            <Link to="/admin/invoices/$invoiceId" params={{ invoiceId: invoice.id }} className="font-medium hover:underline" dir="ltr">
+              {invoice.invoice_number}
+            </Link>
+            <span className="text-xs text-muted-foreground">{formatDateAr(invoice.issue_date)}</span>
+            <Badge variant="outline" className={INVOICE_STATUS_CLASSES[invoice.status]}>
+              {INVOICE_STATUS_LABELS[invoice.status]}
+            </Badge>
+            <span className="font-semibold">{formatMAD(invoice.total_mad)}</span>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground italic">لم يتم إصدار فاتورة لهذا الطلب بعد.</p>
+        )}
       </Card>
 
       {order.notes && (

@@ -35,11 +35,13 @@ import { Route as AppAdminAdminProductsRouteImport } from './routes/_app/_admin/
 import { Route as AppAdminAdminProductZonesRouteImport } from './routes/_app/_admin/admin.product-zones'
 import { Route as AppAdminAdminOrdersRouteImport } from './routes/_app/_admin/admin.orders'
 import { Route as AppAdminAdminOrderRulesRouteImport } from './routes/_app/_admin/admin.order-rules'
+import { Route as AppAdminAdminInvoicesRouteImport } from './routes/_app/_admin/admin.invoices'
 import { Route as AppAdminAdminDistributorsRouteImport } from './routes/_app/_admin/admin.distributors'
 import { Route as AppAdminAdminBrandingRouteImport } from './routes/_app/_admin/admin.branding'
 import { Route as AppAdminAdminAnalyticsRouteImport } from './routes/_app/_admin/admin.analytics'
 import { Route as AppAdminAdminActivityRouteImport } from './routes/_app/_admin/admin.activity'
 import { Route as AppAdminAdminOrdersOrderIdRouteImport } from './routes/_app/_admin/admin.orders_.$orderId'
+import { Route as AppAdminAdminInvoicesInvoiceIdRouteImport } from './routes/_app/_admin/admin.invoices_.$invoiceId'
 import { Route as AppAdminAdminDistributorsIdRouteImport } from './routes/_app/_admin/admin.distributors_.$id'
 import { Route as AppAdminAdminCreateOrderClientIdRouteImport } from './routes/_app/_admin/admin.create-order.$clientId'
 
@@ -176,6 +178,11 @@ const AppAdminAdminOrderRulesRoute = AppAdminAdminOrderRulesRouteImport.update({
   path: '/admin/order-rules',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminAdminInvoicesRoute = AppAdminAdminInvoicesRouteImport.update({
+  id: '/admin/invoices',
+  path: '/admin/invoices',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminAdminDistributorsRoute =
   AppAdminAdminDistributorsRouteImport.update({
     id: '/admin/distributors',
@@ -201,6 +208,12 @@ const AppAdminAdminOrdersOrderIdRoute =
   AppAdminAdminOrdersOrderIdRouteImport.update({
     id: '/admin/orders_/$orderId',
     path: '/admin/orders/$orderId',
+    getParentRoute: () => AppAdminRoute,
+  } as any)
+const AppAdminAdminInvoicesInvoiceIdRoute =
+  AppAdminAdminInvoicesInvoiceIdRouteImport.update({
+    id: '/admin/invoices_/$invoiceId',
+    path: '/admin/invoices/$invoiceId',
     getParentRoute: () => AppAdminRoute,
   } as any)
 const AppAdminAdminDistributorsIdRoute =
@@ -237,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/admin/analytics': typeof AppAdminAdminAnalyticsRoute
   '/admin/branding': typeof AppAdminAdminBrandingRoute
   '/admin/distributors': typeof AppAdminAdminDistributorsRoute
+  '/admin/invoices': typeof AppAdminAdminInvoicesRoute
   '/admin/order-rules': typeof AppAdminAdminOrderRulesRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
   '/admin/product-zones': typeof AppAdminAdminProductZonesRoute
@@ -247,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AppAdminAdminIndexRoute
   '/admin/create-order/$clientId': typeof AppAdminAdminCreateOrderClientIdRoute
   '/admin/distributors/$id': typeof AppAdminAdminDistributorsIdRoute
+  '/admin/invoices/$invoiceId': typeof AppAdminAdminInvoicesInvoiceIdRoute
   '/admin/orders/$orderId': typeof AppAdminAdminOrdersOrderIdRoute
 }
 export interface FileRoutesByTo {
@@ -269,6 +284,7 @@ export interface FileRoutesByTo {
   '/admin/analytics': typeof AppAdminAdminAnalyticsRoute
   '/admin/branding': typeof AppAdminAdminBrandingRoute
   '/admin/distributors': typeof AppAdminAdminDistributorsRoute
+  '/admin/invoices': typeof AppAdminAdminInvoicesRoute
   '/admin/order-rules': typeof AppAdminAdminOrderRulesRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
   '/admin/product-zones': typeof AppAdminAdminProductZonesRoute
@@ -279,6 +295,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AppAdminAdminIndexRoute
   '/admin/create-order/$clientId': typeof AppAdminAdminCreateOrderClientIdRoute
   '/admin/distributors/$id': typeof AppAdminAdminDistributorsIdRoute
+  '/admin/invoices/$invoiceId': typeof AppAdminAdminInvoicesInvoiceIdRoute
   '/admin/orders/$orderId': typeof AppAdminAdminOrdersOrderIdRoute
 }
 export interface FileRoutesById {
@@ -305,6 +322,7 @@ export interface FileRoutesById {
   '/_app/_admin/admin/analytics': typeof AppAdminAdminAnalyticsRoute
   '/_app/_admin/admin/branding': typeof AppAdminAdminBrandingRoute
   '/_app/_admin/admin/distributors': typeof AppAdminAdminDistributorsRoute
+  '/_app/_admin/admin/invoices': typeof AppAdminAdminInvoicesRoute
   '/_app/_admin/admin/order-rules': typeof AppAdminAdminOrderRulesRoute
   '/_app/_admin/admin/orders': typeof AppAdminAdminOrdersRoute
   '/_app/_admin/admin/product-zones': typeof AppAdminAdminProductZonesRoute
@@ -315,6 +333,7 @@ export interface FileRoutesById {
   '/_app/_admin/admin/': typeof AppAdminAdminIndexRoute
   '/_app/_admin/admin/create-order/$clientId': typeof AppAdminAdminCreateOrderClientIdRoute
   '/_app/_admin/admin/distributors_/$id': typeof AppAdminAdminDistributorsIdRoute
+  '/_app/_admin/admin/invoices_/$invoiceId': typeof AppAdminAdminInvoicesInvoiceIdRoute
   '/_app/_admin/admin/orders_/$orderId': typeof AppAdminAdminOrdersOrderIdRoute
 }
 export interface FileRouteTypes {
@@ -340,6 +359,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/branding'
     | '/admin/distributors'
+    | '/admin/invoices'
     | '/admin/order-rules'
     | '/admin/orders'
     | '/admin/product-zones'
@@ -350,6 +370,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/create-order/$clientId'
     | '/admin/distributors/$id'
+    | '/admin/invoices/$invoiceId'
     | '/admin/orders/$orderId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -372,6 +393,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/branding'
     | '/admin/distributors'
+    | '/admin/invoices'
     | '/admin/order-rules'
     | '/admin/orders'
     | '/admin/product-zones'
@@ -382,6 +404,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/create-order/$clientId'
     | '/admin/distributors/$id'
+    | '/admin/invoices/$invoiceId'
     | '/admin/orders/$orderId'
   id:
     | '__root__'
@@ -407,6 +430,7 @@ export interface FileRouteTypes {
     | '/_app/_admin/admin/analytics'
     | '/_app/_admin/admin/branding'
     | '/_app/_admin/admin/distributors'
+    | '/_app/_admin/admin/invoices'
     | '/_app/_admin/admin/order-rules'
     | '/_app/_admin/admin/orders'
     | '/_app/_admin/admin/product-zones'
@@ -417,6 +441,7 @@ export interface FileRouteTypes {
     | '/_app/_admin/admin/'
     | '/_app/_admin/admin/create-order/$clientId'
     | '/_app/_admin/admin/distributors_/$id'
+    | '/_app/_admin/admin/invoices_/$invoiceId'
     | '/_app/_admin/admin/orders_/$orderId'
   fileRoutesById: FileRoutesById
 }
@@ -611,6 +636,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminOrderRulesRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/_admin/admin/invoices': {
+      id: '/_app/_admin/admin/invoices'
+      path: '/admin/invoices'
+      fullPath: '/admin/invoices'
+      preLoaderRoute: typeof AppAdminAdminInvoicesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/_admin/admin/distributors': {
       id: '/_app/_admin/admin/distributors'
       path: '/admin/distributors'
@@ -646,6 +678,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminOrdersOrderIdRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/_admin/admin/invoices_/$invoiceId': {
+      id: '/_app/_admin/admin/invoices_/$invoiceId'
+      path: '/admin/invoices/$invoiceId'
+      fullPath: '/admin/invoices/$invoiceId'
+      preLoaderRoute: typeof AppAdminAdminInvoicesInvoiceIdRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/_admin/admin/distributors_/$id': {
       id: '/_app/_admin/admin/distributors_/$id'
       path: '/admin/distributors/$id'
@@ -668,6 +707,7 @@ interface AppAdminRouteChildren {
   AppAdminAdminAnalyticsRoute: typeof AppAdminAdminAnalyticsRoute
   AppAdminAdminBrandingRoute: typeof AppAdminAdminBrandingRoute
   AppAdminAdminDistributorsRoute: typeof AppAdminAdminDistributorsRoute
+  AppAdminAdminInvoicesRoute: typeof AppAdminAdminInvoicesRoute
   AppAdminAdminOrderRulesRoute: typeof AppAdminAdminOrderRulesRoute
   AppAdminAdminOrdersRoute: typeof AppAdminAdminOrdersRoute
   AppAdminAdminProductZonesRoute: typeof AppAdminAdminProductZonesRoute
@@ -678,6 +718,7 @@ interface AppAdminRouteChildren {
   AppAdminAdminIndexRoute: typeof AppAdminAdminIndexRoute
   AppAdminAdminCreateOrderClientIdRoute: typeof AppAdminAdminCreateOrderClientIdRoute
   AppAdminAdminDistributorsIdRoute: typeof AppAdminAdminDistributorsIdRoute
+  AppAdminAdminInvoicesInvoiceIdRoute: typeof AppAdminAdminInvoicesInvoiceIdRoute
   AppAdminAdminOrdersOrderIdRoute: typeof AppAdminAdminOrdersOrderIdRoute
 }
 
@@ -686,6 +727,7 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminAdminAnalyticsRoute: AppAdminAdminAnalyticsRoute,
   AppAdminAdminBrandingRoute: AppAdminAdminBrandingRoute,
   AppAdminAdminDistributorsRoute: AppAdminAdminDistributorsRoute,
+  AppAdminAdminInvoicesRoute: AppAdminAdminInvoicesRoute,
   AppAdminAdminOrderRulesRoute: AppAdminAdminOrderRulesRoute,
   AppAdminAdminOrdersRoute: AppAdminAdminOrdersRoute,
   AppAdminAdminProductZonesRoute: AppAdminAdminProductZonesRoute,
@@ -696,6 +738,7 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminAdminIndexRoute: AppAdminAdminIndexRoute,
   AppAdminAdminCreateOrderClientIdRoute: AppAdminAdminCreateOrderClientIdRoute,
   AppAdminAdminDistributorsIdRoute: AppAdminAdminDistributorsIdRoute,
+  AppAdminAdminInvoicesInvoiceIdRoute: AppAdminAdminInvoicesInvoiceIdRoute,
   AppAdminAdminOrdersOrderIdRoute: AppAdminAdminOrdersOrderIdRoute,
 }
 
@@ -758,12 +801,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

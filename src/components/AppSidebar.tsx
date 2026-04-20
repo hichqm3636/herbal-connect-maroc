@@ -17,6 +17,7 @@ import {
   Tag,
   ListChecks,
   UsersRound,
+  Receipt,
 } from "lucide-react";
 import {
   Sidebar,
@@ -49,6 +50,7 @@ const adminItems = [
   { title: "العملاء", url: "/admin/distributors", icon: Users },
   { title: "إدارة المناطق", url: "/admin/territories", icon: MapPin },
   { title: "إدارة الطلبات", url: "/admin/orders", icon: ClipboardList },
+  { title: "الفواتير", url: "/admin/invoices", icon: Receipt },
   { title: "قواعد الطلب", url: "/admin/order-rules", icon: ListChecks },
   { title: "فريق الشركة", url: "/admin/team", icon: UsersRound },
   { title: "إعدادات الشركة", url: "/admin/branding", icon: Settings },

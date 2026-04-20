@@ -183,6 +183,123 @@ export type Database = {
           },
         ]
       }
+      invoice_sequences: {
+        Row: {
+          company_id: string
+          next_number: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          company_id: string
+          next_number?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          company_id?: string
+          next_number?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_sequences_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          distributor_id: string
+          due_date: string | null
+          id: string
+          invoice_number: string
+          issue_date: string
+          notes: string | null
+          order_id: string
+          paid_at: string | null
+          payment_method: string | null
+          pdf_path: string | null
+          status: Database["public"]["Enums"]["invoice_status"]
+          subtotal_mad: number
+          total_mad: number
+          updated_at: string
+          vat_amount_mad: number
+          vat_rate: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          distributor_id: string
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          notes?: string | null
+          order_id: string
+          paid_at?: string | null
+          payment_method?: string | null
+          pdf_path?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal_mad?: number
+          total_mad?: number
+          updated_at?: string
+          vat_amount_mad?: number
+          vat_rate?: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          distributor_id?: string
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          order_id?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          pdf_path?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal_mad?: number
+          total_mad?: number
+          updated_at?: string
+          vat_amount_mad?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_distributor_id_fkey"
+            columns: ["distributor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_transactions: {
         Row: {
           admin_id: string | null
@@ -881,6 +998,7 @@ export type Database = {
         | "success_builder"
         | "supervisor"
         | "world_team"
+      invoice_status: "draft" | "issued" | "paid" | "cancelled"
       order_status:
         | "pending"
         | "confirmed"
@@ -1036,6 +1154,7 @@ export const Constants = {
         "supervisor",
         "world_team",
       ],
+      invoice_status: ["draft", "issued", "paid", "cancelled"],
       order_status: [
         "pending",
         "confirmed",
