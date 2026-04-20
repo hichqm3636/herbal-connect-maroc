@@ -40,6 +40,7 @@ interface PricingTier {
 }
 
 function SuperAdminPricingTiers() {
+  const { companyId } = useAuth();
   const [tiers, setTiers] = useState<PricingTier[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -96,9 +97,14 @@ function SuperAdminPricingTiers() {
       if (error) return toast.error(error.message);
       toast.success("تم تحديث الفئة");
     } else {
+      if (!companyId) {
+        setBusy(false);
+        return toast.error("اختر شركة أولاً من قائمة الشركات");
+      }
       const { error } = await supabase.from("pricing_tiers").insert({
         name: form.name.trim(),
         base_discount_percent: form.base_discount_percent,
+        company_id: companyId,
       });
       setBusy(false);
       if (error) return toast.error(error.message);
