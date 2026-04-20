@@ -34,6 +34,7 @@ interface AuthContextValue {
   partnerType: PartnerType;
   companyId: string | null;
   company: Company | null;
+  territoryId: string | null;
   pricingTierId: string | null;
   pricingTierDiscount: number;
   loading: boolean;
@@ -72,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [accountType, setAccountType] = useState<PartnerType>("distributor");
   const [profileCompanyId, setProfileCompanyId] = useState<string | null>(null);
+  const [territoryId, setTerritoryId] = useState<string | null>(null);
   const [pricingTierId, setPricingTierId] = useState<string | null>(null);
   const [pricingTierDiscount, setPricingTierDiscount] = useState<number>(0);
   const [activeCompanyId, setActiveCompanyIdState] = useState<string | null>(() =>
@@ -106,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setRoles([]);
       setAccountType("distributor");
       setProfileCompanyId(null);
+      setTerritoryId(null);
       setPricingTierId(null);
       setPricingTierDiscount(0);
       setCompany(null);
@@ -115,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("user_roles").select("role").eq("user_id", uid),
       supabase
         .from("profiles")
-        .select("account_type, company_id")
+        .select("account_type, company_id, territory_id")
         .eq("id", uid)
         .maybeSingle(),
     ]);
@@ -123,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccountType((profile?.account_type as PartnerType | undefined) ?? "distributor");
     const cid = (profile?.company_id as string | null | undefined) ?? null;
     setProfileCompanyId(cid);
+    setTerritoryId((profile?.territory_id as string | null | undefined) ?? null);
 
     // Fetch this distributor's pricing assignment from the new table.
     let tierId: string | null = null;
@@ -167,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRoles([]);
         setAccountType("distributor");
         setProfileCompanyId(null);
+        setTerritoryId(null);
         setCompany(null);
         writeActiveCompany(null);
         setActiveCompanyIdState(null);
@@ -223,6 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     partnerType: accountType,
     companyId,
     company,
+    territoryId,
     pricingTierId,
     pricingTierDiscount,
     loading,
@@ -230,7 +236,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshRoles,
     refreshCompany,
     setActiveCompany,
-  }), [session, user, roles, accountType, companyId, company, pricingTierId, pricingTierDiscount, loading]);
+  }), [session, user, roles, accountType, companyId, company, territoryId, pricingTierId, pricingTierDiscount, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
