@@ -472,6 +472,9 @@ function OrderDetails() {
                         </span>
                       </div>
                     </td>
+                    <td className="py-2 text-xs text-muted-foreground" dir="ltr">
+                      {it.products?.sku ?? "—"}
+                    </td>
                     <td className="text-center py-2">{it.quantity}</td>
                     <td className="text-left py-2 text-muted-foreground line-through">
                       {formatMAD(base)}
