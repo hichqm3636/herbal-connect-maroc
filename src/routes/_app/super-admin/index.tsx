@@ -489,9 +489,12 @@ function SuperAdminDashboard() {
 
       {/* Top Products Across Platform */}
       <Card className="shadow-soft">
-        <CardHeader className="pb-3 flex flex-row items-center justify-between">
-          <CardTitle className="text-base">أفضل المنتجات مبيعاً في المنصة</CardTitle>
-          <Package className="h-4 w-4 text-muted-foreground" />
+        <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">أفضل المنتجات مبيعاً في المنصة</CardTitle>
+          </div>
+          <WindowToggle value={topWindow} onChange={setTopWindow} />
         </CardHeader>
         <CardContent>
           {loading ? (
