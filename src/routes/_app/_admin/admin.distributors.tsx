@@ -631,7 +631,15 @@ function AdminDistributors() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold truncate">{d.full_name || "—"}</p>
-                      <Badge variant="secondary" className="text-[10px]">موزع</Badge>
+                      {(rolesByUser[d.id] ?? []).filter((r) => ROLE_BADGE_LABELS[r]).map((r) => (
+                        <Badge
+                          key={r}
+                          variant="secondary"
+                          className={`text-[10px] ${ROLE_BADGE_CLASSES[r] ?? ""}`}
+                        >
+                          {ROLE_BADGE_LABELS[r]}
+                        </Badge>
+                      ))}
                       {bannedMap[d.id] ? (
                         <Badge variant="destructive" className="text-[10px] gap-1">
                           <Ban className="h-3 w-3" />
