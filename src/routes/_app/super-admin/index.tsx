@@ -119,6 +119,23 @@ function WindowToggle({
   );
 }
 
+function DeltaBadge({ delta }: { delta: number | null }) {
+  if (delta === null) return null;
+  const up = delta >= 0;
+  const Icon = up ? TrendingUp : TrendingDown;
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 text-[10px] font-medium ${
+        up ? "text-success" : "text-destructive"
+      }`}
+    >
+      <Icon className="h-3 w-3" />
+      {up ? "+" : ""}
+      {delta}%
+    </span>
+  );
+}
+
 function SuperAdminDashboard() {
   const [stats, setStats] = useState<Overview>({
     companies: 0,
@@ -506,8 +523,9 @@ function SuperAdminDashboard() {
                     </div>
                     <div className="text-left shrink-0">
                       <div className="text-sm font-bold">{formatMAD(c.total)}</div>
-                      <div className="text-[11px] text-muted-foreground">
-                        {c.orders.toLocaleString("ar-MA")} طلب
+                      <div className="flex items-center justify-end gap-1.5 text-[11px] text-muted-foreground">
+                        <span>{c.orders.toLocaleString("ar-MA")} طلب</span>
+                        <DeltaBadge delta={c.delta} />
                       </div>
                     </div>
                   </li>
@@ -579,8 +597,9 @@ function SuperAdminDashboard() {
                   </div>
                   <div className="text-left shrink-0">
                     <div className="text-sm font-bold">{formatMAD(p.revenue)}</div>
-                    <div className="text-[11px] text-muted-foreground">
-                      {p.units.toLocaleString("ar-MA")} وحدة
+                    <div className="flex items-center justify-end gap-1.5 text-[11px] text-muted-foreground">
+                      <span>{p.units.toLocaleString("ar-MA")} وحدة</span>
+                      <DeltaBadge delta={p.delta} />
                     </div>
                   </div>
                 </li>
