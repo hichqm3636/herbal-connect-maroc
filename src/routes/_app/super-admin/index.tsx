@@ -82,6 +82,41 @@ function describeActivity(row: ActivityRow): string {
   return `${company} — ${label}`;
 }
 
+type TopWindow = "all" | "30d" | "7d";
+
+const WINDOW_OPTIONS: Array<{ value: TopWindow; label: string }> = [
+  { value: "all", label: "كل الأوقات" },
+  { value: "30d", label: "آخر 30 يوماً" },
+  { value: "7d", label: "هذا الأسبوع" },
+];
+
+function WindowToggle({
+  value,
+  onChange,
+}: {
+  value: TopWindow;
+  onChange: (v: TopWindow) => void;
+}) {
+  return (
+    <div className="inline-flex rounded-lg border bg-muted/40 p-0.5 text-[11px]">
+      {WINDOW_OPTIONS.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          onClick={() => onChange(o.value)}
+          className={`px-2 py-1 rounded-md transition-colors ${
+            value === o.value
+              ? "bg-background shadow-sm font-medium text-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function SuperAdminDashboard() {
   const [stats, setStats] = useState<Overview>({
     companies: 0,
