@@ -11,7 +11,7 @@ import {
   Plus,
   Settings,
   ArrowLeft,
-  CheckCircle2,
+  
   Clock,
   Package,
 } from "lucide-react";
@@ -28,14 +28,20 @@ export const Route = createFileRoute("/_app/super-admin/")({
 interface Overview {
   companies: number;
   distributors: number;
+  products: number;
   orders: number;
   gmv: number;
   ordersThisWeek: number;
   ordersLastWeek: number;
-  activeCompanies: number;
-  companiesWithOrdersThisWeek: number;
   pendingOrders: number;
-  ordersCompletedToday: number;
+  // Growth (last 30 days)
+  newCompanies30d: number;
+  newDistributors30d: number;
+  newProducts30d: number;
+  newOrders30d: number;
+  // Health
+  companiesWithoutOrders: number;
+  productsWithoutSales: number;
 }
 
 interface TopCompany {
@@ -140,14 +146,18 @@ function SuperAdminDashboard() {
   const [stats, setStats] = useState<Overview>({
     companies: 0,
     distributors: 0,
+    products: 0,
     orders: 0,
     gmv: 0,
     ordersThisWeek: 0,
     ordersLastWeek: 0,
-    activeCompanies: 0,
-    companiesWithOrdersThisWeek: 0,
     pendingOrders: 0,
-    ordersCompletedToday: 0,
+    newCompanies30d: 0,
+    newDistributors30d: 0,
+    newProducts30d: 0,
+    newOrders30d: 0,
+    companiesWithoutOrders: 0,
+    productsWithoutSales: 0,
   });
   const [topWindow, setTopWindow] = useState<"all" | "30d" | "7d">("all");
   const [companyMap, setCompanyMap] = useState<Map<string, string>>(new Map());
@@ -167,23 +177,26 @@ function SuperAdminDashboard() {
   useEffect(() => {
     (async () => {
       const now = new Date();
-      const startToday = new Date(now);
-      startToday.setHours(0, 0, 0, 0);
       const startWeek = new Date(now);
       startWeek.setDate(startWeek.getDate() - 7);
       const startLastWeek = new Date(now);
       startLastWeek.setDate(startLastWeek.getDate() - 14);
+      const start30d = new Date(now);
+      start30d.setDate(start30d.getDate() - 30);
 
       const [
         companiesRes,
         distributorsRes,
+        productsCountRes,
         ordersCountRes,
         ordersAllRes,
         thisWeekRes,
         lastWeekRes,
         pendingRes,
-        completedTodayRes,
-        weekOrdersRes,
+        newCompanies30dRes,
+        newDistributors30dRes,
+        newProducts30dRes,
+        newOrders30dRes,
         activityRes,
         companiesListRes,
         orderItemsRes,
@@ -194,6 +207,7 @@ function SuperAdminDashboard() {
           .from("profiles")
           .select("*", { count: "exact", head: true })
           .eq("account_type", "distributor"),
+        supabase.from("products").select("*", { count: "exact", head: true }),
         supabase.from("orders").select("*", { count: "exact", head: true }),
         supabase.from("orders").select("id, company_id, total_mad, created_at"),
         supabase
@@ -210,24 +224,31 @@ function SuperAdminDashboard() {
           .select("*", { count: "exact", head: true })
           .eq("status", "pending"),
         supabase
-          .from("orders")
+          .from("companies")
           .select("*", { count: "exact", head: true })
-          .eq("status", "delivered")
-          .gte("updated_at", startToday.toISOString()),
+          .gte("created_at", start30d.toISOString()),
+        supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("account_type", "distributor")
+          .gte("created_at", start30d.toISOString()),
+        supabase
+          .from("products")
+          .select("*", { count: "exact", head: true })
+          .gte("created_at", start30d.toISOString()),
         supabase
           .from("orders")
-          .select("company_id")
-          .gte("created_at", startWeek.toISOString()),
+          .select("*", { count: "exact", head: true })
+          .gte("created_at", start30d.toISOString()),
         supabase
           .from("admin_activity_log")
           .select("id, action, created_at, metadata, company_id")
           .order("created_at", { ascending: false })
-          .limit(8),
+          .limit(10),
         supabase.from("companies").select("id, display_name, name"),
         supabase.from("order_items").select("product_id, quantity, unit_price_mad, order_id"),
         supabase.from("products").select("id, name_ar, company_id"),
       ]);
-      
 
       const cMap = new Map<string, string>();
       (companiesListRes.data ?? []).forEach((c: { id: string; display_name: string; name: string }) =>
@@ -248,10 +269,23 @@ function SuperAdminDashboard() {
         dateById.set(o.id, new Date(o.created_at).getTime());
       });
 
-      const activeCompanies = new Set(ordersData.map((o) => o.company_id)).size;
-      const companiesWithOrdersThisWeek = new Set(
-        (weekOrdersRes.data ?? []).map((o: { company_id: string }) => o.company_id),
-      ).size;
+      const companiesWithOrders = new Set(ordersData.map((o) => o.company_id));
+      const companiesWithoutOrders = Math.max(
+        0,
+        (companiesRes.count ?? 0) - companiesWithOrders.size,
+      );
+
+      const itemsData = (orderItemsRes.data ?? []) as Array<{
+        product_id: string;
+        quantity: number;
+        unit_price_mad: number;
+        order_id: string;
+      }>;
+      const productsWithSales = new Set(itemsData.map((it) => it.product_id));
+      const productsWithoutSales = Math.max(
+        0,
+        (productsCountRes.count ?? 0) - productsWithSales.size,
+      );
 
       const enrichedActivity: ActivityRow[] = (activityRes.data ?? []).map((r) => ({
         id: r.id,
@@ -272,26 +306,23 @@ function SuperAdminDashboard() {
       setCompanyMap(cMap);
       setProductMap(pMap);
       setAllOrders(ordersData);
-      setAllItems(
-        (orderItemsRes.data ?? []) as Array<{
-          product_id: string;
-          quantity: number;
-          unit_price_mad: number;
-          order_id: string;
-        }>,
-      );
+      setAllItems(itemsData);
       setOrderDateById(dateById);
       setStats({
         companies: companiesRes.count ?? 0,
         distributors: distributorsRes.count ?? 0,
+        products: productsCountRes.count ?? 0,
         orders: ordersCountRes.count ?? 0,
         gmv,
         ordersThisWeek: thisWeekRes.count ?? 0,
         ordersLastWeek: lastWeekRes.count ?? 0,
-        activeCompanies,
-        companiesWithOrdersThisWeek,
         pendingOrders: pendingRes.count ?? 0,
-        ordersCompletedToday: completedTodayRes.count ?? 0,
+        newCompanies30d: newCompanies30dRes.count ?? 0,
+        newDistributors30d: newDistributors30dRes.count ?? 0,
+        newProducts30d: newProducts30dRes.count ?? 0,
+        newOrders30d: newOrders30dRes.count ?? 0,
+        companiesWithoutOrders,
+        productsWithoutSales,
       });
       setActivity(enrichedActivity);
       setLoading(false);
@@ -380,37 +411,49 @@ function SuperAdminDashboard() {
 
   const overviewCards = [
     {
-      label: "إجمالي الشركات",
+      label: "الشركات",
       value: stats.companies.toLocaleString("ar-MA"),
       icon: Building2,
       accent: "bg-primary/10 text-primary",
     },
     {
-      label: "إجمالي الموزعين",
+      label: "الموزعون",
       value: stats.distributors.toLocaleString("ar-MA"),
       icon: Users,
       accent: "bg-success/10 text-success",
     },
     {
-      label: "إجمالي الطلبات",
+      label: "المنتجات",
+      value: stats.products.toLocaleString("ar-MA"),
+      icon: Package,
+      accent: "bg-accent/40 text-accent-foreground",
+    },
+    {
+      label: "الطلبات",
       value: stats.orders.toLocaleString("ar-MA"),
       icon: ClipboardList,
       accent: "bg-warning/15 text-warning-foreground",
       trend: growth,
     },
     {
-      label: "إجمالي قيمة الطلبات",
+      label: "إجمالي المبيعات",
       value: formatMAD(stats.gmv),
       icon: Wallet,
-      accent: "bg-accent/40 text-accent-foreground",
+      accent: "bg-primary/10 text-primary",
     },
   ];
 
+  const growthCards = [
+    { label: "شركات جديدة (30 يوماً)", value: stats.newCompanies30d, icon: Building2 },
+    { label: "موزعون جدد (30 يوماً)", value: stats.newDistributors30d, icon: Users },
+    { label: "منتجات جديدة (30 يوماً)", value: stats.newProducts30d, icon: Package },
+    { label: "طلبات جديدة (30 يوماً)", value: stats.newOrders30d, icon: ClipboardList },
+  ];
+
   const healthCards = [
-    { label: "شركات نشطة", value: stats.activeCompanies, icon: Building2 },
-    { label: "شركات لها طلبات هذا الأسبوع", value: stats.companiesWithOrdersThisWeek, icon: TrendingUp },
     { label: "طلبات قيد الانتظار", value: stats.pendingOrders, icon: Clock },
-    { label: "طلبات مُسلَّمة اليوم", value: stats.ordersCompletedToday, icon: CheckCircle2 },
+    { label: "شركات بدون طلبات", value: stats.companiesWithoutOrders, icon: Building2 },
+    { label: "منتجات بدون مبيعات", value: stats.productsWithoutSales, icon: Package },
   ];
 
   return (
@@ -428,19 +471,19 @@ function SuperAdminDashboard() {
       </div>
 
       {/* Overview metrics */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
         {overviewCards.map((c) => (
           <Card key={c.label} className="shadow-soft">
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between gap-3">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">{c.label}</p>
-                  <p className="mt-2 text-2xl font-bold tracking-tight truncate">
+                  <p className="mt-2 text-xl font-bold tracking-tight truncate">
                     {loading ? "…" : c.value}
                   </p>
                   {typeof c.trend === "number" && !loading && (
                     <p
-                      className={`mt-1 inline-flex items-center gap-0.5 text-xs ${
+                      className={`mt-1 inline-flex items-center gap-0.5 text-[11px] ${
                         c.trend >= 0 ? "text-success" : "text-destructive"
                       }`}
                     >
@@ -450,18 +493,46 @@ function SuperAdminDashboard() {
                         <TrendingDown className="h-3 w-3" />
                       )}
                       {c.trend >= 0 ? "+" : ""}
-                      {c.trend}% أسبوعياً
+                      {c.trend}%
                     </p>
                   )}
                 </div>
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl shrink-0 ${c.accent}`}>
-                  <c.icon className="h-5 w-5" />
+                <div className={`flex h-9 w-9 items-center justify-center rounded-xl shrink-0 ${c.accent}`}>
+                  <c.icon className="h-4 w-4" />
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Platform Growth */}
+      <Card className="shadow-soft">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">نمو المنصة (آخر 30 يوماً)</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+          {growthCards.map((g) => (
+            <div
+              key={g.label}
+              className="flex items-center gap-3 rounded-lg border bg-card/50 p-3"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10 text-success">
+                <g.icon className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-lg font-bold flex items-center gap-1">
+                  {loading ? "…" : g.value.toLocaleString("ar-MA")}
+                  {!loading && g.value > 0 && (
+                    <TrendingUp className="h-3 w-3 text-success" />
+                  )}
+                </div>
+                <div className="text-[11px] text-muted-foreground truncate">{g.label}</div>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
       <Card className="shadow-soft">
@@ -614,7 +685,7 @@ function SuperAdminDashboard() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">حالة المنصة</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        <CardContent className="grid gap-3 grid-cols-1 sm:grid-cols-3">
           {healthCards.map((h) => (
             <div
               key={h.label}
