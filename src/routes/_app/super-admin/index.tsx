@@ -471,19 +471,19 @@ function SuperAdminDashboard() {
       </div>
 
       {/* Overview metrics */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
         {overviewCards.map((c) => (
           <Card key={c.label} className="shadow-soft">
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between gap-3">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">{c.label}</p>
-                  <p className="mt-2 text-2xl font-bold tracking-tight truncate">
+                  <p className="mt-2 text-xl font-bold tracking-tight truncate">
                     {loading ? "…" : c.value}
                   </p>
                   {typeof c.trend === "number" && !loading && (
                     <p
-                      className={`mt-1 inline-flex items-center gap-0.5 text-xs ${
+                      className={`mt-1 inline-flex items-center gap-0.5 text-[11px] ${
                         c.trend >= 0 ? "text-success" : "text-destructive"
                       }`}
                     >
@@ -493,18 +493,46 @@ function SuperAdminDashboard() {
                         <TrendingDown className="h-3 w-3" />
                       )}
                       {c.trend >= 0 ? "+" : ""}
-                      {c.trend}% أسبوعياً
+                      {c.trend}%
                     </p>
                   )}
                 </div>
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl shrink-0 ${c.accent}`}>
-                  <c.icon className="h-5 w-5" />
+                <div className={`flex h-9 w-9 items-center justify-center rounded-xl shrink-0 ${c.accent}`}>
+                  <c.icon className="h-4 w-4" />
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Platform Growth */}
+      <Card className="shadow-soft">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">نمو المنصة (آخر 30 يوماً)</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+          {growthCards.map((g) => (
+            <div
+              key={g.label}
+              className="flex items-center gap-3 rounded-lg border bg-card/50 p-3"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10 text-success">
+                <g.icon className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-lg font-bold flex items-center gap-1">
+                  {loading ? "…" : g.value.toLocaleString("ar-MA")}
+                  {!loading && g.value > 0 && (
+                    <TrendingUp className="h-3 w-3 text-success" />
+                  )}
+                </div>
+                <div className="text-[11px] text-muted-foreground truncate">{g.label}</div>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
       <Card className="shadow-soft">
