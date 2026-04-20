@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   Clock,
+  Package,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +43,14 @@ interface TopCompany {
   name: string;
   total: number;
   orders: number;
+}
+
+interface TopProduct {
+  id: string;
+  name: string;
+  company: string;
+  units: number;
+  revenue: number;
 }
 
 interface ActivityRow {
@@ -87,6 +96,7 @@ function SuperAdminDashboard() {
     ordersCompletedToday: 0,
   });
   const [topCompanies, setTopCompanies] = useState<TopCompany[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -112,6 +122,8 @@ function SuperAdminDashboard() {
         weekOrdersRes,
         activityRes,
         companiesListRes,
+        orderItemsRes,
+        productsRes,
       ] = await Promise.all([
         supabase.from("companies").select("id, name", { count: "exact" }),
         supabase
@@ -148,7 +160,10 @@ function SuperAdminDashboard() {
           .order("created_at", { ascending: false })
           .limit(8),
         supabase.from("companies").select("id, display_name, name"),
+        supabase.from("order_items").select("product_id, quantity, unit_price_mad"),
+        supabase.from("products").select("id, name_ar, company_id"),
       ]);
+      
 
       const companyMap = new Map<string, string>();
       (companiesListRes.data ?? []).forEach((c: { id: string; display_name: string; name: string }) =>
@@ -187,6 +202,34 @@ function SuperAdminDashboard() {
         company_name: r.company_id ? companyMap.get(r.company_id) : undefined,
       }));
 
+      // Top products across the platform
+      const productMap = new Map<string, { name: string; company_id: string }>();
+      (productsRes.data ?? []).forEach((p: { id: string; name_ar: string; company_id: string }) =>
+        productMap.set(p.id, { name: p.name_ar, company_id: p.company_id }),
+      );
+      const productAgg = new Map<string, { units: number; revenue: number }>();
+      (orderItemsRes.data ?? []).forEach(
+        (it: { product_id: string; quantity: number; unit_price_mad: number }) => {
+          const cur = productAgg.get(it.product_id) ?? { units: 0, revenue: 0 };
+          cur.units += Number(it.quantity) || 0;
+          cur.revenue += (Number(it.quantity) || 0) * (Number(it.unit_price_mad) || 0);
+          productAgg.set(it.product_id, cur);
+        },
+      );
+      const topProds: TopProduct[] = Array.from(productAgg.entries())
+        .map(([id, v]) => {
+          const p = productMap.get(id);
+          return {
+            id,
+            name: p?.name ?? "—",
+            company: p ? (companyMap.get(p.company_id) ?? "—") : "—",
+            units: v.units,
+            revenue: v.revenue,
+          };
+        })
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 5);
+
       setStats({
         companies: companiesRes.count ?? 0,
         distributors: distributorsRes.count ?? 0,
@@ -200,6 +243,7 @@ function SuperAdminDashboard() {
         ordersCompletedToday: completedTodayRes.count ?? 0,
       });
       setTopCompanies(top);
+      setTopProducts(topProds);
       setActivity(enrichedActivity);
       setLoading(false);
     })();
@@ -397,6 +441,46 @@ function SuperAdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Top Products Across Platform */}
+      <Card className="shadow-soft">
+        <CardHeader className="pb-3 flex flex-row items-center justify-between">
+          <CardTitle className="text-base">أفضل المنتجات مبيعاً في المنصة</CardTitle>
+          <Package className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <p className="text-sm text-muted-foreground">جارٍ التحميل…</p>
+          ) : topProducts.length === 0 ? (
+            <p className="text-sm text-muted-foreground">لا توجد بيانات بعد</p>
+          ) : (
+            <ul className="space-y-2">
+              {topProducts.map((p, i) => (
+                <li
+                  key={p.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border bg-card/50 px-3 py-2"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-muted text-xs font-bold shrink-0">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{p.name}</div>
+                      <div className="truncate text-[11px] text-muted-foreground">{p.company}</div>
+                    </div>
+                  </div>
+                  <div className="text-left shrink-0">
+                    <div className="text-sm font-bold">{formatMAD(p.revenue)}</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {p.units.toLocaleString("ar-MA")} وحدة
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Platform Health */}
       <Card className="shadow-soft">
