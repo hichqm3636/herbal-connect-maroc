@@ -176,21 +176,16 @@ function SuperAdminDashboard() {
         (weekOrdersRes.data ?? []).map((o: { company_id: string }) => o.company_id),
       ).size;
 
-      const enrichedActivity: ActivityRow[] = (activityRes.data ?? []).map(
-        (r: {
-          id: string;
-          action: string;
-          created_at: string;
-          metadata: Record<string, unknown>;
-          company_id: string | null;
-        }) => ({
-          id: r.id,
-          action: r.action,
-          created_at: r.created_at,
-          metadata: r.metadata,
-          company_name: r.company_id ? companyMap.get(r.company_id) : undefined,
-        }),
-      );
+      const enrichedActivity: ActivityRow[] = (activityRes.data ?? []).map((r) => ({
+        id: r.id,
+        action: r.action,
+        created_at: r.created_at,
+        metadata:
+          r.metadata && typeof r.metadata === "object" && !Array.isArray(r.metadata)
+            ? (r.metadata as Record<string, unknown>)
+            : {},
+        company_name: r.company_id ? companyMap.get(r.company_id) : undefined,
+      }));
 
       setStats({
         companies: companiesRes.count ?? 0,
