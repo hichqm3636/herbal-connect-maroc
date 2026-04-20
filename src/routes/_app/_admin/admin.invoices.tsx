@@ -159,7 +159,7 @@ function InvoicesPage() {
                       {INVOICE_STATUS_LABELS[r.status]}
                     </Badge>
                     {isInvoiceOverdue(r) && (
-                      <Badge variant="outline" className="border-red-500/40 bg-red-500/15 text-red-700 dark:text-red-300">
+                      <Badge variant="outline" className={INVOICE_STATUS_CLASSES.cancelled}>
                         متأخرة
                       </Badge>
                     )}
@@ -215,7 +215,7 @@ function InvoicesPage() {
                           {INVOICE_STATUS_LABELS[r.status]}
                         </Badge>
                         {isInvoiceOverdue(r) && (
-                          <Badge variant="outline" className="border-red-500/40 bg-red-500/15 text-red-700 dark:text-red-300">
+                          <Badge variant="outline" className={INVOICE_STATUS_CLASSES.cancelled}>
                             متأخرة
                           </Badge>
                         )}
