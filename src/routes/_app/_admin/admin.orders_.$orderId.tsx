@@ -257,6 +257,35 @@ function OrderDetails() {
     load();
   };
 
+  const handleGenerateInvoice = async () => {
+    if (!order) return;
+    setGeneratingInvoice(true);
+    try {
+      await createInvoiceForOrder({ orderId: order.id });
+      toast.success("تم إصدار الفاتورة");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "تعذر إصدار الفاتورة");
+    } finally {
+      setGeneratingInvoice(false);
+    }
+  };
+
+  const handleDownloadInvoice = async () => {
+    if (!invoice?.pdf_path) {
+      toast.error("لا يوجد ملف PDF");
+      return;
+    }
+    setDownloadingInvoice(true);
+    try {
+      await downloadInvoicePdf(invoice.pdf_path, `${invoice.invoice_number}.pdf`);
+    } catch {
+      toast.error("تعذر تنزيل الفاتورة");
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  };
+
   const startEditNotes = () => {
     setDraft(order?.admin_notes ?? "");
     setEditingNotes(true);
