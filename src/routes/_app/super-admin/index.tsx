@@ -43,6 +43,7 @@ interface TopCompany {
   name: string;
   total: number;
   orders: number;
+  delta: number | null; // % change vs previous window; null when not applicable
 }
 
 interface TopProduct {
@@ -51,6 +52,7 @@ interface TopProduct {
   company: string;
   units: number;
   revenue: number;
+  delta: number | null;
 }
 
 interface ActivityRow {
@@ -279,41 +281,63 @@ function SuperAdminDashboard() {
     })();
   }, []);
 
-  const windowStart = useMemo(() => {
-    if (topWindow === "all") return 0;
-    const days = topWindow === "7d" ? 7 : 30;
-    return Date.now() - days * 24 * 60 * 60 * 1000;
-  }, [topWindow]);
+  const windowDays = topWindow === "all" ? 0 : topWindow === "7d" ? 7 : 30;
+  const windowStart = useMemo(
+    () => (windowDays === 0 ? 0 : Date.now() - windowDays * 24 * 60 * 60 * 1000),
+    [windowDays],
+  );
+  const prevStart = useMemo(
+    () => (windowDays === 0 ? 0 : Date.now() - windowDays * 2 * 24 * 60 * 60 * 1000),
+    [windowDays],
+  );
+
+  function pctDelta(curr: number, prev: number): number | null {
+    if (prev === 0) return curr > 0 ? 100 : null;
+    return Math.round(((curr - prev) / prev) * 100);
+  }
 
   const topCompanies: TopCompany[] = useMemo(() => {
-    const totals = new Map<string, { total: number; orders: number }>();
+    const curr = new Map<string, { total: number; orders: number }>();
+    const prev = new Map<string, number>();
     allOrders.forEach((o) => {
       const ts = new Date(o.created_at).getTime();
-      if (windowStart && ts < windowStart) return;
-      const cur = totals.get(o.company_id) ?? { total: 0, orders: 0 };
-      cur.total += Number(o.total_mad) || 0;
-      cur.orders += 1;
-      totals.set(o.company_id, cur);
+      const t = Number(o.total_mad) || 0;
+      if (windowStart === 0 || ts >= windowStart) {
+        const c = curr.get(o.company_id) ?? { total: 0, orders: 0 };
+        c.total += t;
+        c.orders += 1;
+        curr.set(o.company_id, c);
+      } else if (windowDays > 0 && ts >= prevStart && ts < windowStart) {
+        prev.set(o.company_id, (prev.get(o.company_id) ?? 0) + t);
+      }
     });
-    return Array.from(totals.entries())
-      .map(([id, v]) => ({ id, name: companyMap.get(id) ?? "—", ...v }))
+    return Array.from(curr.entries())
+      .map(([id, v]) => ({
+        id,
+        name: companyMap.get(id) ?? "—",
+        ...v,
+        delta: windowDays === 0 ? null : pctDelta(v.total, prev.get(id) ?? 0),
+      }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
-  }, [allOrders, companyMap, windowStart]);
+  }, [allOrders, companyMap, windowStart, prevStart, windowDays]);
 
   const topProducts: TopProduct[] = useMemo(() => {
-    const agg = new Map<string, { units: number; revenue: number }>();
+    const curr = new Map<string, { units: number; revenue: number }>();
+    const prev = new Map<string, number>();
     allItems.forEach((it) => {
-      if (windowStart) {
-        const ts = orderDateById.get(it.order_id);
-        if (!ts || ts < windowStart) return;
+      const ts = orderDateById.get(it.order_id) ?? 0;
+      const rev = (Number(it.quantity) || 0) * (Number(it.unit_price_mad) || 0);
+      if (windowStart === 0 || ts >= windowStart) {
+        const c = curr.get(it.product_id) ?? { units: 0, revenue: 0 };
+        c.units += Number(it.quantity) || 0;
+        c.revenue += rev;
+        curr.set(it.product_id, c);
+      } else if (windowDays > 0 && ts >= prevStart && ts < windowStart) {
+        prev.set(it.product_id, (prev.get(it.product_id) ?? 0) + rev);
       }
-      const cur = agg.get(it.product_id) ?? { units: 0, revenue: 0 };
-      cur.units += Number(it.quantity) || 0;
-      cur.revenue += (Number(it.quantity) || 0) * (Number(it.unit_price_mad) || 0);
-      agg.set(it.product_id, cur);
     });
-    return Array.from(agg.entries())
+    return Array.from(curr.entries())
       .map(([id, v]) => {
         const p = productMap.get(id);
         return {
@@ -322,11 +346,12 @@ function SuperAdminDashboard() {
           company: p ? (companyMap.get(p.company_id) ?? "—") : "—",
           units: v.units,
           revenue: v.revenue,
+          delta: windowDays === 0 ? null : pctDelta(v.revenue, prev.get(id) ?? 0),
         };
       })
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
-  }, [allItems, orderDateById, productMap, companyMap, windowStart]);
+  }, [allItems, orderDateById, productMap, companyMap, windowStart, prevStart, windowDays]);
 
   const growth =
     stats.ordersLastWeek === 0
