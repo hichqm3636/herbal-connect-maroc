@@ -65,23 +65,32 @@ function AdminSalesAgents() {
   const load = useCallback(async () => {
     if (!companyId) return;
     setLoading(true);
-    const [{ data: agents }, { data: profs }, { data: zs }] = await Promise.all([
+    const [{ data: agents }, { data: agentRoles }, { data: zs }] = await Promise.all([
       supabase
         .from("sales_agents")
         .select("id, profile_id, zone_id, active, created_at")
         .eq("company_id", companyId)
         .order("created_at", { ascending: false }),
       supabase
-        .from("profiles")
-        .select("id, full_name")
+        .from("user_roles")
+        .select("user_id")
         .eq("company_id", companyId)
-        .order("full_name"),
+        .eq("role", "sales_agent"),
       supabase
         .from("territories")
         .select("id, name")
         .eq("company_id", companyId)
         .order("name"),
     ]);
+    const agentIds = (agentRoles ?? []).map((r) => r.user_id);
+    const { data: profs } = agentIds.length
+      ? await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .eq("company_id", companyId)
+          .in("id", agentIds)
+          .order("full_name")
+      : { data: [] as { id: string; full_name: string }[] };
     const profMap = new Map((profs ?? []).map((p) => [p.id, p.full_name]));
     const zoneMap = new Map((zs ?? []).map((z) => [z.id, z.name]));
     setRows(
