@@ -201,6 +201,34 @@ function SuperAdminDashboard() {
         company_name: r.company_id ? companyMap.get(r.company_id) : undefined,
       }));
 
+      // Top products across the platform
+      const productMap = new Map<string, { name: string; company_id: string }>();
+      (productsRes.data ?? []).forEach((p: { id: string; name_ar: string; company_id: string }) =>
+        productMap.set(p.id, { name: p.name_ar, company_id: p.company_id }),
+      );
+      const productAgg = new Map<string, { units: number; revenue: number }>();
+      (orderItemsRes.data ?? []).forEach(
+        (it: { product_id: string; quantity: number; unit_price_mad: number }) => {
+          const cur = productAgg.get(it.product_id) ?? { units: 0, revenue: 0 };
+          cur.units += Number(it.quantity) || 0;
+          cur.revenue += (Number(it.quantity) || 0) * (Number(it.unit_price_mad) || 0);
+          productAgg.set(it.product_id, cur);
+        },
+      );
+      const topProds: TopProduct[] = Array.from(productAgg.entries())
+        .map(([id, v]) => {
+          const p = productMap.get(id);
+          return {
+            id,
+            name: p?.name ?? "—",
+            company: p ? (companyMap.get(p.company_id) ?? "—") : "—",
+            units: v.units,
+            revenue: v.revenue,
+          };
+        })
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 5);
+
       setStats({
         companies: companiesRes.count ?? 0,
         distributors: distributorsRes.count ?? 0,
@@ -214,6 +242,7 @@ function SuperAdminDashboard() {
         ordersCompletedToday: completedTodayRes.count ?? 0,
       });
       setTopCompanies(top);
+      setTopProducts(topProds);
       setActivity(enrichedActivity);
       setLoading(false);
     })();
