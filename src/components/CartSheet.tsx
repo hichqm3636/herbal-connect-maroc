@@ -61,6 +61,7 @@ interface PricedLine {
   lineTotal: number;
   blocked: boolean;
   message?: string;
+  reason?: "min_order" | "map_violation";
 }
 
 export function CartSheet() {
@@ -91,6 +92,7 @@ export function CartSheet() {
           lineTotal: unitPrice * item.qty,
           blocked: !v.ok,
           message: v.message,
+          reason: v.reason,
         };
       }),
     [items, partnerType],
@@ -239,7 +241,12 @@ export function CartSheet() {
             </div>
           ) : (
             <>
-              {priced.map(({ item, unitPrice, lineTotal, blocked, message }) => (
+              {priced.map(({ item, unitPrice, lineTotal, blocked, message, reason }) => {
+                const pack = Math.max(1, item.pack_size ?? 1);
+                const minOrder = Math.max(1, item.minimum_order ?? 1);
+                // Round up to nearest pack multiple so we respect pack_size too.
+                const bumpTarget = Math.ceil(minOrder / pack) * pack;
+                return (
                 <div
                   key={item.id}
                   className={`flex gap-3 p-3 rounded-lg border bg-card ${
@@ -262,10 +269,22 @@ export function CartSheet() {
                       </span>
                     </div>
                     {blocked && message && (
-                      <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        {message}
-                      </p>
+                      <div className="mt-1 flex items-center gap-2 flex-wrap">
+                        <p className="text-[11px] text-destructive flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {message}
+                        </p>
+                        {reason === "min_order" && item.qty < bumpTarget && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-[11px] border-warning/60 text-warning-foreground bg-warning/10 hover:bg-warning/20"
+                            onClick={() => setQty(item.id, bumpTarget)}
+                          >
+                            ضبط على {bumpTarget}
+                          </Button>
+                        )}
+                      </div>
                     )}
                     <div className="flex items-center gap-2 mt-2">
                       {(() => {
