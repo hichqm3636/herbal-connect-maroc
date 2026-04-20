@@ -3,7 +3,13 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { PartnerType } from "@/lib/pricing";
 
-type AppRole = "admin" | "distributor" | "super_admin";
+export type AppRole =
+  | "admin"
+  | "super_admin"
+  | "buyer"
+  | "seller"
+  | "sales_agent"
+  | "distributor"; // legacy — kept so existing rows still parse
 
 export interface Company {
   id: string;
@@ -19,6 +25,12 @@ interface AuthContextValue {
   roles: AppRole[];
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  isBuyer: boolean;
+  isSeller: boolean;
+  isSalesAgent: boolean;
+  /** Business classification of the account (pharmacy, distributor, etc). */
+  accountType: PartnerType;
+  /** @deprecated use `accountType`. Kept for back-compat. */
   partnerType: PartnerType;
   companyId: string | null;
   company: Company | null;
@@ -58,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
-  const [partnerType, setPartnerType] = useState<PartnerType>("distributor");
+  const [accountType, setAccountType] = useState<PartnerType>("distributor");
   const [profileCompanyId, setProfileCompanyId] = useState<string | null>(null);
   const [pricingTierId, setPricingTierId] = useState<string | null>(null);
   const [pricingTierDiscount, setPricingTierDiscount] = useState<number>(0);
@@ -92,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = async (uid: string | undefined) => {
     if (!uid) {
       setRoles([]);
-      setPartnerType("distributor");
+      setAccountType("distributor");
       setProfileCompanyId(null);
       setPricingTierId(null);
       setPricingTierDiscount(0);
@@ -103,12 +115,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("user_roles").select("role").eq("user_id", uid),
       supabase
         .from("profiles")
-        .select("partner_type, company_id")
+        .select("account_type, company_id")
         .eq("id", uid)
         .maybeSingle(),
     ]);
     setRoles((roleRows ?? []).map((r) => r.role as AppRole));
-    setPartnerType((profile?.partner_type as PartnerType | undefined) ?? "distributor");
+    setAccountType((profile?.account_type as PartnerType | undefined) ?? "distributor");
     const cid = (profile?.company_id as string | null | undefined) ?? null;
     setProfileCompanyId(cid);
 
@@ -153,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTimeout(() => loadProfile(newSession.user.id), 0);
       } else {
         setRoles([]);
-        setPartnerType("distributor");
+        setAccountType("distributor");
         setProfileCompanyId(null);
         setCompany(null);
         writeActiveCompany(null);
@@ -204,7 +216,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     roles,
     isAdmin: roles.includes("admin") || roles.includes("super_admin"),
     isSuperAdmin: roles.includes("super_admin"),
-    partnerType,
+    isBuyer: roles.includes("buyer"),
+    isSeller: roles.includes("seller") || roles.includes("distributor"),
+    isSalesAgent: roles.includes("sales_agent"),
+    accountType,
+    partnerType: accountType,
     companyId,
     company,
     pricingTierId,
@@ -214,7 +230,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshRoles,
     refreshCompany,
     setActiveCompany,
-  }), [session, user, roles, partnerType, companyId, company, pricingTierId, pricingTierDiscount, loading]);
+  }), [session, user, roles, accountType, companyId, company, pricingTierId, pricingTierDiscount, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

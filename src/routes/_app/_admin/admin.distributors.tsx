@@ -64,7 +64,7 @@ import { formatMAD, LEVEL_LABELS } from "@/lib/format";
 import { toast } from "sonner";
 import { CreateDistributorDialog } from "@/components/admin/CreateDistributorDialog";
 import { ResetPasswordDialog } from "@/components/admin/ResetPasswordDialog";
-import { EditDistributorDialog } from "@/components/admin/EditDistributorDialog";
+import { EditClientDialog } from "@/components/admin/EditClientDialog";
 
 export const Route = createFileRoute("/_app/_admin/admin/distributors")({
   component: AdminDistributors,
@@ -756,8 +756,8 @@ function AdminDistributors() {
       />
 
       {/* Edit */}
-      <EditDistributorDialog
-        distributor={editing}
+      <EditClientDialog
+        client={editing}
         onClose={() => setEditing(null)}
         onSaved={load}
       />
