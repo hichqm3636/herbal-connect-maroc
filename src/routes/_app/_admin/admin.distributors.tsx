@@ -102,6 +102,22 @@ interface DistributorPricingLite {
 
 const LEVELS = ["distributor", "senior_consultant", "success_builder", "supervisor", "world_team"];
 
+const ROLE_BADGE_LABELS: Record<string, string> = {
+  buyer: "مشتري",
+  seller: "بائع",
+  sales_agent: "مندوب",
+  admin: "مسؤول",
+  super_admin: "مسؤول عام",
+};
+
+const ROLE_BADGE_CLASSES: Record<string, string> = {
+  buyer: "bg-primary/15 text-primary border border-primary/30 hover:bg-primary/20",
+  seller: "bg-success/15 text-success-foreground border border-success/30 hover:bg-success/20",
+  sales_agent: "bg-warning/15 text-warning-foreground border border-warning/30 hover:bg-warning/20",
+  admin: "bg-secondary text-secondary-foreground",
+  super_admin: "bg-destructive/15 text-destructive border border-destructive/30",
+};
+
 function AdminDistributors() {
   const { user, companyId } = useAuth();
   const [list, setList] = useState<Distributor[]>([]);
@@ -144,11 +160,12 @@ function AdminDistributors() {
   const [pricingByDistributor, setPricingByDistributor] = useState<
     Record<string, DistributorPricingLite>
   >({});
+  const [rolesByUser, setRolesByUser] = useState<Record<string, string[]>>({});
 
   const load = async () => {
     if (!companyId) return;
     setLoading(true);
-    const [{ data: profs }, { data: terrs }, { data: pTiers }, { data: cdpRows }] =
+    const [{ data: profs }, { data: terrs }, { data: pTiers }, { data: cdpRows }, { data: roleRows }] =
       await Promise.all([
         supabase
           .from("profiles")
@@ -170,6 +187,10 @@ function AdminDistributors() {
           .from("company_distributor_pricing")
           .select("distributor_id, pricing_tier_id, custom_discount_percent")
           .eq("company_id", companyId),
+        supabase
+          .from("user_roles")
+          .select("user_id, role")
+          .eq("company_id", companyId),
       ]);
     const profiles = (profs ?? []) as Distributor[];
     setList(profiles);
@@ -180,6 +201,11 @@ function AdminDistributors() {
       cdpMap[row.distributor_id] = row;
     }
     setPricingByDistributor(cdpMap);
+    const rMap: Record<string, string[]> = {};
+    for (const row of (roleRows ?? []) as { user_id: string; role: string }[]) {
+      (rMap[row.user_id] ??= []).push(row.role);
+    }
+    setRolesByUser(rMap);
     setLoading(false);
 
     // Fetch banned status + last sign-in from auth.users via edge function
@@ -621,7 +647,15 @@ function AdminDistributors() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold truncate">{d.full_name || "—"}</p>
-                      <Badge variant="secondary" className="text-[10px]">موزع</Badge>
+                      {(rolesByUser[d.id] ?? []).filter((r) => ROLE_BADGE_LABELS[r]).map((r) => (
+                        <Badge
+                          key={r}
+                          variant="secondary"
+                          className={`text-[10px] ${ROLE_BADGE_CLASSES[r] ?? ""}`}
+                        >
+                          {ROLE_BADGE_LABELS[r]}
+                        </Badge>
+                      ))}
                       {bannedMap[d.id] ? (
                         <Badge variant="destructive" className="text-[10px] gap-1">
                           <Ban className="h-3 w-3" />
