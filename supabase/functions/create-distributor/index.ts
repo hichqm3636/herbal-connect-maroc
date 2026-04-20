@@ -196,7 +196,6 @@ Deno.serve(async (req) => {
         company_id: callerCompanyId,
         is_active: true,
         account_type: accountType,
-        partner_type: accountType,
         ...(initialPoints > 0 ? { loyalty_points: initialPoints } : {}),
       }, { onConflict: "id" });
     if (updErr) {
