@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Building2,
   Users,
@@ -82,6 +82,41 @@ function describeActivity(row: ActivityRow): string {
   return `${company} — ${label}`;
 }
 
+type TopWindow = "all" | "30d" | "7d";
+
+const WINDOW_OPTIONS: Array<{ value: TopWindow; label: string }> = [
+  { value: "all", label: "كل الأوقات" },
+  { value: "30d", label: "آخر 30 يوماً" },
+  { value: "7d", label: "هذا الأسبوع" },
+];
+
+function WindowToggle({
+  value,
+  onChange,
+}: {
+  value: TopWindow;
+  onChange: (v: TopWindow) => void;
+}) {
+  return (
+    <div className="inline-flex rounded-lg border bg-muted/40 p-0.5 text-[11px]">
+      {WINDOW_OPTIONS.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          onClick={() => onChange(o.value)}
+          className={`px-2 py-1 rounded-md transition-colors ${
+            value === o.value
+              ? "bg-background shadow-sm font-medium text-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function SuperAdminDashboard() {
   const [stats, setStats] = useState<Overview>({
     companies: 0,
@@ -95,8 +130,18 @@ function SuperAdminDashboard() {
     pendingOrders: 0,
     ordersCompletedToday: 0,
   });
-  const [topCompanies, setTopCompanies] = useState<TopCompany[]>([]);
-  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [topWindow, setTopWindow] = useState<"all" | "30d" | "7d">("all");
+  const [companyMap, setCompanyMap] = useState<Map<string, string>>(new Map());
+  const [productMap, setProductMap] = useState<Map<string, { name: string; company_id: string }>>(
+    new Map(),
+  );
+  const [allOrders, setAllOrders] = useState<
+    Array<{ company_id: string; total_mad: number; created_at: string; id: string }>
+  >([]);
+  const [allItems, setAllItems] = useState<
+    Array<{ product_id: string; quantity: number; unit_price_mad: number; order_id: string }>
+  >([]);
+  const [orderDateById, setOrderDateById] = useState<Map<string, number>>(new Map());
   const [activity, setActivity] = useState<ActivityRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -131,7 +176,7 @@ function SuperAdminDashboard() {
           .select("*", { count: "exact", head: true })
           .eq("account_type", "distributor"),
         supabase.from("orders").select("*", { count: "exact", head: true }),
-        supabase.from("orders").select("company_id, total_mad"),
+        supabase.from("orders").select("id, company_id, total_mad, created_at"),
         supabase
           .from("orders")
           .select("*", { count: "exact", head: true })
@@ -160,33 +205,31 @@ function SuperAdminDashboard() {
           .order("created_at", { ascending: false })
           .limit(8),
         supabase.from("companies").select("id, display_name, name"),
-        supabase.from("order_items").select("product_id, quantity, unit_price_mad"),
+        supabase.from("order_items").select("product_id, quantity, unit_price_mad, order_id"),
         supabase.from("products").select("id, name_ar, company_id"),
       ]);
       
 
-      const companyMap = new Map<string, string>();
+      const cMap = new Map<string, string>();
       (companiesListRes.data ?? []).forEach((c: { id: string; display_name: string; name: string }) =>
-        companyMap.set(c.id, c.display_name || c.name),
+        cMap.set(c.id, c.display_name || c.name),
       );
 
-      const totals = new Map<string, { total: number; orders: number }>();
+      const ordersData = (ordersAllRes.data ?? []) as Array<{
+        id: string;
+        company_id: string;
+        total_mad: number;
+        created_at: string;
+      }>;
+
       let gmv = 0;
-      (ordersAllRes.data ?? []).forEach((o: { company_id: string; total_mad: number }) => {
-        const t = Number(o.total_mad) || 0;
-        gmv += t;
-        const cur = totals.get(o.company_id) ?? { total: 0, orders: 0 };
-        cur.total += t;
-        cur.orders += 1;
-        totals.set(o.company_id, cur);
+      const dateById = new Map<string, number>();
+      ordersData.forEach((o) => {
+        gmv += Number(o.total_mad) || 0;
+        dateById.set(o.id, new Date(o.created_at).getTime());
       });
 
-      const top = Array.from(totals.entries())
-        .map(([id, v]) => ({ id, name: companyMap.get(id) ?? "—", ...v }))
-        .sort((a, b) => b.total - a.total)
-        .slice(0, 5);
-
-      const activeCompanies = totals.size;
+      const activeCompanies = new Set(ordersData.map((o) => o.company_id)).size;
       const companiesWithOrdersThisWeek = new Set(
         (weekOrdersRes.data ?? []).map((o: { company_id: string }) => o.company_id),
       ).size;
@@ -199,37 +242,26 @@ function SuperAdminDashboard() {
           r.metadata && typeof r.metadata === "object" && !Array.isArray(r.metadata)
             ? (r.metadata as Record<string, unknown>)
             : {},
-        company_name: r.company_id ? companyMap.get(r.company_id) : undefined,
+        company_name: r.company_id ? cMap.get(r.company_id) : undefined,
       }));
 
-      // Top products across the platform
-      const productMap = new Map<string, { name: string; company_id: string }>();
+      const pMap = new Map<string, { name: string; company_id: string }>();
       (productsRes.data ?? []).forEach((p: { id: string; name_ar: string; company_id: string }) =>
-        productMap.set(p.id, { name: p.name_ar, company_id: p.company_id }),
+        pMap.set(p.id, { name: p.name_ar, company_id: p.company_id }),
       );
-      const productAgg = new Map<string, { units: number; revenue: number }>();
-      (orderItemsRes.data ?? []).forEach(
-        (it: { product_id: string; quantity: number; unit_price_mad: number }) => {
-          const cur = productAgg.get(it.product_id) ?? { units: 0, revenue: 0 };
-          cur.units += Number(it.quantity) || 0;
-          cur.revenue += (Number(it.quantity) || 0) * (Number(it.unit_price_mad) || 0);
-          productAgg.set(it.product_id, cur);
-        },
-      );
-      const topProds: TopProduct[] = Array.from(productAgg.entries())
-        .map(([id, v]) => {
-          const p = productMap.get(id);
-          return {
-            id,
-            name: p?.name ?? "—",
-            company: p ? (companyMap.get(p.company_id) ?? "—") : "—",
-            units: v.units,
-            revenue: v.revenue,
-          };
-        })
-        .sort((a, b) => b.revenue - a.revenue)
-        .slice(0, 5);
 
+      setCompanyMap(cMap);
+      setProductMap(pMap);
+      setAllOrders(ordersData);
+      setAllItems(
+        (orderItemsRes.data ?? []) as Array<{
+          product_id: string;
+          quantity: number;
+          unit_price_mad: number;
+          order_id: string;
+        }>,
+      );
+      setOrderDateById(dateById);
       setStats({
         companies: companiesRes.count ?? 0,
         distributors: distributorsRes.count ?? 0,
@@ -242,12 +274,59 @@ function SuperAdminDashboard() {
         pendingOrders: pendingRes.count ?? 0,
         ordersCompletedToday: completedTodayRes.count ?? 0,
       });
-      setTopCompanies(top);
-      setTopProducts(topProds);
       setActivity(enrichedActivity);
       setLoading(false);
     })();
   }, []);
+
+  const windowStart = useMemo(() => {
+    if (topWindow === "all") return 0;
+    const days = topWindow === "7d" ? 7 : 30;
+    return Date.now() - days * 24 * 60 * 60 * 1000;
+  }, [topWindow]);
+
+  const topCompanies: TopCompany[] = useMemo(() => {
+    const totals = new Map<string, { total: number; orders: number }>();
+    allOrders.forEach((o) => {
+      const ts = new Date(o.created_at).getTime();
+      if (windowStart && ts < windowStart) return;
+      const cur = totals.get(o.company_id) ?? { total: 0, orders: 0 };
+      cur.total += Number(o.total_mad) || 0;
+      cur.orders += 1;
+      totals.set(o.company_id, cur);
+    });
+    return Array.from(totals.entries())
+      .map(([id, v]) => ({ id, name: companyMap.get(id) ?? "—", ...v }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+  }, [allOrders, companyMap, windowStart]);
+
+  const topProducts: TopProduct[] = useMemo(() => {
+    const agg = new Map<string, { units: number; revenue: number }>();
+    allItems.forEach((it) => {
+      if (windowStart) {
+        const ts = orderDateById.get(it.order_id);
+        if (!ts || ts < windowStart) return;
+      }
+      const cur = agg.get(it.product_id) ?? { units: 0, revenue: 0 };
+      cur.units += Number(it.quantity) || 0;
+      cur.revenue += (Number(it.quantity) || 0) * (Number(it.unit_price_mad) || 0);
+      agg.set(it.product_id, cur);
+    });
+    return Array.from(agg.entries())
+      .map(([id, v]) => {
+        const p = productMap.get(id);
+        return {
+          id,
+          name: p?.name ?? "—",
+          company: p ? (companyMap.get(p.company_id) ?? "—") : "—",
+          units: v.units,
+          revenue: v.revenue,
+        };
+      })
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+  }, [allItems, orderDateById, productMap, companyMap, windowStart]);
 
   const growth =
     stats.ordersLastWeek === 0
@@ -378,8 +457,9 @@ function SuperAdminDashboard() {
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Top Companies */}
         <Card className="shadow-soft">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
             <CardTitle className="text-base">أفضل الشركات مبيعاً</CardTitle>
+            <WindowToggle value={topWindow} onChange={setTopWindow} />
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -444,9 +524,12 @@ function SuperAdminDashboard() {
 
       {/* Top Products Across Platform */}
       <Card className="shadow-soft">
-        <CardHeader className="pb-3 flex flex-row items-center justify-between">
-          <CardTitle className="text-base">أفضل المنتجات مبيعاً في المنصة</CardTitle>
-          <Package className="h-4 w-4 text-muted-foreground" />
+        <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">أفضل المنتجات مبيعاً في المنصة</CardTitle>
+          </div>
+          <WindowToggle value={topWindow} onChange={setTopWindow} />
         </CardHeader>
         <CardContent>
           {loading ? (
