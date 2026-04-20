@@ -102,6 +102,22 @@ interface DistributorPricingLite {
 
 const LEVELS = ["distributor", "senior_consultant", "success_builder", "supervisor", "world_team"];
 
+const ROLE_BADGE_LABELS: Record<string, string> = {
+  buyer: "مشتري",
+  seller: "بائع",
+  sales_agent: "مندوب",
+  admin: "مسؤول",
+  super_admin: "مسؤول عام",
+};
+
+const ROLE_BADGE_CLASSES: Record<string, string> = {
+  buyer: "bg-primary/15 text-primary border border-primary/30 hover:bg-primary/20",
+  seller: "bg-success/15 text-success-foreground border border-success/30 hover:bg-success/20",
+  sales_agent: "bg-warning/15 text-warning-foreground border border-warning/30 hover:bg-warning/20",
+  admin: "bg-secondary text-secondary-foreground",
+  super_admin: "bg-destructive/15 text-destructive border border-destructive/30",
+};
+
 function AdminDistributors() {
   const { user, companyId } = useAuth();
   const [list, setList] = useState<Distributor[]>([]);
