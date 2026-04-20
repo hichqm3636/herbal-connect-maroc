@@ -4,10 +4,13 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
+  Download,
+  FileText,
   Loader2,
   Package,
   PackageCheck,
   Pencil,
+  Receipt,
   Truck,
   XCircle,
 } from "lucide-react";
@@ -38,10 +41,17 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   formatMAD,
   formatDateTimeAr,
+  formatDateAr,
   STATUS_LABELS,
   STATUS_VARIANTS,
   STATUS_CLASSES,
 } from "@/lib/format";
+import {
+  createInvoiceForOrder,
+  downloadInvoicePdf,
+  INVOICE_STATUS_CLASSES,
+  INVOICE_STATUS_LABELS,
+} from "@/lib/invoices";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/_admin/admin/orders_/$orderId")({
@@ -130,6 +140,17 @@ function OrderDetails() {
   >([]);
 
   const [tier, setTier] = useState<TierInfo | null>(null);
+
+  const [invoice, setInvoice] = useState<{
+    id: string;
+    invoice_number: string;
+    status: string;
+    issue_date: string;
+    total_mad: number;
+    pdf_path: string | null;
+  } | null>(null);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
 
   const load = async () => {
     if (!companyId) return;
