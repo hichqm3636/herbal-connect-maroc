@@ -11,7 +11,7 @@ import {
   Plus,
   Settings,
   ArrowLeft,
-  CheckCircle2,
+  
   Clock,
   Package,
 } from "lucide-react";
