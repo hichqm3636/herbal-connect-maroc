@@ -67,6 +67,7 @@ interface OrderDetail {
   created_at: string;
   notes: string | null;
   admin_notes: string | null;
+  payment_method: string | null;
   distributor_id: string;
   company_id: string;
   profiles: {
@@ -77,6 +78,13 @@ interface OrderDetail {
   } | null;
   order_items: ItemRow[];
 }
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cash: "نقداً",
+  transfer: "تحويل بنكي",
+  credit: "آجل",
+  check: "شيك",
+};
 
 interface TierInfo {
   name: string;
@@ -122,7 +130,7 @@ function OrderDetails() {
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, distributor_id, company_id, profiles(full_name, phone, city, territories(name)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost_price))",
+        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, payment_method, distributor_id, company_id, profiles(full_name, phone, city, territories(name)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost_price))",
       )
       .eq("id", orderId)
       .eq("company_id", companyId)
