@@ -326,10 +326,14 @@ function OrderDetails() {
       </div>
 
       <Card className="p-4 space-y-2">
-        <h2 className="font-semibold text-sm text-muted-foreground">معلومات الموزع</h2>
+        <h2 className="font-semibold text-sm text-muted-foreground">معلومات الطلب</h2>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-xs text-muted-foreground">الاسم</p>
+            <p className="text-xs text-muted-foreground">رقم الطلب</p>
+            <p className="font-medium" dir="ltr">{order.order_number}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">العميل</p>
             <p className="font-medium">{order.profiles?.full_name || "—"}</p>
           </div>
           <div>
@@ -337,14 +341,14 @@ function OrderDetails() {
             <p className="font-medium" dir="ltr">{order.profiles?.phone || "—"}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">المنطقة</p>
-            <p className="font-medium">{order.profiles?.territories?.name || "—"}</p>
+            <p className="text-xs text-muted-foreground">المدينة</p>
+            <p className="font-medium">{order.profiles?.city || order.profiles?.territories?.name || "—"}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">المدينة</p>
-            <p className="font-medium">{order.profiles?.city || "—"}</p>
+            <p className="text-xs text-muted-foreground">تاريخ الطلب</p>
+            <p className="font-medium">{formatDateTimeAr(order.created_at)}</p>
           </div>
-          <div className="col-span-2">
+          <div>
             <p className="text-xs text-muted-foreground">شريحة الأسعار</p>
             {tier ? (
               <div className="flex items-center gap-2 flex-wrap">
@@ -356,8 +360,39 @@ function OrderDetails() {
                 )}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground italic">لا توجد شريحة مُعيَّنة</p>
+              <p className="text-xs text-muted-foreground italic">لا توجد شريحة</p>
             )}
+          </div>
+          <div className="col-span-2">
+            <p className="text-xs text-muted-foreground mb-1">طريقة الدفع</p>
+            <Select
+              value={order.payment_method ?? "none"}
+              onValueChange={async (v) => {
+                const next = v === "none" ? null : v;
+                const { error } = await supabase
+                  .from("orders")
+                  .update({ payment_method: next })
+                  .eq("id", order.id);
+                if (error) {
+                  toast.error("تعذر تحديث طريقة الدفع");
+                  return;
+                }
+                setOrder({ ...order, payment_method: next });
+                toast.success("تم حفظ طريقة الدفع");
+              }}
+            >
+              <SelectTrigger className="h-8 text-sm">
+                <SelectValue placeholder="اختر طريقة الدفع" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— غير محددة —</SelectItem>
+                {Object.entries(PAYMENT_METHOD_LABELS).map(([k, label]) => (
+                  <SelectItem key={k} value={k}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </Card>
