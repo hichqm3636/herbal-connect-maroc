@@ -1,9 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Download, Loader2 } from "lucide-react";
+import { ArrowRight, CalendarIcon, CheckCircle2, Download, Loader2 } from "lucide-react";
+import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import {
   Select,
@@ -13,11 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { formatMAD, formatDateAr } from "@/lib/format";
 import {
   INVOICE_STATUS_CLASSES,
   INVOICE_STATUS_LABELS,
   downloadInvoicePdf,
+  isInvoiceOverdue,
 } from "@/lib/invoices";
 import { toast } from "sonner";
 
@@ -63,6 +68,8 @@ function InvoiceDetail() {
   const [inv, setInv] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [paymentDate, setPaymentDate] = useState<Date>(new Date());
+  const [paying, setPaying] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -95,6 +102,25 @@ function InvoiceDetail() {
       return;
     }
     toast.success("تم التحديث");
+    load();
+  };
+
+  const markAsPaid = async () => {
+    if (!inv) return;
+    setPaying(true);
+    const { error } = await supabase
+      .from("invoices")
+      .update({
+        status: "paid",
+        paid_at: paymentDate.toISOString(),
+      })
+      .eq("id", inv.id);
+    setPaying(false);
+    if (error) {
+      toast.error("تعذر تسجيل الدفع");
+      return;
+    }
+    toast.success("تم تسجيل الدفع");
     load();
   };
 
@@ -132,6 +158,8 @@ function InvoiceDetail() {
     );
   }
 
+  const overdue = isInvoiceOverdue(inv);
+
   return (
     <div className="space-y-5 pb-12">
       <div className="flex items-center gap-2">
@@ -149,12 +177,18 @@ function InvoiceDetail() {
           <p className="text-xs text-muted-foreground mt-1">
             صادرة في {formatDateAr(inv.issue_date)}
             {inv.due_date && <> — استحقاق {formatDateAr(inv.due_date)}</>}
+            {inv.paid_at && <> — مدفوعة في {formatDateAr(inv.paid_at)}</>}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline" className={`text-sm py-1.5 px-3 ${INVOICE_STATUS_CLASSES[inv.status]}`}>
             {INVOICE_STATUS_LABELS[inv.status]}
           </Badge>
+          {overdue && (
+            <Badge variant="outline" className={`text-sm py-1.5 px-3 ${INVOICE_STATUS_CLASSES.cancelled}`}>
+              متأخرة
+            </Badge>
+          )}
           <Select value={inv.status} onValueChange={updateStatus}>
             <SelectTrigger className="h-9 w-36">
               <SelectValue />
@@ -171,6 +205,49 @@ function InvoiceDetail() {
           </Button>
         </div>
       </div>
+
+      {inv.status !== "paid" && inv.status !== "cancelled" && (
+        <Card className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+            <h2 className="font-semibold text-sm">تسجيل الدفع</h2>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "sm:w-56 justify-start text-right font-normal",
+                    !paymentDate && "text-muted-foreground",
+                  )}
+                >
+                  <CalendarIcon className="ml-2 h-4 w-4" />
+                  {paymentDate ? format(paymentDate, "yyyy-MM-dd") : "اختر تاريخ الدفع"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={paymentDate}
+                  onSelect={(d) => d && setPaymentDate(d)}
+                  disabled={(date) => date > new Date()}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            <Button onClick={markAsPaid} disabled={paying}>
+              {paying ? (
+                <Loader2 className="h-4 w-4 animate-spin ml-1" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4 ml-1" />
+              )}
+              تأكيد الدفع
+            </Button>
+          </div>
+        </Card>
+      )}
 
       <Card className="p-4 space-y-2">
         <h2 className="font-semibold text-sm text-muted-foreground">العميل</h2>

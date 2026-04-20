@@ -167,6 +167,12 @@ export async function downloadInvoicePdf(pdfPath: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+export function isInvoiceOverdue(invoice: { status: string; due_date: string | null }) {
+  if (invoice.status !== "issued" || !invoice.due_date) return false;
+  const today = new Date().toISOString().slice(0, 10);
+  return invoice.due_date < today;
+}
+
 export const INVOICE_STATUS_LABELS: Record<string, string> = {
   draft: "مسودة",
   issued: "صادرة",
