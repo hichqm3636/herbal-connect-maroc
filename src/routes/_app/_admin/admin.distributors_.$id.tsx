@@ -427,10 +427,10 @@ function DistributorProfile() {
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           >
             <ArrowRight className="h-3.5 w-3.5" />
-            العودة إلى قائمة الموزعين
+            العودة إلى قائمة العملاء
           </Link>
           <h1 className="mt-2 text-2xl md:text-3xl font-bold tracking-tight truncate">
-            {profile.full_name || "موزّع بدون اسم"}
+            {profile.full_name || "عميل بدون اسم"}
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="outline" className={status.classes}>
@@ -449,6 +449,13 @@ function DistributorProfile() {
             )}
           </div>
         </div>
+        <Button
+          className="gap-2 self-start"
+          onClick={() => navigate({ to: "/admin/create-order/$clientId", params: { clientId: profile.id } })}
+        >
+          <Plus className="h-4 w-4" />
+          إنشاء طلب
+        </Button>
       </div>
 
       {/* Distributor information */}
