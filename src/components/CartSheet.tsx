@@ -61,6 +61,7 @@ interface PricedLine {
   lineTotal: number;
   blocked: boolean;
   message?: string;
+  reason?: "min_order" | "map_violation";
 }
 
 export function CartSheet() {
@@ -91,6 +92,7 @@ export function CartSheet() {
           lineTotal: unitPrice * item.qty,
           blocked: !v.ok,
           message: v.message,
+          reason: v.reason,
         };
       }),
     [items, partnerType],
@@ -239,7 +241,12 @@ export function CartSheet() {
             </div>
           ) : (
             <>
-              {priced.map(({ item, unitPrice, lineTotal, blocked, message }) => (
+              {priced.map(({ item, unitPrice, lineTotal, blocked, message, reason }) => {
+                const pack = Math.max(1, item.pack_size ?? 1);
+                const minOrder = Math.max(1, item.minimum_order ?? 1);
+                // Round up to nearest pack multiple so we respect pack_size too.
+                const bumpTarget = Math.ceil(minOrder / pack) * pack;
+                return (
                 <div
                   key={item.id}
                   className={`flex gap-3 p-3 rounded-lg border bg-card ${
@@ -262,62 +269,67 @@ export function CartSheet() {
                       </span>
                     </div>
                     {blocked && message && (
-                      <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        {message}
-                      </p>
+                      <div className="mt-1 flex items-center gap-2 flex-wrap">
+                        <p className="text-[11px] text-destructive flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {message}
+                        </p>
+                        {reason === "min_order" && item.qty < bumpTarget && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-[11px] border-warning/60 text-warning-foreground bg-warning/10 hover:bg-warning/20"
+                            onClick={() => setQty(item.id, bumpTarget)}
+                          >
+                            ضبط على {bumpTarget}
+                          </Button>
+                        )}
+                      </div>
                     )}
                     <div className="flex items-center gap-2 mt-2">
-                      {(() => {
-                        const pack = Math.max(1, item.pack_size ?? 1);
-                        const minStep = Math.max(pack, item.minimum_order ?? 1);
-                        return (
-                          <>
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              className="h-7 w-7"
-                              onClick={() => {
-                                const next = item.qty - pack;
-                                if (next < minStep) removeItem(item.id);
-                                else setQty(item.id, next);
-                              }}
-                              aria-label="إنقاص"
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="text-sm font-medium w-8 text-center tabular-nums">
-                              {item.qty}
-                            </span>
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              className="h-7 w-7"
-                              onClick={() => updateQty(item.id, pack)}
-                              aria-label="زيادة"
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                            {pack > 1 && (
-                              <span className="text-[10px] text-muted-foreground">
-                                ×{pack}
-                              </span>
-                            )}
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 mr-auto text-destructive"
-                              onClick={() => removeItem(item.id)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </>
-                        );
-                      })()}
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-7 w-7"
+                        onClick={() => {
+                          const next = item.qty - pack;
+                          if (next < minOrder) removeItem(item.id);
+                          else setQty(item.id, next);
+                        }}
+                        aria-label="إنقاص"
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="text-sm font-medium w-8 text-center tabular-nums">
+                        {item.qty}
+                      </span>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-7 w-7"
+                        onClick={() => updateQty(item.id, pack)}
+                        aria-label="زيادة"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                      {pack > 1 && (
+                        <span className="text-[10px] text-muted-foreground">
+                          ×{pack}
+                        </span>
+                      )}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 mr-auto text-destructive"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
               <div className="space-y-2 pt-2">
                 <Label htmlFor="delivery-notes" className="text-sm">
                   ملاحظات التوصيل (اختياري)
