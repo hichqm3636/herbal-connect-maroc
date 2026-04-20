@@ -203,6 +203,12 @@ export function CartSheet() {
         toast.error("هذا المنتج غير متاح في منطقتك");
       } else if (msg.includes("غير مُعيَّن لأي منطقة")) {
         toast.error("لا يمكن إرسال الطلب: لم يتم تعيين منطقة لحسابك");
+      } else if (msg.includes("الحد الأدنى للطلب (")) {
+        // Per-product minimum quantity trigger — message already includes product name.
+        toast.error(msg);
+      } else if (msg.includes("الحد الأدنى للطلب هو")) {
+        // Per-company minimum order amount trigger.
+        toast.error(msg);
       } else {
         toast.error(`تعذر حفظ عناصر الطلب: ${itemsErr.message}`);
       }
