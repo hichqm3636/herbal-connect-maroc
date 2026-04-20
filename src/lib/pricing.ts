@@ -5,7 +5,8 @@ export type PartnerType =
   | "pharmacy"
   | "parapharmacy"
   | "distributor"
-  | "master_distributor";
+  | "master_distributor"
+  | "gym";
 
 export interface PriceTier {
   min_qty: number;
@@ -27,6 +28,7 @@ export const PARTNER_TYPE_LABELS: Record<PartnerType, string> = {
   parapharmacy: "شبه صيدلية",
   distributor: "موزع",
   master_distributor: "موزع رئيسي",
+  gym: "نادي رياضي",
 };
 
 const round = (n: number) => Math.round(n);
