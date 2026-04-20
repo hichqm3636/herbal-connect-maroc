@@ -158,16 +158,40 @@ function AdminOrders() {
   }, [orders]);
 
   const q = search.trim().toLowerCase();
+  const fromTs = dateFrom ? new Date(dateFrom + "T00:00:00").getTime() : null;
+  const toTs = dateTo ? new Date(dateTo + "T23:59:59.999").getTime() : null;
   const filtered = orders.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
     if (distributorFilter !== "all" && o.distributor_id !== distributorFilter) return false;
     if (territoryFilter !== "all" && o.profiles?.territory_id !== territoryFilter) return false;
+    if (fromTs || toTs) {
+      const ts = new Date(o.created_at).getTime();
+      if (fromTs && ts < fromTs) return false;
+      if (toTs && ts > toTs) return false;
+    }
     if (!q) return true;
     const name = o.profiles?.full_name?.toLowerCase() ?? "";
     const city = o.profiles?.city?.toLowerCase() ?? "";
     const num = o.order_number?.toLowerCase() ?? "";
     return name.includes(q) || city.includes(q) || num.includes(q);
   });
+
+  const hasActiveFilters =
+    !!q ||
+    statusFilter !== "all" ||
+    distributorFilter !== "all" ||
+    territoryFilter !== "all" ||
+    !!dateFrom ||
+    !!dateTo;
+
+  const clearFilters = () => {
+    setSearch("");
+    setStatusFilter("all");
+    setDistributorFilter("all");
+    setTerritoryFilter("all");
+    setDateFrom("");
+    setDateTo("");
+  };
 
   const totalValue = filtered.reduce((s, o) => s + Number(o.total_mad ?? 0), 0);
 
