@@ -682,6 +682,40 @@ function OrderDetails() {
         </p>
       </Card>
 
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+            <h2 className="font-semibold text-sm text-muted-foreground">الفاتورة</h2>
+          </div>
+          {invoice ? (
+            <Button size="sm" variant="outline" onClick={handleDownloadInvoice} disabled={!invoice.pdf_path || downloadingInvoice}>
+              {downloadingInvoice ? <Loader2 className="h-3.5 w-3.5 animate-spin ml-1" /> : <Download className="h-3.5 w-3.5 ml-1" />}
+              تنزيل PDF
+            </Button>
+          ) : (
+            <Button size="sm" onClick={handleGenerateInvoice} disabled={generatingInvoice}>
+              {generatingInvoice ? <Loader2 className="h-3.5 w-3.5 animate-spin ml-1" /> : <FileText className="h-3.5 w-3.5 ml-1" />}
+              إصدار فاتورة
+            </Button>
+          )}
+        </div>
+        {invoice ? (
+          <div className="flex items-center justify-between flex-wrap gap-2 text-sm">
+            <Link to="/admin/invoices/$invoiceId" params={{ invoiceId: invoice.id }} className="font-medium hover:underline" dir="ltr">
+              {invoice.invoice_number}
+            </Link>
+            <span className="text-xs text-muted-foreground">{formatDateAr(invoice.issue_date)}</span>
+            <Badge variant="outline" className={INVOICE_STATUS_CLASSES[invoice.status]}>
+              {INVOICE_STATUS_LABELS[invoice.status]}
+            </Badge>
+            <span className="font-semibold">{formatMAD(invoice.total_mad)}</span>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground italic">لم يتم إصدار فاتورة لهذا الطلب بعد.</p>
+        )}
+      </Card>
+
       {order.notes && (
         <Card className="p-4 space-y-1">
           <h2 className="font-semibold text-sm text-muted-foreground">ملاحظات التوصيل</h2>
