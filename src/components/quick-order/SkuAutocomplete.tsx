@@ -5,6 +5,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { supabase } from "@/integrations/supabase/client";
 import { formatMAD } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { getHiddenProductIds } from "@/lib/productZones";
 
 interface Suggestion {
   id: string;
@@ -24,6 +26,7 @@ interface Props {
 }
 
 export function SkuAutocomplete({ value, onChange, onSelect, placeholder, className }: Props) {
+  const { territoryId, isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,7 +51,17 @@ export function SkuAutocomplete({ value, onChange, onSelect, placeholder, classN
         .or(`sku.ilike.%${term}%,name_ar.ilike.%${term}%`)
         .limit(8);
       if (!error) {
-        setResults((data ?? []) as Suggestion[]);
+        const rows = (data ?? []) as Suggestion[];
+        const visible = isAdmin
+          ? rows
+          : await (async () => {
+              const hidden = await getHiddenProductIds(
+                rows.map((r) => r.id),
+                territoryId,
+              );
+              return rows.filter((r) => !hidden.has(r.id));
+            })();
+        setResults(visible);
         setActiveIdx(0);
       }
       setLoading(false);
@@ -56,7 +69,7 @@ export function SkuAutocomplete({ value, onChange, onSelect, placeholder, classN
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [value]);
+  }, [value, territoryId, isAdmin]);
 
   const choose = (s: Suggestion) => {
     onChange(s.sku ?? "");
