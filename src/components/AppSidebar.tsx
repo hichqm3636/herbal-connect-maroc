@@ -58,6 +58,7 @@ const adminItems = [
 const superAdminItems = [
   { title: "لوحة المنصة", url: "/super-admin", icon: LayoutDashboard },
   { title: "الشركات", url: "/super-admin/companies", icon: Building2 },
+  { title: "الموزّعون", url: "/super-admin/distributors", icon: Users },
   { title: "فئات التسعير", url: "/super-admin/pricing-tiers", icon: Tag },
   { title: "قواعد الطلب", url: "/super-admin/order-rules", icon: ListChecks },
 ];
