@@ -121,6 +121,8 @@ function SuperAdminDashboard() {
         weekOrdersRes,
         activityRes,
         companiesListRes,
+        orderItemsRes,
+        productsRes,
       ] = await Promise.all([
         supabase.from("companies").select("id, name", { count: "exact" }),
         supabase
@@ -160,7 +162,7 @@ function SuperAdminDashboard() {
         supabase.from("order_items").select("product_id, quantity, unit_price_mad"),
         supabase.from("products").select("id, name_ar, company_id"),
       ]);
-      const orderItemsRes = arguments[0]; // placeholder, replaced below
+      
 
       const companyMap = new Map<string, string>();
       (companiesListRes.data ?? []).forEach((c: { id: string; display_name: string; name: string }) =>
