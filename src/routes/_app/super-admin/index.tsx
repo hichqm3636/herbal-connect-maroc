@@ -422,8 +422,9 @@ function SuperAdminDashboard() {
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Top Companies */}
         <Card className="shadow-soft">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
             <CardTitle className="text-base">أفضل الشركات مبيعاً</CardTitle>
+            <WindowToggle value={topWindow} onChange={setTopWindow} />
           </CardHeader>
           <CardContent>
             {loading ? (
