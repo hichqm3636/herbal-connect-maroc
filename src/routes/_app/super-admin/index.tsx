@@ -44,6 +44,14 @@ interface TopCompany {
   orders: number;
 }
 
+interface TopProduct {
+  id: string;
+  name: string;
+  company: string;
+  units: number;
+  revenue: number;
+}
+
 interface ActivityRow {
   id: string;
   action: string;
@@ -87,6 +95,7 @@ function SuperAdminDashboard() {
     ordersCompletedToday: 0,
   });
   const [topCompanies, setTopCompanies] = useState<TopCompany[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -148,7 +157,10 @@ function SuperAdminDashboard() {
           .order("created_at", { ascending: false })
           .limit(8),
         supabase.from("companies").select("id, display_name, name"),
+        supabase.from("order_items").select("product_id, quantity, unit_price_mad"),
+        supabase.from("products").select("id, name_ar, company_id"),
       ]);
+      const orderItemsRes = arguments[0]; // placeholder, replaced below
 
       const companyMap = new Map<string, string>();
       (companiesListRes.data ?? []).forEach((c: { id: string; display_name: string; name: string }) =>
