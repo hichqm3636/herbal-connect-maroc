@@ -404,6 +404,52 @@ export type Database = {
           },
         ]
       }
+      product_zones: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          product_id: string
+          zone_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+          zone_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_zones_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_zones_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_zones_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "territories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean
@@ -497,6 +543,7 @@ export type Database = {
           level: Database["public"]["Enums"]["distributor_level"]
           loyalty_points: number
           monthly_sales: number
+          parent_distributor_id: string | null
           phone: string | null
           territory_id: string
           updated_at: string
@@ -513,6 +560,7 @@ export type Database = {
           level?: Database["public"]["Enums"]["distributor_level"]
           loyalty_points?: number
           monthly_sales?: number
+          parent_distributor_id?: string | null
           phone?: string | null
           territory_id: string
           updated_at?: string
@@ -529,6 +577,7 @@ export type Database = {
           level?: Database["public"]["Enums"]["distributor_level"]
           loyalty_points?: number
           monthly_sales?: number
+          parent_distributor_id?: string | null
           phone?: string | null
           territory_id?: string
           updated_at?: string
@@ -539,6 +588,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_parent_distributor_id_fkey"
+            columns: ["parent_distributor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -588,8 +644,61 @@ export type Database = {
           },
         ]
       }
+      sales_agents: {
+        Row: {
+          active: boolean
+          company_id: string
+          created_at: string
+          id: string
+          profile_id: string
+          updated_at: string
+          zone_id: string
+        }
+        Insert: {
+          active?: boolean
+          company_id: string
+          created_at?: string
+          id?: string
+          profile_id: string
+          updated_at?: string
+          zone_id: string
+        }
+        Update: {
+          active?: boolean
+          company_id?: string
+          created_at?: string
+          id?: string
+          profile_id?: string
+          updated_at?: string
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_agents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_agents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_agents_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "territories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       territories: {
         Row: {
+          city: string | null
           company_id: string
           created_at: string
           id: string
@@ -598,6 +707,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          city?: string | null
           company_id: string
           created_at?: string
           id?: string
@@ -606,6 +716,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          city?: string | null
           company_id?: string
           created_at?: string
           id?: string
