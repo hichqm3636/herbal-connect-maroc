@@ -472,6 +472,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: Database["public"]["Enums"]["partner_type"]
           avatar_url: string | null
           city: string | null
           company_id: string | null
@@ -482,12 +483,12 @@ export type Database = {
           level: Database["public"]["Enums"]["distributor_level"]
           loyalty_points: number
           monthly_sales: number
-          partner_type: Database["public"]["Enums"]["partner_type"]
           phone: string | null
           territory_id: string
           updated_at: string
         }
         Insert: {
+          account_type?: Database["public"]["Enums"]["partner_type"]
           avatar_url?: string | null
           city?: string | null
           company_id?: string | null
@@ -498,12 +499,12 @@ export type Database = {
           level?: Database["public"]["Enums"]["distributor_level"]
           loyalty_points?: number
           monthly_sales?: number
-          partner_type?: Database["public"]["Enums"]["partner_type"]
           phone?: string | null
           territory_id: string
           updated_at?: string
         }
         Update: {
+          account_type?: Database["public"]["Enums"]["partner_type"]
           avatar_url?: string | null
           city?: string | null
           company_id?: string | null
@@ -514,7 +515,6 @@ export type Database = {
           level?: Database["public"]["Enums"]["distributor_level"]
           loyalty_points?: number
           monthly_sales?: number
-          partner_type?: Database["public"]["Enums"]["partner_type"]
           phone?: string | null
           territory_id?: string
           updated_at?: string
@@ -694,7 +694,13 @@ export type Database = {
       reset_monthly_sales: { Args: never; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "distributor" | "super_admin"
+      app_role:
+        | "admin"
+        | "distributor"
+        | "super_admin"
+        | "buyer"
+        | "seller"
+        | "sales_agent"
       distributor_level:
         | "distributor"
         | "senior_consultant"
@@ -840,7 +846,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "distributor", "super_admin"],
+      app_role: [
+        "admin",
+        "distributor",
+        "super_admin",
+        "buyer",
+        "seller",
+        "sales_agent",
+      ],
       distributor_level: [
         "distributor",
         "senior_consultant",
