@@ -198,7 +198,16 @@ export function CartSheet() {
     const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);
     if (itemsErr) {
       console.error("[placeOrder] order_items insert failed", { itemsErr, orderItems });
-      toast.error(`تعذر حفظ عناصر الطلب: ${itemsErr.message}`);
+      const msg = itemsErr.message ?? "";
+      if (msg.includes("غير متاح في منطقة الموزع") || msg.includes("not available")) {
+        toast.error("هذا المنتج غير متاح في منطقتك");
+      } else if (msg.includes("غير مُعيَّن لأي منطقة")) {
+        toast.error("لا يمكن إرسال الطلب: لم يتم تعيين منطقة لحسابك");
+      } else {
+        toast.error(`تعذر حفظ عناصر الطلب: ${itemsErr.message}`);
+      }
+      // Roll back the parent order so we don't leave an empty order behind.
+      await supabase.from("orders").delete().eq("id", order.id);
       setSubmitting(false);
       return;
     }
