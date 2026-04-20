@@ -21,7 +21,7 @@ export async function createInvoiceForOrder({
   dueInDays = 30,
 }: CreateInvoiceParams) {
   // 1) Load the order with everything we need for the PDF.
-  const { data: order, error: orderErr } = await supabase
+  const { data: orderRaw, error: orderErr } = await supabase
     .from("orders")
     .select(
       "id, order_number, status, total_mad, payment_method, notes, distributor_id, company_id, created_at, " +
@@ -31,7 +31,29 @@ export async function createInvoiceForOrder({
     .eq("id", orderId)
     .maybeSingle();
 
-  if (orderErr || !order) throw new Error("Order not found");
+  if (orderErr || !orderRaw) throw new Error("Order not found");
+
+  const order = orderRaw as unknown as {
+    id: string;
+    order_number: string;
+    status: string;
+    total_mad: number;
+    payment_method: string | null;
+    notes: string | null;
+    distributor_id: string;
+    company_id: string;
+    profiles: {
+      full_name: string;
+      phone: string | null;
+      city: string | null;
+      territories: { name: string } | null;
+    } | null;
+    order_items: {
+      quantity: number;
+      unit_price_mad: number;
+      products: { name_ar: string; sku: string | null } | null;
+    }[];
+  };
 
   // 2) Load company branding.
   const { data: company, error: companyErr } = await supabase
@@ -54,31 +76,31 @@ export async function createInvoiceForOrder({
 
   const { data: invoice, error: insertErr } = await supabase
     .from("invoices")
-    .insert({
-      company_id: order.company_id,
-      order_id: order.id,
-      distributor_id: order.distributor_id,
-      invoice_number: "" as unknown as string, // trigger fills it
-      status: "issued",
-      issue_date,
-      due_date,
-      subtotal_mad: subtotal,
-      vat_rate: vatRate,
-      vat_amount_mad: vat_amount,
-      total_mad: total,
-      payment_method: order.payment_method,
-      notes: order.notes,
-      created_by: user?.id ?? null,
-    })
+    .insert([
+      {
+        company_id: order.company_id,
+        order_id: order.id,
+        distributor_id: order.distributor_id,
+        invoice_number: "", // trigger fills it
+        status: "issued",
+        issue_date,
+        due_date,
+        subtotal_mad: subtotal,
+        vat_rate: vatRate,
+        vat_amount_mad: vat_amount,
+        total_mad: total,
+        payment_method: order.payment_method,
+        notes: order.notes,
+        created_by: user?.id ?? null,
+      },
+    ])
     .select("*")
     .single();
 
   if (insertErr || !invoice) throw insertErr ?? new Error("Failed to create invoice");
 
   // 5) Build PDF.
-  const profile = order.profiles as
-    | { full_name: string; phone: string | null; city: string | null; territories: { name: string } | null }
-    | null;
+  const profile = order.profiles;
 
   const pdfData: InvoicePdfData = {
     invoice_number: invoice.invoice_number,
@@ -105,8 +127,8 @@ export async function createInvoiceForOrder({
       territory: profile?.territories?.name ?? null,
     },
     items: (order.order_items ?? []).map((it) => ({
-      name: (it.products as { name_ar: string } | null)?.name_ar ?? "—",
-      sku: (it.products as { sku: string | null } | null)?.sku ?? null,
+      name: it.products?.name_ar ?? "—",
+      sku: it.products?.sku ?? null,
       quantity: it.quantity,
       unit_price: Number(it.unit_price_mad),
       line_total: Number(it.unit_price_mad) * it.quantity,

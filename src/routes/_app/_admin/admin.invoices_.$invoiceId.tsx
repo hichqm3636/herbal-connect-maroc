@@ -85,9 +85,10 @@ function InvoiceDetail() {
 
   const updateStatus = async (status: string) => {
     if (!inv) return;
-    const patch: Record<string, unknown> = { status };
-    if (status === "paid") patch.paid_at = new Date().toISOString();
-    if (status !== "paid") patch.paid_at = null;
+    const patch = {
+      status: status as "draft" | "issued" | "paid" | "cancelled",
+      paid_at: status === "paid" ? new Date().toISOString() : null,
+    };
     const { error } = await supabase.from("invoices").update(patch).eq("id", inv.id);
     if (error) {
       toast.error("تعذر تحديث الحالة");
