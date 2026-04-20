@@ -25,6 +25,9 @@ interface Payload {
   phone?: string;
   territoryId?: string;
   pricingTierId?: string | null;
+  customDiscountPercent?: number | null;
+  accountType?: string;
+  roles?: string[];
   initialPoints?: number;
   // super admin impersonation: explicit company target
   companyId?: string;
@@ -114,6 +117,22 @@ Deno.serve(async (req) => {
     const phone = body.phone?.trim() ?? "";
     const territoryId = body.territoryId?.trim() ?? "";
     const pricingTierId = body.pricingTierId?.trim() || null;
+    const customDiscountPercent =
+      typeof body.customDiscountPercent === "number" && Number.isFinite(body.customDiscountPercent)
+        ? body.customDiscountPercent
+        : null;
+    const accountType = (body.accountType?.trim() || "distributor") as
+      | "pharmacy" | "parapharmacy" | "distributor" | "master_distributor";
+    const allowedAccountTypes = ["pharmacy", "parapharmacy", "distributor", "master_distributor"];
+    if (!allowedAccountTypes.includes(accountType)) return bad("نوع حساب غير صالح");
+    const allowedRoles = ["buyer", "seller", "sales_agent"];
+    const rolesIn = Array.isArray(body.roles) && body.roles.length > 0 ? body.roles : ["buyer"];
+    const clientRoles = [...new Set(rolesIn.filter((r) => allowedRoles.includes(r)))];
+    if (clientRoles.length === 0) return bad("اختر دوراً واحداً على الأقل");
+    if (customDiscountPercent !== null && (customDiscountPercent < 0 || customDiscountPercent > 100))
+      return bad("نسبة الخصم المخصصة يجب أن تكون بين 0 و 100");
+    if (customDiscountPercent !== null && !pricingTierId)
+      return bad("اختر فئة تسعير قبل تعيين نسبة خصم مخصصة");
     const initialPoints = Math.max(0, Math.floor(body.initialPoints ?? 0));
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return bad("بريد غير صالح");
@@ -176,6 +195,8 @@ Deno.serve(async (req) => {
         territory_id: territoryId,
         company_id: callerCompanyId,
         is_active: true,
+        account_type: accountType,
+        partner_type: accountType,
         ...(initialPoints > 0 ? { loyalty_points: initialPoints } : {}),
       }, { onConflict: "id" });
     if (updErr) {
@@ -188,15 +209,20 @@ Deno.serve(async (req) => {
         company_id: callerCompanyId,
         distributor_id: created.user.id,
         pricing_tier_id: pricingTierId,
+        custom_discount_percent: customDiscountPercent,
       });
     }
 
-    // Assign distributor role scoped to the company
-    await admin.from("user_roles").insert({
-      user_id: created.user.id,
-      role: "distributor",
-      company_id: callerCompanyId,
-    });
+    // Assign legacy distributor role + selected client roles, all scoped to the company
+    const roleRows = [
+      { user_id: created.user.id, role: "distributor", company_id: callerCompanyId },
+      ...clientRoles.map((role) => ({
+        user_id: created.user.id,
+        role,
+        company_id: callerCompanyId,
+      })),
+    ];
+    await admin.from("user_roles").insert(roleRows);
 
     if (initialPoints > 0) {
       await admin.from("loyalty_transactions").insert({
