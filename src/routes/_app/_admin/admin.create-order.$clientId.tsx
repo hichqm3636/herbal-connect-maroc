@@ -141,10 +141,11 @@ function CreateOrderForClient() {
           total_mad: total,
           status: "pending",
           notes: "أُنشئ من قبل الإدارة نيابةً عن العميل",
-          order_number: `TMP-${Date.now()}`,
+          // order_number is auto-assigned by the set_order_number trigger when NULL
+          order_number: null as unknown as string,
         },
       ])
-      .select("id")
+      .select("id, order_number")
       .single();
     if (error || !created) {
       setSubmitting(false);
