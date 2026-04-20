@@ -28,7 +28,9 @@ import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-
 import { Route as AppProductsProductIdRouteImport } from './routes/_app/products_.$productId'
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
 import { Route as AppAdminAdminTerritoriesRouteImport } from './routes/_app/_admin/admin.territories'
+import { Route as AppAdminAdminSalesAgentsRouteImport } from './routes/_app/_admin/admin.sales-agents'
 import { Route as AppAdminAdminProductsRouteImport } from './routes/_app/_admin/admin.products'
+import { Route as AppAdminAdminProductZonesRouteImport } from './routes/_app/_admin/admin.product-zones'
 import { Route as AppAdminAdminOrdersRouteImport } from './routes/_app/_admin/admin.orders'
 import { Route as AppAdminAdminOrderRulesRouteImport } from './routes/_app/_admin/admin.order-rules'
 import { Route as AppAdminAdminDistributorsRouteImport } from './routes/_app/_admin/admin.distributors'
@@ -132,11 +134,23 @@ const AppAdminAdminTerritoriesRoute =
     path: '/admin/territories',
     getParentRoute: () => AppAdminRoute,
   } as any)
+const AppAdminAdminSalesAgentsRoute =
+  AppAdminAdminSalesAgentsRouteImport.update({
+    id: '/admin/sales-agents',
+    path: '/admin/sales-agents',
+    getParentRoute: () => AppAdminRoute,
+  } as any)
 const AppAdminAdminProductsRoute = AppAdminAdminProductsRouteImport.update({
   id: '/admin/products',
   path: '/admin/products',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminAdminProductZonesRoute =
+  AppAdminAdminProductZonesRouteImport.update({
+    id: '/admin/product-zones',
+    path: '/admin/product-zones',
+    getParentRoute: () => AppAdminRoute,
+  } as any)
 const AppAdminAdminOrdersRoute = AppAdminAdminOrdersRouteImport.update({
   id: '/admin/orders',
   path: '/admin/orders',
@@ -197,7 +211,9 @@ export interface FileRoutesByFullPath {
   '/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/admin/order-rules': typeof AppAdminAdminOrderRulesRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
+  '/admin/product-zones': typeof AppAdminAdminProductZonesRoute
   '/admin/products': typeof AppAdminAdminProductsRoute
+  '/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
   '/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/admin/': typeof AppAdminAdminIndexRoute
   '/admin/orders/$orderId': typeof AppAdminAdminOrdersOrderIdRoute
@@ -223,7 +239,9 @@ export interface FileRoutesByTo {
   '/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/admin/order-rules': typeof AppAdminAdminOrderRulesRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
+  '/admin/product-zones': typeof AppAdminAdminProductZonesRoute
   '/admin/products': typeof AppAdminAdminProductsRoute
+  '/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
   '/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/admin': typeof AppAdminAdminIndexRoute
   '/admin/orders/$orderId': typeof AppAdminAdminOrdersOrderIdRoute
@@ -253,7 +271,9 @@ export interface FileRoutesById {
   '/_app/_admin/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/_app/_admin/admin/order-rules': typeof AppAdminAdminOrderRulesRoute
   '/_app/_admin/admin/orders': typeof AppAdminAdminOrdersRoute
+  '/_app/_admin/admin/product-zones': typeof AppAdminAdminProductZonesRoute
   '/_app/_admin/admin/products': typeof AppAdminAdminProductsRoute
+  '/_app/_admin/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
   '/_app/_admin/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/_app/_admin/admin/': typeof AppAdminAdminIndexRoute
   '/_app/_admin/admin/orders_/$orderId': typeof AppAdminAdminOrdersOrderIdRoute
@@ -282,7 +302,9 @@ export interface FileRouteTypes {
     | '/admin/distributors'
     | '/admin/order-rules'
     | '/admin/orders'
+    | '/admin/product-zones'
     | '/admin/products'
+    | '/admin/sales-agents'
     | '/admin/territories'
     | '/admin/'
     | '/admin/orders/$orderId'
@@ -308,7 +330,9 @@ export interface FileRouteTypes {
     | '/admin/distributors'
     | '/admin/order-rules'
     | '/admin/orders'
+    | '/admin/product-zones'
     | '/admin/products'
+    | '/admin/sales-agents'
     | '/admin/territories'
     | '/admin'
     | '/admin/orders/$orderId'
@@ -337,7 +361,9 @@ export interface FileRouteTypes {
     | '/_app/_admin/admin/distributors'
     | '/_app/_admin/admin/order-rules'
     | '/_app/_admin/admin/orders'
+    | '/_app/_admin/admin/product-zones'
     | '/_app/_admin/admin/products'
+    | '/_app/_admin/admin/sales-agents'
     | '/_app/_admin/admin/territories'
     | '/_app/_admin/admin/'
     | '/_app/_admin/admin/orders_/$orderId'
@@ -485,11 +511,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminTerritoriesRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/_admin/admin/sales-agents': {
+      id: '/_app/_admin/admin/sales-agents'
+      path: '/admin/sales-agents'
+      fullPath: '/admin/sales-agents'
+      preLoaderRoute: typeof AppAdminAdminSalesAgentsRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/_admin/admin/products': {
       id: '/_app/_admin/admin/products'
       path: '/admin/products'
       fullPath: '/admin/products'
       preLoaderRoute: typeof AppAdminAdminProductsRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/_admin/admin/product-zones': {
+      id: '/_app/_admin/admin/product-zones'
+      path: '/admin/product-zones'
+      fullPath: '/admin/product-zones'
+      preLoaderRoute: typeof AppAdminAdminProductZonesRouteImport
       parentRoute: typeof AppAdminRoute
     }
     '/_app/_admin/admin/orders': {
@@ -551,7 +591,9 @@ interface AppAdminRouteChildren {
   AppAdminAdminDistributorsRoute: typeof AppAdminAdminDistributorsRoute
   AppAdminAdminOrderRulesRoute: typeof AppAdminAdminOrderRulesRoute
   AppAdminAdminOrdersRoute: typeof AppAdminAdminOrdersRoute
+  AppAdminAdminProductZonesRoute: typeof AppAdminAdminProductZonesRoute
   AppAdminAdminProductsRoute: typeof AppAdminAdminProductsRoute
+  AppAdminAdminSalesAgentsRoute: typeof AppAdminAdminSalesAgentsRoute
   AppAdminAdminTerritoriesRoute: typeof AppAdminAdminTerritoriesRoute
   AppAdminAdminIndexRoute: typeof AppAdminAdminIndexRoute
   AppAdminAdminOrdersOrderIdRoute: typeof AppAdminAdminOrdersOrderIdRoute
@@ -564,7 +606,9 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminAdminDistributorsRoute: AppAdminAdminDistributorsRoute,
   AppAdminAdminOrderRulesRoute: AppAdminAdminOrderRulesRoute,
   AppAdminAdminOrdersRoute: AppAdminAdminOrdersRoute,
+  AppAdminAdminProductZonesRoute: AppAdminAdminProductZonesRoute,
   AppAdminAdminProductsRoute: AppAdminAdminProductsRoute,
+  AppAdminAdminSalesAgentsRoute: AppAdminAdminSalesAgentsRoute,
   AppAdminAdminTerritoriesRoute: AppAdminAdminTerritoriesRoute,
   AppAdminAdminIndexRoute: AppAdminAdminIndexRoute,
   AppAdminAdminOrdersOrderIdRoute: AppAdminAdminOrdersOrderIdRoute,
