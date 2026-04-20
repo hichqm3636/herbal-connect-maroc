@@ -141,9 +141,7 @@ export function EditClientDialog({ client, onClose, onSaved }: Props) {
         phone: form.phone.trim(),
         territory_id: form.territory_id,
         account_type: form.account_type,
-        // legacy alias still accepted by generated types until next regen
-        partner_type: form.account_type,
-      } as never)
+      })
       .eq("id", client.id);
     if (profErr) {
       setBusy(false);
