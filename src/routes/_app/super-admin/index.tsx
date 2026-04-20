@@ -95,8 +95,18 @@ function SuperAdminDashboard() {
     pendingOrders: 0,
     ordersCompletedToday: 0,
   });
-  const [topCompanies, setTopCompanies] = useState<TopCompany[]>([]);
-  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [topWindow, setTopWindow] = useState<"all" | "30d" | "7d">("all");
+  const [companyMap, setCompanyMap] = useState<Map<string, string>>(new Map());
+  const [productMap, setProductMap] = useState<Map<string, { name: string; company_id: string }>>(
+    new Map(),
+  );
+  const [allOrders, setAllOrders] = useState<
+    Array<{ company_id: string; total_mad: number; created_at: string; id: string }>
+  >([]);
+  const [allItems, setAllItems] = useState<
+    Array<{ product_id: string; quantity: number; unit_price_mad: number; order_id: string }>
+  >([]);
+  const [orderDateById, setOrderDateById] = useState<Map<string, number>>(new Map());
   const [activity, setActivity] = useState<ActivityRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -131,7 +141,7 @@ function SuperAdminDashboard() {
           .select("*", { count: "exact", head: true })
           .eq("account_type", "distributor"),
         supabase.from("orders").select("*", { count: "exact", head: true }),
-        supabase.from("orders").select("company_id, total_mad"),
+        supabase.from("orders").select("id, company_id, total_mad, created_at"),
         supabase
           .from("orders")
           .select("*", { count: "exact", head: true })
@@ -160,7 +170,7 @@ function SuperAdminDashboard() {
           .order("created_at", { ascending: false })
           .limit(8),
         supabase.from("companies").select("id, display_name, name"),
-        supabase.from("order_items").select("product_id, quantity, unit_price_mad"),
+        supabase.from("order_items").select("product_id, quantity, unit_price_mad, order_id"),
         supabase.from("products").select("id, name_ar, company_id"),
       ]);
       
