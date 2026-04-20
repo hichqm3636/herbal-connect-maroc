@@ -137,6 +137,52 @@ export type Database = {
           },
         ]
       }
+      distributor_territories: {
+        Row: {
+          company_id: string
+          created_at: string
+          distributor_id: string
+          id: string
+          territory_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          distributor_id: string
+          id?: string
+          territory_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          distributor_id?: string
+          id?: string
+          territory_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distributor_territories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distributor_territories_distributor_id_fkey"
+            columns: ["distributor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distributor_territories_territory_id_fkey"
+            columns: ["territory_id"]
+            isOneToOne: false
+            referencedRelation: "territories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_transactions: {
         Row: {
           admin_id: string | null
