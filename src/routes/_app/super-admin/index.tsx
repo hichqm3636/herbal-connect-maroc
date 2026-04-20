@@ -411,37 +411,49 @@ function SuperAdminDashboard() {
 
   const overviewCards = [
     {
-      label: "إجمالي الشركات",
+      label: "الشركات",
       value: stats.companies.toLocaleString("ar-MA"),
       icon: Building2,
       accent: "bg-primary/10 text-primary",
     },
     {
-      label: "إجمالي الموزعين",
+      label: "الموزعون",
       value: stats.distributors.toLocaleString("ar-MA"),
       icon: Users,
       accent: "bg-success/10 text-success",
     },
     {
-      label: "إجمالي الطلبات",
+      label: "المنتجات",
+      value: stats.products.toLocaleString("ar-MA"),
+      icon: Package,
+      accent: "bg-accent/40 text-accent-foreground",
+    },
+    {
+      label: "الطلبات",
       value: stats.orders.toLocaleString("ar-MA"),
       icon: ClipboardList,
       accent: "bg-warning/15 text-warning-foreground",
       trend: growth,
     },
     {
-      label: "إجمالي قيمة الطلبات",
+      label: "إجمالي المبيعات",
       value: formatMAD(stats.gmv),
       icon: Wallet,
-      accent: "bg-accent/40 text-accent-foreground",
+      accent: "bg-primary/10 text-primary",
     },
   ];
 
+  const growthCards = [
+    { label: "شركات جديدة (30 يوماً)", value: stats.newCompanies30d, icon: Building2 },
+    { label: "موزعون جدد (30 يوماً)", value: stats.newDistributors30d, icon: Users },
+    { label: "منتجات جديدة (30 يوماً)", value: stats.newProducts30d, icon: Package },
+    { label: "طلبات جديدة (30 يوماً)", value: stats.newOrders30d, icon: ClipboardList },
+  ];
+
   const healthCards = [
-    { label: "شركات نشطة", value: stats.activeCompanies, icon: Building2 },
-    { label: "شركات لها طلبات هذا الأسبوع", value: stats.companiesWithOrdersThisWeek, icon: TrendingUp },
     { label: "طلبات قيد الانتظار", value: stats.pendingOrders, icon: Clock },
-    { label: "طلبات مُسلَّمة اليوم", value: stats.ordersCompletedToday, icon: CheckCircle2 },
+    { label: "شركات بدون طلبات", value: stats.companiesWithoutOrders, icon: Building2 },
+    { label: "منتجات بدون مبيعات", value: stats.productsWithoutSales, icon: Package },
   ];
 
   return (
