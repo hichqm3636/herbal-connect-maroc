@@ -694,7 +694,13 @@ function AdminDistributors() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold truncate">{d.full_name || "—"}</p>
+                      <Link
+                        to="/admin/distributors/$id"
+                        params={{ id: d.id }}
+                        className="font-semibold truncate hover:text-primary hover:underline"
+                      >
+                        {d.full_name || "—"}
+                      </Link>
                       {(rolesByUser[d.id] ?? []).filter((r) => ROLE_BADGE_LABELS[r]).map((r) => (
                         <Badge
                           key={r}
