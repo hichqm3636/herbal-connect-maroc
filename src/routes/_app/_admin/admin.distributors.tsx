@@ -144,11 +144,12 @@ function AdminDistributors() {
   const [pricingByDistributor, setPricingByDistributor] = useState<
     Record<string, DistributorPricingLite>
   >({});
+  const [rolesByUser, setRolesByUser] = useState<Record<string, string[]>>({});
 
   const load = async () => {
     if (!companyId) return;
     setLoading(true);
-    const [{ data: profs }, { data: terrs }, { data: pTiers }, { data: cdpRows }] =
+    const [{ data: profs }, { data: terrs }, { data: pTiers }, { data: cdpRows }, { data: roleRows }] =
       await Promise.all([
         supabase
           .from("profiles")
@@ -170,6 +171,10 @@ function AdminDistributors() {
           .from("company_distributor_pricing")
           .select("distributor_id, pricing_tier_id, custom_discount_percent")
           .eq("company_id", companyId),
+        supabase
+          .from("user_roles")
+          .select("user_id, role")
+          .eq("company_id", companyId),
       ]);
     const profiles = (profs ?? []) as Distributor[];
     setList(profiles);
@@ -180,6 +185,11 @@ function AdminDistributors() {
       cdpMap[row.distributor_id] = row;
     }
     setPricingByDistributor(cdpMap);
+    const rMap: Record<string, string[]> = {};
+    for (const row of (roleRows ?? []) as { user_id: string; role: string }[]) {
+      (rMap[row.user_id] ??= []).push(row.role);
+    }
+    setRolesByUser(rMap);
     setLoading(false);
 
     // Fetch banned status + last sign-in from auth.users via edge function
