@@ -553,6 +553,41 @@ function AdminDistributors() {
         })}
       </div>
 
+      {/* Role filter pills */}
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            { key: "all", label: "كل الأدوار", count: roleCounts.all },
+            { key: "buyer", label: "المشترون", count: roleCounts.buyer },
+            { key: "seller", label: "البائعون", count: roleCounts.seller },
+            { key: "sales_agent", label: "المندوبون", count: roleCounts.sales_agent },
+          ] as const
+        ).map((pill) => {
+          const isActive = roleFilter === pill.key;
+          return (
+            <Button
+              key={pill.key}
+              type="button"
+              size="sm"
+              variant={isActive ? "default" : "outline"}
+              className={cn("gap-1.5", isActive && "shadow-soft")}
+              onClick={() => setRoleFilter(pill.key)}
+            >
+              <span>{pill.label}</span>
+              <Badge
+                variant="secondary"
+                className={cn(
+                  "px-1.5 py-0 text-[10px]",
+                  isActive && "bg-primary-foreground/20 text-primary-foreground",
+                )}
+              >
+                {pill.count}
+              </Badge>
+            </Button>
+          );
+        })}
+      </div>
+
       {/* Filters */}
       <Card className="p-3 shadow-soft">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
