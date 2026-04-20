@@ -332,6 +332,7 @@ export type Database = {
           id: string
           notes: string | null
           order_number: string
+          payment_method: string | null
           points_earned: number
           status: Database["public"]["Enums"]["order_status"]
           total_mad: number
@@ -345,6 +346,7 @@ export type Database = {
           id?: string
           notes?: string | null
           order_number: string
+          payment_method?: string | null
           points_earned?: number
           status?: Database["public"]["Enums"]["order_status"]
           total_mad?: number
@@ -358,6 +360,7 @@ export type Database = {
           id?: string
           notes?: string | null
           order_number?: string
+          payment_method?: string | null
           points_earned?: number
           status?: Database["public"]["Enums"]["order_status"]
           total_mad?: number
@@ -890,6 +893,7 @@ export type Database = {
         | "parapharmacy"
         | "distributor"
         | "master_distributor"
+        | "gym"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1045,6 +1049,7 @@ export const Constants = {
         "parapharmacy",
         "distributor",
         "master_distributor",
+        "gym",
       ],
     },
   },
