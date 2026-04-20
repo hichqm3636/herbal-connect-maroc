@@ -28,14 +28,20 @@ export const Route = createFileRoute("/_app/super-admin/")({
 interface Overview {
   companies: number;
   distributors: number;
+  products: number;
   orders: number;
   gmv: number;
   ordersThisWeek: number;
   ordersLastWeek: number;
-  activeCompanies: number;
-  companiesWithOrdersThisWeek: number;
   pendingOrders: number;
-  ordersCompletedToday: number;
+  // Growth (last 30 days)
+  newCompanies30d: number;
+  newDistributors30d: number;
+  newProducts30d: number;
+  newOrders30d: number;
+  // Health
+  companiesWithoutOrders: number;
+  productsWithoutSales: number;
 }
 
 interface TopCompany {
