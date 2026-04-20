@@ -19,6 +19,7 @@ import {
   INVOICE_STATUS_CLASSES,
   INVOICE_STATUS_LABELS,
   downloadInvoicePdf,
+  isInvoiceOverdue,
 } from "@/lib/invoices";
 import { toast } from "sonner";
 
@@ -152,11 +153,16 @@ function InvoicesPage() {
                     </p>
                     <p className="text-xs text-muted-foreground">{formatDateAr(r.issue_date)}</p>
                   </div>
-                  <div className="text-left shrink-0">
+                  <div className="text-left shrink-0 space-y-1">
                     <p className="font-bold text-sm">{formatMAD(r.total_mad)}</p>
                     <Badge variant="outline" className={INVOICE_STATUS_CLASSES[r.status]}>
                       {INVOICE_STATUS_LABELS[r.status]}
                     </Badge>
+                    {isInvoiceOverdue(r) && (
+                      <Badge variant="outline" className="border-red-500/40 bg-red-500/15 text-red-700 dark:text-red-300">
+                        متأخرة
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </Link>
@@ -204,9 +210,16 @@ function InvoicesPage() {
                       {formatMAD(r.total_mad)}
                     </td>
                     <td className="py-2 px-3 text-center">
-                      <Badge variant="outline" className={INVOICE_STATUS_CLASSES[r.status]}>
-                        {INVOICE_STATUS_LABELS[r.status]}
-                      </Badge>
+                      <div className="inline-flex flex-col items-center gap-1">
+                        <Badge variant="outline" className={INVOICE_STATUS_CLASSES[r.status]}>
+                          {INVOICE_STATUS_LABELS[r.status]}
+                        </Badge>
+                        {isInvoiceOverdue(r) && (
+                          <Badge variant="outline" className="border-red-500/40 bg-red-500/15 text-red-700 dark:text-red-300">
+                            متأخرة
+                          </Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="py-2 px-3 text-center">
                       <Button
