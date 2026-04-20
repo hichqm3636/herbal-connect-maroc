@@ -155,6 +155,7 @@ function AdminDistributors() {
   const [search, setSearch] = useState("");
   const [territoryFilter, setTerritoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [roleFilter, setRoleFilter] = useState<"all" | "buyer" | "seller" | "sales_agent">("all");
   const [territories, setTerritories] = useState<TerritoryLite[]>([]);
   const [tiers, setTiers] = useState<PricingTierLite[]>([]);
   const [pricingByDistributor, setPricingByDistributor] = useState<
@@ -262,19 +263,31 @@ function AdminDistributors() {
     return { total: list.length, active, inactive, banned };
   }, [list, bannedMap]);
 
+  const roleCounts = useMemo(() => {
+    let buyer = 0, seller = 0, sales_agent = 0;
+    for (const d of list) {
+      const r = rolesByUser[d.id] ?? [];
+      if (r.includes("buyer")) buyer++;
+      if (r.includes("seller")) seller++;
+      if (r.includes("sales_agent")) sales_agent++;
+    }
+    return { all: list.length, buyer, seller, sales_agent };
+  }, [list, rolesByUser]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return list.filter((d) => {
       if (q && !(d.full_name?.toLowerCase().includes(q) || d.phone?.toLowerCase().includes(q)))
         return false;
       if (territoryFilter !== "all" && d.territory_id !== territoryFilter) return false;
+      if (roleFilter !== "all" && !(rolesByUser[d.id] ?? []).includes(roleFilter)) return false;
       const isBanned = !!bannedMap[d.id];
       if (statusFilter === "active" && (!d.is_active || isBanned)) return false;
       if (statusFilter === "disabled" && (d.is_active || isBanned)) return false;
       if (statusFilter === "banned" && !isBanned) return false;
       return true;
     });
-  }, [list, search, territoryFilter, statusFilter, bannedMap]);
+  }, [list, search, territoryFilter, statusFilter, roleFilter, rolesByUser, bannedMap]);
 
   const formatLastLogin = (iso: string | null | undefined): string => {
     if (!iso) return "لم يسجل الدخول بعد";
