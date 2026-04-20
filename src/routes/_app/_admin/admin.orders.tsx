@@ -76,6 +76,8 @@ function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [distributorFilter, setDistributorFilter] = useState<string>("all");
   const [territoryFilter, setTerritoryFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
