@@ -443,9 +443,10 @@ function OrderDetails() {
             <thead>
               <tr className="text-xs text-muted-foreground border-b">
                 <th className="text-right py-2 font-medium">المنتج</th>
+                <th className="text-right py-2 font-medium">SKU</th>
                 <th className="text-center py-2 font-medium">الكمية</th>
-                <th className="text-left py-2 font-medium">السعر الأساسي (RRP)</th>
-                <th className="text-left py-2 font-medium">سعر الموزع</th>
+                <th className="text-left py-2 font-medium">السعر الأساسي</th>
+                <th className="text-left py-2 font-medium">سعر الوحدة</th>
                 <th className="text-left py-2 font-medium">إجمالي السطر</th>
               </tr>
             </thead>
