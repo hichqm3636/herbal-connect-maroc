@@ -146,14 +146,18 @@ function SuperAdminDashboard() {
   const [stats, setStats] = useState<Overview>({
     companies: 0,
     distributors: 0,
+    products: 0,
     orders: 0,
     gmv: 0,
     ordersThisWeek: 0,
     ordersLastWeek: 0,
-    activeCompanies: 0,
-    companiesWithOrdersThisWeek: 0,
     pendingOrders: 0,
-    ordersCompletedToday: 0,
+    newCompanies30d: 0,
+    newDistributors30d: 0,
+    newProducts30d: 0,
+    newOrders30d: 0,
+    companiesWithoutOrders: 0,
+    productsWithoutSales: 0,
   });
   const [topWindow, setTopWindow] = useState<"all" | "30d" | "7d">("all");
   const [companyMap, setCompanyMap] = useState<Map<string, string>>(new Map());
