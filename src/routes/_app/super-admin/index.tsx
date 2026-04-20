@@ -177,23 +177,26 @@ function SuperAdminDashboard() {
   useEffect(() => {
     (async () => {
       const now = new Date();
-      const startToday = new Date(now);
-      startToday.setHours(0, 0, 0, 0);
       const startWeek = new Date(now);
       startWeek.setDate(startWeek.getDate() - 7);
       const startLastWeek = new Date(now);
       startLastWeek.setDate(startLastWeek.getDate() - 14);
+      const start30d = new Date(now);
+      start30d.setDate(start30d.getDate() - 30);
 
       const [
         companiesRes,
         distributorsRes,
+        productsCountRes,
         ordersCountRes,
         ordersAllRes,
         thisWeekRes,
         lastWeekRes,
         pendingRes,
-        completedTodayRes,
-        weekOrdersRes,
+        newCompanies30dRes,
+        newDistributors30dRes,
+        newProducts30dRes,
+        newOrders30dRes,
         activityRes,
         companiesListRes,
         orderItemsRes,
@@ -204,6 +207,7 @@ function SuperAdminDashboard() {
           .from("profiles")
           .select("*", { count: "exact", head: true })
           .eq("account_type", "distributor"),
+        supabase.from("products").select("*", { count: "exact", head: true }),
         supabase.from("orders").select("*", { count: "exact", head: true }),
         supabase.from("orders").select("id, company_id, total_mad, created_at"),
         supabase
@@ -220,24 +224,31 @@ function SuperAdminDashboard() {
           .select("*", { count: "exact", head: true })
           .eq("status", "pending"),
         supabase
-          .from("orders")
+          .from("companies")
           .select("*", { count: "exact", head: true })
-          .eq("status", "delivered")
-          .gte("updated_at", startToday.toISOString()),
+          .gte("created_at", start30d.toISOString()),
+        supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("account_type", "distributor")
+          .gte("created_at", start30d.toISOString()),
+        supabase
+          .from("products")
+          .select("*", { count: "exact", head: true })
+          .gte("created_at", start30d.toISOString()),
         supabase
           .from("orders")
-          .select("company_id")
-          .gte("created_at", startWeek.toISOString()),
+          .select("*", { count: "exact", head: true })
+          .gte("created_at", start30d.toISOString()),
         supabase
           .from("admin_activity_log")
           .select("id, action, created_at, metadata, company_id")
           .order("created_at", { ascending: false })
-          .limit(8),
+          .limit(10),
         supabase.from("companies").select("id, display_name, name"),
         supabase.from("order_items").select("product_id, quantity, unit_price_mad, order_id"),
         supabase.from("products").select("id, name_ar, company_id"),
       ]);
-      
 
       const cMap = new Map<string, string>();
       (companiesListRes.data ?? []).forEach((c: { id: string; display_name: string; name: string }) =>
@@ -258,10 +269,23 @@ function SuperAdminDashboard() {
         dateById.set(o.id, new Date(o.created_at).getTime());
       });
 
-      const activeCompanies = new Set(ordersData.map((o) => o.company_id)).size;
-      const companiesWithOrdersThisWeek = new Set(
-        (weekOrdersRes.data ?? []).map((o: { company_id: string }) => o.company_id),
-      ).size;
+      const companiesWithOrders = new Set(ordersData.map((o) => o.company_id));
+      const companiesWithoutOrders = Math.max(
+        0,
+        (companiesRes.count ?? 0) - companiesWithOrders.size,
+      );
+
+      const itemsData = (orderItemsRes.data ?? []) as Array<{
+        product_id: string;
+        quantity: number;
+        unit_price_mad: number;
+        order_id: string;
+      }>;
+      const productsWithSales = new Set(itemsData.map((it) => it.product_id));
+      const productsWithoutSales = Math.max(
+        0,
+        (productsCountRes.count ?? 0) - productsWithSales.size,
+      );
 
       const enrichedActivity: ActivityRow[] = (activityRes.data ?? []).map((r) => ({
         id: r.id,
@@ -282,26 +306,23 @@ function SuperAdminDashboard() {
       setCompanyMap(cMap);
       setProductMap(pMap);
       setAllOrders(ordersData);
-      setAllItems(
-        (orderItemsRes.data ?? []) as Array<{
-          product_id: string;
-          quantity: number;
-          unit_price_mad: number;
-          order_id: string;
-        }>,
-      );
+      setAllItems(itemsData);
       setOrderDateById(dateById);
       setStats({
         companies: companiesRes.count ?? 0,
         distributors: distributorsRes.count ?? 0,
+        products: productsCountRes.count ?? 0,
         orders: ordersCountRes.count ?? 0,
         gmv,
         ordersThisWeek: thisWeekRes.count ?? 0,
         ordersLastWeek: lastWeekRes.count ?? 0,
-        activeCompanies,
-        companiesWithOrdersThisWeek,
         pendingOrders: pendingRes.count ?? 0,
-        ordersCompletedToday: completedTodayRes.count ?? 0,
+        newCompanies30d: newCompanies30dRes.count ?? 0,
+        newDistributors30d: newDistributors30dRes.count ?? 0,
+        newProducts30d: newProducts30dRes.count ?? 0,
+        newOrders30d: newOrders30dRes.count ?? 0,
+        companiesWithoutOrders,
+        productsWithoutSales,
       });
       setActivity(enrichedActivity);
       setLoading(false);
