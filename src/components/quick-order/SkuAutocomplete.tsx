@@ -15,6 +15,7 @@ interface Suggestion {
   price_mad: number;
   stock: number;
   image_url: string | null;
+  minimum_order: number;
 }
 
 interface Props {
@@ -46,7 +47,7 @@ export function SkuAutocomplete({ value, onChange, onSelect, placeholder, classN
     debounceRef.current = setTimeout(async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, sku, name_ar, price_mad, stock, image_url")
+        .select("id, sku, name_ar, price_mad, stock, image_url, minimum_order")
         .eq("active", true)
         .or(`sku.ilike.%${term}%,name_ar.ilike.%${term}%`)
         .limit(8);
@@ -158,12 +159,17 @@ export function SkuAutocomplete({ value, onChange, onSelect, placeholder, classN
               )}
               <div className="min-w-0 flex-1">
                 <div className="truncate font-medium">{r.name_ar}</div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                   <span dir="ltr" className="font-mono">{r.sku ?? "—"}</span>
                   <span>•</span>
                   <span>{formatMAD(Number(r.price_mad))}</span>
                   <span>•</span>
                   <span>المخزون: {r.stock}</span>
+                  {r.minimum_order > 1 && (
+                    <span className="rounded border border-warning/50 bg-warning/10 px-1.5 py-0.5 text-[10px] font-medium text-warning-foreground">
+                      الحد الأدنى: {r.minimum_order}
+                    </span>
+                  )}
                 </div>
               </div>
             </button>
