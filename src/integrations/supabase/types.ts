@@ -60,6 +60,7 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          slug: string
           updated_at: string
         }
         Insert: {
@@ -69,6 +70,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
+          slug: string
           updated_at?: string
         }
         Update: {
@@ -78,6 +80,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          slug?: string
           updated_at?: string
         }
         Relationships: []
@@ -334,6 +337,7 @@ export type Database = {
       pricing_tiers: {
         Row: {
           base_discount_percent: number
+          company_id: string
           created_at: string
           id: string
           name: string
@@ -341,6 +345,7 @@ export type Database = {
         }
         Insert: {
           base_discount_percent?: number
+          company_id: string
           created_at?: string
           id?: string
           name: string
@@ -348,12 +353,21 @@ export type Database = {
         }
         Update: {
           base_discount_percent?: number
+          company_id?: string
           created_at?: string
           id?: string
           name?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pricing_tiers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       product_images: {
         Row: {
