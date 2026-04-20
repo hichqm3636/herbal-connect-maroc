@@ -13,13 +13,10 @@ import {
   Leaf,
   Settings,
   Zap,
-  Palette,
   Building2,
   Tag,
-  BarChart3,
   ListChecks,
-  UserCheck,
-  PackageSearch,
+  UsersRound,
 } from "lucide-react";
 import {
   Sidebar,
@@ -51,12 +48,10 @@ const adminItems = [
   { title: "إدارة المنتجات", url: "/admin/products", icon: Boxes },
   { title: "إدارة الموزعين", url: "/admin/distributors", icon: Users },
   { title: "إدارة المناطق", url: "/admin/territories", icon: MapPin },
-  { title: "مندوبو المبيعات", url: "/admin/sales-agents", icon: UserCheck },
-  { title: "تقييد المنتجات بالمناطق", url: "/admin/product-zones", icon: PackageSearch },
   { title: "إدارة الطلبات", url: "/admin/orders", icon: ClipboardList },
   { title: "قواعد الطلب", url: "/admin/order-rules", icon: ListChecks },
-  { title: "ذكاء السوق", url: "/admin/analytics", icon: BarChart3 },
-  { title: "هوية الشركة", url: "/admin/branding", icon: Palette },
+  { title: "فريق الشركة", url: "/admin/team", icon: UsersRound },
+  { title: "إعدادات الشركة", url: "/admin/branding", icon: Settings },
   { title: "سجل النشاط", url: "/admin/activity", icon: Activity },
 ];
 
