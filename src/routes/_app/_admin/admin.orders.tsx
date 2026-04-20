@@ -345,6 +345,33 @@ function AdminOrders() {
         </Select>
       </div>
 
+      <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] items-end">
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">من تاريخ</label>
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            max={dateTo || undefined}
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">إلى تاريخ</label>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            min={dateFrom || undefined}
+          />
+        </div>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9">
+            <X className="h-4 w-4 ml-1" />
+            مسح الفلاتر
+          </Button>
+        )}
+      </div>
+
       <div className="grid gap-3">
         {filtered.length === 0 ? (
           <Card className="p-8 text-center text-sm text-muted-foreground">
