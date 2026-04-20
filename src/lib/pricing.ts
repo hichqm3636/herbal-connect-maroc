@@ -5,7 +5,8 @@ export type PartnerType =
   | "pharmacy"
   | "parapharmacy"
   | "distributor"
-  | "master_distributor";
+  | "master_distributor"
+  | "gym";
 
 export interface PriceTier {
   min_qty: number;
@@ -27,6 +28,7 @@ export const PARTNER_TYPE_LABELS: Record<PartnerType, string> = {
   parapharmacy: "شبه صيدلية",
   distributor: "موزع",
   master_distributor: "موزع رئيسي",
+  gym: "نادي رياضي",
 };
 
 const round = (n: number) => Math.round(n);
@@ -129,8 +131,12 @@ export function getUnitPrice(
   const fallbackRrp =
     product.rrp_price ?? product.price_mad ?? 0;
 
-  // Pharmacy / parapharmacy → flat pharmacy_price
-  if (partnerType === "pharmacy" || partnerType === "parapharmacy") {
+  // Pharmacy / parapharmacy / gym → flat pharmacy_price (resellers)
+  if (
+    partnerType === "pharmacy" ||
+    partnerType === "parapharmacy" ||
+    partnerType === "gym"
+  ) {
     const flat = product.pharmacy_price ?? round(fallbackRrp * 0.7);
     return { unitPrice: flat, source: "pharmacy" };
   }
@@ -197,7 +203,9 @@ export function validateLine(
   }
 
   if (
-    (partnerType === "pharmacy" || partnerType === "parapharmacy") &&
+    (partnerType === "pharmacy" ||
+      partnerType === "parapharmacy" ||
+      partnerType === "gym") &&
     product.map_price != null &&
     unitPrice < product.map_price
   ) {

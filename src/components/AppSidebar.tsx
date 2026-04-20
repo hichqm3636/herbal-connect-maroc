@@ -46,7 +46,7 @@ const distributorItems = [
 const adminItems = [
   { title: "لوحة الإدارة", url: "/admin", icon: ShieldCheck },
   { title: "إدارة المنتجات", url: "/admin/products", icon: Boxes },
-  { title: "إدارة الموزعين", url: "/admin/distributors", icon: Users },
+  { title: "العملاء", url: "/admin/distributors", icon: Users },
   { title: "إدارة المناطق", url: "/admin/territories", icon: MapPin },
   { title: "إدارة الطلبات", url: "/admin/orders", icon: ClipboardList },
   { title: "قواعد الطلب", url: "/admin/order-rules", icon: ListChecks },
@@ -58,7 +58,7 @@ const adminItems = [
 const superAdminItems = [
   { title: "لوحة المنصة", url: "/super-admin", icon: LayoutDashboard },
   { title: "الشركات", url: "/super-admin/companies", icon: Building2 },
-  { title: "الموزّعون", url: "/super-admin/distributors", icon: Users },
+  { title: "العملاء", url: "/super-admin/distributors", icon: Users },
   { title: "فئات التسعير", url: "/super-admin/pricing-tiers", icon: Tag },
   { title: "قواعد الطلب", url: "/super-admin/order-rules", icon: ListChecks },
 ];

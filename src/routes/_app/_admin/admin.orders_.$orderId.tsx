@@ -17,6 +17,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -67,6 +74,7 @@ interface OrderDetail {
   created_at: string;
   notes: string | null;
   admin_notes: string | null;
+  payment_method: string | null;
   distributor_id: string;
   company_id: string;
   profiles: {
@@ -77,6 +85,13 @@ interface OrderDetail {
   } | null;
   order_items: ItemRow[];
 }
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cash: "نقداً",
+  transfer: "تحويل بنكي",
+  credit: "آجل",
+  check: "شيك",
+};
 
 interface TierInfo {
   name: string;
@@ -122,7 +137,7 @@ function OrderDetails() {
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, distributor_id, company_id, profiles(full_name, phone, city, territories(name)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost_price))",
+        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, payment_method, distributor_id, company_id, profiles(full_name, phone, city, territories(name)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost_price))",
       )
       .eq("id", orderId)
       .eq("company_id", companyId)
@@ -318,10 +333,14 @@ function OrderDetails() {
       </div>
 
       <Card className="p-4 space-y-2">
-        <h2 className="font-semibold text-sm text-muted-foreground">معلومات الموزع</h2>
+        <h2 className="font-semibold text-sm text-muted-foreground">معلومات الطلب</h2>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-xs text-muted-foreground">الاسم</p>
+            <p className="text-xs text-muted-foreground">رقم الطلب</p>
+            <p className="font-medium" dir="ltr">{order.order_number}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">العميل</p>
             <p className="font-medium">{order.profiles?.full_name || "—"}</p>
           </div>
           <div>
@@ -329,14 +348,14 @@ function OrderDetails() {
             <p className="font-medium" dir="ltr">{order.profiles?.phone || "—"}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">المنطقة</p>
-            <p className="font-medium">{order.profiles?.territories?.name || "—"}</p>
+            <p className="text-xs text-muted-foreground">المدينة</p>
+            <p className="font-medium">{order.profiles?.city || order.profiles?.territories?.name || "—"}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">المدينة</p>
-            <p className="font-medium">{order.profiles?.city || "—"}</p>
+            <p className="text-xs text-muted-foreground">تاريخ الطلب</p>
+            <p className="font-medium">{formatDateTimeAr(order.created_at)}</p>
           </div>
-          <div className="col-span-2">
+          <div>
             <p className="text-xs text-muted-foreground">شريحة الأسعار</p>
             {tier ? (
               <div className="flex items-center gap-2 flex-wrap">
@@ -348,8 +367,39 @@ function OrderDetails() {
                 )}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground italic">لا توجد شريحة مُعيَّنة</p>
+              <p className="text-xs text-muted-foreground italic">لا توجد شريحة</p>
             )}
+          </div>
+          <div className="col-span-2">
+            <p className="text-xs text-muted-foreground mb-1">طريقة الدفع</p>
+            <Select
+              value={order.payment_method ?? "none"}
+              onValueChange={async (v) => {
+                const next = v === "none" ? null : v;
+                const { error } = await supabase
+                  .from("orders")
+                  .update({ payment_method: next })
+                  .eq("id", order.id);
+                if (error) {
+                  toast.error("تعذر تحديث طريقة الدفع");
+                  return;
+                }
+                setOrder({ ...order, payment_method: next });
+                toast.success("تم حفظ طريقة الدفع");
+              }}
+            >
+              <SelectTrigger className="h-8 text-sm">
+                <SelectValue placeholder="اختر طريقة الدفع" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— غير محددة —</SelectItem>
+                {Object.entries(PAYMENT_METHOD_LABELS).map(([k, label]) => (
+                  <SelectItem key={k} value={k}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </Card>
@@ -393,9 +443,10 @@ function OrderDetails() {
             <thead>
               <tr className="text-xs text-muted-foreground border-b">
                 <th className="text-right py-2 font-medium">المنتج</th>
+                <th className="text-right py-2 font-medium">SKU</th>
                 <th className="text-center py-2 font-medium">الكمية</th>
-                <th className="text-left py-2 font-medium">السعر الأساسي (RRP)</th>
-                <th className="text-left py-2 font-medium">سعر الموزع</th>
+                <th className="text-left py-2 font-medium">السعر الأساسي</th>
+                <th className="text-left py-2 font-medium">سعر الوحدة</th>
                 <th className="text-left py-2 font-medium">إجمالي السطر</th>
               </tr>
             </thead>
@@ -420,6 +471,9 @@ function OrderDetails() {
                           {it.products?.name_ar ?? "منتج محذوف"}
                         </span>
                       </div>
+                    </td>
+                    <td className="py-2 text-xs text-muted-foreground" dir="ltr">
+                      {it.products?.sku ?? "—"}
                     </td>
                     <td className="text-center py-2">{it.quantity}</td>
                     <td className="text-left py-2 text-muted-foreground line-through">

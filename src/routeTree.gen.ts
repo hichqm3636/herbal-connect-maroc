@@ -41,6 +41,7 @@ import { Route as AppAdminAdminAnalyticsRouteImport } from './routes/_app/_admin
 import { Route as AppAdminAdminActivityRouteImport } from './routes/_app/_admin/admin.activity'
 import { Route as AppAdminAdminOrdersOrderIdRouteImport } from './routes/_app/_admin/admin.orders_.$orderId'
 import { Route as AppAdminAdminDistributorsIdRouteImport } from './routes/_app/_admin/admin.distributors_.$id'
+import { Route as AppAdminAdminCreateOrderClientIdRouteImport } from './routes/_app/_admin/admin.create-order.$clientId'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -208,6 +209,12 @@ const AppAdminAdminDistributorsIdRoute =
     path: '/admin/distributors/$id',
     getParentRoute: () => AppAdminRoute,
   } as any)
+const AppAdminAdminCreateOrderClientIdRoute =
+  AppAdminAdminCreateOrderClientIdRouteImport.update({
+    id: '/admin/create-order/$clientId',
+    path: '/admin/create-order/$clientId',
+    getParentRoute: () => AppAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -238,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/admin/team': typeof AppAdminAdminTeamRoute
   '/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/admin/': typeof AppAdminAdminIndexRoute
+  '/admin/create-order/$clientId': typeof AppAdminAdminCreateOrderClientIdRoute
   '/admin/distributors/$id': typeof AppAdminAdminDistributorsIdRoute
   '/admin/orders/$orderId': typeof AppAdminAdminOrdersOrderIdRoute
 }
@@ -269,6 +277,7 @@ export interface FileRoutesByTo {
   '/admin/team': typeof AppAdminAdminTeamRoute
   '/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/admin': typeof AppAdminAdminIndexRoute
+  '/admin/create-order/$clientId': typeof AppAdminAdminCreateOrderClientIdRoute
   '/admin/distributors/$id': typeof AppAdminAdminDistributorsIdRoute
   '/admin/orders/$orderId': typeof AppAdminAdminOrdersOrderIdRoute
 }
@@ -304,6 +313,7 @@ export interface FileRoutesById {
   '/_app/_admin/admin/team': typeof AppAdminAdminTeamRoute
   '/_app/_admin/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/_app/_admin/admin/': typeof AppAdminAdminIndexRoute
+  '/_app/_admin/admin/create-order/$clientId': typeof AppAdminAdminCreateOrderClientIdRoute
   '/_app/_admin/admin/distributors_/$id': typeof AppAdminAdminDistributorsIdRoute
   '/_app/_admin/admin/orders_/$orderId': typeof AppAdminAdminOrdersOrderIdRoute
 }
@@ -338,6 +348,7 @@ export interface FileRouteTypes {
     | '/admin/team'
     | '/admin/territories'
     | '/admin/'
+    | '/admin/create-order/$clientId'
     | '/admin/distributors/$id'
     | '/admin/orders/$orderId'
   fileRoutesByTo: FileRoutesByTo
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/admin/team'
     | '/admin/territories'
     | '/admin'
+    | '/admin/create-order/$clientId'
     | '/admin/distributors/$id'
     | '/admin/orders/$orderId'
   id:
@@ -403,6 +415,7 @@ export interface FileRouteTypes {
     | '/_app/_admin/admin/team'
     | '/_app/_admin/admin/territories'
     | '/_app/_admin/admin/'
+    | '/_app/_admin/admin/create-order/$clientId'
     | '/_app/_admin/admin/distributors_/$id'
     | '/_app/_admin/admin/orders_/$orderId'
   fileRoutesById: FileRoutesById
@@ -640,6 +653,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminDistributorsIdRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/_admin/admin/create-order/$clientId': {
+      id: '/_app/_admin/admin/create-order/$clientId'
+      path: '/admin/create-order/$clientId'
+      fullPath: '/admin/create-order/$clientId'
+      preLoaderRoute: typeof AppAdminAdminCreateOrderClientIdRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
   }
 }
 
@@ -656,6 +676,7 @@ interface AppAdminRouteChildren {
   AppAdminAdminTeamRoute: typeof AppAdminAdminTeamRoute
   AppAdminAdminTerritoriesRoute: typeof AppAdminAdminTerritoriesRoute
   AppAdminAdminIndexRoute: typeof AppAdminAdminIndexRoute
+  AppAdminAdminCreateOrderClientIdRoute: typeof AppAdminAdminCreateOrderClientIdRoute
   AppAdminAdminDistributorsIdRoute: typeof AppAdminAdminDistributorsIdRoute
   AppAdminAdminOrdersOrderIdRoute: typeof AppAdminAdminOrdersOrderIdRoute
 }
@@ -673,6 +694,7 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminAdminTeamRoute: AppAdminAdminTeamRoute,
   AppAdminAdminTerritoriesRoute: AppAdminAdminTerritoriesRoute,
   AppAdminAdminIndexRoute: AppAdminAdminIndexRoute,
+  AppAdminAdminCreateOrderClientIdRoute: AppAdminAdminCreateOrderClientIdRoute,
   AppAdminAdminDistributorsIdRoute: AppAdminAdminDistributorsIdRoute,
   AppAdminAdminOrdersOrderIdRoute: AppAdminAdminOrdersOrderIdRoute,
 }

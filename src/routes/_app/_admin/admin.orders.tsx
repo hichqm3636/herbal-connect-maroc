@@ -1,7 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Download, ExternalLink, Loader2, MapPin, Package, PackageCheck, Phone, Search, X, XCircle } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import {
+  CheckCircle2,
+  Download,
+  Eye,
+  MoreVertical,
+  Package,
+  Search,
+  Truck,
+  X,
+  XCircle,
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +44,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { RecomputeDistributorPricesButton } from "@/components/admin/RecomputeDistributorPricesButton";
 import {
   formatMAD,
-  formatDateTimeAr,
+  formatDateAr,
   STATUS_LABELS,
   STATUS_VARIANTS,
   STATUS_CLASSES,
@@ -37,7 +54,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/_admin/admin/orders")({
   component: AdminOrders,
-  head: () => ({ meta: [{ title: "إدارة الطلبات — هيرباليفي" }] }),
+  head: () => ({ meta: [{ title: "إدارة الطلبات — DistribHub" }] }),
 });
 
 interface OrderItem {
@@ -69,44 +86,30 @@ interface OrderRow {
   order_items: OrderItem[];
 }
 
+function computeMargin(items: OrderItem[]): { profit: number; margin: number; partial: boolean } {
+  const withCost = items.filter(
+    (it) => it.cost_snapshot != null && Number(it.cost_snapshot) > 0,
+  );
+  if (withCost.length === 0) return { profit: 0, margin: 0, partial: items.length > 0 };
+  const rev = withCost.reduce((s, it) => s + Number(it.unit_price_mad) * it.quantity, 0);
+  const cost = withCost.reduce((s, it) => s + Number(it.cost_snapshot ?? 0) * it.quantity, 0);
+  const profit = rev - cost;
+  const margin = rev > 0 ? (profit / rev) * 100 : 0;
+  return { profit, margin, partial: withCost.length < items.length };
+}
+
 function AdminOrders() {
   const { companyId, isSuperAdmin, user } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [distributorFilter, setDistributorFilter] = useState<string>("all");
-  const [territoryFilter, setTerritoryFilter] = useState<string>("all");
+  const [clientFilter, setClientFilter] = useState<string>("all");
+  const [cityFilter, setCityFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
-
-  const QUICK_ACTIONS: {
-    status: "confirmed" | "preparing" | "delivered" | "cancelled";
-    label: string;
-    icon: typeof CheckCircle2;
-    variant: "default" | "outline" | "destructive";
-  }[] = [
-    { status: "confirmed", label: "موافقة", icon: CheckCircle2, variant: "default" },
-    { status: "preparing", label: "تحضير", icon: Package, variant: "outline" },
-    { status: "delivered", label: "تم التسليم", icon: PackageCheck, variant: "outline" },
-    { status: "cancelled", label: "إلغاء", icon: XCircle, variant: "destructive" },
-  ];
-
-  const quickUpdate = async (
-    orderId: string,
-    status: "confirmed" | "preparing" | "delivered" | "cancelled",
-  ) => {
-    setUpdatingId(orderId);
-    const { error } = await supabase.from("orders").update({ status }).eq("id", orderId);
-    setUpdatingId(null);
-    if (error) {
-      toast.error("تعذر تحديث الحالة");
-      return;
-    }
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
-    toast.success(`تم تحديث الحالة: ${STATUS_LABELS[status]}`);
-  };
 
   const load = async () => {
     if (!user) return;
@@ -117,11 +120,10 @@ function AdminOrders() {
       )
       .order("created_at", { ascending: false });
     if (isSuperAdmin) {
-      // Super admins see ALL orders across every company.
+      // super admin sees everything
     } else if (companyId) {
       query = query.eq("company_id", companyId);
     } else {
-      // Non-super admin without a company: nothing to show
       setOrders([]);
       return;
     }
@@ -137,7 +139,22 @@ function AdminOrders() {
     load();
   }, [companyId, isSuperAdmin, user?.id]);
 
-  const distributors = useMemo(() => {
+  const updateStatus = async (
+    orderId: string,
+    status: "confirmed" | "preparing" | "shipped" | "delivered" | "cancelled",
+  ) => {
+    setUpdatingId(orderId);
+    const { error } = await supabase.from("orders").update({ status }).eq("id", orderId);
+    setUpdatingId(null);
+    if (error) {
+      toast.error("تعذر تحديث الحالة");
+      return;
+    }
+    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
+    toast.success(`تم تحديث الحالة: ${STATUS_LABELS[status]}`);
+  };
+
+  const clients = useMemo(() => {
     const map = new Map<string, string>();
     orders.forEach((o) => {
       if (o.distributor_id && o.profiles?.full_name) {
@@ -147,14 +164,13 @@ function AdminOrders() {
     return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1], "ar"));
   }, [orders]);
 
-  const territories = useMemo(() => {
-    const map = new Map<string, string>();
+  const cities = useMemo(() => {
+    const set = new Set<string>();
     orders.forEach((o) => {
-      const tid = o.profiles?.territory_id;
-      const tname = o.profiles?.territories?.name;
-      if (tid && tname) map.set(tid, tname);
+      const c = o.profiles?.city || o.profiles?.territories?.name;
+      if (c) set.add(c);
     });
-    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1], "ar"));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "ar"));
   }, [orders]);
 
   const q = search.trim().toLowerCase();
@@ -162,8 +178,11 @@ function AdminOrders() {
   const toTs = dateTo ? new Date(dateTo + "T23:59:59.999").getTime() : null;
   const filtered = orders.filter((o) => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
-    if (distributorFilter !== "all" && o.distributor_id !== distributorFilter) return false;
-    if (territoryFilter !== "all" && o.profiles?.territory_id !== territoryFilter) return false;
+    if (clientFilter !== "all" && o.distributor_id !== clientFilter) return false;
+    if (cityFilter !== "all") {
+      const c = o.profiles?.city || o.profiles?.territories?.name || "";
+      if (c !== cityFilter) return false;
+    }
     if (fromTs || toTs) {
       const ts = new Date(o.created_at).getTime();
       if (fromTs && ts < fromTs) return false;
@@ -171,24 +190,23 @@ function AdminOrders() {
     }
     if (!q) return true;
     const name = o.profiles?.full_name?.toLowerCase() ?? "";
-    const city = o.profiles?.city?.toLowerCase() ?? "";
     const num = o.order_number?.toLowerCase() ?? "";
-    return name.includes(q) || city.includes(q) || num.includes(q);
+    return name.includes(q) || num.includes(q);
   });
 
   const hasActiveFilters =
     !!q ||
     statusFilter !== "all" ||
-    distributorFilter !== "all" ||
-    territoryFilter !== "all" ||
+    clientFilter !== "all" ||
+    cityFilter !== "all" ||
     !!dateFrom ||
     !!dateTo;
 
   const clearFilters = () => {
     setSearch("");
     setStatusFilter("all");
-    setDistributorFilter("all");
-    setTerritoryFilter("all");
+    setClientFilter("all");
+    setCityFilter("all");
     setDateFrom("");
     setDateTo("");
   };
@@ -202,38 +220,29 @@ function AdminOrders() {
     }
     const headers = [
       "Order Number",
-      "Company",
-      "Distributor",
-      "Phone",
-      "City",
-      "Territory",
-      "Total (MAD)",
+      "Client",
+      "City/Territory",
+      "Order Value",
+      "Margin",
       "Status",
-      "Created At",
-      "Order ID",
-      "Points Earned",
-      "Items",
+      "Date",
     ];
     const escape = (v: unknown) => {
       const s = v == null ? "" : String(v);
       return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
-    const rows = filtered.map((o) => [
-      o.order_number,
-      o.companies?.display_name ?? o.companies?.name ?? "",
-      o.profiles?.full_name ?? "",
-      o.profiles?.phone ?? "",
-      o.profiles?.city ?? "",
-      o.profiles?.territories?.name ?? "",
-      o.total_mad,
-      o.status,
-      new Date(o.created_at).toISOString(),
-      o.id,
-      o.points_earned,
-      (o.order_items ?? [])
-        .map((it) => `${it.products?.name_ar ?? "?"} x${it.quantity}`)
-        .join("; "),
-    ]);
+    const rows = filtered.map((o) => {
+      const m = computeMargin(o.order_items ?? []);
+      return [
+        o.order_number,
+        o.profiles?.full_name ?? "",
+        o.profiles?.city || o.profiles?.territories?.name || "",
+        o.total_mad,
+        m.profit,
+        STATUS_LABELS[o.status] ?? o.status,
+        new Date(o.created_at).toISOString(),
+      ];
+    });
     const csv =
       "\uFEFF" + [headers, ...rows].map((r) => r.map(escape).join(",")).join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -250,8 +259,8 @@ function AdminOrders() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-3">
+    <div className="space-y-6" dir="rtl">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">إدارة الطلبات</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -260,10 +269,7 @@ function AdminOrders() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {companyId && (
-            <RecomputeDistributorPricesButton
-              companyId={companyId}
-              onComplete={load}
-            />
+            <RecomputeDistributorPricesButton companyId={companyId} onComplete={load} />
           )}
           <Button
             variant="outline"
@@ -271,7 +277,7 @@ function AdminOrders() {
             onClick={exportCsv}
             disabled={filtered.length === 0}
           >
-            <Download className="h-4 w-4 mr-1" />
+            <Download className="h-4 w-4 ml-1" />
             تصدير CSV
           </Button>
         </div>
@@ -279,248 +285,280 @@ function AdminOrders() {
 
       <Card className="p-4 bg-primary/5 border-primary/20">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">القيمة الإجمالية للطلبات المعروضة</span>
+          <span className="text-sm text-muted-foreground">القيمة الإجمالية</span>
           <span className="text-2xl font-bold text-primary">{formatMAD(totalValue)}</span>
         </div>
       </Card>
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="relative sm:col-span-2 lg:col-span-1">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="بحث برقم الطلب أو الاسم…"
-            className="pr-9 pl-9"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch("")}
-              aria-label="مسح البحث"
-              className="absolute left-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
+      {/* Filters: status, client, city, date range */}
+      <Card>
+        <CardContent className="pt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="relative sm:col-span-2 lg:col-span-1">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="بحث برقم الطلب أو الاسم…"
+              className="pr-9"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="الحالة" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل الحالات</SelectItem>
+              {ORDER_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {STATUS_LABELS[s]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={cityFilter} onValueChange={setCityFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="المدينة / المنطقة" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل المدن</SelectItem>
+              {cities.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={clientFilter} onValueChange={setClientFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="العميل" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل العملاء</SelectItem>
+              {clients.map(([id, name]) => (
+                <SelectItem key={id} value={id}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">من تاريخ</label>
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              max={dateTo || undefined}
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">إلى تاريخ</label>
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              min={dateFrom || undefined}
+            />
+          </div>
+          {hasActiveFilters && (
+            <div className="sm:col-span-2 lg:col-span-2 flex justify-end">
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                <X className="h-4 w-4 ml-1" />
+                مسح الفلاتر
+              </Button>
+            </div>
           )}
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="الحالة" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">كل الحالات</SelectItem>
-            {ORDER_STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {STATUS_LABELS[s]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={distributorFilter} onValueChange={setDistributorFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="الموزع" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">كل الموزعين</SelectItem>
-            {distributors.map(([id, name]) => (
-              <SelectItem key={id} value={id}>
-                {name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={territoryFilter} onValueChange={setTerritoryFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="المنطقة" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">كل المناطق</SelectItem>
-            {territories.map(([id, name]) => (
-              <SelectItem key={id} value={id}>
-                {name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] items-end">
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">من تاريخ</label>
-          <Input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            max={dateTo || undefined}
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">إلى تاريخ</label>
-          <Input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            min={dateFrom || undefined}
-          />
-        </div>
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9">
-            <X className="h-4 w-4 ml-1" />
-            مسح الفلاتر
-          </Button>
-        )}
-      </div>
-
-      <div className="grid gap-3">
-        {filtered.length === 0 ? (
-          <Card className="p-8 text-center text-sm text-muted-foreground">
-            لا توجد طلبات مطابقة
-          </Card>
-        ) : (
-          filtered.map((o) => (
-            <Card key={o.id} className="p-4 shadow-soft hover:bg-muted/30 transition-colors overflow-hidden">
-              <Link
-                to="/admin/orders/$orderId"
-                params={{ orderId: o.id }}
-                className="block"
-              >
-                <div className="flex flex-col md:flex-row md:items-center gap-3">
-                  <div className="flex-1 min-w-0 space-y-1.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold">{o.order_number}</p>
-                      <Badge variant={STATUS_VARIANTS[o.status]} className={STATUS_CLASSES[o.status]}>
-                        {STATUS_LABELS[o.status]}
-                      </Badge>
-                      {isSuperAdmin && (
-                        <Badge variant="outline" className="font-normal">
-                          {o.companies?.display_name || o.companies?.name || "—"}
-                        </Badge>
-                      )}
-                      <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm font-medium">
-                      {o.profiles?.full_name || "—"}
-                    </p>
-                    <div className="flex items-center gap-x-3 gap-y-1 flex-wrap text-xs text-muted-foreground">
-                      {o.profiles?.phone && (
-                        <a
-                          href={`tel:${o.profiles.phone}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 hover:text-foreground"
-                          dir="ltr"
-                        >
-                          <Phone className="h-3 w-3" />
-                          {o.profiles.phone}
-                        </a>
-                      )}
-                      {o.profiles?.city && (
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {o.profiles.city}
-                        </span>
-                      )}
-                      {o.profiles?.territories?.name && (
-                        <span>{o.profiles.territories.name}</span>
-                      )}
-                      <span>{formatDateTimeAr(o.created_at)}</span>
-                    </div>
-                  </div>
-                  <div className="text-left shrink-0">
-                    <p className="font-bold">{formatMAD(o.total_mad)}</p>
-                    <p className="text-xs text-warning">+{o.points_earned} نقطة</p>
-                    {(() => {
-                      const items = o.order_items ?? [];
-                      const withCost = items.filter(
-                        (it) => it.cost_snapshot != null && Number(it.cost_snapshot) > 0,
-                      );
-                      if (withCost.length === 0) {
-                        return (
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
-                            ربح: —
-                          </p>
-                        );
-                      }
-                      const rev = withCost.reduce(
-                        (s, it) => s + Number(it.unit_price_mad) * it.quantity,
-                        0,
-                      );
-                      const cost = withCost.reduce(
-                        (s, it) => s + Number(it.cost_snapshot ?? 0) * it.quantity,
-                        0,
-                      );
-                      const profit = rev - cost;
-                      const margin = rev > 0 ? Math.round((profit / rev) * 100) : 0;
-                      const partial = withCost.length < items.length;
-                      return (
-                        <p
-                          className={`text-[11px] font-medium mt-0.5 ${
-                            profit >= 0
-                              ? "text-emerald-700 dark:text-emerald-400"
-                              : "text-destructive"
-                          }`}
-                        >
-                          ربح: {formatMAD(profit)} ({margin}%)
-                          {partial && <span className="text-muted-foreground"> *</span>}
-                        </p>
-                      );
-                    })()}
-                  </div>
-                </div>
-              </Link>
-              <div className="mt-3 pt-3 border-t flex flex-wrap gap-2">
-                {QUICK_ACTIONS.map((a) => {
-                  const Icon = a.icon;
-                  const isCurrent = o.status === a.status;
-                  const isLoading = updatingId === o.id;
+      {/* Operational table */}
+      {filtered.length === 0 ? (
+        <Card className="p-8 text-center text-sm text-muted-foreground">
+          لا توجد طلبات مطابقة
+        </Card>
+      ) : (
+        <Card className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-muted/60 backdrop-blur z-10 text-xs">
+                <tr className="border-b">
+                  <th className="text-right py-2.5 px-3 font-medium text-muted-foreground">
+                    رقم الطلب
+                  </th>
+                  <th className="text-right py-2.5 px-3 font-medium text-muted-foreground">
+                    العميل
+                  </th>
+                  <th className="text-right py-2.5 px-3 font-medium text-muted-foreground hidden md:table-cell">
+                    المدينة
+                  </th>
+                  <th className="text-left py-2.5 px-3 font-medium text-muted-foreground">
+                    القيمة
+                  </th>
+                  <th className="text-left py-2.5 px-3 font-medium text-muted-foreground hidden sm:table-cell">
+                    الهامش
+                  </th>
+                  <th className="text-center py-2.5 px-3 font-medium text-muted-foreground">
+                    الحالة
+                  </th>
+                  <th className="text-right py-2.5 px-3 font-medium text-muted-foreground hidden lg:table-cell">
+                    التاريخ
+                  </th>
+                  <th className="text-center py-2.5 px-3 font-medium text-muted-foreground">
+                    إجراءات
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((o) => {
+                  const m = computeMargin(o.order_items ?? []);
+                  const city =
+                    o.profiles?.city || o.profiles?.territories?.name || "—";
                   return (
-                    <Button
-                      key={a.status}
-                      variant={a.variant}
-                      size="sm"
-                      className="shrink-0 h-8 text-xs"
-                      disabled={isCurrent || isLoading}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (a.status === "cancelled") {
-                          setCancelTarget(o.id);
-                        } else {
-                          quickUpdate(o.id, a.status);
-                        }
-                      }}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="h-3 w-3 animate-spin ml-1" />
-                      ) : (
-                        <Icon className="h-3 w-3 ml-1" />
-                      )}
-                      {a.label}
-                    </Button>
+                    <tr key={o.id} className="border-b last:border-0 hover:bg-muted/30">
+                      <td className="py-2.5 px-3 font-medium whitespace-nowrap">
+                        <Link
+                          to="/admin/orders/$orderId"
+                          params={{ orderId: o.id }}
+                          className="text-primary hover:underline"
+                        >
+                          {o.order_number}
+                        </Link>
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <div className="min-w-0">
+                          <p className="truncate max-w-[160px]">
+                            {o.profiles?.full_name || "—"}
+                          </p>
+                          {isSuperAdmin && o.companies && (
+                            <p className="text-[10px] text-muted-foreground truncate max-w-[160px]">
+                              {o.companies.display_name || o.companies.name}
+                            </p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3 text-muted-foreground hidden md:table-cell">
+                        {city}
+                      </td>
+                      <td className="py-2.5 px-3 text-left font-semibold whitespace-nowrap">
+                        {formatMAD(o.total_mad)}
+                      </td>
+                      <td className="py-2.5 px-3 text-left hidden sm:table-cell whitespace-nowrap">
+                        {m.profit !== 0 || !m.partial ? (
+                          <span
+                            className={
+                              m.profit >= 0
+                                ? "text-emerald-700 dark:text-emerald-400 font-medium"
+                                : "text-destructive font-medium"
+                            }
+                          >
+                            {formatMAD(m.profit)}
+                            {m.partial && (
+                              <span className="text-muted-foreground"> *</span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <Badge
+                          variant={STATUS_VARIANTS[o.status]}
+                          className={STATUS_CLASSES[o.status]}
+                        >
+                          {STATUS_LABELS[o.status]}
+                        </Badge>
+                      </td>
+                      <td className="py-2.5 px-3 text-muted-foreground hidden lg:table-cell whitespace-nowrap">
+                        {formatDateAr(o.created_at)}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              disabled={updatingId === o.id}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() =>
+                                navigate({
+                                  to: "/admin/orders/$orderId",
+                                  params: { orderId: o.id },
+                                })
+                              }
+                            >
+                              <Eye className="h-4 w-4 ml-2" />
+                              عرض الطلب
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              disabled={o.status === "confirmed"}
+                              onClick={() => updateStatus(o.id, "confirmed")}
+                            >
+                              <CheckCircle2 className="h-4 w-4 ml-2" />
+                              موافقة
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={o.status === "preparing"}
+                              onClick={() => updateStatus(o.id, "preparing")}
+                            >
+                              <Package className="h-4 w-4 ml-2" />
+                              قيد التحضير
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={o.status === "shipped"}
+                              onClick={() => updateStatus(o.id, "shipped")}
+                            >
+                              <Truck className="h-4 w-4 ml-2" />
+                              شحن
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={o.status === "delivered"}
+                              onClick={() => updateStatus(o.id, "delivered")}
+                            >
+                              <CheckCircle2 className="h-4 w-4 ml-2" />
+                              تم التسليم
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              disabled={o.status === "cancelled"}
+                              onClick={() => setCancelTarget(o.id)}
+                            >
+                              <XCircle className="h-4 w-4 ml-2" />
+                              إلغاء الطلب
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
                   );
                 })}
-              </div>
-            </Card>
-          ))
-        )}
-      </div>
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
-      <AlertDialog open={cancelTarget !== null} onOpenChange={(open) => !open && setCancelTarget(null)}>
-        <AlertDialogContent>
+      <AlertDialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
+        <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
             <AlertDialogTitle>إلغاء الطلب</AlertDialogTitle>
-            <AlertDialogDescription>هل أنت متأكد أنك تريد إلغاء هذا الطلب؟</AlertDialogDescription>
+            <AlertDialogDescription>
+              هل أنت متأكد من إلغاء هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء بسهولة.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>تراجع</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
-                if (cancelTarget) {
-                  const id = cancelTarget;
-                  setCancelTarget(null);
-                  quickUpdate(id, "cancelled");
-                }
+                if (cancelTarget) updateStatus(cancelTarget, "cancelled");
+                setCancelTarget(null);
               }}
             >
               نعم، ألغِ الطلب
