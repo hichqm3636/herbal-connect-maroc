@@ -1,0 +1,1 @@
+DELETE FROM public.invoices WHERE id = 'fce6b1ad-911d-4408-a708-526025e75f9c' AND pdf_path IS NULL;
