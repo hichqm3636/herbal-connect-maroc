@@ -237,6 +237,11 @@ function ProductDetail() {
               <span className="text-sm text-muted-foreground">
                 المخزون: {product.stock}
               </span>
+              {product.minimum_order > 1 && (
+                <Badge variant="outline" className="text-[11px] font-medium border-warning/50 text-warning-foreground bg-warning/10">
+                  الحد الأدنى: {product.minimum_order}
+                </Badge>
+              )}
             </div>
           </div>
 
