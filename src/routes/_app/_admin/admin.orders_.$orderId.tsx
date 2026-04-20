@@ -225,6 +225,15 @@ function OrderDetails() {
     } else {
       setHistory([]);
     }
+
+    // Load existing invoice for this order (one-to-one).
+    const { data: inv } = await supabase
+      .from("invoices")
+      .select("id, invoice_number, status, issue_date, total_mad, pdf_path")
+      .eq("order_id", orderId)
+      .maybeSingle();
+    setInvoice(inv as typeof invoice);
+
     setLoading(false);
   };
 
