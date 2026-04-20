@@ -10,6 +10,7 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
 import { getUnitPrice, parseTiers, type PriceTier } from "@/lib/pricing";
+import { getHiddenProductIds } from "@/lib/productZones";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/products")({
@@ -35,11 +36,12 @@ interface Product {
 
 function ProductsPage() {
   const { addItem } = useCart();
-  const { partnerType } = useAuth();
+  const { partnerType, territoryId, isAdmin } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       const { data } = await supabase
         .from("products")
@@ -50,9 +52,22 @@ function ProductsPage() {
         ...p,
         price_tiers: parseTiers((p as { price_tiers?: unknown }).price_tiers),
       })) as Product[];
-      setProducts(rows);
+      // Admins see everything; distributors get zone-restricted products filtered out.
+      const visible = isAdmin
+        ? rows
+        : await (async () => {
+            const hidden = await getHiddenProductIds(
+              rows.map((r) => r.id),
+              territoryId,
+            );
+            return rows.filter((r) => !hidden.has(r.id));
+          })();
+      if (!cancelled) setProducts(visible);
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [territoryId, isAdmin]);
 
   const filtered = useMemo(
     () =>
