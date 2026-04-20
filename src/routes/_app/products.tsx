@@ -186,9 +186,9 @@ function ProductsPage() {
                         </span>
                       )}
                       {p.minimum_order > 1 && (
-                        <span className="text-[10px] text-muted-foreground mt-0.5">
+                        <Badge variant="outline" className="mt-1 w-fit text-[10px] font-medium border-warning/50 text-warning-foreground bg-warning/10">
                           الحد الأدنى: {p.minimum_order}
-                        </span>
+                        </Badge>
                       )}
                     </div>
                     <Button size="sm" onClick={() => addToCart(p)} className="gap-1">
