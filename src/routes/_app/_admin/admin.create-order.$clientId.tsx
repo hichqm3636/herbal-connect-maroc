@@ -134,13 +134,16 @@ function CreateOrderForClient() {
     setSubmitting(true);
     const { data: created, error } = await supabase
       .from("orders")
-      .insert({
-        distributor_id: client.id,
-        company_id: client.company_id,
-        total_mad: total,
-        status: "pending",
-        notes: "أُنشئ من قبل الإدارة نيابةً عن العميل",
-      })
+      .insert([
+        {
+          distributor_id: client.id,
+          company_id: client.company_id,
+          total_mad: total,
+          status: "pending",
+          notes: "أُنشئ من قبل الإدارة نيابةً عن العميل",
+          order_number: `TMP-${Date.now()}`,
+        },
+      ])
       .select("id")
       .single();
     if (error || !created) {
