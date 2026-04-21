@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Pencil, Trash2, Tag } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Tag, Globe } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,7 @@ interface PricingTier {
   name: string;
   base_discount_percent: number;
   created_at: string;
+  company_id: string | null;
 }
 
 function SuperAdminPricingTiers() {
@@ -52,7 +53,8 @@ function SuperAdminPricingTiers() {
     setLoading(true);
     const { data } = await supabase
       .from("pricing_tiers")
-      .select("id, name, base_discount_percent, created_at")
+      .select("id, name, base_discount_percent, created_at, company_id")
+      .order("company_id", { ascending: true, nullsFirst: true })
       .order("base_discount_percent", { ascending: true });
     setTiers((data ?? []) as PricingTier[]);
     setLoading(false);
@@ -154,6 +156,12 @@ function SuperAdminPricingTiers() {
                       <Tag className="h-3 w-3" />
                       {t.name}
                     </Badge>
+                    {t.company_id === null && (
+                      <Badge className="bg-accent/20 text-accent-foreground border border-accent/40 hover:bg-accent/30 gap-1">
+                        <Globe className="h-3 w-3" />
+                        عالمية
+                      </Badge>
+                    )}
                   </div>
                   <p className="mt-3 text-2xl font-bold text-primary">
                     {t.base_discount_percent}%
