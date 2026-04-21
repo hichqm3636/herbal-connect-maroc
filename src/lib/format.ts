@@ -1,10 +1,16 @@
+// Moroccan format: Western digits, space thousands, comma decimal, "MAD" suffix.
+// Example: 12 345,67 MAD
+const MAD_FORMATTER = new Intl.NumberFormat("fr-MA", {
+  style: "currency",
+  currency: "MAD",
+  currencyDisplay: "code",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 export function formatMAD(value: number | string | null | undefined): string {
   const n = typeof value === "string" ? Number(value) : (value ?? 0);
-  return new Intl.NumberFormat("ar-MA", {
-    style: "currency",
-    currency: "MAD",
-    maximumFractionDigits: 2,
-  }).format(Number.isFinite(n) ? n : 0);
+  return MAD_FORMATTER.format(Number.isFinite(n) ? n : 0);
 }
 
 export function formatDateAr(value: string | Date): string {
