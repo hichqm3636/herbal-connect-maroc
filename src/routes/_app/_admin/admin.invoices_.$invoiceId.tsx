@@ -1,13 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, CalendarIcon, CheckCircle2, Download, Loader2 } from "lucide-react";
-import { format } from "date-fns";
+import { ArrowRight, Download, FileText, Loader2, Plus, Receipt } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { RecordPaymentDialog } from "@/components/RecordPaymentDialog";
 import {
   Select,
   SelectContent,
