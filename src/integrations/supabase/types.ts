@@ -137,6 +137,57 @@ export type Database = {
           },
         ]
       }
+      company_subscriptions: {
+        Row: {
+          company_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan_id: string
+          started_at: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_id: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_subscriptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       distributor_territories: {
         Row: {
           company_id: string
@@ -354,6 +405,64 @@ export type Database = {
           },
         ]
       }
+      invoice_items: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          product_id: string | null
+          quantity: number
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id: string
+          product_id?: string | null
+          quantity: number
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          product_id?: string | null
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_sequences: {
         Row: {
           company_id: string
@@ -388,11 +497,13 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string | null
+          currency: string
           distributor_id: string
           due_date: string | null
           id: string
           invoice_number: string
           issue_date: string
+          issued_at: string | null
           notes: string | null
           order_id: string
           paid_at: string | null
@@ -409,11 +520,13 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by?: string | null
+          currency?: string
           distributor_id: string
           due_date?: string | null
           id?: string
           invoice_number: string
           issue_date?: string
+          issued_at?: string | null
           notes?: string | null
           order_id: string
           paid_at?: string | null
@@ -430,11 +543,13 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string | null
+          currency?: string
           distributor_id?: string
           due_date?: string | null
           id?: string
           invoice_number?: string
           issue_date?: string
+          issued_at?: string | null
           notes?: string | null
           order_id?: string
           paid_at?: string | null
@@ -667,6 +782,60 @@ export type Database = {
             columns: ["distributor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          invoice_id: string
+          paid_at: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_reference: string | null
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          invoice_id: string
+          paid_at?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          payment_reference?: string | null
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          invoice_id?: string
+          paid_at?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          payment_reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
         ]
@@ -1033,6 +1202,48 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          active: boolean
+          created_at: string
+          currency: string
+          features: Json
+          id: string
+          max_clients: number | null
+          max_products: number | null
+          max_users: number | null
+          monthly_price: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          features?: Json
+          id?: string
+          max_clients?: number | null
+          max_products?: number | null
+          max_users?: number | null
+          monthly_price?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          features?: Json
+          id?: string
+          max_clients?: number | null
+          max_products?: number | null
+          max_users?: number | null
+          monthly_price?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       territories: {
         Row: {
           city: string | null
@@ -1219,7 +1430,7 @@ export type Database = {
         | "adjustment"
         | "transfer"
         | "return"
-      invoice_status: "draft" | "issued" | "paid" | "cancelled"
+      invoice_status: "draft" | "issued" | "paid" | "cancelled" | "overdue"
       order_status:
         | "pending"
         | "confirmed"
@@ -1233,6 +1444,13 @@ export type Database = {
         | "distributor"
         | "master_distributor"
         | "gym"
+      payment_method: "cash" | "bank_transfer" | "card" | "stripe" | "manual"
+      subscription_status:
+        | "trial"
+        | "active"
+        | "past_due"
+        | "cancelled"
+        | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1384,7 +1602,7 @@ export const Constants = {
         "transfer",
         "return",
       ],
-      invoice_status: ["draft", "issued", "paid", "cancelled"],
+      invoice_status: ["draft", "issued", "paid", "cancelled", "overdue"],
       order_status: [
         "pending",
         "confirmed",
@@ -1399,6 +1617,14 @@ export const Constants = {
         "distributor",
         "master_distributor",
         "gym",
+      ],
+      payment_method: ["cash", "bank_transfer", "card", "stripe", "manual"],
+      subscription_status: [
+        "trial",
+        "active",
+        "past_due",
+        "cancelled",
+        "expired",
       ],
     },
   },
