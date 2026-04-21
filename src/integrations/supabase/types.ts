@@ -183,6 +183,177 @@ export type Database = {
           },
         ]
       }
+      inventory_events: {
+        Row: {
+          company_id: string
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          product_id: string | null
+          warehouse_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          product_id?: string | null
+          warehouse_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          product_id?: string | null
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_events_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_levels: {
+        Row: {
+          company_id: string
+          id: string
+          product_id: string
+          quantity_available: number
+          quantity_on_hand: number
+          quantity_reserved: number
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          company_id: string
+          id?: string
+          product_id: string
+          quantity_available?: number
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          company_id?: string
+          id?: string
+          product_id?: string
+          quantity_available?: number
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_levels_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_levels_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_levels_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_movements: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          metadata: Json
+          movement_type: Database["public"]["Enums"]["inventory_movement_type"]
+          product_id: string
+          quantity: number
+          reference_id: string | null
+          reference_type: string | null
+          warehouse_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          movement_type: Database["public"]["Enums"]["inventory_movement_type"]
+          product_id: string
+          quantity: number
+          reference_id?: string | null
+          reference_type?: string | null
+          warehouse_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          metadata?: Json
+          movement_type?: Database["public"]["Enums"]["inventory_movement_type"]
+          product_id?: string
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_sequences: {
         Row: {
           company_id: string
@@ -932,6 +1103,44 @@ export type Database = {
           },
         ]
       }
+      warehouses: {
+        Row: {
+          city: string | null
+          company_id: string
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -949,6 +1158,10 @@ export type Database = {
       admin_exists: { Args: never; Returns: boolean }
       claim_first_admin: { Args: never; Returns: boolean }
       current_company_id: { Args: never; Returns: string }
+      default_warehouse_for_company: {
+        Args: { _company_id: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -998,6 +1211,14 @@ export type Database = {
         | "success_builder"
         | "supervisor"
         | "world_team"
+      inventory_movement_type:
+        | "purchase"
+        | "sale"
+        | "reservation"
+        | "release"
+        | "adjustment"
+        | "transfer"
+        | "return"
       invoice_status: "draft" | "issued" | "paid" | "cancelled"
       order_status:
         | "pending"
@@ -1153,6 +1374,15 @@ export const Constants = {
         "success_builder",
         "supervisor",
         "world_team",
+      ],
+      inventory_movement_type: [
+        "purchase",
+        "sale",
+        "reservation",
+        "release",
+        "adjustment",
+        "transfer",
+        "return",
       ],
       invoice_status: ["draft", "issued", "paid", "cancelled"],
       order_status: [
