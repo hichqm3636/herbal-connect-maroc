@@ -1,6 +1,6 @@
-// Moroccan format: Western digits, space thousands, comma decimal, "MAD" suffix.
-// Example: 12 345,67 MAD
-const MAD_FORMATTER = new Intl.NumberFormat("fr-MA", {
+// Moroccan business format: comma thousands, dot decimal, "MAD" suffix.
+// Example: 12,345.67 MAD
+const MAD_FORMATTER = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "MAD",
   currencyDisplay: "code",
