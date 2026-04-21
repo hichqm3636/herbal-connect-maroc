@@ -503,7 +503,7 @@ export type Database = {
       pricing_tiers: {
         Row: {
           base_discount_percent: number
-          company_id: string
+          company_id: string | null
           created_at: string
           id: string
           name: string
@@ -511,7 +511,7 @@ export type Database = {
         }
         Insert: {
           base_discount_percent?: number
-          company_id: string
+          company_id?: string | null
           created_at?: string
           id?: string
           name: string
@@ -519,7 +519,7 @@ export type Database = {
         }
         Update: {
           base_discount_percent?: number
-          company_id?: string
+          company_id?: string | null
           created_at?: string
           id?: string
           name?: string
