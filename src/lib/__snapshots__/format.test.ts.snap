@@ -1,0 +1,31 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`formatMAD > formats a representative range of numeric inputs 1`] = `
+{
+  "-1": "-1.00 MAD",
+  "-1234.5": "-1,234.50 MAD",
+  "-Infinity": "0.00 MAD",
+  "0": "0.00 MAD",
+  "0.1": "0.10 MAD",
+  "0.5": "0.50 MAD",
+  "0.99": "0.99 MAD",
+  "1": "1.00 MAD",
+  "1.005": "1.01 MAD",
+  "100": "100.00 MAD",
+  "1000": "1,000.00 MAD",
+  "1000000": "1,000,000.00 MAD",
+  "12.34": "12.34 MAD",
+  "1234.5": "1,234.50 MAD",
+  "1234.56": "1,234.56 MAD",
+  "1234.567": "1,234.57 MAD",
+  "12345.67": "12,345.67 MAD",
+  "1234567.89": "1,234,567.89 MAD",
+  "9.999": "10.00 MAD",
+  "999.9": "999.90 MAD",
+  "999999.99": "999,999.99 MAD",
+  "Infinity": "0.00 MAD",
+  "NaN": "0.00 MAD",
+  "null": "0.00 MAD",
+  "undefined": "0.00 MAD",
+}
+`;
