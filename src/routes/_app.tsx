@@ -57,7 +57,6 @@ function AppLayout() {
           <AppSidebar />
           <SidebarInset className="flex flex-col min-w-0">
             <AppHeader />
-            <CartSheet />
             <main className="flex-1 p-4 md:p-6 lg:p-8 min-w-0 overflow-x-hidden">
               <Outlet />
             </main>
