@@ -186,7 +186,9 @@ function SuperAdminDashboard() {
 
       const adminUserByCompany = new Map<string, string>();
       (adminRolesRes.data ?? []).forEach((r) => {
-        if (!adminUserByCompany.has(r.company_id)) adminUserByCompany.set(r.company_id, r.user_id);
+        if (r.company_id && !adminUserByCompany.has(r.company_id)) {
+          adminUserByCompany.set(r.company_id, r.user_id);
+        }
       });
 
       const adminUserIds = Array.from(new Set(Array.from(adminUserByCompany.values())));
