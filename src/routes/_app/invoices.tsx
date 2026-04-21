@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { FileText, Download, Loader2 } from "lucide-react";
+import { FileText, Download, Loader2, Filter } from "lucide-react";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui/toggle-group";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,6 +52,7 @@ function InvoicesPage() {
   const { user } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [statusFilters, setStatusFilters] = useState<string[]>([]);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
