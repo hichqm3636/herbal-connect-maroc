@@ -10,7 +10,7 @@ export function AppHeader() {
   const initial = name.charAt(0).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-2 sm:gap-3 border-b bg-background/95 backdrop-blur px-3 sm:px-4">
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center gap-2 sm:gap-3 overflow-hidden border-b bg-background/95 backdrop-blur ps-3 pe-3 sm:ps-4 sm:pe-4">
       <SidebarTrigger className="text-foreground hover:text-primary shrink-0" />
       <Separator orientation="vertical" className="h-6 hidden sm:block" />
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
