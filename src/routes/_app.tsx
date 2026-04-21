@@ -1,9 +1,9 @@
 import { createFileRoute, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { CartButton, CartSheet } from "@/components/CartSheet";
+import { AppHeader } from "@/components/AppHeader";
+import { CartSheet } from "@/components/CartSheet";
 import { useAuth } from "@/hooks/useAuth";
 import { CartProvider } from "@/hooks/useCart";
 import { Leaf } from "lucide-react";
