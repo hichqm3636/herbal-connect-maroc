@@ -36,6 +36,7 @@ interface PricingTier {
   name: string;
   base_discount_percent: number;
   created_at: string;
+  company_id: string | null;
 }
 
 function SuperAdminPricingTiers() {
@@ -52,7 +53,8 @@ function SuperAdminPricingTiers() {
     setLoading(true);
     const { data } = await supabase
       .from("pricing_tiers")
-      .select("id, name, base_discount_percent, created_at")
+      .select("id, name, base_discount_percent, created_at, company_id")
+      .order("company_id", { ascending: true, nullsFirst: true })
       .order("base_discount_percent", { ascending: true });
     setTiers((data ?? []) as PricingTier[]);
     setLoading(false);
