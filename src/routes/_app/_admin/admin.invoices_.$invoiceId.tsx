@@ -1,13 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, CalendarIcon, CheckCircle2, Download, Loader2 } from "lucide-react";
-import { format } from "date-fns";
+import { ArrowRight, Download, FileText, Loader2, Plus, Receipt } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { RecordPaymentDialog } from "@/components/RecordPaymentDialog";
 import {
   Select,
   SelectContent,
@@ -16,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
+
 import { formatMAD, formatDateAr } from "@/lib/format";
 import {
   INVOICE_STATUS_CLASSES,
@@ -62,27 +60,55 @@ interface Invoice {
   } | null;
 }
 
+interface Payment {
+  id: string;
+  amount: number;
+  payment_method: string;
+  payment_reference: string | null;
+  paid_at: string;
+}
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cash: "نقداً",
+  bank_transfer: "تحويل بنكي",
+  card: "بطاقة بنكية",
+  stripe: "Stripe",
+  manual: "يدوي",
+};
+
+function isStoragePath(s: string) {
+  // Heuristic: our uploads look like "<companyId>/<invoiceId>/<ts>.<ext>"
+  return /^[0-9a-f-]{36}\/[0-9a-f-]{36}\//.test(s);
+}
+
 function InvoiceDetail() {
   const { invoiceId } = Route.useParams();
   const navigate = useNavigate();
   const [inv, setInv] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
-  const [paymentDate, setPaymentDate] = useState<Date>(new Date());
-  const [paying, setPaying] = useState(false);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [paymentOpen, setPaymentOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
     const { data } = await supabase
       .from("invoices")
       .select(
-        "id, invoice_number, status, issue_date, due_date, subtotal_mad, vat_rate, vat_amount_mad, total_mad, payment_method, notes, pdf_path, paid_at, order_id, " +
+        "id, invoice_number, status, issue_date, due_date, subtotal_mad, vat_rate, vat_amount_mad, total_mad, payment_method, notes, pdf_path, paid_at, order_id, company_id, " +
           "orders(order_number, order_items(quantity, unit_price_mad, products(name_ar, sku))), " +
           "profiles(full_name, phone, city, territories(name))",
       )
       .eq("id", invoiceId)
       .maybeSingle();
     setInv((data as unknown as Invoice) ?? null);
+
+    const { data: pays } = await supabase
+      .from("payments")
+      .select("id, amount, payment_method, payment_reference, paid_at")
+      .eq("invoice_id", invoiceId)
+      .order("paid_at", { ascending: false });
+    setPayments((pays as Payment[]) ?? []);
     setLoading(false);
   };
 
@@ -105,23 +131,15 @@ function InvoiceDetail() {
     load();
   };
 
-  const markAsPaid = async () => {
-    if (!inv) return;
-    setPaying(true);
-    const { error } = await supabase
-      .from("invoices")
-      .update({
-        status: "paid",
-        paid_at: paymentDate.toISOString(),
-      })
-      .eq("id", inv.id);
-    setPaying(false);
-    if (error) {
-      toast.error("تعذر تسجيل الدفع");
+  const downloadReference = async (path: string) => {
+    const { data, error } = await supabase.storage
+      .from("payment-references")
+      .createSignedUrl(path, 60);
+    if (error || !data?.signedUrl) {
+      toast.error("تعذر فتح الإيصال");
       return;
     }
-    toast.success("تم تسجيل الدفع");
-    load();
+    window.open(data.signedUrl, "_blank", "noopener");
   };
 
   const handleDownload = async () => {
@@ -206,48 +224,95 @@ function InvoiceDetail() {
         </div>
       </div>
 
-      {inv.status !== "paid" && inv.status !== "cancelled" && (
-        <Card className="p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-            <h2 className="font-semibold text-sm">تسجيل الدفع</h2>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "sm:w-56 justify-start text-right font-normal",
-                    !paymentDate && "text-muted-foreground",
-                  )}
-                >
-                  <CalendarIcon className="ml-2 h-4 w-4" />
-                  {paymentDate ? format(paymentDate, "yyyy-MM-dd") : "اختر تاريخ الدفع"}
+      {(() => {
+        const paidSum = payments.reduce((s, p) => s + Number(p.amount), 0);
+        const due = Math.max(0, Number(inv.total_mad) - paidSum);
+        return (
+          <Card className="p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-muted-foreground" />
+                <h2 className="font-semibold text-sm">الدفعات</h2>
+              </div>
+              {inv.status !== "cancelled" && due > 0 && (
+                <Button size="sm" onClick={() => setPaymentOpen(true)}>
+                  <Plus className="h-4 w-4 ml-1" />
+                  تسجيل دفعة
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={paymentDate}
-                  onSelect={(d) => d && setPaymentDate(d)}
-                  disabled={(date) => date > new Date()}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-            <Button onClick={markAsPaid} disabled={paying}>
-              {paying ? (
-                <Loader2 className="h-4 w-4 animate-spin ml-1" />
-              ) : (
-                <CheckCircle2 className="h-4 w-4 ml-1" />
               )}
-              تأكيد الدفع
-            </Button>
-          </div>
-        </Card>
-      )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="rounded-md border p-2">
+                <p className="text-muted-foreground">الإجمالي</p>
+                <p className="font-semibold text-sm">{formatMAD(inv.total_mad)}</p>
+              </div>
+              <div className="rounded-md border p-2">
+                <p className="text-muted-foreground">المدفوع</p>
+                <p className="font-semibold text-sm text-green-600">{formatMAD(paidSum)}</p>
+              </div>
+              <div className="rounded-md border p-2">
+                <p className="text-muted-foreground">المتبقي</p>
+                <p className="font-semibold text-sm">{formatMAD(due)}</p>
+              </div>
+            </div>
+
+            {payments.length > 0 ? (
+              <div className="divide-y border rounded-md">
+                {payments.map((p) => {
+                  const ref = p.payment_reference ?? "";
+                  const parts = ref.split(" | ");
+                  const path = parts.find(isStoragePath);
+                  const text = parts.filter((x) => !isStoragePath(x)).join(" | ");
+                  return (
+                    <div key={p.id} className="p-3 flex items-center justify-between gap-3">
+                      <div className="min-w-0 space-y-0.5">
+                        <p className="text-sm font-medium">
+                          {formatMAD(p.amount)}
+                          <span className="text-xs text-muted-foreground mr-2">
+                            · {PAYMENT_METHOD_LABELS[p.payment_method] ?? p.payment_method}
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDateAr(p.paid_at)}
+                          {text && <span className="mr-2" dir="ltr">— {text}</span>}
+                        </p>
+                      </div>
+                      {path && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => downloadReference(path)}
+                        >
+                          <FileText className="h-4 w-4 ml-1" />
+                          الإيصال
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-3">
+                لم يتم تسجيل أي دفعة بعد
+              </p>
+            )}
+
+            <RecordPaymentDialog
+              open={paymentOpen}
+              onOpenChange={setPaymentOpen}
+              invoice={{
+                id: inv.id,
+                invoice_number: inv.invoice_number,
+                company_id: (inv as unknown as { company_id: string }).company_id,
+                total_mad: inv.total_mad,
+              }}
+              amountDue={due}
+              onRecorded={load}
+            />
+          </Card>
+        );
+      })()}
 
       <Card className="p-4 space-y-2">
         <h2 className="font-semibold text-sm text-muted-foreground">العميل</h2>
