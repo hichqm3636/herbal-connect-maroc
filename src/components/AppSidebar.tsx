@@ -66,6 +66,7 @@ const distributorTopItems: NavItem[] = [
   { title: "المنتجات", url: "/products", icon: ShoppingBag },
   { title: "طلب سريع", url: "/quick-order", icon: Zap },
   { title: "طلباتي", url: "/orders", icon: ClipboardList },
+  { title: "فواتيري", url: "/invoices", icon: Receipt },
   { title: "نقاط الولاء", url: "/loyalty", icon: Award },
   { title: "الإعدادات", url: "/settings", icon: Settings },
 ];
