@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
+
 import { formatMAD, formatDateAr } from "@/lib/format";
 import {
   INVOICE_STATUS_CLASSES,
