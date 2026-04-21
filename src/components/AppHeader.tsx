@@ -1,8 +1,7 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { CartButton } from "@/components/CartSheet";
 import { useAuth } from "@/hooks/useAuth";
-
 export function AppHeader() {
   const { company } = useAuth();
   const name = company?.display_name || company?.name || "DistribHub";
