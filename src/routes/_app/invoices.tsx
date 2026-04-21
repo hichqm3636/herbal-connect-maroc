@@ -326,6 +326,26 @@ function InvoicesPage() {
         )}
       </Card>
 
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-sm text-muted-foreground">
+        <span>
+          عدد الفواتير ضمن النطاق:{" "}
+          <span className="font-semibold text-foreground">
+            {filteredInvoices.length}
+          </span>
+          {invoices.length !== filteredInvoices.length && (
+            <span className="text-xs"> / {invoices.length}</span>
+          )}
+        </span>
+        <span>
+          الإجمالي:{" "}
+          <span className="font-semibold text-foreground">
+            {formatMAD(
+              filteredInvoices.reduce((s, i) => s + Number(i.total_mad), 0),
+            )}
+          </span>
+        </span>
+      </div>
+
       {selected.size > 0 && (
         <Card className="p-3 flex items-center justify-between gap-3 bg-accent/30">
           <div className="text-sm">
