@@ -36,6 +36,8 @@ import { toast } from "sonner";
 
 export function CartButton() {
   const { totalQty, openCart } = useCart();
+  const label =
+    totalQty > 0 ? `فتح السلة، ${totalQty} عنصر` : "فتح السلة، فارغة";
   return (
     <Button
       type="button"
@@ -43,14 +45,21 @@ export function CartButton() {
       size="icon"
       className="relative"
       onClick={openCart}
-      aria-label="فتح السلة"
+      aria-label={label}
+      aria-haspopup="dialog"
     >
-      <ShoppingCart className="h-5 w-5" />
+      <ShoppingCart className="h-5 w-5" aria-hidden="true" />
       {totalQty > 0 && (
-        <span className="absolute -top-1 -right-1 bg-warning text-warning-foreground text-[10px] font-bold rounded-full h-5 min-w-5 px-1 flex items-center justify-center">
+        <span
+          className="absolute -top-1 -end-1 bg-warning text-warning-foreground text-[10px] font-bold rounded-full h-5 min-w-5 px-1 flex items-center justify-center"
+          aria-hidden="true"
+        >
           {totalQty}
         </span>
       )}
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
+        {totalQty} عنصر في السلة
+      </span>
     </Button>
   );
 }
