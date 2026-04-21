@@ -19,6 +19,7 @@ import { Route as AppQuickOrderRouteImport } from './routes/_app/quick-order'
 import { Route as AppProductsRouteImport } from './routes/_app/products'
 import { Route as AppOrdersRouteImport } from './routes/_app/orders'
 import { Route as AppLoyaltyRouteImport } from './routes/_app/loyalty'
+import { Route as AppInvoicesRouteImport } from './routes/_app/invoices'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppAdminRouteImport } from './routes/_app/_admin'
 import { Route as AppSuperAdminIndexRouteImport } from './routes/_app/super-admin/index'
@@ -92,6 +93,11 @@ const AppOrdersRoute = AppOrdersRouteImport.update({
 const AppLoyaltyRoute = AppLoyaltyRouteImport.update({
   id: '/loyalty',
   path: '/loyalty',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInvoicesRoute = AppInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -234,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AppDashboardRoute
+  '/invoices': typeof AppInvoicesRoute
   '/loyalty': typeof AppLoyaltyRoute
   '/orders': typeof AppOrdersRoute
   '/products': typeof AppProductsRoute
@@ -269,6 +276,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AppDashboardRoute
+  '/invoices': typeof AppInvoicesRoute
   '/loyalty': typeof AppLoyaltyRoute
   '/orders': typeof AppOrdersRoute
   '/products': typeof AppProductsRoute
@@ -306,6 +314,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_app/_admin': typeof AppAdminRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/invoices': typeof AppInvoicesRoute
   '/_app/loyalty': typeof AppLoyaltyRoute
   '/_app/orders': typeof AppOrdersRoute
   '/_app/products': typeof AppProductsRoute
@@ -343,6 +352,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/dashboard'
+    | '/invoices'
     | '/loyalty'
     | '/orders'
     | '/products'
@@ -378,6 +388,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/dashboard'
+    | '/invoices'
     | '/loyalty'
     | '/orders'
     | '/products'
@@ -414,6 +425,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_app/_admin'
     | '/_app/dashboard'
+    | '/_app/invoices'
     | '/_app/loyalty'
     | '/_app/orders'
     | '/_app/products'
@@ -522,6 +534,13 @@ declare module '@tanstack/react-router' {
       path: '/loyalty'
       fullPath: '/loyalty'
       preLoaderRoute: typeof AppLoyaltyRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/invoices': {
+      id: '/_app/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof AppInvoicesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
@@ -769,6 +788,7 @@ const AppSuperAdminRouteWithChildren = AppSuperAdminRoute._addFileChildren(
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppDashboardRoute: typeof AppDashboardRoute
+  AppInvoicesRoute: typeof AppInvoicesRoute
   AppLoyaltyRoute: typeof AppLoyaltyRoute
   AppOrdersRoute: typeof AppOrdersRoute
   AppProductsRoute: typeof AppProductsRoute
@@ -781,6 +801,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
   AppDashboardRoute: AppDashboardRoute,
+  AppInvoicesRoute: AppInvoicesRoute,
   AppLoyaltyRoute: AppLoyaltyRoute,
   AppOrdersRoute: AppOrdersRoute,
   AppProductsRoute: AppProductsRoute,
