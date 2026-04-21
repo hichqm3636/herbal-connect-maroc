@@ -1,13 +1,17 @@
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { CartButton } from "@/components/CartSheet";
 import { useAuth } from "@/hooks/useAuth";
-
 export function AppHeader() {
   const { company } = useAuth();
+  const { open, openMobile, isMobile } = useSidebar();
+  const isOpen = isMobile ? openMobile : open;
   const name = company?.display_name || company?.name || "DistribHub";
   const logo = company?.logo_url;
   const initial = name.charAt(0).toUpperCase();
+  const sidebarLabel = isOpen
+    ? "إغلاق الشريط الجانبي"
+    : "فتح الشريط الجانبي";
 
   return (
     <header
@@ -17,7 +21,10 @@ export function AppHeader() {
     >
       <SidebarTrigger
         className="text-foreground hover:text-primary shrink-0"
-        aria-label="فتح أو إغلاق الشريط الجانبي"
+        aria-label={sidebarLabel}
+        aria-expanded={isOpen}
+        aria-controls="app-sidebar"
+        title={sidebarLabel}
       />
       <Separator
         orientation="vertical"
