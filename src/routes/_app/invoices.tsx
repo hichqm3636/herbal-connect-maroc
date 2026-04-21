@@ -242,6 +242,90 @@ function InvoicesPage() {
         )}
       </Card>
 
+      <Card className="p-3 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <CalendarIcon className="h-4 w-4" />
+          نطاق التاريخ
+        </div>
+        <ToggleGroup
+          type="single"
+          value={dateField}
+          onValueChange={(v) => v && setDateField(v as "issue_date" | "due_date")}
+        >
+          <ToggleGroupItem value="issue_date" size="sm">
+            الإصدار
+          </ToggleGroupItem>
+          <ToggleGroupItem value="due_date" size="sm">
+            الاستحقاق
+          </ToggleGroupItem>
+        </ToggleGroup>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "justify-start font-normal",
+                !dateFrom && "text-muted-foreground",
+              )}
+            >
+              <CalendarIcon className="ms-1 h-4 w-4" />
+              {dateFrom ? format(dateFrom, "yyyy-MM-dd") : "من"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={dateFrom}
+              onSelect={setDateFrom}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "justify-start font-normal",
+                !dateTo && "text-muted-foreground",
+              )}
+            >
+              <CalendarIcon className="ms-1 h-4 w-4" />
+              {dateTo ? format(dateTo, "yyyy-MM-dd") : "إلى"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={dateTo}
+              onSelect={setDateTo}
+              disabled={(d) => (dateFrom ? d < dateFrom : false)}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+
+        {(dateFrom || dateTo) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setDateFrom(undefined);
+              setDateTo(undefined);
+            }}
+            className="ms-auto"
+          >
+            مسح التاريخ
+          </Button>
+        )}
+      </Card>
+
       {selected.size > 0 && (
         <Card className="p-3 flex items-center justify-between gap-3 bg-accent/30">
           <div className="text-sm">
