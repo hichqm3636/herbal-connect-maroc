@@ -60,27 +60,55 @@ interface Invoice {
   } | null;
 }
 
+interface Payment {
+  id: string;
+  amount: number;
+  payment_method: string;
+  payment_reference: string | null;
+  paid_at: string;
+}
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cash: "نقداً",
+  bank_transfer: "تحويل بنكي",
+  card: "بطاقة بنكية",
+  stripe: "Stripe",
+  manual: "يدوي",
+};
+
+function isStoragePath(s: string) {
+  // Heuristic: our uploads look like "<companyId>/<invoiceId>/<ts>.<ext>"
+  return /^[0-9a-f-]{36}\/[0-9a-f-]{36}\//.test(s);
+}
+
 function InvoiceDetail() {
   const { invoiceId } = Route.useParams();
   const navigate = useNavigate();
   const [inv, setInv] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
-  const [paymentDate, setPaymentDate] = useState<Date>(new Date());
-  const [paying, setPaying] = useState(false);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [paymentOpen, setPaymentOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
     const { data } = await supabase
       .from("invoices")
       .select(
-        "id, invoice_number, status, issue_date, due_date, subtotal_mad, vat_rate, vat_amount_mad, total_mad, payment_method, notes, pdf_path, paid_at, order_id, " +
+        "id, invoice_number, status, issue_date, due_date, subtotal_mad, vat_rate, vat_amount_mad, total_mad, payment_method, notes, pdf_path, paid_at, order_id, company_id, " +
           "orders(order_number, order_items(quantity, unit_price_mad, products(name_ar, sku))), " +
           "profiles(full_name, phone, city, territories(name))",
       )
       .eq("id", invoiceId)
       .maybeSingle();
     setInv((data as unknown as Invoice) ?? null);
+
+    const { data: pays } = await supabase
+      .from("payments")
+      .select("id, amount, payment_method, payment_reference, paid_at")
+      .eq("invoice_id", invoiceId)
+      .order("paid_at", { ascending: false });
+    setPayments((pays as Payment[]) ?? []);
     setLoading(false);
   };
 
@@ -103,23 +131,15 @@ function InvoiceDetail() {
     load();
   };
 
-  const markAsPaid = async () => {
-    if (!inv) return;
-    setPaying(true);
-    const { error } = await supabase
-      .from("invoices")
-      .update({
-        status: "paid",
-        paid_at: paymentDate.toISOString(),
-      })
-      .eq("id", inv.id);
-    setPaying(false);
-    if (error) {
-      toast.error("تعذر تسجيل الدفع");
+  const downloadReference = async (path: string) => {
+    const { data, error } = await supabase.storage
+      .from("payment-references")
+      .createSignedUrl(path, 60);
+    if (error || !data?.signedUrl) {
+      toast.error("تعذر فتح الإيصال");
       return;
     }
-    toast.success("تم تسجيل الدفع");
-    load();
+    window.open(data.signedUrl, "_blank", "noopener");
   };
 
   const handleDownload = async () => {
