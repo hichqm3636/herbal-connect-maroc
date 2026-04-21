@@ -158,23 +158,60 @@ function CreateCompanyDialog({
 
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.rpc("provision_company_with_admin", {
+      const payload = {
         _name: slug,
         _display_name: displayName.trim() || name.trim(),
         _admin_email: email,
         _admin_password: adminPassword,
         _admin_full_name: adminFullName.trim(),
         _brand_color: brandColor,
-      });
-      if (error) throw error;
+      };
+      console.log("[create-company] calling provision_company_with_admin", { ...payload, _admin_password: "***" });
 
+      const { data, error } = await supabase.rpc("provision_company_with_admin", payload);
+
+      if (error) {
+        // Surface every detail Supabase gives us
+        console.error("[create-company] Supabase RPC error:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          full: error,
+        });
+
+        const msg = error.message?.toLowerCase() ?? "";
+        let friendly = error.message || "تعذر إنشاء الشركة";
+
+        if (msg.includes("duplicate key") && msg.includes("companies_name")) {
+          friendly = `الاسم الداخلي "${slug}" مستخدم بالفعل. اختر اسمًا آخر.`;
+        } else if (msg.includes("duplicate key") && msg.includes("companies_slug")) {
+          friendly = `الـ slug "${slug}" مستخدم بالفعل.`;
+        } else if (msg.includes("مستخدم بالفعل") || (msg.includes("auth.users") && msg.includes("duplicate"))) {
+          friendly = `البريد ${email} مستخدم بالفعل في حساب آخر.`;
+        } else if (msg.includes("row-level security") || msg.includes("row level security") || msg.includes("permission denied")) {
+          friendly = "صلاحيات غير كافية: يجب أن تكون super admin لإنشاء شركة.";
+        } else if (msg.includes("foreign key")) {
+          friendly = `خطأ مرجعي في قاعدة البيانات: ${error.details || error.message}`;
+        } else if (msg.includes("only super admins")) {
+          friendly = "يُسمح فقط لمسؤولي المنصّة (super admin) بإنشاء شركات.";
+        }
+
+        const detailSuffix = error.details ? ` — ${error.details}` : error.hint ? ` — ${error.hint}` : "";
+        toast.error(friendly + detailSuffix);
+        return;
+      }
+
+      console.log("[create-company] success:", data);
       const companyId = (data as { company_id?: string } | null)?.company_id;
       toast.success(`تم إنشاء الشركة. معرّف: ${companyId}`);
       reset();
       onOpenChange(false);
       onCreated();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "تعذر إنشاء الشركة");
+      console.error("[create-company] Unexpected error:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`تعذر إنشاء الشركة: ${message}`);
     } finally {
       setSubmitting(false);
     }
