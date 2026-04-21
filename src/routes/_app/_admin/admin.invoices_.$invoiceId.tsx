@@ -241,12 +241,60 @@ function InvoiceDetail() {
                 <Receipt className="h-4 w-4 text-muted-foreground" />
                 <h2 className="font-semibold text-sm">الدفعات</h2>
               </div>
-              {inv.status !== "cancelled" && due > 0 && (
-                <Button size="sm" onClick={() => setPaymentOpen(true)}>
-                  <Plus className="h-4 w-4 ml-1" />
-                  تسجيل دفعة
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                {payments.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="outline">
+                        <Download className="h-4 w-4 ml-1" />
+                        تصدير
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() =>
+                          exportPaymentsCsv(
+                            {
+                              invoice_number: inv.invoice_number,
+                              client_name: inv.profiles?.full_name ?? null,
+                              total: Number(inv.total_mad),
+                              paid: paidSum,
+                              due,
+                            },
+                            payments,
+                          )
+                        }
+                      >
+                        <FileSpreadsheet className="h-4 w-4 ml-2" />
+                        CSV
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          exportPaymentsPdf(
+                            {
+                              invoice_number: inv.invoice_number,
+                              client_name: inv.profiles?.full_name ?? null,
+                              total: Number(inv.total_mad),
+                              paid: paidSum,
+                              due,
+                            },
+                            payments,
+                          )
+                        }
+                      >
+                        <FileText className="h-4 w-4 ml-2" />
+                        PDF
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                {inv.status !== "cancelled" && due > 0 && (
+                  <Button size="sm" onClick={() => setPaymentOpen(true)}>
+                    <Plus className="h-4 w-4 ml-1" />
+                    تسجيل دفعة
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2 text-xs">
