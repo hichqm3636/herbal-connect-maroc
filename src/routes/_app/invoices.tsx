@@ -347,10 +347,18 @@ function InvoicesPage() {
       </div>
 
       {selected.size > 0 && (
-        <Card className="p-3 flex items-center justify-between gap-3 bg-accent/30">
-          <div className="text-sm">
-            <span className="font-semibold">{totals.count}</span> محددة •{" "}
-            {formatMAD(totals.total)}
+        <Card className="p-3 flex flex-wrap items-center justify-between gap-3 bg-accent/30">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            <span>
+              فواتير محددة:{" "}
+              <span className="font-semibold">{totals.count}</span>
+            </span>
+            <span className="text-muted-foreground">•</span>
+            <span>
+              إجمالي المبلغ:{" "}
+              <span className="font-semibold">{formatMAD(totals.total)}</span>{" "}
+              <span className="text-xs text-muted-foreground">MAD</span>
+            </span>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
