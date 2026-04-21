@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Download, FileText, Loader2, Plus, Receipt } from "lucide-react";
+import { ArrowRight, Download, FileSpreadsheet, FileText, Loader2, Plus, Receipt } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 
 import { formatMAD, formatDateAr } from "@/lib/format";
@@ -22,6 +28,7 @@ import {
   downloadInvoicePdf,
   isInvoiceOverdue,
 } from "@/lib/invoices";
+import { exportPaymentsCsv, exportPaymentsPdf } from "@/lib/paymentsExport";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/_admin/admin/invoices_/$invoiceId")({
