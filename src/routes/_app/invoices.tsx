@@ -69,12 +69,32 @@ function InvoicesPage() {
     })();
   }, [user]);
 
+  const filteredInvoices = useMemo(
+    () =>
+      statusFilters.length === 0
+        ? invoices
+        : invoices.filter((i) => statusFilters.includes(i.status)),
+    [invoices, statusFilters],
+  );
+
   const allSelected =
-    invoices.length > 0 && selected.size === invoices.length;
+    filteredInvoices.length > 0 &&
+    filteredInvoices.every((i) => selected.has(i.id));
 
   const toggleAll = () => {
-    if (allSelected) setSelected(new Set());
-    else setSelected(new Set(invoices.map((i) => i.id)));
+    if (allSelected) {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        for (const i of filteredInvoices) next.delete(i.id);
+        return next;
+      });
+    } else {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        for (const i of filteredInvoices) next.add(i.id);
+        return next;
+      });
+    }
   };
 
   const toggleOne = (id: string) => {
