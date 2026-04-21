@@ -1,6 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { FileText, Download, Loader2, Filter } from "lucide-react";
+import { format } from "date-fns";
+import {
+  FileText,
+  Download,
+  Loader2,
+  Filter,
+  CalendarIcon,
+} from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -53,6 +67,11 @@ function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
+  const [dateField, setDateField] = useState<"issue_date" | "due_date">(
+    "issue_date",
+  );
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -69,13 +88,22 @@ function InvoicesPage() {
     })();
   }, [user]);
 
-  const filteredInvoices = useMemo(
-    () =>
-      statusFilters.length === 0
-        ? invoices
-        : invoices.filter((i) => statusFilters.includes(i.status)),
-    [invoices, statusFilters],
-  );
+  const filteredInvoices = useMemo(() => {
+    const fromTs = dateFrom ? new Date(dateFrom).setHours(0, 0, 0, 0) : null;
+    const toTs = dateTo ? new Date(dateTo).setHours(23, 59, 59, 999) : null;
+    return invoices.filter((i) => {
+      if (statusFilters.length > 0 && !statusFilters.includes(i.status))
+        return false;
+      const raw = i[dateField];
+      if (fromTs !== null || toTs !== null) {
+        if (!raw) return false;
+        const ts = new Date(raw).getTime();
+        if (fromTs !== null && ts < fromTs) return false;
+        if (toTs !== null && ts > toTs) return false;
+      }
+      return true;
+    });
+  }, [invoices, statusFilters, dateField, dateFrom, dateTo]);
 
   const allSelected =
     filteredInvoices.length > 0 &&
@@ -210,6 +238,90 @@ function InvoicesPage() {
             className="ms-auto"
           >
             مسح
+          </Button>
+        )}
+      </Card>
+
+      <Card className="p-3 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <CalendarIcon className="h-4 w-4" />
+          نطاق التاريخ
+        </div>
+        <ToggleGroup
+          type="single"
+          value={dateField}
+          onValueChange={(v) => v && setDateField(v as "issue_date" | "due_date")}
+        >
+          <ToggleGroupItem value="issue_date" size="sm">
+            الإصدار
+          </ToggleGroupItem>
+          <ToggleGroupItem value="due_date" size="sm">
+            الاستحقاق
+          </ToggleGroupItem>
+        </ToggleGroup>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "justify-start font-normal",
+                !dateFrom && "text-muted-foreground",
+              )}
+            >
+              <CalendarIcon className="ms-1 h-4 w-4" />
+              {dateFrom ? format(dateFrom, "yyyy-MM-dd") : "من"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={dateFrom}
+              onSelect={setDateFrom}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "justify-start font-normal",
+                !dateTo && "text-muted-foreground",
+              )}
+            >
+              <CalendarIcon className="ms-1 h-4 w-4" />
+              {dateTo ? format(dateTo, "yyyy-MM-dd") : "إلى"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={dateTo}
+              onSelect={setDateTo}
+              disabled={(d) => (dateFrom ? d < dateFrom : false)}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+
+        {(dateFrom || dateTo) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setDateFrom(undefined);
+              setDateTo(undefined);
+            }}
+            className="ms-auto"
+          >
+            مسح التاريخ
           </Button>
         )}
       </Card>
