@@ -1,6 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { FileText, Download, Loader2, Filter } from "lucide-react";
+import { format } from "date-fns";
+import {
+  FileText,
+  Download,
+  Loader2,
+  Filter,
+  CalendarIcon,
+} from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -53,6 +67,11 @@ function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
+  const [dateField, setDateField] = useState<"issue_date" | "due_date">(
+    "issue_date",
+  );
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -69,13 +88,22 @@ function InvoicesPage() {
     })();
   }, [user]);
 
-  const filteredInvoices = useMemo(
-    () =>
-      statusFilters.length === 0
-        ? invoices
-        : invoices.filter((i) => statusFilters.includes(i.status)),
-    [invoices, statusFilters],
-  );
+  const filteredInvoices = useMemo(() => {
+    const fromTs = dateFrom ? new Date(dateFrom).setHours(0, 0, 0, 0) : null;
+    const toTs = dateTo ? new Date(dateTo).setHours(23, 59, 59, 999) : null;
+    return invoices.filter((i) => {
+      if (statusFilters.length > 0 && !statusFilters.includes(i.status))
+        return false;
+      const raw = i[dateField];
+      if (fromTs !== null || toTs !== null) {
+        if (!raw) return false;
+        const ts = new Date(raw).getTime();
+        if (fromTs !== null && ts < fromTs) return false;
+        if (toTs !== null && ts > toTs) return false;
+      }
+      return true;
+    });
+  }, [invoices, statusFilters, dateField, dateFrom, dateTo]);
 
   const allSelected =
     filteredInvoices.length > 0 &&
