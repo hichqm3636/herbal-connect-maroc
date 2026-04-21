@@ -156,6 +156,12 @@ function SuperAdminPricingTiers() {
                       <Tag className="h-3 w-3" />
                       {t.name}
                     </Badge>
+                    {t.company_id === null && (
+                      <Badge className="bg-accent/20 text-accent-foreground border border-accent/40 hover:bg-accent/30 gap-1">
+                        <Globe className="h-3 w-3" />
+                        عالمية
+                      </Badge>
+                    )}
                   </div>
                   <p className="mt-3 text-2xl font-bold text-primary">
                     {t.base_discount_percent}%
