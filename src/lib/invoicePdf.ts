@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { formatMAD } from "./format";
 
 export interface InvoicePdfData {
   invoice_number: string;
@@ -34,8 +35,9 @@ export interface InvoicePdfData {
   }[];
 }
 
+// Numeric-only formatter (no MAD suffix) for table cells where the column header already shows the unit.
 const fmt = (n: number) =>
-  new Intl.NumberFormat("fr-MA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 
 export function generateInvoicePdf(data: InvoicePdfData): Blob {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
@@ -125,17 +127,17 @@ export function generateInvoicePdf(data: InvoicePdfData): Blob {
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.text("Sous-total HT", totalsX, ty);
-  doc.text(`${fmt(data.subtotal)} MAD`, pageW - margin, ty, { align: "right" });
+  doc.text(formatMAD(data.subtotal), pageW - margin, ty, { align: "right" });
   ty += 6;
   doc.text(`TVA (${data.vat_rate}%)`, totalsX, ty);
-  doc.text(`${fmt(data.vat_amount)} MAD`, pageW - margin, ty, { align: "right" });
+  doc.text(formatMAD(data.vat_amount), pageW - margin, ty, { align: "right" });
   ty += 8;
   doc.setDrawColor(brand);
   doc.line(totalsX, ty - 4, pageW - margin, ty - 4);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.text("Total TTC", totalsX, ty);
-  doc.text(`${fmt(data.total)} MAD`, pageW - margin, ty, { align: "right" });
+  doc.text(formatMAD(data.total), pageW - margin, ty, { align: "right" });
 
   // Notes
   if (data.notes) {
