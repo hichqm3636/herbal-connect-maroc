@@ -356,8 +356,7 @@ function InvoicesPage() {
             <span className="text-muted-foreground">•</span>
             <span>
               إجمالي المبلغ:{" "}
-              <span className="font-semibold">{formatMAD(totals.total)}</span>{" "}
-              <span className="text-xs text-muted-foreground">MAD</span>
+              <span className="font-semibold">{formatMAD(totals.total)}</span>
             </span>
           </div>
           <DropdownMenu>
