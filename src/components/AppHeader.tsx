@@ -10,19 +10,19 @@ export function AppHeader() {
   const initial = name.charAt(0).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/95 backdrop-blur px-4">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-2 sm:gap-3 border-b bg-background/95 backdrop-blur px-3 sm:px-4">
       <SidebarTrigger className="text-foreground hover:text-primary shrink-0" />
-      <Separator orientation="vertical" className="h-6" />
-      <div className="flex items-center gap-3 min-w-0">
+      <Separator orientation="vertical" className="h-6 hidden sm:block" />
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         {logo ? (
           <img
             src={logo}
             alt={name}
-            className="h-9 w-9 rounded-full object-cover ring-1 ring-border shrink-0"
+            className="h-8 w-8 sm:h-9 sm:w-9 rounded-full object-cover ring-1 ring-border shrink-0"
           />
         ) : (
           <div
-            className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-primary-foreground shrink-0 shadow-sm"
+            className="h-8 w-8 sm:h-9 sm:w-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold text-primary-foreground shrink-0 shadow-sm"
             style={{ background: "var(--company-brand, var(--primary))" }}
             aria-hidden="true"
           >
@@ -30,13 +30,13 @@ export function AppHeader() {
           </div>
         )}
         <div className="flex flex-col leading-tight min-w-0">
-          <span className="text-sm font-bold truncate">{name}</span>
-          <span className="text-[11px] text-muted-foreground truncate">
+          <span className="text-xs sm:text-sm font-bold truncate">{name}</span>
+          <span className="text-[10px] sm:text-[11px] text-muted-foreground truncate">
             بوابة الموزعين
           </span>
         </div>
       </div>
-      <div className="ms-auto">
+      <div className="ms-auto ps-2 shrink-0">
         <CartButton />
       </div>
     </header>
