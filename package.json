@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test:format-mad": "node scripts/check-mad-format.mjs"
+    "test:format-mad": "node scripts/check-mad-format.mjs",
+    "test": "vitest run --config ./vitest.config.ts",
+    "test:watch": "vitest --config ./vitest.config.ts"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
