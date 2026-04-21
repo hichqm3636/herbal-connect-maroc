@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { FileText, Download, Loader2 } from "lucide-react";
+import { FileText, Download, Loader2, Filter } from "lucide-react";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui/toggle-group";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,6 +52,7 @@ function InvoicesPage() {
   const { user } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [statusFilters, setStatusFilters] = useState<string[]>([]);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -64,12 +69,32 @@ function InvoicesPage() {
     })();
   }, [user]);
 
+  const filteredInvoices = useMemo(
+    () =>
+      statusFilters.length === 0
+        ? invoices
+        : invoices.filter((i) => statusFilters.includes(i.status)),
+    [invoices, statusFilters],
+  );
+
   const allSelected =
-    invoices.length > 0 && selected.size === invoices.length;
+    filteredInvoices.length > 0 &&
+    filteredInvoices.every((i) => selected.has(i.id));
 
   const toggleAll = () => {
-    if (allSelected) setSelected(new Set());
-    else setSelected(new Set(invoices.map((i) => i.id)));
+    if (allSelected) {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        for (const i of filteredInvoices) next.delete(i.id);
+        return next;
+      });
+    } else {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        for (const i of filteredInvoices) next.add(i.id);
+        return next;
+      });
+    }
   };
 
   const toggleOne = (id: string) => {
@@ -156,6 +181,39 @@ function InvoicesPage() {
         </p>
       </div>
 
+      <Card className="p-3 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Filter className="h-4 w-4" />
+          فلترة حسب الحالة
+        </div>
+        <ToggleGroup
+          type="multiple"
+          value={statusFilters}
+          onValueChange={setStatusFilters}
+          className="flex-wrap justify-start"
+        >
+          <ToggleGroupItem value="paid" size="sm">
+            مدفوعة
+          </ToggleGroupItem>
+          <ToggleGroupItem value="overdue" size="sm">
+            متأخرة
+          </ToggleGroupItem>
+          <ToggleGroupItem value="issued" size="sm">
+            صادرة
+          </ToggleGroupItem>
+        </ToggleGroup>
+        {statusFilters.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setStatusFilters([])}
+            className="ms-auto"
+          >
+            مسح
+          </Button>
+        )}
+      </Card>
+
       {selected.size > 0 && (
         <Card className="p-3 flex items-center justify-between gap-3 bg-accent/30">
           <div className="text-sm">
@@ -203,7 +261,7 @@ function InvoicesPage() {
             </span>
           </div>
           <div className="divide-y">
-            {invoices.map((inv) => (
+            {filteredInvoices.map((inv) => (
               <div
                 key={inv.id}
                 className="p-4 flex items-center gap-3 hover:bg-accent/30 transition-colors"
