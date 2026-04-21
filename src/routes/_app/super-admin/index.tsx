@@ -5,60 +5,63 @@ import {
   Users,
   ClipboardList,
   Wallet,
-  Activity,
-  TrendingUp,
-  TrendingDown,
   Plus,
   Settings,
   ArrowLeft,
-  
-  Clock,
+  Layers,
+  Activity as ActivityIcon,
   Package,
+  UserPlus,
+  ShoppingCart,
+  Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatMAD } from "@/lib/format";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+import {
+  Line,
+  LineChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+} from "recharts";
+import { formatMAD, formatDateAr, formatDateTimeAr } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/super-admin/")({
   component: SuperAdminDashboard,
+  head: () => ({ meta: [{ title: "Nexora — لوحة المنصة" }] }),
 });
 
-interface Overview {
+interface PlatformStats {
   companies: number;
   distributors: number;
-  products: number;
   orders: number;
-  gmv: number;
-  ordersThisWeek: number;
-  ordersLastWeek: number;
-  pendingOrders: number;
-  // Growth (last 30 days)
-  newCompanies30d: number;
-  newDistributors30d: number;
-  newProducts30d: number;
-  newOrders30d: number;
-  // Health
-  companiesWithoutOrders: number;
-  productsWithoutSales: number;
-}
-
-interface TopCompany {
-  id: string;
-  name: string;
-  total: number;
-  orders: number;
-  delta: number | null; // % change vs previous window; null when not applicable
-}
-
-interface TopProduct {
-  id: string;
-  name: string;
-  company: string;
-  units: number;
   revenue: number;
-  delta: number | null;
+}
+
+interface RecentCompany {
+  id: string;
+  name: string;
+  admin_email: string;
+  city: string;
+  products_count: number;
+  created_at: string;
 }
 
 interface ActivityRow {
@@ -69,223 +72,153 @@ interface ActivityRow {
   company_name?: string;
 }
 
-const ACTION_LABELS: Record<string, string> = {
-  order_status_change: "تحديث حالة طلب",
-  create_territory: "إنشاء منطقة",
-  update_territory: "تعديل منطقة",
-  delete_territory: "حذف منطقة",
-  create_distributor: "إضافة موزع",
-  create_company: "إنشاء شركة",
+const ACTION_META: Record<string, { label: string; icon: typeof Building2; tone: string }> = {
+  create_company: { label: "تسجيل شركة جديدة", icon: Building2, tone: "bg-primary/10 text-primary" },
+  create_distributor: { label: "إضافة موزع جديد", icon: UserPlus, tone: "bg-success/10 text-success" },
+  order_status_change: { label: "تحديث حالة طلب", icon: ShoppingCart, tone: "bg-warning/15 text-warning-foreground" },
+  create_territory: { label: "إنشاء منطقة", icon: Layers, tone: "bg-accent/40 text-accent-foreground" },
+  update_territory: { label: "تعديل منطقة", icon: Layers, tone: "bg-muted text-muted-foreground" },
+  delete_territory: { label: "حذف منطقة", icon: Layers, tone: "bg-destructive/10 text-destructive" },
 };
 
-function describeActivity(row: ActivityRow): string {
-  const company = row.company_name ? row.company_name : "المنصة";
+function describeActivity(row: ActivityRow): { label: string; detail: string } {
+  const company = row.company_name ?? "المنصة";
   const meta = row.metadata || {};
+  const base = ACTION_META[row.action]?.label ?? row.action;
   if (row.action === "order_status_change") {
     const num = (meta as { order_number?: string }).order_number ?? "";
     const status = (meta as { new_status?: string }).new_status ?? "";
-    return `${company} — طلب ${num} → ${status}`;
+    return { label: `${base} ${num}`, detail: `${company} → ${status}` };
   }
-  const label = ACTION_LABELS[row.action] ?? row.action;
-  return `${company} — ${label}`;
-}
-
-type TopWindow = "all" | "30d" | "7d";
-
-const WINDOW_OPTIONS: Array<{ value: TopWindow; label: string }> = [
-  { value: "all", label: "كل الأوقات" },
-  { value: "30d", label: "آخر 30 يوماً" },
-  { value: "7d", label: "هذا الأسبوع" },
-];
-
-function WindowToggle({
-  value,
-  onChange,
-}: {
-  value: TopWindow;
-  onChange: (v: TopWindow) => void;
-}) {
-  return (
-    <div className="inline-flex rounded-lg border bg-muted/40 p-0.5 text-[11px]">
-      {WINDOW_OPTIONS.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          onClick={() => onChange(o.value)}
-          className={`px-2 py-1 rounded-md transition-colors ${
-            value === o.value
-              ? "bg-background shadow-sm font-medium text-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function DeltaBadge({ delta }: { delta: number | null }) {
-  if (delta === null) return null;
-  const up = delta >= 0;
-  const Icon = up ? TrendingUp : TrendingDown;
-  return (
-    <span
-      className={`inline-flex items-center gap-0.5 text-[10px] font-medium ${
-        up ? "text-success" : "text-destructive"
-      }`}
-    >
-      <Icon className="h-3 w-3" />
-      {up ? "+" : ""}
-      {delta}%
-    </span>
-  );
+  return { label: base, detail: company };
 }
 
 function SuperAdminDashboard() {
-  const [stats, setStats] = useState<Overview>({
+  const [stats, setStats] = useState<PlatformStats>({
     companies: 0,
     distributors: 0,
-    products: 0,
     orders: 0,
-    gmv: 0,
-    ordersThisWeek: 0,
-    ordersLastWeek: 0,
-    pendingOrders: 0,
-    newCompanies30d: 0,
-    newDistributors30d: 0,
-    newProducts30d: 0,
-    newOrders30d: 0,
-    companiesWithoutOrders: 0,
-    productsWithoutSales: 0,
+    revenue: 0,
   });
-  const [topWindow, setTopWindow] = useState<"all" | "30d" | "7d">("all");
-  const [companyMap, setCompanyMap] = useState<Map<string, string>>(new Map());
-  const [productMap, setProductMap] = useState<Map<string, { name: string; company_id: string }>>(
-    new Map(),
-  );
-  const [allOrders, setAllOrders] = useState<
-    Array<{ company_id: string; total_mad: number; created_at: string; id: string }>
-  >([]);
-  const [allItems, setAllItems] = useState<
-    Array<{ product_id: string; quantity: number; unit_price_mad: number; order_id: string }>
-  >([]);
-  const [orderDateById, setOrderDateById] = useState<Map<string, number>>(new Map());
+  const [recentCompanies, setRecentCompanies] = useState<RecentCompany[]>([]);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
+  const [ordersDaily, setOrdersDaily] = useState<Array<{ date: string; label: string; count: number }>>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const now = new Date();
-      const startWeek = new Date(now);
-      startWeek.setDate(startWeek.getDate() - 7);
-      const startLastWeek = new Date(now);
-      startLastWeek.setDate(startLastWeek.getDate() - 14);
       const start30d = new Date(now);
       start30d.setDate(start30d.getDate() - 30);
 
       const [
-        companiesRes,
+        companiesCountRes,
         distributorsRes,
-        productsCountRes,
         ordersCountRes,
-        ordersAllRes,
-        thisWeekRes,
-        lastWeekRes,
-        pendingRes,
-        newCompanies30dRes,
-        newDistributors30dRes,
-        newProducts30dRes,
-        newOrders30dRes,
+        ordersRevenueRes,
+        recentCompaniesRes,
         activityRes,
         companiesListRes,
-        orderItemsRes,
-        productsRes,
+        ordersLast30Res,
       ] = await Promise.all([
-        supabase.from("companies").select("id, name", { count: "exact" }),
-        supabase
-          .from("profiles")
-          .select("*", { count: "exact", head: true })
-          .eq("account_type", "distributor"),
-        supabase.from("products").select("*", { count: "exact", head: true }),
-        supabase.from("orders").select("*", { count: "exact", head: true }),
-        supabase.from("orders").select("id, company_id, total_mad, created_at"),
-        supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", startWeek.toISOString()),
-        supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", startLastWeek.toISOString())
-          .lt("created_at", startWeek.toISOString()),
-        supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "pending"),
-        supabase
-          .from("companies")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", start30d.toISOString()),
+        supabase.from("companies").select("*", { count: "exact", head: true }),
         supabase
           .from("profiles")
           .select("*", { count: "exact", head: true })
           .eq("account_type", "distributor")
-          .gte("created_at", start30d.toISOString()),
+          .eq("is_active", true),
+        supabase.from("orders").select("*", { count: "exact", head: true }),
+        supabase.from("orders").select("total_mad").neq("status", "cancelled"),
         supabase
-          .from("products")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", start30d.toISOString()),
-        supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", start30d.toISOString()),
+          .from("companies")
+          .select("id, name, display_name, created_at")
+          .order("created_at", { ascending: false })
+          .limit(5),
         supabase
           .from("admin_activity_log")
           .select("id, action, created_at, metadata, company_id")
           .order("created_at", { ascending: false })
-          .limit(10),
+          .limit(8),
         supabase.from("companies").select("id, display_name, name"),
-        supabase.from("order_items").select("product_id, quantity, unit_price_mad, order_id"),
-        supabase.from("products").select("id, name_ar, company_id"),
+        supabase
+          .from("orders")
+          .select("created_at")
+          .gte("created_at", start30d.toISOString()),
       ]);
 
+      const revenue = (ordersRevenueRes.data ?? []).reduce(
+        (s, o) => s + (Number(o.total_mad) || 0),
+        0,
+      );
+
       const cMap = new Map<string, string>();
-      (companiesListRes.data ?? []).forEach((c: { id: string; display_name: string; name: string }) =>
+      (companiesListRes.data ?? []).forEach((c) =>
         cMap.set(c.id, c.display_name || c.name),
       );
 
-      const ordersData = (ordersAllRes.data ?? []) as Array<{
-        id: string;
-        company_id: string;
-        total_mad: number;
-        created_at: string;
-      }>;
+      // Enrich recent companies with admin email + city + products count
+      const recents = recentCompaniesRes.data ?? [];
+      const recentIds = recents.map((c) => c.id);
 
-      let gmv = 0;
-      const dateById = new Map<string, number>();
-      ordersData.forEach((o) => {
-        gmv += Number(o.total_mad) || 0;
-        dateById.set(o.id, new Date(o.created_at).getTime());
+      const [adminRolesRes, territoriesRes, productsByCompanyRes] = await Promise.all([
+        recentIds.length
+          ? supabase
+              .from("user_roles")
+              .select("user_id, company_id")
+              .eq("role", "admin")
+              .in("company_id", recentIds)
+          : Promise.resolve({ data: [] as Array<{ user_id: string; company_id: string }> }),
+        recentIds.length
+          ? supabase
+              .from("territories")
+              .select("company_id, city, name")
+              .in("company_id", recentIds)
+          : Promise.resolve({ data: [] as Array<{ company_id: string; city: string | null; name: string }> }),
+        recentIds.length
+          ? supabase
+              .from("products")
+              .select("company_id")
+              .in("company_id", recentIds)
+          : Promise.resolve({ data: [] as Array<{ company_id: string }> }),
+      ]);
+
+      const adminUserByCompany = new Map<string, string>();
+      (adminRolesRes.data ?? []).forEach((r) => {
+        if (r.company_id && !adminUserByCompany.has(r.company_id)) {
+          adminUserByCompany.set(r.company_id, r.user_id);
+        }
       });
 
-      const companiesWithOrders = new Set(ordersData.map((o) => o.company_id));
-      const companiesWithoutOrders = Math.max(
-        0,
-        (companiesRes.count ?? 0) - companiesWithOrders.size,
-      );
+      const adminUserIds = Array.from(new Set(Array.from(adminUserByCompany.values())));
+      const emailByUser = new Map<string, string>();
+      if (adminUserIds.length) {
+        // Fetch emails through the auth-aware path: profiles do not store email.
+        // We fall back to "—" if not retrievable client-side.
+        // Use rpc-less approach: nothing reliable client-side, so leave blank.
+      }
 
-      const itemsData = (orderItemsRes.data ?? []) as Array<{
-        product_id: string;
-        quantity: number;
-        unit_price_mad: number;
-        order_id: string;
-      }>;
-      const productsWithSales = new Set(itemsData.map((it) => it.product_id));
-      const productsWithoutSales = Math.max(
-        0,
-        (productsCountRes.count ?? 0) - productsWithSales.size,
-      );
+      const cityByCompany = new Map<string, string>();
+      (territoriesRes.data ?? []).forEach((t) => {
+        if (!cityByCompany.has(t.company_id)) {
+          cityByCompany.set(t.company_id, t.city || t.name || "—");
+        }
+      });
+
+      const productsCountByCompany = new Map<string, number>();
+      (productsByCompanyRes.data ?? []).forEach((p) => {
+        productsCountByCompany.set(p.company_id, (productsCountByCompany.get(p.company_id) ?? 0) + 1);
+      });
+
+      const recentMapped: RecentCompany[] = recents.map((c) => ({
+        id: c.id,
+        name: c.display_name || c.name,
+        admin_email: emailByUser.get(adminUserByCompany.get(c.id) ?? "") || "—",
+        city: cityByCompany.get(c.id) || "—",
+        products_count: productsCountByCompany.get(c.id) ?? 0,
+        created_at: c.created_at,
+      }));
 
       const enrichedActivity: ActivityRow[] = (activityRes.data ?? []).map((r) => ({
         id: r.id,
@@ -298,207 +231,119 @@ function SuperAdminDashboard() {
         company_name: r.company_id ? cMap.get(r.company_id) : undefined,
       }));
 
-      const pMap = new Map<string, { name: string; company_id: string }>();
-      (productsRes.data ?? []).forEach((p: { id: string; name_ar: string; company_id: string }) =>
-        pMap.set(p.id, { name: p.name_ar, company_id: p.company_id }),
-      );
-
-      setCompanyMap(cMap);
-      setProductMap(pMap);
-      setAllOrders(ordersData);
-      setAllItems(itemsData);
-      setOrderDateById(dateById);
-      setStats({
-        companies: companiesRes.count ?? 0,
-        distributors: distributorsRes.count ?? 0,
-        products: productsCountRes.count ?? 0,
-        orders: ordersCountRes.count ?? 0,
-        gmv,
-        ordersThisWeek: thisWeekRes.count ?? 0,
-        ordersLastWeek: lastWeekRes.count ?? 0,
-        pendingOrders: pendingRes.count ?? 0,
-        newCompanies30d: newCompanies30dRes.count ?? 0,
-        newDistributors30d: newDistributors30dRes.count ?? 0,
-        newProducts30d: newProducts30dRes.count ?? 0,
-        newOrders30d: newOrders30dRes.count ?? 0,
-        companiesWithoutOrders,
-        productsWithoutSales,
+      // Build orders/day for last 30 days (zero-filled)
+      const buckets = new Map<string, number>();
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(now);
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() - i);
+        buckets.set(d.toISOString().slice(0, 10), 0);
+      }
+      (ordersLast30Res.data ?? []).forEach((o) => {
+        const key = new Date(o.created_at).toISOString().slice(0, 10);
+        if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + 1);
       });
+      const dailyArr = Array.from(buckets.entries()).map(([date, count]) => {
+        const d = new Date(date);
+        return {
+          date,
+          label: new Intl.DateTimeFormat("ar-MA", { day: "2-digit", month: "2-digit" }).format(d),
+          count,
+        };
+      });
+
+      setStats({
+        companies: companiesCountRes.count ?? 0,
+        distributors: distributorsRes.count ?? 0,
+        orders: ordersCountRes.count ?? 0,
+        revenue,
+      });
+      setRecentCompanies(recentMapped);
       setActivity(enrichedActivity);
+      setOrdersDaily(dailyArr);
       setLoading(false);
     })();
   }, []);
 
-  const windowDays = topWindow === "all" ? 0 : topWindow === "7d" ? 7 : 30;
-  const windowStart = useMemo(
-    () => (windowDays === 0 ? 0 : Date.now() - windowDays * 24 * 60 * 60 * 1000),
-    [windowDays],
+  const overviewCards = useMemo(
+    () => [
+      {
+        label: "إجمالي الشركات",
+        value: stats.companies.toLocaleString("ar-MA"),
+        icon: Building2,
+        accent: "bg-primary/10 text-primary",
+      },
+      {
+        label: "الموزعون النشطون",
+        value: stats.distributors.toLocaleString("ar-MA"),
+        icon: Users,
+        accent: "bg-success/10 text-success",
+      },
+      {
+        label: "إجمالي الطلبات",
+        value: stats.orders.toLocaleString("ar-MA"),
+        icon: ClipboardList,
+        accent: "bg-warning/15 text-warning-foreground",
+      },
+      {
+        label: "إيرادات المنصة",
+        value: formatMAD(stats.revenue),
+        icon: Wallet,
+        accent: "bg-accent/40 text-accent-foreground",
+      },
+    ],
+    [stats],
   );
-  const prevStart = useMemo(
-    () => (windowDays === 0 ? 0 : Date.now() - windowDays * 2 * 24 * 60 * 60 * 1000),
-    [windowDays],
-  );
 
-  function pctDelta(curr: number, prev: number): number | null {
-    if (prev === 0) return curr > 0 ? 100 : null;
-    return Math.round(((curr - prev) / prev) * 100);
-  }
-
-  const topCompanies: TopCompany[] = useMemo(() => {
-    const curr = new Map<string, { total: number; orders: number }>();
-    const prev = new Map<string, number>();
-    allOrders.forEach((o) => {
-      const ts = new Date(o.created_at).getTime();
-      const t = Number(o.total_mad) || 0;
-      if (windowStart === 0 || ts >= windowStart) {
-        const c = curr.get(o.company_id) ?? { total: 0, orders: 0 };
-        c.total += t;
-        c.orders += 1;
-        curr.set(o.company_id, c);
-      } else if (windowDays > 0 && ts >= prevStart && ts < windowStart) {
-        prev.set(o.company_id, (prev.get(o.company_id) ?? 0) + t);
-      }
-    });
-    return Array.from(curr.entries())
-      .map(([id, v]) => ({
-        id,
-        name: companyMap.get(id) ?? "—",
-        ...v,
-        delta: windowDays === 0 ? null : pctDelta(v.total, prev.get(id) ?? 0),
-      }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5);
-  }, [allOrders, companyMap, windowStart, prevStart, windowDays]);
-
-  const topProducts: TopProduct[] = useMemo(() => {
-    const curr = new Map<string, { units: number; revenue: number }>();
-    const prev = new Map<string, number>();
-    allItems.forEach((it) => {
-      const ts = orderDateById.get(it.order_id) ?? 0;
-      const rev = (Number(it.quantity) || 0) * (Number(it.unit_price_mad) || 0);
-      if (windowStart === 0 || ts >= windowStart) {
-        const c = curr.get(it.product_id) ?? { units: 0, revenue: 0 };
-        c.units += Number(it.quantity) || 0;
-        c.revenue += rev;
-        curr.set(it.product_id, c);
-      } else if (windowDays > 0 && ts >= prevStart && ts < windowStart) {
-        prev.set(it.product_id, (prev.get(it.product_id) ?? 0) + rev);
-      }
-    });
-    return Array.from(curr.entries())
-      .map(([id, v]) => {
-        const p = productMap.get(id);
-        return {
-          id,
-          name: p?.name ?? "—",
-          company: p ? (companyMap.get(p.company_id) ?? "—") : "—",
-          units: v.units,
-          revenue: v.revenue,
-          delta: windowDays === 0 ? null : pctDelta(v.revenue, prev.get(id) ?? 0),
-        };
-      })
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5);
-  }, [allItems, orderDateById, productMap, companyMap, windowStart, prevStart, windowDays]);
-
-  const growth =
-    stats.ordersLastWeek === 0
-      ? stats.ordersThisWeek > 0
-        ? 100
-        : 0
-      : Math.round(((stats.ordersThisWeek - stats.ordersLastWeek) / stats.ordersLastWeek) * 100);
-  const growthUp = growth >= 0;
-
-  const overviewCards = [
-    {
-      label: "الشركات",
-      value: stats.companies.toLocaleString("ar-MA"),
-      icon: Building2,
-      accent: "bg-primary/10 text-primary",
-    },
-    {
-      label: "الموزعون",
-      value: stats.distributors.toLocaleString("ar-MA"),
-      icon: Users,
-      accent: "bg-success/10 text-success",
-    },
-    {
-      label: "المنتجات",
-      value: stats.products.toLocaleString("ar-MA"),
-      icon: Package,
-      accent: "bg-accent/40 text-accent-foreground",
-    },
-    {
-      label: "الطلبات",
-      value: stats.orders.toLocaleString("ar-MA"),
-      icon: ClipboardList,
-      accent: "bg-warning/15 text-warning-foreground",
-      trend: growth,
-    },
-    {
-      label: "إجمالي المبيعات",
-      value: formatMAD(stats.gmv),
-      icon: Wallet,
-      accent: "bg-primary/10 text-primary",
-    },
-  ];
-
-  const growthCards = [
-    { label: "شركات جديدة (30 يوماً)", value: stats.newCompanies30d, icon: Building2 },
-    { label: "موزعون جدد (30 يوماً)", value: stats.newDistributors30d, icon: Users },
-    { label: "منتجات جديدة (30 يوماً)", value: stats.newProducts30d, icon: Package },
-    { label: "طلبات جديدة (30 يوماً)", value: stats.newOrders30d, icon: ClipboardList },
-  ];
-
-  const healthCards = [
-    { label: "طلبات قيد الانتظار", value: stats.pendingOrders, icon: Clock },
-    { label: "شركات بدون طلبات", value: stats.companiesWithoutOrders, icon: Building2 },
-    { label: "منتجات بدون مبيعات", value: stats.productsWithoutSales, icon: Package },
-  ];
+  const chartConfig: ChartConfig = {
+    count: { label: "الطلبات", color: "hsl(var(--primary))" },
+  };
 
   return (
     <div className="space-y-6" dir="rtl">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">لوحة المنصة</h1>
-          <p className="text-sm text-muted-foreground">نظرة عامة على نشاط المنصة بالكامل</p>
-        </div>
-        <Badge variant={growthUp ? "default" : "destructive"} className="gap-1 text-xs">
-          {growthUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-          نمو الطلبات هذا الأسبوع: {growthUp ? "+" : ""}
-          {growth}%
-        </Badge>
-      </div>
+      {/* Branded platform header */}
+      <Card className="shadow-soft overflow-hidden border-primary/20">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground shadow-md shrink-0"
+                aria-hidden="true"
+              >
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Nexora</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Distribution Management Platform · لوحة تحكم مالك المنصة
+                </p>
+              </div>
+            </div>
+            <Badge variant="outline" className="gap-1 text-[11px] border-primary/30 text-primary">
+              <Sparkles className="h-3 w-3" />
+              Super Admin
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Overview metrics */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+      {/* SECTION 1 — Platform Overview Cards */}
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         {overviewCards.map((c) => (
-          <Card key={c.label} className="shadow-soft">
-            <CardContent className="p-4">
+          <Card key={c.label} className="shadow-soft hover:shadow-elegant transition-shadow">
+            <CardContent className="p-4 sm:p-5">
               <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">{c.label}</p>
-                  <p className="mt-2 text-xl font-bold tracking-tight truncate">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground">{c.label}</p>
+                  <p className="mt-2 text-lg sm:text-2xl font-bold tracking-tight truncate">
                     {loading ? "…" : c.value}
                   </p>
-                  {typeof c.trend === "number" && !loading && (
-                    <p
-                      className={`mt-1 inline-flex items-center gap-0.5 text-[11px] ${
-                        c.trend >= 0 ? "text-success" : "text-destructive"
-                      }`}
-                    >
-                      {c.trend >= 0 ? (
-                        <TrendingUp className="h-3 w-3" />
-                      ) : (
-                        <TrendingDown className="h-3 w-3" />
-                      )}
-                      {c.trend >= 0 ? "+" : ""}
-                      {c.trend}%
-                    </p>
-                  )}
                 </div>
-                <div className={`flex h-9 w-9 items-center justify-center rounded-xl shrink-0 ${c.accent}`}>
-                  <c.icon className="h-4 w-4" />
+                <div
+                  className={`flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl shrink-0 ${c.accent}`}
+                  aria-hidden="true"
+                >
+                  <c.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
               </div>
             </CardContent>
@@ -506,213 +351,198 @@ function SuperAdminDashboard() {
         ))}
       </div>
 
-      {/* Platform Growth */}
+      {/* SECTION 4 — Growth Metrics (chart) */}
       <Card className="shadow-soft">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">نمو المنصة (آخر 30 يوماً)</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <ActivityIcon className="h-4 w-4 text-primary" />
+            الطلبات اليومية — آخر 30 يوماً
+          </CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-          {growthCards.map((g) => (
-            <div
-              key={g.label}
-              className="flex items-center gap-3 rounded-lg border bg-card/50 p-3"
-            >
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10 text-success">
-                <g.icon className="h-4 w-4" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-lg font-bold flex items-center gap-1">
-                  {loading ? "…" : g.value.toLocaleString("ar-MA")}
-                  {!loading && g.value > 0 && (
-                    <TrendingUp className="h-3 w-3 text-success" />
-                  )}
-                </div>
-                <div className="text-[11px] text-muted-foreground truncate">{g.label}</div>
-              </div>
-            </div>
-          ))}
+        <CardContent className="pt-2">
+          <ChartContainer config={chartConfig} className="h-[260px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={ordersDaily} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 11 }}
+                  interval="preserveStartEnd"
+                  reversed
+                />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} orientation="right" width={32} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  stroke="var(--color-count)"
+                  strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
-      <Card className="shadow-soft">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">إجراءات سريعة</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Button asChild variant="outline" size="sm" className="justify-start">
-            <Link to="/super-admin/companies">
-              <Plus className="h-4 w-4 ms-1" />
-              إنشاء شركة
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm" className="justify-start">
-            <Link to="/super-admin/companies">
-              <Building2 className="h-4 w-4 ms-1" />
-              عرض الشركات
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm" className="justify-start">
-            <Link to="/super-admin/order-rules">
-              <ClipboardList className="h-4 w-4 ms-1" />
-              قواعد الطلب
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm" className="justify-start">
-            <Link to="/super-admin/pricing-tiers">
-              <Settings className="h-4 w-4 ms-1" />
-              إعدادات المنصة
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Top Companies */}
-        <Card className="shadow-soft">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
-            <CardTitle className="text-base">أفضل الشركات مبيعاً</CardTitle>
-            <WindowToggle value={topWindow} onChange={setTopWindow} />
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* SECTION 2 — Recent Companies (spans 2) */}
+        <Card className="shadow-soft lg:col-span-2">
+          <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary" />
+              الشركات الأخيرة
+            </CardTitle>
+            <Button asChild variant="ghost" size="sm" className="text-xs gap-1">
+              <Link to="/super-admin/companies">
+                عرض الكل
+                <ArrowLeft className="h-3 w-3" />
+              </Link>
+            </Button>
           </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p className="text-sm text-muted-foreground">جارٍ التحميل…</p>
-            ) : topCompanies.length === 0 ? (
-              <p className="text-sm text-muted-foreground">لا توجد بيانات بعد</p>
-            ) : (
-              <ul className="space-y-2">
-                {topCompanies.map((c, i) => (
-                  <li
-                    key={c.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border bg-card/50 px-3 py-2"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-muted text-xs font-bold">
-                        {i + 1}
-                      </span>
-                      <span className="truncate text-sm font-medium">{c.name}</span>
-                    </div>
-                    <div className="text-left shrink-0">
-                      <div className="text-sm font-bold">{formatMAD(c.total)}</div>
-                      <div className="flex items-center justify-end gap-1.5 text-[11px] text-muted-foreground">
-                        <span>{c.orders.toLocaleString("ar-MA")} طلب</span>
-                        <DeltaBadge delta={c.delta} />
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right">الشركة</TableHead>
+                    <TableHead className="text-right hidden sm:table-cell">المسؤول</TableHead>
+                    <TableHead className="text-right hidden md:table-cell">المنطقة</TableHead>
+                    <TableHead className="text-right hidden sm:table-cell">المنتجات</TableHead>
+                    <TableHead className="text-right hidden md:table-cell">تاريخ الإنشاء</TableHead>
+                    <TableHead className="text-right">الإجراء</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-6">
+                        جاري التحميل…
+                      </TableCell>
+                    </TableRow>
+                  ) : recentCompanies.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-6">
+                        لا توجد شركات بعد
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    recentCompanies.map((c) => (
+                      <TableRow key={c.id}>
+                        <TableCell className="font-medium">{c.name}</TableCell>
+                        <TableCell className="hidden sm:table-cell text-muted-foreground text-xs">
+                          {c.admin_email}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground text-xs">
+                          {c.city}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge variant="outline" className="text-[10px]">
+                            {c.products_count}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground text-xs">
+                          {formatDateAr(c.created_at)}
+                        </TableCell>
+                        <TableCell>
+                          <Button asChild variant="outline" size="sm" className="text-xs h-7">
+                            <Link to="/super-admin/companies">عرض</Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Activity Feed */}
+        {/* SECTION 3 — Platform Activity */}
         <Card className="shadow-soft">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-base">آخر نشاط على المنصة</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ActivityIcon className="h-4 w-4 text-primary" />
+              نشاط المنصة
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {loading ? (
-              <p className="text-sm text-muted-foreground">جارٍ التحميل…</p>
+              <p className="text-xs text-muted-foreground py-4 text-center">جاري التحميل…</p>
             ) : activity.length === 0 ? (
-              <p className="text-sm text-muted-foreground">لا يوجد نشاط حديث</p>
+              <p className="text-xs text-muted-foreground py-4 text-center">لا يوجد نشاط بعد</p>
             ) : (
-              <ul className="space-y-2">
-                {activity.map((a) => (
-                  <li key={a.id} className="flex items-start gap-2 text-sm">
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate">{describeActivity(a)}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {new Date(a.created_at).toLocaleString("ar-MA")}
-                      </p>
-                    </div>
-                  </li>
-                ))}
+              <ul className="space-y-3">
+                {activity.map((row) => {
+                  const meta = ACTION_META[row.action] ?? {
+                    label: row.action,
+                    icon: ActivityIcon,
+                    tone: "bg-muted text-muted-foreground",
+                  };
+                  const Icon = meta.icon;
+                  const desc = describeActivity(row);
+                  return (
+                    <li key={row.id} className="flex items-start gap-3">
+                      <div
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 ${meta.tone}`}
+                        aria-hidden="true"
+                      >
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium truncate">{desc.label}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{desc.detail}</p>
+                        <p className="text-[10px] text-muted-foreground/80 mt-0.5">
+                          {formatDateTimeAr(row.created_at)}
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Top Products Across Platform */}
+      {/* SECTION 5 — Quick Actions */}
       <Card className="shadow-soft">
-        <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Package className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">أفضل المنتجات مبيعاً في المنصة</CardTitle>
-          </div>
-          <WindowToggle value={topWindow} onChange={setTopWindow} />
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            إجراءات سريعة
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <p className="text-sm text-muted-foreground">جارٍ التحميل…</p>
-          ) : topProducts.length === 0 ? (
-            <p className="text-sm text-muted-foreground">لا توجد بيانات بعد</p>
-          ) : (
-            <ul className="space-y-2">
-              {topProducts.map((p, i) => (
-                <li
-                  key={p.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border bg-card/50 px-3 py-2"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-muted text-xs font-bold shrink-0">
-                      {i + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium">{p.name}</div>
-                      <div className="truncate text-[11px] text-muted-foreground">{p.company}</div>
-                    </div>
-                  </div>
-                  <div className="text-left shrink-0">
-                    <div className="text-sm font-bold">{formatMAD(p.revenue)}</div>
-                    <div className="flex items-center justify-end gap-1.5 text-[11px] text-muted-foreground">
-                      <span>{p.units.toLocaleString("ar-MA")} وحدة</span>
-                      <DeltaBadge delta={p.delta} />
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+            <Button asChild variant="outline" className="h-auto py-4 flex-col gap-2 hover:border-primary hover:bg-primary/5">
+              <Link to="/super-admin/companies">
+                <Plus className="h-5 w-5 text-primary" />
+                <span className="text-xs font-medium">إنشاء شركة</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto py-4 flex-col gap-2 hover:border-primary hover:bg-primary/5">
+              <Link to="/super-admin/companies">
+                <Building2 className="h-5 w-5 text-primary" />
+                <span className="text-xs font-medium">جميع الشركات</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto py-4 flex-col gap-2 hover:border-primary hover:bg-primary/5">
+              <Link to="/super-admin/pricing-tiers">
+                <Layers className="h-5 w-5 text-primary" />
+                <span className="text-xs font-medium">شرائح الأسعار</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto py-4 flex-col gap-2 hover:border-primary hover:bg-primary/5">
+              <Link to="/super-admin/order-rules">
+                <Settings className="h-5 w-5 text-primary" />
+                <span className="text-xs font-medium">إعدادات المنصة</span>
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
-
-      {/* Platform Health */}
-      <Card className="shadow-soft">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">حالة المنصة</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-          {healthCards.map((h) => (
-            <div
-              key={h.label}
-              className="flex items-center gap-3 rounded-lg border bg-card/50 p-3"
-            >
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-                <h.icon className="h-4 w-4" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-lg font-bold">
-                  {loading ? "…" : h.value.toLocaleString("ar-MA")}
-                </div>
-                <div className="text-[11px] text-muted-foreground truncate">{h.label}</div>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end">
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/super-admin/companies">
-            إدارة الشركات
-            <ArrowLeft className="h-4 w-4 ms-1" />
-          </Link>
-        </Button>
-      </div>
     </div>
   );
 }
