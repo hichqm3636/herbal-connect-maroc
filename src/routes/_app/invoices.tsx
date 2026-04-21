@@ -181,6 +181,39 @@ function InvoicesPage() {
         </p>
       </div>
 
+      <Card className="p-3 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Filter className="h-4 w-4" />
+          فلترة حسب الحالة
+        </div>
+        <ToggleGroup
+          type="multiple"
+          value={statusFilters}
+          onValueChange={setStatusFilters}
+          className="flex-wrap justify-start"
+        >
+          <ToggleGroupItem value="paid" size="sm">
+            مدفوعة
+          </ToggleGroupItem>
+          <ToggleGroupItem value="overdue" size="sm">
+            متأخرة
+          </ToggleGroupItem>
+          <ToggleGroupItem value="issued" size="sm">
+            صادرة
+          </ToggleGroupItem>
+        </ToggleGroup>
+        {statusFilters.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setStatusFilters([])}
+            className="ms-auto"
+          >
+            مسح
+          </Button>
+        )}
+      </Card>
+
       {selected.size > 0 && (
         <Card className="p-3 flex items-center justify-between gap-3 bg-accent/30">
           <div className="text-sm">
@@ -228,7 +261,7 @@ function InvoicesPage() {
             </span>
           </div>
           <div className="divide-y">
-            {invoices.map((inv) => (
+            {filteredInvoices.map((inv) => (
               <div
                 key={inv.id}
                 className="p-4 flex items-center gap-3 hover:bg-accent/30 transition-colors"
