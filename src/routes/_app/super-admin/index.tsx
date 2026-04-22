@@ -550,6 +550,140 @@ function SuperAdminDashboard() {
         </Card>
       </div>
 
+      {/* New widgets row: Order status + Top companies */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Order Status Widget */}
+        <Card className="shadow-soft">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <PieChartIcon className="h-4 w-4 text-primary" />
+              توزيع حالات الطلبات
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {(() => {
+              const total = ORDER_STATUSES.reduce((s, st) => s + (statusCounts[st.key] ?? 0), 0);
+              if (loading) {
+                return <p className="text-xs text-muted-foreground py-4 text-center">جاري التحميل…</p>;
+              }
+              if (total === 0) {
+                return <p className="text-xs text-muted-foreground py-4 text-center">لا توجد طلبات بعد</p>;
+              }
+              return (
+                <ul className="space-y-3">
+                  {ORDER_STATUSES.map((st) => {
+                    const count = statusCounts[st.key] ?? 0;
+                    const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                    return (
+                      <li key={st.key} className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md px-1.5 font-semibold ${st.tone}`}>
+                              {count.toLocaleString("ar-MA")}
+                            </span>
+                            <span className="font-medium truncate">{st.label}</span>
+                          </div>
+                          <span className="text-muted-foreground shrink-0">{pct}%</span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        {/* Top Companies */}
+        <Card className="shadow-soft">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-primary" />
+              أفضل 5 شركات
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {loading ? (
+              <p className="text-xs text-muted-foreground py-4 text-center">جاري التحميل…</p>
+            ) : companyRevenue.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-4 text-center">لا توجد بيانات بعد</p>
+            ) : (
+              <ul className="space-y-3">
+                {companyRevenue.slice(0, 5).map((c, idx) => (
+                  <li key={c.id} className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs shrink-0">
+                      #{idx + 1}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium truncate">{c.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {c.orders.toLocaleString("ar-MA")} طلب
+                      </p>
+                    </div>
+                    <div className="text-xs font-semibold tabular-nums shrink-0">
+                      {formatMAD(c.revenue)}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Revenue Breakdown by company */}
+      <Card className="shadow-soft">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            توزيع الإيرادات حسب الشركة
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {loading ? (
+            <p className="text-xs text-muted-foreground py-4 text-center">جاري التحميل…</p>
+          ) : companyRevenue.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-4 text-center">لا توجد إيرادات بعد</p>
+          ) : (
+            (() => {
+              const maxRev = companyRevenue[0]?.revenue || 1;
+              const totalRev = companyRevenue.reduce((s, c) => s + c.revenue, 0);
+              return (
+                <ul className="space-y-3">
+                  {companyRevenue.map((c) => {
+                    const pct = totalRev > 0 ? Math.round((c.revenue / totalRev) * 100) : 0;
+                    const barPct = maxRev > 0 ? (c.revenue / maxRev) * 100 : 0;
+                    return (
+                      <li key={c.id} className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2 text-xs">
+                          <span className="font-medium truncate min-w-0">{c.name}</span>
+                          <span className="shrink-0 tabular-nums">
+                            <span className="font-semibold">{formatMAD(c.revenue)}</span>
+                            <span className="text-muted-foreground ms-2">{pct}%</span>
+                          </span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-l from-primary to-primary/60 transition-all"
+                            style={{ width: `${barPct}%` }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              );
+            })()
+          )}
+        </CardContent>
+      </Card>
+
       {/* SECTION 5 — Quick Actions */}
       <Card className="shadow-soft">
         <CardHeader className="pb-3">
