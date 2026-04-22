@@ -873,6 +873,8 @@ export type Database = {
           company_id: string
           created_at: string
           distributor_id: string
+          external_id: string | null
+          external_status: string | null
           id: string
           notes: string | null
           order_number: string
@@ -880,6 +882,7 @@ export type Database = {
           points_earned: number
           status: Database["public"]["Enums"]["order_status"]
           supplier_partner_id: string | null
+          sync_error: string | null
           total_mad: number
           updated_at: string
         }
@@ -888,6 +891,8 @@ export type Database = {
           company_id: string
           created_at?: string
           distributor_id: string
+          external_id?: string | null
+          external_status?: string | null
           id?: string
           notes?: string | null
           order_number: string
@@ -895,6 +900,7 @@ export type Database = {
           points_earned?: number
           status?: Database["public"]["Enums"]["order_status"]
           supplier_partner_id?: string | null
+          sync_error?: string | null
           total_mad?: number
           updated_at?: string
         }
@@ -903,6 +909,8 @@ export type Database = {
           company_id?: string
           created_at?: string
           distributor_id?: string
+          external_id?: string | null
+          external_status?: string | null
           id?: string
           notes?: string | null
           order_number?: string
@@ -910,6 +918,7 @@ export type Database = {
           points_earned?: number
           status?: Database["public"]["Enums"]["order_status"]
           supplier_partner_id?: string | null
+          sync_error?: string | null
           total_mad?: number
           updated_at?: string
         }
@@ -1224,6 +1233,7 @@ export type Database = {
           cost_price: number | null
           created_at: string
           description_ar: string
+          external_id: string | null
           id: string
           image_url: string | null
           low_stock_threshold: number
@@ -1237,6 +1247,7 @@ export type Database = {
           price_tiers: Json
           rrp_price: number | null
           sku: string | null
+          source: string
           stock: number
           updated_at: string
         }
@@ -1247,6 +1258,7 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description_ar?: string
+          external_id?: string | null
           id?: string
           image_url?: string | null
           low_stock_threshold?: number
@@ -1260,6 +1272,7 @@ export type Database = {
           price_tiers?: Json
           rrp_price?: number | null
           sku?: string | null
+          source?: string
           stock?: number
           updated_at?: string
         }
@@ -1270,6 +1283,7 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description_ar?: string
+          external_id?: string | null
           id?: string
           image_url?: string | null
           low_stock_threshold?: number
@@ -1283,6 +1297,7 @@ export type Database = {
           price_tiers?: Json
           rrp_price?: number | null
           sku?: string | null
+          source?: string
           stock?: number
           updated_at?: string
         }
