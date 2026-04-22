@@ -534,40 +534,123 @@ function AdminActivity() {
       })
       .join("");
 
+    const actionBreakdownRows = Object.entries(perAction)
+      .sort((a, b) => b[1] - a[1])
+      .map(
+        ([action, count]) => `<tr>
+          <td>${escapeHtml(ACTION_LABELS[action] ?? action)}</td>
+          <td>${escapeHtml(
+            ORDER_ACTIONS.includes(action)
+              ? "طلب"
+              : LOYALTY_ACTIONS.includes(action)
+                ? "نقاط"
+                : ADMIN_ACTIONS.includes(action)
+                  ? "إداري"
+                  : "آخر",
+          )}</td>
+          <td>${count}</td>
+          <td>${rows.length ? ((count / rows.length) * 100).toFixed(1) + "٪" : "—"}</td>
+        </tr>`,
+      )
+      .join("");
+
+    const topAdminsRows = topList(adminCounts)
+      .map(
+        ([id, c]) =>
+          `<tr><td>${escapeHtml(profiles[id] || id.slice(0, 8))}</td><td>${c}</td></tr>`,
+      )
+      .join("") || `<tr><td colspan="2">—</td></tr>`;
+
+    const topDistsRows = topList(distributorCounts)
+      .map(
+        ([id, c]) =>
+          `<tr><td>${escapeHtml(profiles[id] || id.slice(0, 8))}</td><td>${c}</td></tr>`,
+      )
+      .join("") || `<tr><td colspan="2">—</td></tr>`;
+
+    const dateRangeStr =
+      minDate && maxDate
+        ? `${format(minDate as Date, "yyyy-MM-dd HH:mm")} ← ${format(maxDate as Date, "yyyy-MM-dd HH:mm")}`
+        : "—";
+
     const html = `<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8" />
 <title>سجل النشاط الإداري</title>
 <style>
   @page { size: A4 landscape; margin: 12mm; }
   body { font-family: -apple-system, "Segoe UI", Tahoma, Arial, sans-serif; color: #111; font-size: 11px; }
-  h1 { font-size: 18px; margin: 0 0 4px; }
-  .meta { color: #555; font-size: 11px; margin-bottom: 12px; }
-  .filters, .totals { background: #f4f4f5; border: 1px solid #e4e4e7; padding: 8px 10px; border-radius: 6px; margin-bottom: 10px; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  h2 { font-size: 14px; margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #18181b; }
+  .meta { color: #555; font-size: 12px; margin-bottom: 14px; }
+  .filters, .totals { background: #f4f4f5; border: 1px solid #e4e4e7; padding: 10px 12px; border-radius: 6px; margin-bottom: 12px; }
   .filters strong, .totals strong { display: inline-block; min-width: 60px; }
-  .totals-grid { display: flex; flex-wrap: wrap; gap: 16px; }
-  .totals-grid div { font-size: 12px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  .kpi { background: #fff; border: 1px solid #e4e4e7; border-radius: 8px; padding: 12px; }
+  .kpi .label { font-size: 11px; color: #71717a; margin-bottom: 4px; }
+  .kpi .value { font-size: 20px; font-weight: 700; color: #18181b; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   table { width: 100%; border-collapse: collapse; }
   th, td { border: 1px solid #d4d4d8; padding: 5px 6px; text-align: right; vertical-align: top; }
   th { background: #18181b; color: #fff; font-weight: 600; font-size: 11px; }
   tr:nth-child(even) td { background: #fafafa; }
   .footer { margin-top: 12px; font-size: 10px; color: #71717a; text-align: center; }
+  .page-break { page-break-after: always; }
+  .cover { min-height: calc(100vh - 24mm); }
   @media print { .no-print { display: none; } }
 </style></head><body>
-<h1>سجل النشاط الإداري</h1>
-<div class="meta">تاريخ التصدير: ${format(new Date(), "yyyy-MM-dd HH:mm")} · إجمالي السجلات: ${rows.length}</div>
-${
-  filterLines.length
-    ? `<div class="filters"><strong>الفلاتر:</strong> ${filterLines.map(escapeHtml).join(" · ")}</div>`
-    : ""
-}
-<div class="totals">
-  <div class="totals-grid">
-    <div><strong>طلبات:</strong> ${totals.orders}</div>
-    <div><strong>نقاط:</strong> ${totals.loyalty}</div>
-    <div><strong>إدارية:</strong> ${totals.admin}</div>
-    <div><strong>مجموع تغيّر النقاط:</strong> ${totals.pointsDelta}</div>
-    <div><strong>مجموع قيم الطلبات (د.م.):</strong> ${totals.orderTotalSum.toFixed(2)}</div>
+
+<!-- ============ صفحة الملخص ============ -->
+<section class="cover">
+  <h1>تقرير سجل التدقيق</h1>
+  <div class="meta">
+    تاريخ التصدير: ${format(new Date(), "yyyy-MM-dd HH:mm")} ·
+    إجمالي السجلات: <strong>${rows.length}</strong> ·
+    النطاق الزمني للسجلات: ${escapeHtml(dateRangeStr)}
   </div>
-</div>
+
+  <div class="filters">
+    <strong>الفلاتر المطبقة:</strong>
+    ${filterLines.length ? filterLines.map(escapeHtml).join(" · ") : "بدون فلاتر — كل السجلات"}
+  </div>
+
+  <h2>المؤشرات الرئيسية</h2>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="label">طلبات</div><div class="value">${totals.orders}</div></div>
+    <div class="kpi"><div class="label">نقاط ولاء</div><div class="value">${totals.loyalty}</div></div>
+    <div class="kpi"><div class="label">إجراءات إدارية</div><div class="value">${totals.admin}</div></div>
+    <div class="kpi"><div class="label">أخرى</div><div class="value">${totals.other}</div></div>
+    <div class="kpi"><div class="label">مجموع تغيّر النقاط</div><div class="value">${totals.pointsDelta}</div></div>
+    <div class="kpi"><div class="label">مجموع قيم الطلبات (د.م.)</div><div class="value">${totals.orderTotalSum.toFixed(2)}</div></div>
+    <div class="kpi"><div class="label">عدد المسؤولين الفاعلين</div><div class="value">${Object.keys(adminCounts).length}</div></div>
+    <div class="kpi"><div class="label">عدد الموزعين المتأثرين</div><div class="value">${Object.keys(distributorCounts).length}</div></div>
+  </div>
+
+  <h2>التوزيع حسب الإجراء</h2>
+  <table>
+    <thead><tr><th>الإجراء</th><th>النوع</th><th>العدد</th><th>النسبة</th></tr></thead>
+    <tbody>${actionBreakdownRows || `<tr><td colspan="4">—</td></tr>`}</tbody>
+  </table>
+
+  <div class="two-col" style="margin-top:14px;">
+    <div>
+      <h2>أكثر المسؤولين نشاطاً</h2>
+      <table>
+        <thead><tr><th>المسؤول</th><th>عدد السجلات</th></tr></thead>
+        <tbody>${topAdminsRows}</tbody>
+      </table>
+    </div>
+    <div>
+      <h2>أكثر الموزعين تأثراً</h2>
+      <table>
+        <thead><tr><th>الموزع</th><th>عدد السجلات</th></tr></thead>
+        <tbody>${topDistsRows}</tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<div class="page-break"></div>
+
+<!-- ============ تفاصيل السجلات ============ -->
+<h2 style="margin-top:0;">تفاصيل السجلات</h2>
 <table>
   <thead><tr>
     <th>التاريخ</th><th>النوع</th><th>الإجراء</th><th>المسؤول</th><th>الموزع</th>
