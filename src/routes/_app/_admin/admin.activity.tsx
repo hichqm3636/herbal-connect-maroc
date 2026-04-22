@@ -257,6 +257,46 @@ function AdminActivity() {
     return keys.map((k) => [k, ACTION_LABELS[k] ?? k] as const);
   }, [typeFilter]);
 
+  // Per-admin breakdown for the in-app summary card.
+  interface PerAdminTotals {
+    orders: number;
+    loyalty: number;
+    admin: number;
+    other: number;
+    total: number;
+  }
+  const perAdminBreakdown = useMemo(() => {
+    const map: Record<string, PerAdminTotals> = {};
+    rows.forEach((r) => {
+      const b = (map[r.admin_id] ??= {
+        orders: 0,
+        loyalty: 0,
+        admin: 0,
+        other: 0,
+        total: 0,
+      });
+      b.total++;
+      if (ORDER_ACTIONS.includes(r.action)) b.orders++;
+      else if (LOYALTY_ACTIONS.includes(r.action)) b.loyalty++;
+      else if (ADMIN_ACTIONS.includes(r.action)) b.admin++;
+      else b.other++;
+    });
+    return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
+  }, [rows]);
+
+  // Build the search-params object passed to per-admin pages so they inherit
+  // the active filters from the global view.
+  const linkSearch = useMemo(
+    () => ({
+      type: typeFilter,
+      action: actionFilter,
+      distributor: distributorFilter,
+      from: from?.toISOString(),
+      to: to?.toISOString(),
+    }),
+    [typeFilter, actionFilter, distributorFilter, from, to],
+  );
+
   const resetFilters = () => {
     setTypeFilter("all");
     setAdminFilter("all");
