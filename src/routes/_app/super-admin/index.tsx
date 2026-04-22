@@ -75,6 +75,21 @@ interface ActivityRow {
   company_name?: string;
 }
 
+const ORDER_STATUSES: Array<{ key: string; label: string; tone: string }> = [
+  { key: "pending", label: "قيد الانتظار", tone: "bg-warning/15 text-warning-foreground" },
+  { key: "confirmed", label: "مؤكد", tone: "bg-primary/10 text-primary" },
+  { key: "preparing", label: "قيد التحضير", tone: "bg-accent/40 text-accent-foreground" },
+  { key: "shipped", label: "تم الشحن", tone: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
+  { key: "delivered", label: "تم التسليم", tone: "bg-success/10 text-success" },
+];
+
+interface CompanyRevenue {
+  id: string;
+  name: string;
+  orders: number;
+  revenue: number;
+}
+
 const ACTION_META: Record<string, { label: string; icon: typeof Building2; tone: string }> = {
   create_company: { label: "تسجيل شركة جديدة", icon: Building2, tone: "bg-primary/10 text-primary" },
   create_distributor: { label: "إضافة موزع جديد", icon: UserPlus, tone: "bg-success/10 text-success" },
