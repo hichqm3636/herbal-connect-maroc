@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
+  fetchCompanyActivityCounts,
   fetchCompanyActivityPage,
   fetchEntityActivityPage,
   fetchUserNames,
