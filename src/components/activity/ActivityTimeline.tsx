@@ -198,7 +198,7 @@ export function ActivityTimeline(props: Props) {
   const loadMore = async () => {
     setLoadingMore(true);
     try {
-      const next = await fetchPage(rows.length, filter);
+      const next = await fetchPage(rows.length, filter, snapshot);
       setRows((prev) => [...prev, ...next]);
       setHasMore(next.length === pageSize);
       await mergeUserNames(next);
