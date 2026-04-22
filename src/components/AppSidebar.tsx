@@ -63,8 +63,8 @@ type NavSection = {
 
 // ----- Distributor (workspace user) menu -----
 const distributorTopItems: NavItem[] = [
+  { title: "المتجر", url: "/shop", icon: ShoppingBag },
   { title: "لوحة التحكم", url: "/dashboard", icon: LayoutDashboard },
-  { title: "المنتجات", url: "/products", icon: ShoppingBag },
   { title: "طلب سريع", url: "/quick-order", icon: Zap },
   { title: "طلباتي", url: "/orders", icon: ClipboardList },
   { title: "فواتيري", url: "/invoices", icon: Receipt },
