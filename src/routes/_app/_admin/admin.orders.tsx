@@ -515,44 +515,43 @@ function AdminOrders() {
                               <Eye className="h-4 w-4 ml-2" />
                               عرض الطلب
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              disabled={o.status === "confirmed"}
-                              onClick={() => updateStatus(o.id, "confirmed")}
-                            >
-                              <CheckCircle2 className="h-4 w-4 ml-2" />
-                              موافقة
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              disabled={o.status === "preparing"}
-                              onClick={() => updateStatus(o.id, "preparing")}
-                            >
-                              <Package className="h-4 w-4 ml-2" />
-                              قيد التحضير
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              disabled={o.status === "shipped"}
-                              onClick={() => updateStatus(o.id, "shipped")}
-                            >
-                              <Truck className="h-4 w-4 ml-2" />
-                              شحن
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              disabled={o.status === "delivered"}
-                              onClick={() => updateStatus(o.id, "delivered")}
-                            >
-                              <CheckCircle2 className="h-4 w-4 ml-2" />
-                              تم التسليم
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              disabled={o.status === "cancelled"}
-                              onClick={() => setCancelTarget(o.id)}
-                            >
-                              <XCircle className="h-4 w-4 ml-2" />
-                              إلغاء الطلب
-                            </DropdownMenuItem>
+                            {(() => {
+                              const currentStatus = (o.status === "preparing"
+                                ? "processing"
+                                : o.status) as OrderStatus;
+                              const allowed = allowedNextStates(role, currentStatus);
+                              if (allowed.length === 0) return null;
+                              const META: Record<OrderStatus, { label: string; icon: typeof CheckCircle2; danger?: boolean }> = {
+                                pending: { label: "قيد الانتظار", icon: CheckCircle2 },
+                                confirmed: { label: "موافقة", icon: CheckCircle2 },
+                                processing: { label: "قيد التحضير", icon: Package },
+                                shipped: { label: "شحن", icon: Truck },
+                                delivered: { label: "تم التسليم", icon: CheckCircle2 },
+                                cancelled: { label: "إلغاء الطلب", icon: XCircle, danger: true },
+                              };
+                              return (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  {allowed.map((next) => {
+                                    const m = META[next];
+                                    const Icon = m.icon;
+                                    return (
+                                      <DropdownMenuItem
+                                        key={next}
+                                        className={m.danger ? "text-destructive focus:text-destructive" : ""}
+                                        onClick={() => {
+                                          if (next === "cancelled") setCancelTarget(o.id);
+                                          else updateStatus(o.id, next);
+                                        }}
+                                      >
+                                        <Icon className="h-4 w-4 ml-2" />
+                                        {m.label}
+                                      </DropdownMenuItem>
+                                    );
+                                  })}
+                                </>
+                              );
+                            })()}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
