@@ -30,7 +30,9 @@ export interface WooProduct {
   description?: string;
   price?: string;
   stock_quantity?: number | null;
+  stock_status?: string;
   images?: WooImage[];
+  image?: WooImage;
   categories?: WooCategory[];
 }
 
