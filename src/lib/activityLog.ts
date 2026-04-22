@@ -152,16 +152,21 @@ export async function fetchCompanyActivity(
   return (data ?? []) as ActivityLogRow[];
 }
 
-/** Paginated company activity (offset-based, newest first). */
+/** Paginated company activity (offset-based, newest first). Optionally filtered by entity types. */
 export async function fetchCompanyActivityPage(
   companyId: string,
   offset: number,
   pageSize = 50,
+  entityTypes?: EntityType[],
 ): Promise<ActivityLogRow[]> {
-  const { data, error } = await supabase
+  let q = supabase
     .from("activity_logs")
     .select("*")
-    .eq("company_id", companyId)
+    .eq("company_id", companyId);
+  if (entityTypes && entityTypes.length > 0) {
+    q = q.in("entity_type", entityTypes);
+  }
+  const { data, error } = await q
     .order("created_at", { ascending: false })
     .range(offset, offset + pageSize - 1);
   if (error) throw error;
