@@ -135,11 +135,12 @@ export function EditClientDialog({ client, onClose, onSaved }: Props) {
     setBusy(true);
 
     // 1. Profile (account_type lives here; cast as the generated enum until types regen)
+    const normalizedPhone = formatPhoneMA(form.phone);
     const { error: profErr } = await supabase
       .from("profiles")
       .update({
         full_name: form.full_name.trim(),
-        phone: form.phone.trim(),
+        phone: normalizedPhone,
         territory_id: form.territory_id,
         account_type: form.account_type,
       })
