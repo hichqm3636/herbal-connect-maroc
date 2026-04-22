@@ -296,6 +296,16 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {credentials && (
+      <DistributorCredentialsDialog
+        open={!!credentials}
+        onOpenChange={(o) => !o && setCredentials(null)}
+        distributorName={credentials.name}
+        phone={credentials.phone}
+        password={credentials.password}
+      />
+    )}
+    </>
   );
 }
 
