@@ -302,9 +302,13 @@ export function AppSidebar() {
         <div className="flex items-center gap-2 px-2 py-3">
           <div
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-glow overflow-hidden text-primary-foreground"
-            style={company?.brand_color ? { backgroundColor: company.brand_color } : undefined}
+            style={!isPlatform && company?.brand_color ? { backgroundColor: company.brand_color } : undefined}
           >
-            {company?.logo_url ? (
+            {isPlatform ? (
+              <div className="flex h-full w-full items-center justify-center bg-gradient-primary">
+                <Globe2 className="h-5 w-5" />
+              </div>
+            ) : company?.logo_url ? (
               <img src={company.logo_url} alt="logo" className="h-full w-full object-cover" />
             ) : company?.brand_color ? (
               <span className="text-sm font-bold">
@@ -318,12 +322,14 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
             <span className="text-sm font-bold leading-tight truncate">
-              {company?.display_name || company?.name || "DistribHub"}
+              {isPlatform
+                ? PLATFORM_NAME
+                : (company?.display_name || company?.name || TENANT_FALLBACK_NAME)}
             </span>
             <span className="text-xs text-muted-foreground truncate flex items-center gap-1">
-              {isPlatformOwner ? (
+              {isPlatform ? (
                 <>
-                  <Globe2 className="h-3 w-3" /> وضع المنصة
+                  <Globe2 className="h-3 w-3" /> {PLATFORM_SUBTITLE}
                 </>
               ) : isCompanyAdmin ? (
                 <>
