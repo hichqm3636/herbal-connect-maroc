@@ -410,3 +410,58 @@ function ChangeEmailCard({ currentEmail }: { currentEmail: string }) {
     </Card>
   );
 }
+
+function HeaderPreviewCard() {
+  const [mode, setMode] = useHeaderPreview();
+
+  const options: { value: HeaderPreviewMode; label: string; hint: string }[] = [
+    { value: "auto", label: "تلقائي", hint: "حسب المسار الحالي" },
+    { value: "platform", label: "Nexora (المنصة)", hint: "فرض ترويسة المنصة" },
+    { value: "tenant", label: "شركة الموزع", hint: "فرض ترويسة الشركة" },
+  ];
+
+  return (
+    <Card className="shadow-soft">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Eye className="h-5 w-5 text-primary" />
+          معاينة الترويسة
+        </CardTitle>
+        <CardDescription>
+          بدّل بسرعة بين عرض ترويسة Nexora (المنصة) وعرض ترويسة شركة الموزع
+          للتحقق البصري. يُطبَّق فورًا على الترويسة العلوية.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {options.map((opt) => {
+            const active = mode === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setMode(opt.value)}
+                aria-pressed={active}
+                className={`rounded-lg border p-3 text-right transition-colors ${
+                  active
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                    : "border-border hover:bg-muted"
+                }`}
+              >
+                <div className="text-sm font-bold">{opt.label}</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  {opt.hint}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        {mode !== "auto" && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            وضع المعاينة مفعَّل. اختر «تلقائي» للعودة إلى السلوك الافتراضي.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
