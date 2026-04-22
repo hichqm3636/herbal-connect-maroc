@@ -28,7 +28,7 @@ function CompanyActivityPage() {
           سجل كامل لجميع التعديلات والإجراءات داخل الشركة (طلبات، منتجات، إعدادات).
         </p>
       </div>
-      <ActivityTimeline companyId={companyId} title="آخر النشاطات" limit={200} />
+      <ActivityTimeline companyId={companyId} title="آخر النشاطات" pageSize={50} />
     </div>
   );
 }
