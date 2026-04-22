@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
+  Check,
   CheckCircle2,
   Clock,
   Download,
@@ -11,7 +12,9 @@ import {
   PackageCheck,
   Pencil,
   Receipt,
+  Send,
   Truck,
+  Truck as TruckIcon,
   XCircle,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
