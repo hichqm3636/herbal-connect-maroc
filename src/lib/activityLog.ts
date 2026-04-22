@@ -245,18 +245,22 @@ export async function fetchCompanyActivityCounts(
   return out;
 }
 
-/** Paginated entity activity (offset-based, newest first). */
+/** Paginated entity activity (offset-based, newest first).
+ *  Pass `snapshot` (ISO timestamp) to freeze the result set across pagination. */
 export async function fetchEntityActivityPage(
   entityType: EntityType,
   entityId: string,
   offset: number,
   pageSize = 50,
+  snapshot?: string,
 ): Promise<ActivityLogRow[]> {
-  const { data, error } = await supabase
+  let q = supabase
     .from("activity_logs")
     .select("*")
     .eq("entity_type", entityType)
-    .eq("entity_id", entityId)
+    .eq("entity_id", entityId);
+  if (snapshot) q = q.lte("created_at", snapshot);
+  const { data, error } = await q
     .order("created_at", { ascending: false })
     .range(offset, offset + pageSize - 1);
   if (error) throw error;
