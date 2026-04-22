@@ -155,3 +155,39 @@ export function buildSupplierConfirmationMessage(ctx: OrderNotificationContext):
     `${baseUrl}/orders/${ctx.orderId}`,
   ].join("\n");
 }
+
+export interface DistributorCredentialsContext {
+  distributorName: string;
+  /** Raw phone — will be normalized for display in the message body. */
+  phone: string;
+  password: string;
+  /** Login URL shown in the message. Defaults to the public app URL. */
+  loginUrl?: string;
+}
+
+const DEFAULT_LOGIN_URL = "https://herbialife-maroc.lovable.app";
+
+/**
+ * Welcome / credentials message sent to a freshly-created distributor.
+ * Matches the spec template exactly (Arabic, with login URL + phone + password).
+ */
+export function buildDistributorCredentialsMessage(
+  ctx: DistributorCredentialsContext,
+): string {
+  const loginUrl = (ctx.loginUrl ?? DEFAULT_LOGIN_URL).replace(/\/$/, "");
+  const displayPhone = normalizeWhatsappPhone(ctx.phone) || ctx.phone;
+  return [
+    `السلام عليكم ${ctx.distributorName}،`,
+    "",
+    "تم إنشاء حسابك في منصة Herbialife Partner Hub.",
+    "",
+    `🔗 رابط الدخول: ${loginUrl}`,
+    `📱 رقم الدخول: ${displayPhone}`,
+    `🔐 كلمة المرور: ${ctx.password}`,
+    "",
+    "يرجى تغيير كلمة المرور بعد أول دخول.",
+    "",
+    "مرحبا بك معنا 🤝",
+  ].join("\n");
+}
+
