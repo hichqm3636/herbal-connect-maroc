@@ -59,58 +59,57 @@ function LoginPage() {
    * - Production uses real subdomains (`<slug>.nexora.app`); dev/preview falls back to
    *   `?company=<slug>` on the current host.
    */
-  const buildPostLoginUrl = (userId: string): Promise<string> => {
+  const buildPostLoginUrl = async (userId: string): Promise<string> => {
     const fallback = "/dashboard";
-    return supabase
+    const { data: roleRows } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", userId)
-      .then(async ({ data: roleRows }) => {
-        const isSuper = (roleRows ?? []).some((r) => r.role === "super_admin");
-        // Super admins always land on the platform portal.
-        if (isSuper) {
-          if (typeof window === "undefined") return "/super-admin";
-          const host = window.location.hostname.toLowerCase();
-          if (host.endsWith(".nexora.app") && host !== "app.nexora.app") {
-            return "https://app.nexora.app/super-admin";
-          }
-          return "/super-admin";
-        }
+      .eq("user_id", userId);
+    const isSuper = (roleRows ?? []).some((r) => r.role === "super_admin");
 
-        // Resolve the user's company slug.
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("company_id")
-          .eq("id", userId)
-          .maybeSingle();
-        const cid = profile?.company_id as string | undefined | null;
-        if (!cid) return fallback;
+    // Super admins always land on the platform portal.
+    if (isSuper) {
+      if (typeof window === "undefined") return "/super-admin";
+      const host = window.location.hostname.toLowerCase();
+      if (host.endsWith(".nexora.app") && host !== "app.nexora.app") {
+        return "https://app.nexora.app/super-admin";
+      }
+      return "/super-admin";
+    }
 
-        const { data: company } = await supabase
-          .from("companies")
-          .select("slug")
-          .eq("id", cid)
-          .maybeSingle();
-        const userSlug = (company?.slug as string | undefined) ?? null;
-        if (!userSlug) return fallback;
+    // Resolve the user's company slug.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("company_id")
+      .eq("id", userId)
+      .maybeSingle();
+    const cid = (profile?.company_id as string | undefined | null) ?? null;
+    if (!cid) return fallback;
 
-        if (typeof window === "undefined") return fallback;
-        const host = window.location.hostname.toLowerCase();
-        const currentSlug = tenant.company?.slug ?? tenant.slug;
+    const { data: company } = await supabase
+      .from("companies")
+      .select("slug")
+      .eq("id", cid)
+      .maybeSingle();
+    const userSlug = (company?.slug as string | undefined) ?? null;
+    if (!userSlug) return fallback;
 
-        // Already on the right tenant portal → no host change needed.
-        if (currentSlug === userSlug) return fallback;
+    if (typeof window === "undefined") return fallback;
+    const host = window.location.hostname.toLowerCase();
+    const currentSlug = tenant.slug;
 
-        // Production: redirect to <slug>.nexora.app to preserve branding.
-        if (host.endsWith(".nexora.app") || host === "nexora.app") {
-          return `https://${userSlug}.nexora.app/dashboard`;
-        }
+    // Already on the right tenant portal → no host change needed.
+    if (currentSlug === userSlug) return fallback;
 
-        // Dev / Lovable preview: switch the ?company= param so the tenant resolver picks it up.
-        const url = new URL(window.location.origin + "/dashboard");
-        url.searchParams.set("company", userSlug);
-        return url.toString();
-      });
+    // Production: redirect to <slug>.nexora.app to preserve branding.
+    if (host.endsWith(".nexora.app") || host === "nexora.app") {
+      return `https://${userSlug}.nexora.app/dashboard`;
+    }
+
+    // Dev / Lovable preview: switch the ?company= param so the tenant resolver picks it up.
+    const url = new URL(window.location.origin + "/dashboard");
+    url.searchParams.set("company", userSlug);
+    return url.toString();
   };
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
