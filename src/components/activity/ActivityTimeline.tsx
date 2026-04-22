@@ -106,6 +106,9 @@ export function ActivityTimeline(props: Props) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [counts, setCounts] = useState<(Record<string, number> & { all: number }) | null>(null);
   const [countsLoading, setCountsLoading] = useState(true);
+  // Snapshot timestamp pins pagination + counts to a single point in time so
+  // newly-arriving rows do not shift offsets or desync the badge totals.
+  const [snapshot, setSnapshot] = useState<string>(() => new Date().toISOString());
   const isCompanyView = "companyId" in props && !!props.companyId;
 
   const filterTypes = (key: FilterKey): EntityType[] | undefined => {
@@ -114,11 +117,15 @@ export function ActivityTimeline(props: Props) {
     return types.length > 0 ? types : undefined;
   };
 
-  const fetchPage = async (offset: number, key: FilterKey): Promise<ActivityLogRow[]> => {
+  const fetchPage = async (
+    offset: number,
+    key: FilterKey,
+    snap: string,
+  ): Promise<ActivityLogRow[]> => {
     if ("entityType" in props && props.entityType) {
-      return fetchEntityActivityPage(props.entityType, props.entityId, offset, pageSize);
+      return fetchEntityActivityPage(props.entityType, props.entityId, offset, pageSize, snap);
     }
-    return fetchCompanyActivityPage(props.companyId!, offset, pageSize, filterTypes(key));
+    return fetchCompanyActivityPage(props.companyId!, offset, pageSize, filterTypes(key), snap);
   };
 
   const mergeUserNames = async (newRows: ActivityLogRow[]) => {
@@ -129,14 +136,17 @@ export function ActivityTimeline(props: Props) {
   };
 
   // Initial load + reload when entity / company / active filter changes.
+  // Each (re)load takes a fresh snapshot used by every subsequent "Load more".
   useEffect(() => {
     let cancelled = false;
+    const snap = new Date().toISOString();
+    setSnapshot(snap);
     (async () => {
       setLoading(true);
       setRows([]);
       setHasMore(true);
       try {
-        const data = await fetchPage(0, filter);
+        const data = await fetchPage(0, filter, snap);
         if (cancelled) return;
         setRows(data);
         setHasMore(data.length === pageSize);
@@ -188,7 +198,7 @@ export function ActivityTimeline(props: Props) {
   const loadMore = async () => {
     setLoadingMore(true);
     try {
-      const next = await fetchPage(rows.length, filter);
+      const next = await fetchPage(rows.length, filter, snapshot);
       setRows((prev) => [...prev, ...next]);
       setHasMore(next.length === pageSize);
       await mergeUserNames(next);
