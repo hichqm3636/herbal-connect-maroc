@@ -590,6 +590,35 @@ function AdminActivity() {
       )
       .join("");
 
+    const adminBreakdownEntries = Object.entries(adminBreakdown).sort(
+      (a, b) => b[1].total - a[1].total,
+    );
+    const adminBreakdownRows =
+      adminBreakdownEntries
+        .map(
+          ([id, b]) => `<tr>
+          <td>${escapeHtml(profiles[id] || id.slice(0, 8))}</td>
+          <td>${b.orders}</td>
+          <td>${b.loyalty}</td>
+          <td>${b.admin}</td>
+          <td>${b.other}</td>
+          <td>${b.pointsDelta}</td>
+          <td>${b.orderTotalSum.toFixed(2)}</td>
+          <td><strong>${b.total}</strong></td>
+        </tr>`,
+        )
+        .join("") || `<tr><td colspan="8">—</td></tr>`;
+    const adminBreakdownFooter = `<tr style="background:#f4f4f5;font-weight:700;">
+        <td>الإجمالي</td>
+        <td>${totals.orders}</td>
+        <td>${totals.loyalty}</td>
+        <td>${totals.admin}</td>
+        <td>${totals.other}</td>
+        <td>${totals.pointsDelta}</td>
+        <td>${totals.orderTotalSum.toFixed(2)}</td>
+        <td>${rows.length}</td>
+      </tr>`;
+
     const topAdminsRows = topList(adminCounts)
       .map(
         ([id, c]) =>
