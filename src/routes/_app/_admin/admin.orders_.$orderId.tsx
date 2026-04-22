@@ -1059,6 +1059,12 @@ function OrderDetails() {
         </div>
       </div>
 
+      <ActivityTimeline
+        entityType="order"
+        entityId={order.id}
+        title="سجل الطلب / Timeline"
+      />
+
       <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
         <AlertDialogContent>
           <AlertDialogHeader>
