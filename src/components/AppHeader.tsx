@@ -2,43 +2,35 @@ import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { CartButton } from "@/components/CartSheet";
 import { useAuth } from "@/hooks/useAuth";
-import { useLocation } from "@tanstack/react-router";
 import { useHeaderPreview } from "@/hooks/useHeaderPreview";
 
 export function AppHeader() {
-  const { company, isSuperAdmin } = useAuth();
+  const { company, mode } = useAuth();
   const { open, openMobile, isMobile } = useSidebar();
-  const location = useLocation();
   const [previewMode] = useHeaderPreview();
   const isOpen = isMobile ? openMobile : open;
 
-  // Platform branding (Nexora) is shown when:
-  //  - the user is a super_admin (platform operator), OR
-  //  - the route is a platform route (/super-admin, /platform, /admin/*).
-  // The settings preview toggle can override this for QA.
-  const path = location.pathname;
-  const routeIsPlatform =
-    path === "/super-admin" ||
-    path.startsWith("/super-admin/") ||
-    path === "/platform" ||
-    path.startsWith("/platform/") ||
-    path === "/admin" ||
-    path.startsWith("/admin/");
-  const isPlatformRoute =
+  // Platform mode is the source of truth: when the auth layer says we're in
+  // platform mode (super_admin on /super-admin, /platform, /admin/*), no
+  // tenant context is loaded and we MUST show Nexora branding.
+  // The settings preview toggle can override this for QA only.
+  const isPlatform =
     previewMode === "platform"
       ? true
       : previewMode === "tenant"
         ? false
-        : routeIsPlatform || isSuperAdmin;
+        : mode === "platform";
 
   const tenantName = company?.display_name || company?.name || "DistribHub";
-  const name = isPlatformRoute ? "Nexora" : tenantName;
-  const logo = isPlatformRoute ? null : company?.logo_url;
-  const subtitle = isPlatformRoute ? "Platform Administration" : "بوابة الموزعين";
+  const name = isPlatform ? "Nexora" : tenantName;
+  const logo = isPlatform ? null : company?.logo_url;
+  const subtitle = isPlatform ? "Platform Administration" : "بوابة الموزعين";
   const initial = name.charAt(0).toUpperCase();
   const sidebarLabel = isOpen
     ? "إغلاق الشريط الجانبي"
     : "فتح الشريط الجانبي";
+
+
 
   return (
     <header

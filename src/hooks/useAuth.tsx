@@ -19,6 +19,8 @@ export interface Company {
   brand_color: string;
 }
 
+export type AppMode = "platform" | "tenant";
+
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
@@ -32,6 +34,8 @@ interface AuthContextValue {
   accountType: PartnerType;
   /** @deprecated use `accountType`. Kept for back-compat. */
   partnerType: PartnerType;
+  /** Current UI mode. In `platform` mode no tenant context is loaded. */
+  mode: AppMode;
   companyId: string | null;
   company: Company | null;
   territoryId: string | null;
@@ -42,6 +46,27 @@ interface AuthContextValue {
   refreshRoles: () => Promise<void>;
   refreshCompany: () => Promise<void>;
   setActiveCompany: (companyId: string | null) => void;
+}
+
+/**
+ * Routes that are part of the Nexora platform admin surface. While a
+ * super_admin is on one of these paths we never load tenant branding —
+ * the UI must show Nexora / Platform Administration only.
+ */
+function pathIsPlatform(path: string): boolean {
+  return (
+    path === "/super-admin" ||
+    path.startsWith("/super-admin/") ||
+    path === "/platform" ||
+    path.startsWith("/platform/") ||
+    path === "/admin" ||
+    path.startsWith("/admin/")
+  );
+}
+
+function readPath(): string {
+  if (typeof window === "undefined") return "/";
+  return window.location.pathname || "/";
 }
 
 const ACTIVE_COMPANY_KEY = "active_company_id";
@@ -81,9 +106,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pathname, setPathname] = useState<string>(() => readPath());
 
-  // Effective company: explicit active override (sessionStorage) wins, else profile.
-  const companyId = activeCompanyId ?? profileCompanyId;
+  const isSuperAdmin = roles.includes("super_admin");
+
+  // Track route so we can flip into platform mode for super_admins on
+  // /platform, /super-admin, or /admin/* without a full reload.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sync = () => setPathname(readPath());
+    window.addEventListener("popstate", sync);
+    const origPush = window.history.pushState;
+    const origReplace = window.history.replaceState;
+    window.history.pushState = function (...args) {
+      const r = origPush.apply(this, args);
+      sync();
+      return r;
+    };
+    window.history.replaceState = function (...args) {
+      const r = origReplace.apply(this, args);
+      sync();
+      return r;
+    };
+    return () => {
+      window.removeEventListener("popstate", sync);
+      window.history.pushState = origPush;
+      window.history.replaceState = origReplace;
+    };
+  }, []);
+
+  // Platform mode: a super_admin on a platform route. In this mode we drop
+  // all tenant context (no company, no companyId) so the previously selected
+  // tenant cannot bleed into Nexora's admin UI.
+  const mode: AppMode = isSuperAdmin && pathIsPlatform(pathname) ? "platform" : "tenant";
+
+  // Effective company. Forced to null in platform mode.
+  const companyId = mode === "platform" ? null : (activeCompanyId ?? profileCompanyId);
 
   const setActiveCompany = (id: string | null) => {
     writeActiveCompany(id);
@@ -148,9 +206,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setPricingTierId(tierId);
     setPricingTierDiscount(discount);
-    // Non-super users always operate within their own profile company; sync sessionStorage.
+    // Tenant context rules:
+    //  - Super admins: ALWAYS start with no active tenant. They must explicitly
+    //    pick a company from the selector. This prevents the previously
+    //    selected tenant from bleeding into Nexora's admin UI.
+    //  - Everyone else: pin sessionStorage to their own profile company.
     const isSuper = (roleRows ?? []).some((r) => r.role === "super_admin");
-    if (!isSuper && cid) {
+    if (isSuper) {
+      writeActiveCompany(null);
+      setActiveCompanyIdState(null);
+    } else if (cid) {
       writeActiveCompany(cid);
       setActiveCompanyIdState(cid);
     }
@@ -191,15 +256,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Apply company brand color as CSS variable
+  // Apply company brand color as CSS variable. In platform mode we strip
+  // any tenant brand entirely so Nexora's chrome owns the look.
   useEffect(() => {
     if (typeof document === "undefined") return;
-    if (company?.brand_color) {
-      document.documentElement.style.setProperty("--company-brand", company.brand_color);
+    const brand = mode === "platform" ? null : company?.brand_color ?? null;
+    if (brand) {
+      document.documentElement.style.setProperty("--company-brand", brand);
     } else {
       document.documentElement.style.removeProperty("--company-brand");
     }
-  }, [company?.brand_color]);
+  }, [company?.brand_color, mode]);
 
   const signOut = async () => {
     writeActiveCompany(null);
@@ -215,6 +282,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await loadCompany(companyId);
   };
 
+  // In platform mode, expose no tenant company at all.
+  const exposedCompany = mode === "platform" ? null : company;
+
   const value = useMemo<AuthContextValue>(() => ({
     session,
     user,
@@ -226,8 +296,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isSalesAgent: roles.includes("sales_agent"),
     accountType,
     partnerType: accountType,
+    mode,
     companyId,
-    company,
+    company: exposedCompany,
     territoryId,
     pricingTierId,
     pricingTierDiscount,
@@ -236,7 +307,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshRoles,
     refreshCompany,
     setActiveCompany,
-  }), [session, user, roles, accountType, companyId, company, territoryId, pricingTierId, pricingTierDiscount, loading]);
+  }), [session, user, roles, accountType, mode, companyId, exposedCompany, territoryId, pricingTierId, pricingTierDiscount, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
