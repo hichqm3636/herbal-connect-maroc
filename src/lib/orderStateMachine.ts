@@ -22,6 +22,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/lib/activityLog";
 import { buildOrderWhatsappMessage } from "@/utils/whatsapp";
+import { sendOrderToSupplier } from "@/utils/woocommerce.functions";
 
 // ---------- Types ----------
 
@@ -104,8 +105,30 @@ interface SideEffectContext {
 async function handleSideEffects(ctx: SideEffectContext): Promise<void> {
   try {
     if (ctx.to === "confirmed") {
-      // TODO: enqueue customer notification (email / push).
       console.debug("[orderStateMachine] side-effect: confirmed", ctx.orderId);
+      // Fire-and-forget WooCommerce supplier sync. NEVER blocks the transition;
+      // failures are persisted to `orders.sync_error` inside the server fn and
+      // can be retried from the admin UI.
+      void sendOrderToSupplier({ data: { orderId: ctx.orderId } })
+        .then((res) => {
+          if (!res.ok) {
+            console.warn("[orderStateMachine] supplier send failed:", res.error);
+          } else {
+            console.debug("[orderStateMachine] supplier send ok:", res.externalId);
+          }
+        })
+        .catch((err) => {
+          console.warn("[orderStateMachine] supplier send threw:", err);
+        });
+
+      // Best-effort activity log entry — independent of API outcome.
+      void logActivity({
+        companyId: ctx.companyId,
+        action: "order_sent_to_supplier_attempt",
+        entityType: "order",
+        entityId: ctx.orderId,
+        metadata: { trigger: "auto_on_confirm" },
+      }).catch(() => {});
     }
 
     if (ctx.to === "shipped") {
