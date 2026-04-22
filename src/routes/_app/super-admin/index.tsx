@@ -303,6 +303,8 @@ function SuperAdminDashboard() {
       setRecentCompanies(recentMapped);
       setActivity(enrichedActivity);
       setOrdersDaily(dailyArr);
+      setStatusCounts(statusMap);
+      setCompanyRevenue(companyRevenueArr);
       setLoading(false);
     })();
   }, []);
