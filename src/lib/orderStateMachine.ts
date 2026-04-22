@@ -206,8 +206,9 @@ export async function transitionOrderStatus(
   // 3. Optimistic update — guards against concurrent transitions.
   // We accept either the canonical `from` or its legacy alias `preparing`
   // when transitioning out of processing, so historical rows still update.
-  const expectedStatuses: string[] =
-    from === "processing" ? ["processing", "preparing"] : [from];
+  type DbStatus = "pending" | "confirmed" | "processing" | "preparing" | "shipped" | "delivered" | "cancelled";
+  const expectedStatuses: DbStatus[] =
+    from === "processing" ? ["processing", "preparing"] : [from satisfies OrderStatus];
 
   const { data: updated, error: updateErr } = await supabase
     .from("orders")
