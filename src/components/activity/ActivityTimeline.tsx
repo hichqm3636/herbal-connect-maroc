@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, History } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  fetchCompanyActivity,
-  fetchEntityActivity,
+  fetchCompanyActivityPage,
+  fetchEntityActivityPage,
   fetchUserNames,
   type ActivityLogRow,
   type EntityType,
@@ -18,7 +19,8 @@ import {
 
 interface BaseProps {
   title?: string;
-  limit?: number;
+  /** Page size for "Load more". Defaults to 50. */
+  pageSize?: number;
   emptyText?: string;
   className?: string;
 }
@@ -46,28 +48,74 @@ const FILTERS: { key: FilterKey; label: string; types: EntityType[] }[] = [
   { key: "company", label: "إعدادات الشركة", types: ["company"] },
 ];
 
+function EntityLink({ row, children }: { row: ActivityLogRow; children: React.ReactNode }) {
+  if (!row.entity_id) return <>{children}</>;
+  if (row.entity_type === "order") {
+    return (
+      <Link
+        to="/admin/orders/$orderId"
+        params={{ orderId: row.entity_id }}
+        className="hover:underline text-primary"
+      >
+        {children}
+      </Link>
+    );
+  }
+  if (row.entity_type === "product") {
+    return (
+      <Link
+        to="/products/$productId"
+        params={{ productId: row.entity_id }}
+        className="hover:underline text-primary"
+      >
+        {children}
+      </Link>
+    );
+  }
+  return <>{children}</>;
+}
+
 export function ActivityTimeline(props: Props) {
-  const { title = "سجل النشاط", limit = 50, emptyText = "لا يوجد نشاط بعد." } = props;
+  const {
+    title = "سجل النشاط",
+    pageSize = 50,
+    emptyText = "لا يوجد نشاط بعد.",
+  } = props;
   const [rows, setRows] = useState<ActivityLogRow[]>([]);
   const [users, setUsers] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [filter, setFilter] = useState<FilterKey>("all");
   const isCompanyView = "companyId" in props && !!props.companyId;
 
+  const fetchPage = async (offset: number): Promise<ActivityLogRow[]> => {
+    if ("entityType" in props && props.entityType) {
+      return fetchEntityActivityPage(props.entityType, props.entityId, offset, pageSize);
+    }
+    return fetchCompanyActivityPage(props.companyId!, offset, pageSize);
+  };
+
+  const mergeUserNames = async (newRows: ActivityLogRow[]) => {
+    const ids = newRows.map((r) => r.user_id).filter((x): x is string => !!x);
+    if (ids.length === 0) return;
+    const names = await fetchUserNames(ids);
+    setUsers((prev) => ({ ...prev, ...names }));
+  };
+
+  // Initial load (and reload when entity / company changes).
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      setRows([]);
+      setHasMore(true);
       try {
-        const data =
-          "entityType" in props && props.entityType
-            ? await fetchEntityActivity(props.entityType, props.entityId, limit)
-            : await fetchCompanyActivity(props.companyId!, limit);
+        const data = await fetchPage(0);
         if (cancelled) return;
         setRows(data);
-        const ids = data.map((r) => r.user_id).filter((x): x is string => !!x);
-        const names = await fetchUserNames(ids);
-        if (!cancelled) setUsers(names);
+        setHasMore(data.length === pageSize);
+        await mergeUserNames(data);
       } catch (err) {
         console.warn("[ActivityTimeline] load failed", err);
       } finally {
@@ -82,8 +130,22 @@ export function ActivityTimeline(props: Props) {
     "entityType" in props ? props.entityType : null,
     "entityId" in props ? props.entityId : null,
     "companyId" in props ? props.companyId : null,
-    limit,
+    pageSize,
   ]);
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const next = await fetchPage(rows.length);
+      setRows((prev) => [...prev, ...next]);
+      setHasMore(next.length === pageSize);
+      await mergeUserNames(next);
+    } catch (err) {
+      console.warn("[ActivityTimeline] load more failed", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const filteredRows = useMemo(() => {
     if (filter === "all") return rows;
@@ -129,32 +191,59 @@ export function ActivityTimeline(props: Props) {
       ) : filteredRows.length === 0 ? (
         <p className="text-xs text-muted-foreground py-4 text-center">{emptyText}</p>
       ) : (
-        <ol className="relative space-y-3 ps-4 border-s border-border">
-          {filteredRows.map((r) => (
-            <li key={r.id} className="relative">
-              <span className="absolute -start-[5px] top-1.5 h-2 w-2 rounded-full bg-primary" />
-              <div className="text-sm">
-                <span className="font-medium">
-                  {r.user_id ? users[r.user_id] ?? "مستخدم" : "النظام"}
-                </span>{" "}
-                <span className="text-muted-foreground">{labelForAction(r.action)}</span>
-                {r.field_name && (
-                  <span className="text-muted-foreground">
-                    {" "}
-                    — {labelForField(r.field_name)}:{" "}
-                    <span className="line-through text-muted-foreground/70">
-                      {formatValue(r.old_value)}
-                    </span>{" "}
-                    → <span className="font-medium">{formatValue(r.new_value)}</span>
-                  </span>
+        <>
+          <ol className="relative space-y-3 ps-4 border-s border-border">
+            {filteredRows.map((r) => (
+              <li key={r.id} className="relative">
+                <span className="absolute -start-[5px] top-1.5 h-2 w-2 rounded-full bg-primary" />
+                <div className="text-sm">
+                  <span className="font-medium">
+                    {r.user_id ? users[r.user_id] ?? "مستخدم" : "النظام"}
+                  </span>{" "}
+                  <EntityLink row={r}>
+                    <span className="text-muted-foreground hover:text-foreground">
+                      {labelForAction(r.action)}
+                    </span>
+                  </EntityLink>
+                  {r.field_name && (
+                    <span className="text-muted-foreground">
+                      {" "}
+                      — {labelForField(r.field_name)}:{" "}
+                      <span className="line-through text-muted-foreground/70">
+                        {formatValue(r.old_value)}
+                      </span>{" "}
+                      → <span className="font-medium">{formatValue(r.new_value)}</span>
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  {timeAgoAr(r.created_at)}
+                </div>
+              </li>
+            ))}
+          </ol>
+          {hasMore && (
+            <div className="flex justify-center mt-4">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="h-8"
+              >
+                {loadingMore ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin ms-1" />
+                    جاري التحميل…
+                  </>
+                ) : (
+                  "تحميل المزيد"
                 )}
-              </div>
-              <div className="text-[11px] text-muted-foreground mt-0.5">
-                {timeAgoAr(r.created_at)}
-              </div>
-            </li>
-          ))}
-        </ol>
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </Card>
   );
