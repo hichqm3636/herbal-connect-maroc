@@ -157,7 +157,8 @@ const ACTION_META: Record<StatusKey, {
 function OrderDetails() {
   const { orderId } = Route.useParams();
   const navigate = useNavigate();
-  const { companyId } = useAuth();
+  const { companyId, user, isAdmin } = useAuth();
+  const role: Role = isAdmin ? "admin" : "distributor";
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<StatusKey | null>(null);
@@ -310,9 +311,6 @@ function OrderDetails() {
     toast.success(partnerId ? "تم تعيين المورد" : "تم إزالة المورد");
     load();
   };
-
-  const { user, isAdmin } = useAuth();
-  const role: Role = isAdmin ? "admin" : "distributor";
 
   const updateStatus = async (status: StatusKey) => {
     if (!order || !user || !companyId) return;
