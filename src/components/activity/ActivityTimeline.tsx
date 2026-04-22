@@ -209,12 +209,44 @@ export function ActivityTimeline(props: Props) {
     }
   };
 
+  const refresh = () => {
+    setSnapshot(new Date().toISOString());
+  };
+
+  const isDev = import.meta.env.DEV;
+
   return (
     <Card className={`p-4 shadow-soft ${props.className ?? ""}`} dir="rtl">
       <div className="flex items-center gap-2 mb-3">
         <History className="h-4 w-4 text-primary" />
         <h2 className="font-semibold text-sm">{title}</h2>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={refresh}
+          disabled={loading}
+          className="h-7 w-7 p-0 ms-auto"
+          title="تحديث"
+          aria-label="تحديث"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+        </Button>
       </div>
+      {isDev && isCompanyView && (
+        <div className="mb-3 rounded border border-dashed border-border bg-muted/30 p-2 text-[10px] font-mono text-muted-foreground space-y-0.5">
+          <div>snapshot: {snapshot}</div>
+          <div>filter: {filter} | rows: {rows.length} | hasMore: {String(hasMore)}</div>
+          <div>
+            counts:{" "}
+            {countsLoading
+              ? "loading…"
+              : counts == null
+              ? "error"
+              : JSON.stringify(counts)}
+          </div>
+        </div>
+      )}
       {isCompanyView && (
         <div className="flex flex-wrap gap-1.5 mb-3">
           {FILTERS.map((f) => {
