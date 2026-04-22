@@ -793,6 +793,7 @@ function DistributorProfile() {
       )}
     </div>
   );
+}
 
 function InfoRow({
   icon: Icon,
