@@ -311,33 +311,33 @@ function OrderDetails() {
     load();
   };
 
+  const { user, isAdmin } = useAuth();
+  const role: Role = isAdmin ? "admin" : "distributor";
+
   const updateStatus = async (status: StatusKey) => {
-    if (!order) return;
+    if (!order || !user || !companyId) return;
     setSaving(status);
-    const before = order.status;
-    const { error } = await supabase
-      .from("orders")
-      .update({ status })
-      .eq("id", order.id);
-    setSaving(null);
-    if (error) {
-      toast.error("تعذر تحديث الحالة");
-      return;
-    }
-    if (companyId) {
-      logActivity({
+    try {
+      await transitionOrderStatus({
+        orderId: order.id,
+        to: status,
+        userId: user.id,
+        role,
         companyId,
-        action: "order_status_changed",
-        entityType: "order",
-        entityId: order.id,
-        fieldName: "status",
-        oldValue: before,
-        newValue: status,
-        metadata: { order_number: order.order_number },
       });
+      toast.success(`تم تحديث الحالة: ${STATUS_LABELS[status]}`);
+      load();
+    } catch (e) {
+      const msg =
+        e instanceof OrderStateError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "تعذر تحديث الحالة";
+      toast.error(msg);
+    } finally {
+      setSaving(null);
     }
-    toast.success(`تم تحديث الحالة: ${STATUS_LABELS[status]}`);
-    load();
   };
 
   const handleGenerateInvoice = async () => {
