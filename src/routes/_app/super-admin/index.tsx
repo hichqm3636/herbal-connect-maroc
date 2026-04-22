@@ -14,6 +14,9 @@ import {
   UserPlus,
   ShoppingCart,
   Sparkles,
+  PieChart as PieChartIcon,
+  Trophy,
+  TrendingUp,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
