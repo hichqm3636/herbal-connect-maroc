@@ -3,6 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import { CartButton } from "@/components/CartSheet";
 import { TenantSwitcher } from "@/components/TenantSwitcher";
 import { useAuth } from "@/hooks/useAuth";
+import { PLATFORM_NAME, PLATFORM_SUBTITLE, TENANT_FALLBACK_NAME } from "@/lib/platform";
 
 export function AppHeader() {
   const { company, mode } = useAuth();
