@@ -105,6 +105,7 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
   const submit = async () => {
     if (!validate()) return;
     setBusy(true);
+    const normalizedPhone = formatPhoneMA(form.phone);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
@@ -118,7 +119,7 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
           action: "create",
           companyId,
           fullName: form.fullName,
-          phone: form.phone,
+          phone: normalizedPhone,
           territoryId: form.territoryId,
           accountType: form.accountType,
           roles: [...roles],
@@ -151,9 +152,16 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
       }
       if (data?.error) throw new Error(data.error);
       toast.success("تم إنشاء حساب العميل بنجاح");
+      const created = {
+        name: form.fullName.trim(),
+        phone: normalizedPhone,
+        password: form.password,
+      };
       reset();
       onOpenChange(false);
       onCreated();
+      // Show WhatsApp credentials dialog so admin can send login info immediately.
+      setCredentials(created);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "تعذر الإنشاء");
     } finally {
