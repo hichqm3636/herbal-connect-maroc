@@ -456,13 +456,28 @@ function DistributorProfile() {
             )}
           </div>
         </div>
-        <Button
-          className="gap-2 self-start"
-          onClick={() => navigate({ to: "/admin/create-order/$clientId", params: { clientId: profile.id } })}
-        >
-          <Plus className="h-4 w-4" />
-          إنشاء طلب
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 self-start">
+          <Button
+            variant="outline"
+            className="gap-2 border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#075E54]"
+            disabled={!profile.phone}
+            onClick={() => {
+              setWaPassword("");
+              setWaPromptOpen(true);
+            }}
+            title={!profile.phone ? "لا يوجد رقم هاتف" : "إرسال بيانات الدخول عبر WhatsApp"}
+          >
+            <MessageCircle className="h-4 w-4" />
+            إرسال عبر WhatsApp
+          </Button>
+          <Button
+            className="gap-2"
+            onClick={() => navigate({ to: "/admin/create-order/$clientId", params: { clientId: profile.id } })}
+          >
+            <Plus className="h-4 w-4" />
+            إنشاء طلب
+          </Button>
+        </div>
       </div>
 
       {/* Distributor information */}
