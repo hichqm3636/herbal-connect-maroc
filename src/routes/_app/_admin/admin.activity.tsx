@@ -265,29 +265,126 @@ function AdminActivity() {
     setPage(0);
   };
 
+  const categoryOf = (action: string): string => {
+    if (ORDER_ACTIONS.includes(action)) return "طلب";
+    if (LOYALTY_ACTIONS.includes(action)) return "نقاط ولاء";
+    if (ADMIN_ACTIONS.includes(action)) return "إجراء إداري";
+    return "آخر";
+  };
+
+  const formatDiff = (meta: Record<string, unknown>): string => {
+    const changes = (meta?.changes ?? meta?.diff) as
+      | Record<string, { from?: unknown; to?: unknown }>
+      | undefined;
+    if (changes && typeof changes === "object") {
+      return Object.entries(changes)
+        .map(([k, v]) => `${FIELD_LABELS[k] ?? k}: ${v?.from ?? "—"} → ${v?.to ?? "—"}`)
+        .join(" | ");
+    }
+    return "";
+  };
+
   const exportCsv = () => {
     if (rows.length === 0) return toast.error("لا توجد بيانات");
-    const headers = ["التاريخ", "المسؤول", "الإجراء", "الهدف", "التفاصيل"];
-    const escape = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+    const headers = [
+      "التاريخ",
+      "النوع",
+      "الإجراء",
+      "المسؤول",
+      "الموزع المستهدف",
+      "رقم الطلب",
+      "حالة الطلب",
+      "إجمالي الطلب (د.م.)",
+      "تغيّر النقاط",
+      "النقاط قبل",
+      "النقاط بعد",
+      "السبب",
+      "التغييرات",
+      "بيانات إضافية",
+    ];
+    const escape = (v: unknown) => {
+      const s = v === null || v === undefined ? "" : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
     const csv = [
       headers.join(","),
-      ...rows.map((r) =>
+      ...rows.map((r) => {
+        const m = (r.metadata ?? {}) as Record<string, unknown>;
+        const isOrder = ORDER_ACTIONS.includes(r.action);
+        const isLoyalty = LOYALTY_ACTIONS.includes(r.action);
+        const changes = (m.changes ?? m.diff) as
+          | Record<string, { from?: unknown; to?: unknown }>
+          | undefined;
+        const orderNumber = (m.order_number ?? m.order_id ?? "") as string;
+        const orderStatus = isOrder
+          ? (changes?.status
+              ? `${changes.status.from ?? "—"} → ${changes.status.to ?? "—"}`
+              : (m.status ?? "")) as string
+          : "";
+        const orderTotal = isOrder
+          ? (changes?.total_mad
+              ? `${changes.total_mad.from ?? "—"} → ${changes.total_mad.to ?? "—"}`
+              : (m.total_mad ?? "")) as string
+          : "";
+        const pointsDelta = isLoyalty
+          ? (m.points_delta ?? m.points ?? changes?.loyalty_points
+              ? (changes?.loyalty_points
+                  ? Number(changes.loyalty_points.to ?? 0) -
+                    Number(changes.loyalty_points.from ?? 0)
+                  : (m.points_delta ?? m.points ?? ""))
+              : "")
+          : "";
+        const pointsBefore = isLoyalty
+          ? (changes?.loyalty_points?.from ?? m.points_before ?? "")
+          : "";
+        const pointsAfter = isLoyalty
+          ? (changes?.loyalty_points?.to ?? m.points_after ?? "")
+          : "";
+        const reason = (m.reason ?? m.note ?? "") as string;
+        // Strip the columns we already broke out from the leftover blob.
+        const leftover = { ...m };
         [
+          "changes",
+          "diff",
+          "order_number",
+          "order_id",
+          "status",
+          "total_mad",
+          "points_delta",
+          "points",
+          "points_before",
+          "points_after",
+          "reason",
+          "note",
+        ].forEach((k) => delete leftover[k]);
+
+        return [
           format(new Date(r.created_at), "yyyy-MM-dd HH:mm:ss"),
-          profiles[r.admin_id] || r.admin_id,
+          categoryOf(r.action),
           ACTION_LABELS[r.action] ?? r.action,
+          profiles[r.admin_id] || r.admin_id,
           r.target_user_id ? profiles[r.target_user_id] || r.target_user_id : "",
-          JSON.stringify(r.metadata ?? {}),
+          orderNumber,
+          orderStatus,
+          orderTotal,
+          pointsDelta,
+          pointsBefore,
+          pointsAfter,
+          reason,
+          formatDiff(m),
+          Object.keys(leftover).length ? JSON.stringify(leftover) : "",
         ]
           .map(escape)
-          .join(","),
-      ),
+          .join(",");
+      }),
     ].join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `activity-log-${new Date().toISOString().slice(0, 10)}.csv`;
+    const suffix =
+      typeFilter === "all" ? "all" : typeFilter;
+    a.download = `activity-log-${suffix}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success(`تم تصدير ${rows.length} سجل`);
