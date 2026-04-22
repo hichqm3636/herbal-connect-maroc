@@ -1630,6 +1630,13 @@ export type Database = {
         Args: { _full_name: string; _token: string }
         Returns: Json
       }
+      activity_counts: {
+        Args: { p_company_id: string }
+        Returns: {
+          count: number
+          entity_type: string
+        }[]
+      }
       admin_exists: { Args: never; Returns: boolean }
       claim_first_admin: { Args: never; Returns: boolean }
       current_company_id: { Args: never; Returns: string }

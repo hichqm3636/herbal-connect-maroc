@@ -104,7 +104,8 @@ export function ActivityTimeline(props: Props) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [filter, setFilter] = useState<FilterKey>("all");
-  const [counts, setCounts] = useState<(Record<EntityType, number> & { all: number }) | null>(null);
+  const [counts, setCounts] = useState<(Record<string, number> & { all: number }) | null>(null);
+  const [countsLoading, setCountsLoading] = useState(true);
   const isCompanyView = "companyId" in props && !!props.companyId;
 
   const filterTypes = (key: FilterKey): EntityType[] | undefined => {
@@ -159,21 +160,27 @@ export function ActivityTimeline(props: Props) {
   ]);
 
   // Fetch DB-side counts per entity_type for the company view (filter badges).
+  // Debounced 300ms to avoid spamming the RPC when filters/rows change quickly.
   useEffect(() => {
     if (!isCompanyView) return;
     let cancelled = false;
-    const allTypes: EntityType[] = FILTERS.flatMap((f) => f.types);
-    const uniqueTypes = Array.from(new Set(allTypes)) as EntityType[];
-    (async () => {
-      try {
-        const result = await fetchCompanyActivityCounts(props.companyId!, uniqueTypes);
-        if (!cancelled) setCounts(result);
-      } catch (err) {
-        console.warn("[ActivityTimeline] counts failed", err);
-      }
-    })();
+    setCountsLoading(true);
+    const timer = setTimeout(() => {
+      (async () => {
+        try {
+          const result = await fetchCompanyActivityCounts(props.companyId!);
+          if (!cancelled) setCounts(result);
+        } catch (err) {
+          console.warn("[ActivityTimeline] counts failed", err);
+          if (!cancelled) setCounts(null);
+        } finally {
+          if (!cancelled) setCountsLoading(false);
+        }
+      })();
+    }, 300);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, ["companyId" in props ? props.companyId : null, rows.length]);
@@ -208,6 +215,12 @@ export function ActivityTimeline(props: Props) {
                 : f.key === "all"
                 ? counts.all
                 : f.types.reduce((sum, t) => sum + (counts[t] ?? 0), 0);
+            // Loading → "(...)". Error (counts === null after load) → no number.
+            const badge = countsLoading
+              ? "(...)"
+              : count == null
+              ? null
+              : `(${count})`;
             return (
               <Button
                 key={f.key}
@@ -218,9 +231,7 @@ export function ActivityTimeline(props: Props) {
                 className="h-7 px-2.5 text-xs"
               >
                 {f.label}
-                {count != null && (
-                  <span className="ms-1 opacity-70">({count})</span>
-                )}
+                {badge && <span className="ms-1 opacity-70">{badge}</span>}
               </Button>
             );
           })}

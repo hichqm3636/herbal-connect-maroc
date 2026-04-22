@@ -55,12 +55,15 @@ export async function logActivity(input: LogActivityInput): Promise<void> {
   }
   try {
     await insertActivityRow(input, userId);
+    // Invalidate cached counts for this company on successful write.
+    COUNTS_CACHE.delete(input.companyId);
   } catch (firstErr) {
     // One short-delay retry before failing silently, to absorb transient
     // network blips or brief auth refresh windows.
     await new Promise((r) => setTimeout(r, 400));
     try {
       await insertActivityRow(input, userId);
+      COUNTS_CACHE.delete(input.companyId);
     } catch (retryErr) {
       console.warn("[activityLog] insert failed after retry", { firstErr, retryErr });
     }
@@ -176,33 +179,48 @@ export async function fetchCompanyActivityPage(
 /**
  * Server-side counts of activity rows grouped by entity_type for a company.
  *
- * PostgREST does not expose SQL `GROUP BY`, so we issue one HEAD request per
- * entity type with `count: "exact"`. All requests run in parallel and the
- * counts are computed by Postgres — never by iterating a fetched array on the
- * client.
+ * Uses a single Postgres RPC (`activity_counts`) that performs `GROUP BY` in
+ * the database — counts are never computed by iterating fetched arrays on the
+ * client. Results are memoized in a module-level cache for 30s, and the cache
+ * is invalidated whenever `logActivity` writes a new row for that company.
  */
+type CountsData = Record<string, number> & { all: number };
+type CountsCacheEntry = { data: CountsData; ts: number };
+
+const COUNTS_CACHE = new Map<string, CountsCacheEntry>();
+const COUNTS_TTL_MS = 30_000;
+
+/** Exposed for tests — clears the in-memory counts cache. */
+export function _clearActivityCountsCache(companyId?: string) {
+  if (companyId) COUNTS_CACHE.delete(companyId);
+  else COUNTS_CACHE.clear();
+}
+
 export async function fetchCompanyActivityCounts(
   companyId: string,
-  entityTypes: EntityType[],
-): Promise<Record<EntityType, number> & { all: number }> {
-  const perType = await Promise.all(
-    entityTypes.map(async (t) => {
-      const { count, error } = await supabase
-        .from("activity_logs")
-        .select("*", { count: "exact", head: true })
-        .eq("company_id", companyId)
-        .eq("entity_type", t);
-      if (error) throw error;
-      return [t, count ?? 0] as const;
-    }),
-  );
-  const { count: allCount, error: allErr } = await supabase
-    .from("activity_logs")
-    .select("*", { count: "exact", head: true })
-    .eq("company_id", companyId);
-  if (allErr) throw allErr;
-  const out = { all: allCount ?? 0 } as Record<EntityType, number> & { all: number };
-  for (const [t, c] of perType) out[t] = c;
+  _entityTypes?: EntityType[],
+): Promise<CountsData> {
+  const cached = COUNTS_CACHE.get(companyId);
+  if (cached && Date.now() - cached.ts < COUNTS_TTL_MS) {
+    return cached.data;
+  }
+  // RPC isn't in the generated Database types yet — cast through `as never`.
+  const rpc = supabase.rpc as unknown as (
+    name: string,
+    args: Record<string, unknown>,
+  ) => Promise<{
+    data: { entity_type: string; count: number | string }[] | null;
+    error: unknown;
+  }>;
+  const { data, error } = await rpc("activity_counts", { p_company_id: companyId });
+  if (error) throw error;
+  const out: CountsData = { all: 0 };
+  for (const row of data ?? []) {
+    const c = Number(row.count) || 0;
+    out[row.entity_type] = c;
+    out.all += c;
+  }
+  COUNTS_CACHE.set(companyId, { data: out, ts: Date.now() });
   return out;
 }
 
