@@ -72,6 +72,10 @@ import {
 } from "@/lib/orderStateMachine";
 import { ActivityTimeline } from "@/components/activity/ActivityTimeline";
 import { LastEditedLabel } from "@/components/activity/LastEditedLabel";
+import {
+  sendOrderToSupplier,
+  retrySendOrderToSupplier,
+} from "@/utils/woocommerce.functions";
 
 export const Route = createFileRoute("/_app/_admin/admin/orders_/$orderId")({
   component: OrderDetails,
@@ -107,6 +111,9 @@ interface OrderDetail {
   distributor_id: string;
   company_id: string;
   supplier_partner_id: string | null;
+  external_id: string | null;
+  external_status: string | null;
+  sync_error: string | null;
   profiles: {
     full_name: string;
     phone: string | null;
@@ -185,6 +192,7 @@ function OrderDetails() {
 
   const [supplierOptions, setSupplierOptions] = useState<PartnerOption[]>([]);
   const [savingSupplier, setSavingSupplier] = useState(false);
+  const [sendingToSupplier, setSendingToSupplier] = useState(false);
 
   const load = async () => {
     if (!companyId) return;
@@ -192,7 +200,7 @@ function OrderDetails() {
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, payment_method, distributor_id, company_id, supplier_partner_id, profiles(full_name, phone, city, territories(name)), supplier:partners!orders_supplier_partner_id_fkey(id, name, phone), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost_price))",
+        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, payment_method, distributor_id, company_id, supplier_partner_id, external_id, external_status, sync_error, profiles(full_name, phone, city, territories(name)), supplier:partners!orders_supplier_partner_id_fkey(id, name, phone), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost_price))",
       )
       .eq("id", orderId)
       .eq("company_id", companyId)
@@ -310,6 +318,45 @@ function OrderDetails() {
     }
     toast.success(partnerId ? "تم تعيين المورد" : "تم إزالة المورد");
     load();
+  };
+
+  const handleSendToWoo = async (mode: "send" | "retry") => {
+    if (!order) return;
+    setSendingToSupplier(true);
+    try {
+      const fn = mode === "retry" ? retrySendOrderToSupplier : sendOrderToSupplier;
+      const res = await fn({ data: { orderId: order.id } });
+      if (res.ok) {
+        toast.success(
+          res.externalId
+            ? `تم الإرسال إلى المورد (#${res.externalId})`
+            : "تم الإرسال إلى المورد",
+        );
+        if (companyId) {
+          void logActivity({
+            companyId,
+            action:
+              mode === "retry"
+                ? "order_supplier_sync_retried"
+                : "order_supplier_sync_sent",
+            entityType: "order",
+            entityId: order.id,
+            metadata: {
+              order_number: order.order_number,
+              external_id: res.externalId ?? null,
+              external_status: res.externalStatus ?? null,
+            },
+          });
+        }
+      } else {
+        toast.error(res.error ?? "تعذر الإرسال إلى المورد");
+      }
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "تعذر الإرسال إلى المورد");
+    } finally {
+      setSendingToSupplier(false);
+    }
   };
 
   const updateStatus = async (status: StatusKey) => {
@@ -687,6 +734,79 @@ function OrderDetails() {
           <p className="text-xs text-muted-foreground italic">
             عيّن موردًا من قائمة الشركاء لتفعيل إرسال الطلب عبر واتساب.
           </p>
+        )}
+      </Card>
+
+      {/* WooCommerce supplier sync — DB is source of truth, Woo is fulfilment. */}
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold text-sm text-muted-foreground">
+            مزامنة المورد (WooCommerce)
+          </h2>
+          {sendingToSupplier && (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+          )}
+        </div>
+
+        {order.external_id ? (
+          <div className="space-y-1.5 text-sm">
+            <p className="flex items-center gap-2 text-primary">
+              <CheckCircle2 className="h-4 w-4" />
+              تم الإرسال إلى المورد
+            </p>
+            <p className="text-xs text-muted-foreground">
+              معرّف الطلب لدى المورد:{" "}
+              <span className="font-mono" dir="ltr">
+                #{order.external_id}
+              </span>
+            </p>
+            {order.external_status && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                الحالة لدى المورد:
+                <Badge variant="outline" className="text-xs">
+                  {order.external_status}
+                </Badge>
+              </p>
+            )}
+          </div>
+        ) : order.sync_error ? (
+          <div className="space-y-2">
+            <p className="text-xs text-destructive break-words">
+              فشل الإرسال: {order.sync_error}
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={sendingToSupplier}
+              onClick={() => handleSendToWoo("retry")}
+            >
+              {sendingToSupplier ? (
+                <Loader2 className="h-4 w-4 animate-spin ml-1" />
+              ) : (
+                <Send className="h-4 w-4 ml-1" />
+              )}
+              إعادة المحاولة
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              لم يُرسل هذا الطلب إلى المورد بعد. يتم الإرسال تلقائيًا عند الموافقة على الطلب،
+              ويمكنك أيضًا إرساله يدويًا.
+            </p>
+            <Button
+              size="sm"
+              disabled={sendingToSupplier}
+              onClick={() => handleSendToWoo("send")}
+            >
+              {sendingToSupplier ? (
+                <Loader2 className="h-4 w-4 animate-spin ml-1" />
+              ) : (
+                <Send className="h-4 w-4 ml-1" />
+              )}
+              إرسال للمورد
+            </Button>
+          </div>
         )}
       </Card>
 
