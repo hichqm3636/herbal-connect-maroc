@@ -164,10 +164,57 @@ function StorageHealthPage() {
     await Promise.all(Array.from({ length: Math.min(concurrency, total) }, worker));
     setAssets([...updated]);
     setScanning(false);
+
+    // Persist results
+    if (companyId) {
+      const ok_count = updated.filter((a) => a.status === "ok").length;
+      const broken_count = updated.filter((a) => a.status === "broken").length;
+      const { data: saved, error } = await supabase
+        .from("media_health_scans")
+        .insert({
+          company_id: companyId,
+          scanned_by: user?.id ?? null,
+          total: updated.length,
+          ok_count,
+          broken_count,
+          results: updated as unknown as never,
+        })
+        .select("scanned_at")
+        .single();
+      if (error) {
+        toast.error("تعذّر حفظ نتائج الفحص");
+      } else {
+        setLastScanAt(saved.scanned_at);
+        toast.success("تم حفظ نتائج الفحص");
+      }
+    }
+  };
+
+  const loadCachedScan = async () => {
+    if (!companyId) {
+      loadAssets();
+      return;
+    }
+    setLoading(true);
+    const { data } = await supabase
+      .from("media_health_scans")
+      .select("scanned_at, results")
+      .eq("company_id", companyId)
+      .order("scanned_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setLoading(false);
+    if (data && Array.isArray(data.results)) {
+      setAssets(data.results as unknown as Asset[]);
+      setLastScanAt(data.scanned_at);
+      setFromCache(true);
+    } else {
+      loadAssets();
+    }
   };
 
   useEffect(() => {
-    if (companyId || isSuperAdmin) loadAssets();
+    if (companyId || isSuperAdmin) loadCachedScan();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId, isSuperAdmin]);
 
