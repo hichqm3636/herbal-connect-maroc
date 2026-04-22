@@ -587,10 +587,16 @@ ${
             {rows.length} سجل {filtersActive ? "(مُصفّى)" : ""}
           </p>
         </div>
-        <Button variant="outline" className="gap-2 self-start sm:self-auto" onClick={exportCsv}>
-          <Download className="h-4 w-4" />
-          تصدير CSV
-        </Button>
+        <div className="flex gap-2 self-start sm:self-auto">
+          <Button variant="outline" className="gap-2" onClick={exportCsv}>
+            <Download className="h-4 w-4" />
+            تصدير CSV
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={exportPdf}>
+            <FileText className="h-4 w-4" />
+            تصدير PDF
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
