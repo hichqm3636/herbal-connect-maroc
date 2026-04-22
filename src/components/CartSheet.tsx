@@ -32,6 +32,7 @@ import {
   isPriceDrift,
 } from "@/lib/distributorPricing";
 import { evaluateRules } from "@/lib/orderRules";
+import { logActivity } from "@/lib/activityLog";
 import { toast } from "sonner";
 
 export function CartButton() {
@@ -228,6 +229,18 @@ export function CartSheet() {
       setSubmitting(false);
       return;
     }
+    void logActivity({
+      companyId,
+      action: "order_created",
+      entityType: "order",
+      entityId: order.id,
+      metadata: {
+        total_mad: orderTotal,
+        items_count: orderItems.length,
+        points_earned: points,
+        source: "cart",
+      },
+    });
     toast.success(`تم إرسال الطلب بنجاح • +${points} نقطة`);
     clear();
     setNotes("");
