@@ -101,14 +101,21 @@ function BrandingPage() {
     if (!companyId) return;
     if (displayName.trim().length < 2) return toast.error("الاسم المعروض قصير جداً");
     setSaving(true);
-    const { error } = await supabase
-      .from("companies")
-      .update({ display_name: displayName.trim(), brand_color: brandColor })
-      .eq("id", companyId);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    await refreshCompany();
-    toast.success("تم حفظ الإعدادات");
+    try {
+      await withFreshSession(async () => {
+        const { error } = await supabase
+          .from("companies")
+          .update({ display_name: displayName.trim(), brand_color: brandColor })
+          .eq("id", companyId);
+        if (error) throw error;
+      });
+      await refreshCompany();
+      toast.success("تم حفظ الإعدادات");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "تعذر حفظ الإعدادات");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
