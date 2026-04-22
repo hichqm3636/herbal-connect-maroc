@@ -269,6 +269,8 @@ function SettingsPage() {
         </CardContent>
       </Card>
 
+      <ChangeEmailCard currentEmail={email} />
+
       <HeaderPreviewCard />
 
       <Card className="shadow-soft">
