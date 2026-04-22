@@ -59,54 +59,50 @@ function LoginPage() {
    * - Production uses real subdomains (`<slug>.nexora.app`); dev/preview falls back to
    *   `?company=<slug>` on the current host.
    */
-  const buildPostLoginUrl = async (userId: string): Promise<string> => {
-    const fallback = "/dashboard";
+  /** Resolve the signed-in user's company slug + super-admin flag. */
+  const resolveUserTenant = async (
+    userId: string,
+  ): Promise<{ slug: string | null; isSuper: boolean }> => {
     const { data: roleRows } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
     const isSuper = (roleRows ?? []).some((r) => r.role === "super_admin");
 
-    // Super admins always land on the platform portal.
-    if (isSuper) {
-      if (typeof window === "undefined") return "/super-admin";
-      const host = window.location.hostname.toLowerCase();
-      if (host.endsWith(".nexora.app") && host !== "app.nexora.app") {
-        return "https://app.nexora.app/super-admin";
-      }
-      return "/super-admin";
-    }
-
-    // Resolve the user's company slug.
     const { data: profile } = await supabase
       .from("profiles")
       .select("company_id")
       .eq("id", userId)
       .maybeSingle();
     const cid = (profile?.company_id as string | undefined | null) ?? null;
-    if (!cid) return fallback;
+    if (!cid) return { slug: null, isSuper };
 
     const { data: company } = await supabase
       .from("companies")
       .select("slug")
       .eq("id", cid)
       .maybeSingle();
-    const userSlug = (company?.slug as string | undefined) ?? null;
-    if (!userSlug) return fallback;
+    return { slug: (company?.slug as string | undefined) ?? null, isSuper };
+  };
 
-    if (typeof window === "undefined") return fallback;
+  /** Build the post-login URL given the user's resolved slug. */
+  const buildPostLoginUrl = (userSlug: string | null, isSuper: boolean): string => {
+    const fallback = "/dashboard";
+    if (typeof window === "undefined") return isSuper ? "/super-admin" : fallback;
     const host = window.location.hostname.toLowerCase();
-    const currentSlug = tenant.slug;
 
-    // Already on the right tenant portal → no host change needed.
-    if (currentSlug === userSlug) return fallback;
+    if (isSuper) {
+      if (host.endsWith(".nexora.app") && host !== "app.nexora.app") {
+        return "https://app.nexora.app/super-admin";
+      }
+      return "/super-admin";
+    }
+    if (!userSlug) return fallback;
+    if (tenant.slug === userSlug) return fallback;
 
-    // Production: redirect to <slug>.nexora.app to preserve branding.
     if (host.endsWith(".nexora.app") || host === "nexora.app") {
       return `https://${userSlug}.nexora.app/dashboard`;
     }
-
-    // Dev / Lovable preview: switch the ?company= param so the tenant resolver picks it up.
     const url = new URL(window.location.origin + "/dashboard");
     url.searchParams.set("company", userSlug);
     return url.toString();
@@ -132,15 +128,46 @@ function LoginPage() {
       toast.error(friendly);
       return;
     }
+
+    const userId = data.user?.id;
+    if (!userId) {
+      setSubmitting(false);
+      toast.error("تعذر تحديد المستخدم");
+      return;
+    }
+
+    // Client-side tenant verification: if the host resolves to a tenant and the
+    // user's company slug doesn't match, refuse access for THIS portal.
+    // Super admins bypass (they can sign in to any portal).
+    const { slug: userSlug, isSuper } = await resolveUserTenant(userId);
+
+    if (
+      !isSuper &&
+      tenant.kind === "tenant" &&
+      tenant.slug &&
+      userSlug &&
+      tenant.slug !== userSlug
+    ) {
+      await supabase.auth.signOut();
+      setSubmitting(false);
+      const portalName = tenant.company?.display_name ?? tenant.company?.name ?? tenant.slug;
+      toast.error(`هذا الحساب لا ينتمي إلى بوابة ${portalName}. يرجى استخدام بوابة شركتك.`);
+      return;
+    }
+
+    // Also catch the case where a non-super user has no company at all on a tenant portal.
+    if (!isSuper && tenant.kind === "tenant" && !userSlug) {
+      await supabase.auth.signOut();
+      setSubmitting(false);
+      toast.error("لا توجد شركة مرتبطة بهذا الحساب. تواصل مع الإدارة.");
+      return;
+    }
+
     toast.success("مرحباً بعودتك");
-    const target = data.user ? await buildPostLoginUrl(data.user.id) : "/dashboard";
+    const target = buildPostLoginUrl(userSlug, isSuper);
     setSubmitting(false);
-    if (target.startsWith("http")) {
-      // Cross-host redirect (different subdomain) — full page nav so the new host
-      // re-resolves the tenant and applies branding from the start.
-      window.location.assign(target);
-    } else if (target.includes("?")) {
-      // Same host but query param changed (dev/preview). Full nav so useTenant re-runs.
+    if (target.startsWith("http") || target.includes("?")) {
+      // Cross-host or query-param change → full page nav so useTenant re-resolves branding.
       window.location.assign(target);
     } else {
       navigate({ to: target });
