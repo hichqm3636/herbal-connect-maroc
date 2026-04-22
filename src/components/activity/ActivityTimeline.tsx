@@ -178,7 +178,7 @@ export function ActivityTimeline(props: Props) {
     const timer = setTimeout(() => {
       (async () => {
         try {
-          const result = await fetchCompanyActivityCounts(props.companyId!);
+          const result = await fetchCompanyActivityCounts(props.companyId!, snapshot);
           if (!cancelled) setCounts(result);
         } catch (err) {
           console.warn("[ActivityTimeline] counts failed", err);
