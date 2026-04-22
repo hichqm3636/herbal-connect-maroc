@@ -56,7 +56,11 @@ import {
 } from "@/lib/invoices";
 import { toast } from "sonner";
 import { WhatsappContactButton } from "@/components/WhatsappContactButton";
-import { buildOrderWhatsappMessage } from "@/utils/whatsapp";
+import {
+  buildOrderWhatsappMessage,
+  buildSupplierOrderMessage,
+  buildSupplierConfirmationMessage,
+} from "@/utils/whatsapp";
 
 export const Route = createFileRoute("/_app/_admin/admin/orders_/$orderId")({
   component: OrderDetails,
