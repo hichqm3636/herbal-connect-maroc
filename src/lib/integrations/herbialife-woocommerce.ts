@@ -28,6 +28,7 @@ export interface WooProduct {
   sku?: string;
   name?: string;
   description?: string;
+  short_description?: string;
   price?: string;
   stock_quantity?: number | null;
   stock_status?: string;
