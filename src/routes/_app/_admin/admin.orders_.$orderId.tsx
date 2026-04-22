@@ -645,6 +645,9 @@ function OrderDetails() {
                 }
               }}
             />
+            <WhatsappContactButton
+              phone={order.supplier.phone}
+              label="Confirm Order"
               icon={Check}
               message={buildSupplierConfirmationMessage({
                 distributorName: order.profiles?.full_name || "—",
@@ -654,6 +657,20 @@ function OrderDetails() {
                 appBaseUrl:
                   typeof window !== "undefined" ? window.location.origin : undefined,
               })}
+              onSent={() => {
+                if (companyId) {
+                  logActivity({
+                    companyId,
+                    action: "order_supplier_confirmation_requested",
+                    entityType: "order",
+                    entityId: order.id,
+                    metadata: {
+                      order_number: order.order_number,
+                      supplier_id: order.supplier_partner_id,
+                    },
+                  });
+                }
+              }}
             />
           </div>
         ) : order.supplier_partner_id ? (
