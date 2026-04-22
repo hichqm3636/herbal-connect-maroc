@@ -17,6 +17,7 @@ import {
   Trash2,
   Plus,
   RefreshCw,
+  FileText,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -390,6 +391,185 @@ function AdminActivity() {
     toast.success(`تم تصدير ${rows.length} سجل`);
   };
 
+  const exportPdf = () => {
+    if (rows.length === 0) return toast.error("لا توجد بيانات");
+
+    // Aggregate totals per category over the currently filtered rows.
+    const totals = {
+      orders: 0,
+      loyalty: 0,
+      admin: 0,
+      pointsDelta: 0,
+      orderTotalSum: 0,
+    };
+    rows.forEach((r) => {
+      const m = (r.metadata ?? {}) as Record<string, unknown>;
+      const changes = (m.changes ?? m.diff) as
+        | Record<string, { from?: unknown; to?: unknown }>
+        | undefined;
+      if (ORDER_ACTIONS.includes(r.action)) {
+        totals.orders++;
+        const t = Number(
+          (changes?.total_mad?.to as number | undefined) ?? (m.total_mad as number | undefined),
+        );
+        if (Number.isFinite(t)) totals.orderTotalSum += t;
+      } else if (LOYALTY_ACTIONS.includes(r.action)) {
+        totals.loyalty++;
+        const delta = Number(
+          (m.points_delta as number | undefined) ??
+            (m.points as number | undefined) ??
+            (changes?.loyalty_points
+              ? Number(changes.loyalty_points.to ?? 0) -
+                Number(changes.loyalty_points.from ?? 0)
+              : 0),
+        );
+        if (Number.isFinite(delta)) totals.pointsDelta += delta;
+      } else if (ADMIN_ACTIONS.includes(r.action)) {
+        totals.admin++;
+      }
+    });
+
+    const escapeHtml = (s: string) =>
+      s.replace(/[&<>"']/g, (c) =>
+        c === "&"
+          ? "&amp;"
+          : c === "<"
+            ? "&lt;"
+            : c === ">"
+              ? "&gt;"
+              : c === '"'
+                ? "&quot;"
+                : "&#39;",
+      );
+
+    const filterLines: string[] = [];
+    if (typeFilter !== "all")
+      filterLines.push(
+        `النوع: ${
+          typeFilter === "orders"
+            ? "الطلبات"
+            : typeFilter === "loyalty"
+              ? "نقاط الولاء"
+              : "إجراءات إدارية"
+        }`,
+      );
+    if (actionFilter !== "all")
+      filterLines.push(`الإجراء: ${ACTION_LABELS[actionFilter] ?? actionFilter}`);
+    if (adminFilter !== "all") {
+      const a = allAdmins.find((x) => x.id === adminFilter);
+      filterLines.push(`المسؤول: ${a?.full_name ?? adminFilter}`);
+    }
+    if (distributorFilter !== "all") {
+      const d = allDistributors.find((x) => x.id === distributorFilter);
+      filterLines.push(`الموزع: ${d?.full_name ?? distributorFilter}`);
+    }
+    if (from) filterLines.push(`من: ${format(from, "yyyy-MM-dd")}`);
+    if (to) filterLines.push(`إلى: ${format(to, "yyyy-MM-dd")}`);
+
+    const rowsHtml = rows
+      .map((r) => {
+        const m = (r.metadata ?? {}) as Record<string, unknown>;
+        const isOrder = ORDER_ACTIONS.includes(r.action);
+        const isLoyalty = LOYALTY_ACTIONS.includes(r.action);
+        const changes = (m.changes ?? m.diff) as
+          | Record<string, { from?: unknown; to?: unknown }>
+          | undefined;
+        const orderNumber = (m.order_number ?? m.order_id ?? "") as string;
+        const orderStatus = isOrder
+          ? changes?.status
+            ? `${changes.status.from ?? "—"} → ${changes.status.to ?? "—"}`
+            : ((m.status as string | undefined) ?? "")
+          : "";
+        const orderTotal = isOrder
+          ? changes?.total_mad
+            ? `${changes.total_mad.from ?? "—"} → ${changes.total_mad.to ?? "—"}`
+            : ((m.total_mad as string | number | undefined) ?? "")
+          : "";
+        const pointsDelta = isLoyalty
+          ? ((m.points_delta as number | undefined) ??
+            (m.points as number | undefined) ??
+            (changes?.loyalty_points
+              ? Number(changes.loyalty_points.to ?? 0) -
+                Number(changes.loyalty_points.from ?? 0)
+              : ""))
+          : "";
+        return `<tr>
+          <td>${escapeHtml(format(new Date(r.created_at), "yyyy-MM-dd HH:mm"))}</td>
+          <td>${escapeHtml(
+            ORDER_ACTIONS.includes(r.action)
+              ? "طلب"
+              : LOYALTY_ACTIONS.includes(r.action)
+                ? "نقاط"
+                : "إداري",
+          )}</td>
+          <td>${escapeHtml(ACTION_LABELS[r.action] ?? r.action)}</td>
+          <td>${escapeHtml(profiles[r.admin_id] || "—")}</td>
+          <td>${escapeHtml(r.target_user_id ? profiles[r.target_user_id] || "—" : "")}</td>
+          <td>${escapeHtml(String(orderNumber))}</td>
+          <td>${escapeHtml(String(orderStatus))}</td>
+          <td>${escapeHtml(String(orderTotal))}</td>
+          <td>${escapeHtml(String(pointsDelta))}</td>
+          <td>${escapeHtml(formatDiff(m))}</td>
+        </tr>`;
+      })
+      .join("");
+
+    const html = `<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8" />
+<title>سجل النشاط الإداري</title>
+<style>
+  @page { size: A4 landscape; margin: 12mm; }
+  body { font-family: -apple-system, "Segoe UI", Tahoma, Arial, sans-serif; color: #111; font-size: 11px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .meta { color: #555; font-size: 11px; margin-bottom: 12px; }
+  .filters, .totals { background: #f4f4f5; border: 1px solid #e4e4e7; padding: 8px 10px; border-radius: 6px; margin-bottom: 10px; }
+  .filters strong, .totals strong { display: inline-block; min-width: 60px; }
+  .totals-grid { display: flex; flex-wrap: wrap; gap: 16px; }
+  .totals-grid div { font-size: 12px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #d4d4d8; padding: 5px 6px; text-align: right; vertical-align: top; }
+  th { background: #18181b; color: #fff; font-weight: 600; font-size: 11px; }
+  tr:nth-child(even) td { background: #fafafa; }
+  .footer { margin-top: 12px; font-size: 10px; color: #71717a; text-align: center; }
+  @media print { .no-print { display: none; } }
+</style></head><body>
+<h1>سجل النشاط الإداري</h1>
+<div class="meta">تاريخ التصدير: ${format(new Date(), "yyyy-MM-dd HH:mm")} · إجمالي السجلات: ${rows.length}</div>
+${
+  filterLines.length
+    ? `<div class="filters"><strong>الفلاتر:</strong> ${filterLines.map(escapeHtml).join(" · ")}</div>`
+    : ""
+}
+<div class="totals">
+  <div class="totals-grid">
+    <div><strong>طلبات:</strong> ${totals.orders}</div>
+    <div><strong>نقاط:</strong> ${totals.loyalty}</div>
+    <div><strong>إدارية:</strong> ${totals.admin}</div>
+    <div><strong>مجموع تغيّر النقاط:</strong> ${totals.pointsDelta}</div>
+    <div><strong>مجموع قيم الطلبات (د.م.):</strong> ${totals.orderTotalSum.toFixed(2)}</div>
+  </div>
+</div>
+<table>
+  <thead><tr>
+    <th>التاريخ</th><th>النوع</th><th>الإجراء</th><th>المسؤول</th><th>الموزع</th>
+    <th>رقم الطلب</th><th>حالة الطلب</th><th>إجمالي الطلب</th><th>تغيّر النقاط</th><th>التغييرات</th>
+  </tr></thead>
+  <tbody>${rowsHtml}</tbody>
+</table>
+<div class="footer">منصة Nexora — تقرير سجل التدقيق</div>
+<script>window.onload = () => { setTimeout(() => window.print(), 300); };<\/script>
+</body></html>`;
+
+    const w = window.open("", "_blank");
+    if (!w) {
+      toast.error("الرجاء السماح بالنوافذ المنبثقة لتصدير PDF");
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    toast.success(`جاري تجهيز PDF لـ ${rows.length} سجل`);
+  };
+
   const filtersActive =
     typeFilter !== "all" ||
     adminFilter !== "all" ||
@@ -407,10 +587,16 @@ function AdminActivity() {
             {rows.length} سجل {filtersActive ? "(مُصفّى)" : ""}
           </p>
         </div>
-        <Button variant="outline" className="gap-2 self-start sm:self-auto" onClick={exportCsv}>
-          <Download className="h-4 w-4" />
-          تصدير CSV
-        </Button>
+        <div className="flex gap-2 self-start sm:self-auto">
+          <Button variant="outline" className="gap-2" onClick={exportCsv}>
+            <Download className="h-4 w-4" />
+            تصدير CSV
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={exportPdf}>
+            <FileText className="h-4 w-4" />
+            تصدير PDF
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
