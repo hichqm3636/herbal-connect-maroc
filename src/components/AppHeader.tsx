@@ -3,35 +3,30 @@ import { Separator } from "@/components/ui/separator";
 import { CartButton } from "@/components/CartSheet";
 import { TenantSwitcher } from "@/components/TenantSwitcher";
 import { useAuth } from "@/hooks/useAuth";
-import { useHeaderPreview } from "@/hooks/useHeaderPreview";
 
 export function AppHeader() {
   const { company, mode } = useAuth();
   const { open, openMobile, isMobile } = useSidebar();
-  const [previewMode] = useHeaderPreview();
   const isOpen = isMobile ? openMobile : open;
 
-  // Platform mode is the source of truth: when the auth layer says we're in
-  // platform mode (super_admin on /super-admin, /platform, /admin/*), no
-  // tenant context is loaded and we MUST show Nexora branding.
-  // The settings preview toggle can override this for QA only.
-  const isPlatform =
-    previewMode === "platform"
-      ? true
-      : previewMode === "tenant"
-        ? false
-        : mode === "platform";
+  // Single source of truth: auth.mode. In platform mode we IGNORE company
+  // context entirely — no tenant name, no tenant logo, no tenant brand color
+  // can leak into Nexora's chrome.
+  const isPlatform = mode === "platform";
 
-  const tenantName = company?.display_name || company?.name || "DistribHub";
-  const name = isPlatform ? "Nexora" : tenantName;
-  const logo = isPlatform ? null : company?.logo_url;
+  const name = isPlatform
+    ? "Nexora"
+    : (company?.display_name || company?.name || "DistribHub");
+  const logo = isPlatform ? null : company?.logo_url ?? null;
   const subtitle = isPlatform ? "Platform Administration" : "بوابة الموزعين";
   const initial = name.charAt(0).toUpperCase();
-  const sidebarLabel = isOpen
-    ? "إغلاق الشريط الجانبي"
-    : "فتح الشريط الجانبي";
 
+  // Avoid binding the tenant brand variable in platform mode.
+  const avatarStyle = isPlatform
+    ? { background: "var(--primary)" }
+    : { background: "var(--company-brand, var(--primary))" };
 
+  const sidebarLabel = isOpen ? "إغلاق الشريط الجانبي" : "فتح الشريط الجانبي";
 
   return (
     <header
@@ -63,7 +58,7 @@ export function AppHeader() {
             role="img"
             aria-label={`شعار ${name}`}
             className="h-8 w-8 sm:h-9 sm:w-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold text-primary-foreground shrink-0 shadow-sm"
-            style={{ background: "var(--company-brand, var(--primary))" }}
+            style={avatarStyle}
           >
             <span aria-hidden="true">{initial}</span>
           </div>
@@ -77,7 +72,7 @@ export function AppHeader() {
       </div>
       <div className="ms-auto ps-2 shrink-0 flex items-center gap-2">
         <TenantSwitcher />
-        <CartButton />
+        {!isPlatform && <CartButton />}
       </div>
     </header>
   );
