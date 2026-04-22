@@ -480,6 +480,7 @@ function OrderDetails() {
           <p className="text-xs text-muted-foreground mt-1">
             {formatDateTimeAr(order.created_at)}
           </p>
+          <LastEditedLabel entityType="order" entityId={order.id} className="mt-1" />
         </div>
         <Badge
           variant={STATUS_VARIANTS[order.status]}
