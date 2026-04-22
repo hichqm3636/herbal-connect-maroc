@@ -1,6 +1,7 @@
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { CartButton } from "@/components/CartSheet";
+import { TenantSwitcher } from "@/components/TenantSwitcher";
 import { useAuth } from "@/hooks/useAuth";
 import { useHeaderPreview } from "@/hooks/useHeaderPreview";
 
@@ -74,7 +75,8 @@ export function AppHeader() {
           </span>
         </div>
       </div>
-      <div className="ms-auto ps-2 shrink-0">
+      <div className="ms-auto ps-2 shrink-0 flex items-center gap-2">
+        <TenantSwitcher />
         <CartButton />
       </div>
     </header>
