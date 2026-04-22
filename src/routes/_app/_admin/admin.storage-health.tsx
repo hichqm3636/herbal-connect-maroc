@@ -49,16 +49,19 @@ async function checkUrl(url: string): Promise<{ ok: boolean; status?: number; er
 }
 
 function StorageHealthPage() {
-  const { companyId, isSuperAdmin } = useAuth();
+  const { user, companyId, isSuperAdmin } = useAuth();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [lastScanAt, setLastScanAt] = useState<string | null>(null);
+  const [fromCache, setFromCache] = useState(false);
 
   const loadAssets = async () => {
     setLoading(true);
     setAssets([]);
     setProgress(0);
+    setFromCache(false);
 
     const collected: Asset[] = [];
 
