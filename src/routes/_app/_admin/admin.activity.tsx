@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
   Activity,
   CalendarIcon,
   Download,
+  ExternalLink,
   KeyRound,
   Loader2,
   ShieldCheck,
