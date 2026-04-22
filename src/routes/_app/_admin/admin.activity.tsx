@@ -406,6 +406,30 @@ function AdminActivity() {
     const perAction: Record<string, number> = {};
     const adminCounts: Record<string, number> = {};
     const distributorCounts: Record<string, number> = {};
+    interface AdminBreakdown {
+      orders: number;
+      loyalty: number;
+      admin: number;
+      other: number;
+      pointsDelta: number;
+      orderTotalSum: number;
+      total: number;
+    }
+    const adminBreakdown: Record<string, AdminBreakdown> = {};
+    const ensureAdmin = (id: string): AdminBreakdown => {
+      if (!adminBreakdown[id]) {
+        adminBreakdown[id] = {
+          orders: 0,
+          loyalty: 0,
+          admin: 0,
+          other: 0,
+          pointsDelta: 0,
+          orderTotalSum: 0,
+          total: 0,
+        };
+      }
+      return adminBreakdown[id];
+    };
     let minDate: Date | null = null;
     let maxDate: Date | null = null;
     rows.forEach((r) => {
@@ -420,14 +444,21 @@ function AdminActivity() {
       const d = new Date(r.created_at);
       if (!minDate || d < minDate) minDate = d;
       if (!maxDate || d > maxDate) maxDate = d;
+      const ab = ensureAdmin(r.admin_id);
+      ab.total++;
       if (ORDER_ACTIONS.includes(r.action)) {
         totals.orders++;
+        ab.orders++;
         const t = Number(
           (changes?.total_mad?.to as number | undefined) ?? (m.total_mad as number | undefined),
         );
-        if (Number.isFinite(t)) totals.orderTotalSum += t;
+        if (Number.isFinite(t)) {
+          totals.orderTotalSum += t;
+          ab.orderTotalSum += t;
+        }
       } else if (LOYALTY_ACTIONS.includes(r.action)) {
         totals.loyalty++;
+        ab.loyalty++;
         const delta = Number(
           (m.points_delta as number | undefined) ??
             (m.points as number | undefined) ??
@@ -436,11 +467,16 @@ function AdminActivity() {
                 Number(changes.loyalty_points.from ?? 0)
               : 0),
         );
-        if (Number.isFinite(delta)) totals.pointsDelta += delta;
+        if (Number.isFinite(delta)) {
+          totals.pointsDelta += delta;
+          ab.pointsDelta += delta;
+        }
       } else if (ADMIN_ACTIONS.includes(r.action)) {
         totals.admin++;
+        ab.admin++;
       } else {
         totals.other++;
+        ab.other++;
       }
     });
 
