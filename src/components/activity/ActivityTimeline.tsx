@@ -178,7 +178,7 @@ export function ActivityTimeline(props: Props) {
     const timer = setTimeout(() => {
       (async () => {
         try {
-          const result = await fetchCompanyActivityCounts(props.companyId!);
+          const result = await fetchCompanyActivityCounts(props.companyId!, snapshot);
           if (!cancelled) setCounts(result);
         } catch (err) {
           console.warn("[ActivityTimeline] counts failed", err);
@@ -193,7 +193,7 @@ export function ActivityTimeline(props: Props) {
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, ["companyId" in props ? props.companyId : null, rows.length]);
+  }, ["companyId" in props ? props.companyId : null, snapshot]);
 
   const loadMore = async () => {
     setLoadingMore(true);

@@ -183,13 +183,13 @@ export async function fetchCompanyActivityPage(
 }
 
 /**
- * Server-side counts of activity rows grouped by entity_type for a company.
+ * Server-side counts of activity rows grouped by entity_type for a company,
+ * frozen to the caller-provided `snapshot` so badge totals stay consistent
+ * with the paginated rows (which use the same snapshot).
  *
- * Uses a single Postgres RPC (`activity_counts`) that performs `GROUP BY` in
- * the database — counts are never computed by iterating fetched arrays on the
- * client. Results are memoized in a module-level cache for 30s and tagged with
- * a global version. `bumpCountsVersion()` (called after every successful
- * `logActivity` write) invalidates ALL cached entries deterministically.
+ * Cache key = `${companyId}|${snapshot}`. A new snapshot from the UI naturally
+ * produces a fresh cache entry; `bumpCountsVersion()` (called after every
+ * successful `logActivity` write) invalidates ALL cached entries deterministically.
  */
 type CountsData = Record<string, number> & { all: number };
 type CountsCacheEntry = { data: CountsData; ts: number; version: number };
@@ -205,15 +205,21 @@ export function bumpCountsVersion() {
 
 /** Exposed for tests — clears the in-memory counts cache. */
 export function _clearActivityCountsCache(companyId?: string) {
-  if (companyId) COUNTS_CACHE.delete(companyId);
-  else COUNTS_CACHE.clear();
+  if (!companyId) {
+    COUNTS_CACHE.clear();
+    return;
+  }
+  for (const key of COUNTS_CACHE.keys()) {
+    if (key.startsWith(`${companyId}|`)) COUNTS_CACHE.delete(key);
+  }
 }
 
 export async function fetchCompanyActivityCounts(
   companyId: string,
-  _entityTypes?: EntityType[],
+  snapshot: string,
 ): Promise<CountsData> {
-  const cached = COUNTS_CACHE.get(companyId);
+  const cacheKey = `${companyId}|${snapshot}`;
+  const cached = COUNTS_CACHE.get(cacheKey);
   if (
     cached &&
     cached.version === COUNTS_VERSION &&
@@ -229,7 +235,10 @@ export async function fetchCompanyActivityCounts(
     data: { entity_type: string; count: number | string }[] | null;
     error: unknown;
   }>;
-  const { data, error } = await rpc("activity_counts", { p_company_id: companyId });
+  const { data, error } = await rpc("activity_counts", {
+    p_company_id: companyId,
+    p_snapshot: snapshot,
+  });
   if (error) throw error;
   const out: CountsData = { all: 0 };
   for (const row of data ?? []) {
@@ -237,7 +246,7 @@ export async function fetchCompanyActivityCounts(
     out[row.entity_type] = c;
     out.all += c;
   }
-  COUNTS_CACHE.set(companyId, {
+  COUNTS_CACHE.set(cacheKey, {
     data: out,
     ts: Date.now(),
     version: COUNTS_VERSION,
