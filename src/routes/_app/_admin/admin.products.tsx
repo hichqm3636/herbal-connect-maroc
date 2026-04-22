@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { logActivity, logFieldChanges } from "@/lib/activityLog";
 import { formatMAD } from "@/lib/format";
 import { deriveWholesaleFromRRP, deriveFromCost, parseTiers } from "@/lib/pricing";
 import { toast } from "sonner";
@@ -541,13 +542,32 @@ function AdminProducts() {
       price_tiers: form.price_tiers,
       low_stock_threshold: form.low_stock_threshold,
     };
-    const { error } = editing
-      ? await supabase.from("products").update(payload as never).eq("id", editing.id)
-      : await supabase.from("products").insert(payload as never);
+    const { error, data: saved } = editing
+      ? await supabase.from("products").update(payload as never).eq("id", editing.id).select("id").maybeSingle()
+      : await supabase.from("products").insert(payload as never).select("id").maybeSingle();
     setSaving(false);
     if (error) {
       toast.error("تعذر الحفظ");
       return;
+    }
+    const productId = (saved as { id?: string } | null)?.id ?? editing?.id;
+    if (companyId && productId) {
+      if (editing) {
+        logFieldChanges(
+          { companyId, action: "product_updated", entityType: "product", entityId: productId },
+          editing as unknown as Record<string, unknown>,
+          payload as unknown as Record<string, unknown>,
+          ["name_ar", "price_mad", "stock", "active", "category", "cost_price", "rrp_price", "pharmacy_price", "map_price", "minimum_order", "pack_size", "points_per_unit", "low_stock_threshold", "description_ar"],
+        );
+      } else {
+        logActivity({
+          companyId,
+          action: "product_created",
+          entityType: "product",
+          entityId: productId,
+          metadata: { name_ar: payload.name_ar },
+        });
+      }
     }
     toast.success(editing ? "تم تحديث المنتج" : "تمت إضافة المنتج");
     setOpen(false);
