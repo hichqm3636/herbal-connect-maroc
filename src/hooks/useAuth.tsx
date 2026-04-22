@@ -256,15 +256,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Apply company brand color as CSS variable
+  // Apply company brand color as CSS variable. In platform mode we strip
+  // any tenant brand entirely so Nexora's chrome owns the look.
   useEffect(() => {
     if (typeof document === "undefined") return;
-    if (company?.brand_color) {
-      document.documentElement.style.setProperty("--company-brand", company.brand_color);
+    const brand = mode === "platform" ? null : company?.brand_color ?? null;
+    if (brand) {
+      document.documentElement.style.setProperty("--company-brand", brand);
     } else {
       document.documentElement.style.removeProperty("--company-brand");
     }
-  }, [company?.brand_color]);
+  }, [company?.brand_color, mode]);
 
   const signOut = async () => {
     writeActiveCompany(null);
