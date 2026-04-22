@@ -219,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       writeActiveCompany(cid);
       setActiveCompanyIdState(cid);
     }
+  };
 
   // Reload company record whenever effective companyId changes.
   useEffect(() => {
