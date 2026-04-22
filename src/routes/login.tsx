@@ -121,7 +121,9 @@ function LoginPage() {
             </div>
           )}
           <h1 className="mt-4 text-2xl font-extrabold leading-tight">{companyName}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Distributor Portal</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {tenant.company ? "Distributor Portal" : "Distribution Management Platform"}
+          </p>
         </div>
 
         <Card className="p-6 shadow-elegant">
