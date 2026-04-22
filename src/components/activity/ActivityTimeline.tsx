@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
+  fetchCompanyActivityCounts,
   fetchCompanyActivityPage,
   fetchEntityActivityPage,
   fetchUserNames,
@@ -103,6 +104,7 @@ export function ActivityTimeline(props: Props) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [counts, setCounts] = useState<(Record<EntityType, number> & { all: number }) | null>(null);
   const isCompanyView = "companyId" in props && !!props.companyId;
 
   const filterTypes = (key: FilterKey): EntityType[] | undefined => {
@@ -156,6 +158,26 @@ export function ActivityTimeline(props: Props) {
     filter,
   ]);
 
+  // Fetch DB-side counts per entity_type for the company view (filter badges).
+  useEffect(() => {
+    if (!isCompanyView) return;
+    let cancelled = false;
+    const allTypes: EntityType[] = FILTERS.flatMap((f) => f.types);
+    const uniqueTypes = Array.from(new Set(allTypes)) as EntityType[];
+    (async () => {
+      try {
+        const result = await fetchCompanyActivityCounts(props.companyId!, uniqueTypes);
+        if (!cancelled) setCounts(result);
+      } catch (err) {
+        console.warn("[ActivityTimeline] counts failed", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, ["companyId" in props ? props.companyId : null, rows.length]);
+
   const loadMore = async () => {
     setLoadingMore(true);
     try {
@@ -180,6 +202,12 @@ export function ActivityTimeline(props: Props) {
         <div className="flex flex-wrap gap-1.5 mb-3">
           {FILTERS.map((f) => {
             const active = filter === f.key;
+            const count =
+              counts == null
+                ? null
+                : f.key === "all"
+                ? counts.all
+                : f.types.reduce((sum, t) => sum + (counts[t] ?? 0), 0);
             return (
               <Button
                 key={f.key}
@@ -190,6 +218,9 @@ export function ActivityTimeline(props: Props) {
                 className="h-7 px-2.5 text-xs"
               >
                 {f.label}
+                {count != null && (
+                  <span className="ms-1 opacity-70">({count})</span>
+                )}
               </Button>
             );
           })}
