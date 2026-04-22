@@ -19,6 +19,8 @@ export interface Company {
   brand_color: string;
 }
 
+export type AppMode = "platform" | "tenant";
+
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
@@ -32,6 +34,8 @@ interface AuthContextValue {
   accountType: PartnerType;
   /** @deprecated use `accountType`. Kept for back-compat. */
   partnerType: PartnerType;
+  /** Current UI mode. In `platform` mode no tenant context is loaded. */
+  mode: AppMode;
   companyId: string | null;
   company: Company | null;
   territoryId: string | null;
@@ -42,6 +46,27 @@ interface AuthContextValue {
   refreshRoles: () => Promise<void>;
   refreshCompany: () => Promise<void>;
   setActiveCompany: (companyId: string | null) => void;
+}
+
+/**
+ * Routes that are part of the Nexora platform admin surface. While a
+ * super_admin is on one of these paths we never load tenant branding —
+ * the UI must show Nexora / Platform Administration only.
+ */
+function pathIsPlatform(path: string): boolean {
+  return (
+    path === "/super-admin" ||
+    path.startsWith("/super-admin/") ||
+    path === "/platform" ||
+    path.startsWith("/platform/") ||
+    path === "/admin" ||
+    path.startsWith("/admin/")
+  );
+}
+
+function readPath(): string {
+  if (typeof window === "undefined") return "/";
+  return window.location.pathname || "/";
 }
 
 const ACTIVE_COMPANY_KEY = "active_company_id";
