@@ -16,6 +16,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AppSuperAdminRouteImport } from './routes/_app/super-admin'
+import { Route as AppShopRouteImport } from './routes/_app/shop'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppQuickOrderRouteImport } from './routes/_app/quick-order'
 import { Route as AppProductsRouteImport } from './routes/_app/products'
@@ -84,6 +85,11 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
 const AppSuperAdminRoute = AppSuperAdminRouteImport.update({
   id: '/super-admin',
   path: '/super-admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppShopRoute = AppShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -286,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/products': typeof AppProductsRoute
   '/quick-order': typeof AppQuickOrderRoute
   '/settings': typeof AppSettingsRoute
+  '/shop': typeof AppShopRoute
   '/super-admin': typeof AppSuperAdminRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
   '/products/$productId': typeof AppProductsProductIdRoute
@@ -328,6 +335,7 @@ export interface FileRoutesByTo {
   '/products': typeof AppProductsRoute
   '/quick-order': typeof AppQuickOrderRoute
   '/settings': typeof AppSettingsRoute
+  '/shop': typeof AppShopRoute
   '/invite/$token': typeof InviteTokenRoute
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -372,6 +380,7 @@ export interface FileRoutesById {
   '/_app/products': typeof AppProductsRoute
   '/_app/quick-order': typeof AppQuickOrderRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/shop': typeof AppShopRoute
   '/_app/super-admin': typeof AppSuperAdminRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
   '/_app/products_/$productId': typeof AppProductsProductIdRoute
@@ -416,6 +425,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/quick-order'
     | '/settings'
+    | '/shop'
     | '/super-admin'
     | '/invite/$token'
     | '/products/$productId'
@@ -458,6 +468,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/quick-order'
     | '/settings'
+    | '/shop'
     | '/invite/$token'
     | '/products/$productId'
     | '/super-admin/companies'
@@ -501,6 +512,7 @@ export interface FileRouteTypes {
     | '/_app/products'
     | '/_app/quick-order'
     | '/_app/settings'
+    | '/_app/shop'
     | '/_app/super-admin'
     | '/invite/$token'
     | '/_app/products_/$productId'
@@ -590,6 +602,13 @@ declare module '@tanstack/react-router' {
       path: '/super-admin'
       fullPath: '/super-admin'
       preLoaderRoute: typeof AppSuperAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/shop': {
+      id: '/_app/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof AppShopRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings': {
@@ -921,6 +940,7 @@ interface AppRouteChildren {
   AppProductsRoute: typeof AppProductsRoute
   AppQuickOrderRoute: typeof AppQuickOrderRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppShopRoute: typeof AppShopRoute
   AppSuperAdminRoute: typeof AppSuperAdminRouteWithChildren
   AppProductsProductIdRoute: typeof AppProductsProductIdRoute
 }
@@ -934,6 +954,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProductsRoute: AppProductsRoute,
   AppQuickOrderRoute: AppQuickOrderRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppShopRoute: AppShopRoute,
   AppSuperAdminRoute: AppSuperAdminRouteWithChildren,
   AppProductsProductIdRoute: AppProductsProductIdRoute,
 }

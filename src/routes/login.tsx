@@ -43,7 +43,7 @@ function LoginPage() {
   const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
-    if (!loading && session) navigate({ to: "/dashboard" });
+    if (!loading && session) navigate({ to: "/shop" });
   }, [session, loading, navigate]);
 
   const companyName =

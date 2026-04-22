@@ -14,9 +14,9 @@ export const Route = createFileRoute("/_app")({
 });
 
 // Routes a Platform Owner (super_admin without admin role) should never see.
-const DISTRIBUTOR_ONLY_PREFIXES = ["/dashboard", "/products", "/quick-order", "/orders", "/loyalty"];
+const DISTRIBUTOR_ONLY_PREFIXES = ["/dashboard", "/shop", "/products", "/quick-order", "/orders", "/loyalty"];
 // Routes that require the user to belong to the resolved tenant company.
-const TENANT_SCOPED_PREFIXES = ["/dashboard", "/products", "/quick-order", "/orders", "/loyalty"];
+const TENANT_SCOPED_PREFIXES = ["/dashboard", "/shop", "/products", "/quick-order", "/orders", "/loyalty"];
 
 function AppLayout() {
   const { session, loading, isSuperAdmin, roles, companyId } = useAuth();
