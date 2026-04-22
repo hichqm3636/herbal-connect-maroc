@@ -155,12 +155,15 @@ export async function fetchCompanyActivity(
   return (data ?? []) as ActivityLogRow[];
 }
 
-/** Paginated company activity (offset-based, newest first). Optionally filtered by entity types. */
+/** Paginated company activity (offset-based, newest first). Optionally filtered by entity types.
+ *  Pass `snapshot` (ISO timestamp) to freeze the result set across pagination/filter switches
+ *  so that counts and visible rows stay consistent even as new logs arrive. */
 export async function fetchCompanyActivityPage(
   companyId: string,
   offset: number,
   pageSize = 50,
   entityTypes?: EntityType[],
+  snapshot?: string,
 ): Promise<ActivityLogRow[]> {
   let q = supabase
     .from("activity_logs")
@@ -168,6 +171,9 @@ export async function fetchCompanyActivityPage(
     .eq("company_id", companyId);
   if (entityTypes && entityTypes.length > 0) {
     q = q.in("entity_type", entityTypes);
+  }
+  if (snapshot) {
+    q = q.lte("created_at", snapshot);
   }
   const { data, error } = await q
     .order("created_at", { ascending: false })
@@ -181,14 +187,21 @@ export async function fetchCompanyActivityPage(
  *
  * Uses a single Postgres RPC (`activity_counts`) that performs `GROUP BY` in
  * the database — counts are never computed by iterating fetched arrays on the
- * client. Results are memoized in a module-level cache for 30s, and the cache
- * is invalidated whenever `logActivity` writes a new row for that company.
+ * client. Results are memoized in a module-level cache for 30s and tagged with
+ * a global version. `bumpCountsVersion()` (called after every successful
+ * `logActivity` write) invalidates ALL cached entries deterministically.
  */
 type CountsData = Record<string, number> & { all: number };
-type CountsCacheEntry = { data: CountsData; ts: number };
+type CountsCacheEntry = { data: CountsData; ts: number; version: number };
 
 const COUNTS_CACHE = new Map<string, CountsCacheEntry>();
 const COUNTS_TTL_MS = 30_000;
+let COUNTS_VERSION = 0;
+
+/** Bump the global counts version — all cached entries become stale. */
+export function bumpCountsVersion() {
+  COUNTS_VERSION++;
+}
 
 /** Exposed for tests — clears the in-memory counts cache. */
 export function _clearActivityCountsCache(companyId?: string) {
@@ -201,7 +214,11 @@ export async function fetchCompanyActivityCounts(
   _entityTypes?: EntityType[],
 ): Promise<CountsData> {
   const cached = COUNTS_CACHE.get(companyId);
-  if (cached && Date.now() - cached.ts < COUNTS_TTL_MS) {
+  if (
+    cached &&
+    cached.version === COUNTS_VERSION &&
+    Date.now() - cached.ts < COUNTS_TTL_MS
+  ) {
     return cached.data;
   }
   // RPC isn't in the generated Database types yet — cast through `as never`.
@@ -220,7 +237,11 @@ export async function fetchCompanyActivityCounts(
     out[row.entity_type] = c;
     out.all += c;
   }
-  COUNTS_CACHE.set(companyId, { data: out, ts: Date.now() });
+  COUNTS_CACHE.set(companyId, {
+    data: out,
+    ts: Date.now(),
+    version: COUNTS_VERSION,
+  });
   return out;
 }
 
