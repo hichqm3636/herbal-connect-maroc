@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, XCircle, Loader2, RefreshCw, ImageOff, ExternalLink } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, RefreshCw, ImageOff, ExternalLink, Clock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { formatDateAr } from "@/lib/format";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/_admin/admin/storage-health")({
   component: StorageHealthPage,
@@ -47,16 +49,19 @@ async function checkUrl(url: string): Promise<{ ok: boolean; status?: number; er
 }
 
 function StorageHealthPage() {
-  const { companyId, isSuperAdmin } = useAuth();
+  const { user, companyId, isSuperAdmin } = useAuth();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [lastScanAt, setLastScanAt] = useState<string | null>(null);
+  const [fromCache, setFromCache] = useState(false);
 
   const loadAssets = async () => {
     setLoading(true);
     setAssets([]);
     setProgress(0);
+    setFromCache(false);
 
     const collected: Asset[] = [];
 
@@ -159,10 +164,57 @@ function StorageHealthPage() {
     await Promise.all(Array.from({ length: Math.min(concurrency, total) }, worker));
     setAssets([...updated]);
     setScanning(false);
+
+    // Persist results
+    if (companyId) {
+      const ok_count = updated.filter((a) => a.status === "ok").length;
+      const broken_count = updated.filter((a) => a.status === "broken").length;
+      const { data: saved, error } = await supabase
+        .from("media_health_scans")
+        .insert({
+          company_id: companyId,
+          scanned_by: user?.id ?? null,
+          total: updated.length,
+          ok_count,
+          broken_count,
+          results: updated as unknown as never,
+        })
+        .select("scanned_at")
+        .single();
+      if (error) {
+        toast.error("تعذّر حفظ نتائج الفحص");
+      } else {
+        setLastScanAt(saved.scanned_at);
+        toast.success("تم حفظ نتائج الفحص");
+      }
+    }
+  };
+
+  const loadCachedScan = async () => {
+    if (!companyId) {
+      loadAssets();
+      return;
+    }
+    setLoading(true);
+    const { data } = await supabase
+      .from("media_health_scans")
+      .select("scanned_at, results")
+      .eq("company_id", companyId)
+      .order("scanned_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setLoading(false);
+    if (data && Array.isArray(data.results)) {
+      setAssets(data.results as unknown as Asset[]);
+      setLastScanAt(data.scanned_at);
+      setFromCache(true);
+    } else {
+      loadAssets();
+    }
   };
 
   useEffect(() => {
-    if (companyId || isSuperAdmin) loadAssets();
+    if (companyId || isSuperAdmin) loadCachedScan();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId, isSuperAdmin]);
 
@@ -194,6 +246,13 @@ function StorageHealthPage() {
           <p className="text-sm text-muted-foreground">
             يتحقق من أن جميع الروابط في القواعد ترجع HTTP 200.
           </p>
+          {lastScanAt && (
+            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" />
+              آخر فحص: {formatDateAr(lastScanAt)}
+              {fromCache && <Badge variant="outline" className="text-[10px]">من الذاكرة</Badge>}
+            </div>
+          )}
         </div>
         <Button onClick={loadAssets} disabled={loading || scanning}>
           {loading || scanning ? (

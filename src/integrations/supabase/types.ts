@@ -624,6 +624,50 @@ export type Database = {
           },
         ]
       }
+      media_health_scans: {
+        Row: {
+          broken_count: number
+          company_id: string
+          created_at: string
+          id: string
+          ok_count: number
+          results: Json
+          scanned_at: string
+          scanned_by: string | null
+          total: number
+        }
+        Insert: {
+          broken_count?: number
+          company_id: string
+          created_at?: string
+          id?: string
+          ok_count?: number
+          results?: Json
+          scanned_at?: string
+          scanned_by?: string | null
+          total?: number
+        }
+        Update: {
+          broken_count?: number
+          company_id?: string
+          created_at?: string
+          id?: string
+          ok_count?: number
+          results?: Json
+          scanned_at?: string
+          scanned_by?: string | null
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_health_scans_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           cost_snapshot: number | null
