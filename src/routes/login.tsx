@@ -16,12 +16,13 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useTenant } from "@/hooks/useTenant";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
   head: () => ({
-    meta: [{ title: "تسجيل الدخول — DistribHub" }],
+    meta: [{ title: "تسجيل الدخول — Nexora" }],
   }),
 });
 
@@ -35,6 +36,7 @@ const emailSchema = z.string().trim().email({ message: "بريد إلكترون�
 function LoginPage() {
   const navigate = useNavigate();
   const { session, loading } = useAuth();
+  const tenant = useTenant();
   const [submitting, setSubmitting] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
@@ -43,6 +45,11 @@ function LoginPage() {
   useEffect(() => {
     if (!loading && session) navigate({ to: "/dashboard" });
   }, [session, loading, navigate]);
+
+  const companyName =
+    tenant.company?.display_name || tenant.company?.name || "Nexora";
+  const companyLogo = tenant.company?.logo_url || null;
+  const companyInitial = companyName.charAt(0).toUpperCase();
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -92,15 +99,30 @@ function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-soft flex items-center justify-center p-4" dir="rtl">
       <div className="w-full max-w-md">
-        <Link to="/" className="flex items-center justify-center gap-2 mb-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-primary shadow-glow">
-            <Leaf className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <div className="text-right">
-            <h1 className="text-xl font-extrabold leading-tight">DistribHub</h1>
-            <p className="text-xs text-muted-foreground">منصة إدارة الموزعين والطلبات</p>
-          </div>
-        </Link>
+        <div className="flex flex-col items-center text-center mb-6">
+          {companyLogo ? (
+            <img
+              src={companyLogo}
+              alt={`شعار ${companyName}`}
+              className="h-16 w-16 rounded-2xl object-cover ring-1 ring-border shadow-sm"
+            />
+          ) : (
+            <div
+              role="img"
+              aria-label={`شعار ${companyName}`}
+              className="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-extrabold text-primary-foreground shadow-glow"
+              style={{ background: "var(--company-brand, var(--primary))" }}
+            >
+              {tenant.company ? (
+                <span aria-hidden="true">{companyInitial}</span>
+              ) : (
+                <Leaf className="h-7 w-7" />
+              )}
+            </div>
+          )}
+          <h1 className="mt-4 text-2xl font-extrabold leading-tight">{companyName}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Distributor Portal</p>
+        </div>
 
         <Card className="p-6 shadow-elegant">
           <h2 className="text-lg font-bold mb-1 text-center">تسجيل الدخول</h2>
@@ -132,8 +154,8 @@ function LoginPage() {
           </form>
         </Card>
 
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          البوابة الرسمية للموزعين بالمغرب • للحصول على حساب تواصل مع الإدارة
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          Powered by <span className="font-semibold text-foreground">Nexora</span>
         </p>
       </div>
 
