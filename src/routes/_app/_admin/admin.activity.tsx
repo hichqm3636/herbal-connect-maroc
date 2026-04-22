@@ -406,6 +406,30 @@ function AdminActivity() {
     const perAction: Record<string, number> = {};
     const adminCounts: Record<string, number> = {};
     const distributorCounts: Record<string, number> = {};
+    interface AdminBreakdown {
+      orders: number;
+      loyalty: number;
+      admin: number;
+      other: number;
+      pointsDelta: number;
+      orderTotalSum: number;
+      total: number;
+    }
+    const adminBreakdown: Record<string, AdminBreakdown> = {};
+    const ensureAdmin = (id: string): AdminBreakdown => {
+      if (!adminBreakdown[id]) {
+        adminBreakdown[id] = {
+          orders: 0,
+          loyalty: 0,
+          admin: 0,
+          other: 0,
+          pointsDelta: 0,
+          orderTotalSum: 0,
+          total: 0,
+        };
+      }
+      return adminBreakdown[id];
+    };
     let minDate: Date | null = null;
     let maxDate: Date | null = null;
     rows.forEach((r) => {
@@ -420,14 +444,21 @@ function AdminActivity() {
       const d = new Date(r.created_at);
       if (!minDate || d < minDate) minDate = d;
       if (!maxDate || d > maxDate) maxDate = d;
+      const ab = ensureAdmin(r.admin_id);
+      ab.total++;
       if (ORDER_ACTIONS.includes(r.action)) {
         totals.orders++;
+        ab.orders++;
         const t = Number(
           (changes?.total_mad?.to as number | undefined) ?? (m.total_mad as number | undefined),
         );
-        if (Number.isFinite(t)) totals.orderTotalSum += t;
+        if (Number.isFinite(t)) {
+          totals.orderTotalSum += t;
+          ab.orderTotalSum += t;
+        }
       } else if (LOYALTY_ACTIONS.includes(r.action)) {
         totals.loyalty++;
+        ab.loyalty++;
         const delta = Number(
           (m.points_delta as number | undefined) ??
             (m.points as number | undefined) ??
@@ -436,11 +467,16 @@ function AdminActivity() {
                 Number(changes.loyalty_points.from ?? 0)
               : 0),
         );
-        if (Number.isFinite(delta)) totals.pointsDelta += delta;
+        if (Number.isFinite(delta)) {
+          totals.pointsDelta += delta;
+          ab.pointsDelta += delta;
+        }
       } else if (ADMIN_ACTIONS.includes(r.action)) {
         totals.admin++;
+        ab.admin++;
       } else {
         totals.other++;
+        ab.other++;
       }
     });
 
@@ -554,6 +590,35 @@ function AdminActivity() {
       )
       .join("");
 
+    const adminBreakdownEntries = Object.entries(adminBreakdown).sort(
+      (a, b) => b[1].total - a[1].total,
+    );
+    const adminBreakdownRows =
+      adminBreakdownEntries
+        .map(
+          ([id, b]) => `<tr>
+          <td>${escapeHtml(profiles[id] || id.slice(0, 8))}</td>
+          <td>${b.orders}</td>
+          <td>${b.loyalty}</td>
+          <td>${b.admin}</td>
+          <td>${b.other}</td>
+          <td>${b.pointsDelta}</td>
+          <td>${b.orderTotalSum.toFixed(2)}</td>
+          <td><strong>${b.total}</strong></td>
+        </tr>`,
+        )
+        .join("") || `<tr><td colspan="8">—</td></tr>`;
+    const adminBreakdownFooter = `<tr style="background:#f4f4f5;font-weight:700;">
+        <td>الإجمالي</td>
+        <td>${totals.orders}</td>
+        <td>${totals.loyalty}</td>
+        <td>${totals.admin}</td>
+        <td>${totals.other}</td>
+        <td>${totals.pointsDelta}</td>
+        <td>${totals.orderTotalSum.toFixed(2)}</td>
+        <td>${rows.length}</td>
+      </tr>`;
+
     const topAdminsRows = topList(adminCounts)
       .map(
         ([id, c]) =>
@@ -628,6 +693,22 @@ function AdminActivity() {
   <table>
     <thead><tr><th>الإجراء</th><th>النوع</th><th>العدد</th><th>النسبة</th></tr></thead>
     <tbody>${actionBreakdownRows || `<tr><td colspan="4">—</td></tr>`}</tbody>
+  </table>
+
+  <h2>التفصيل لكل مسؤول</h2>
+  <table>
+    <thead><tr>
+      <th>المسؤول</th>
+      <th>طلبات</th>
+      <th>نقاط</th>
+      <th>إدارية</th>
+      <th>أخرى</th>
+      <th>مجموع تغيّر النقاط</th>
+      <th>مجموع قيم الطلبات (د.م.)</th>
+      <th>الإجمالي</th>
+    </tr></thead>
+    <tbody>${adminBreakdownRows}</tbody>
+    <tfoot>${adminBreakdownEntries.length ? adminBreakdownFooter : ""}</tfoot>
   </table>
 
   <div class="two-col" style="margin-top:14px;">
