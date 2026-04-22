@@ -1631,7 +1631,7 @@ export type Database = {
         Returns: Json
       }
       activity_counts: {
-        Args: { p_company_id: string }
+        Args: { p_company_id: string; p_snapshot: string }
         Returns: {
           count: number
           entity_type: string
