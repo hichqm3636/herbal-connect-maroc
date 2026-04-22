@@ -95,13 +95,25 @@ interface OrderDetail {
   payment_method: string | null;
   distributor_id: string;
   company_id: string;
+  supplier_partner_id: string | null;
   profiles: {
     full_name: string;
     phone: string | null;
     city: string | null;
     territories: { name: string } | null;
   } | null;
+  supplier: {
+    id: string;
+    name: string;
+    phone: string | null;
+  } | null;
   order_items: ItemRow[];
+}
+
+interface PartnerOption {
+  id: string;
+  name: string;
+  phone: string | null;
 }
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -160,13 +172,16 @@ function OrderDetails() {
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
 
+  const [supplierOptions, setSupplierOptions] = useState<PartnerOption[]>([]);
+  const [savingSupplier, setSavingSupplier] = useState(false);
+
   const load = async () => {
     if (!companyId) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, payment_method, distributor_id, company_id, profiles(full_name, phone, city, territories(name)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost_price))",
+        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, payment_method, distributor_id, company_id, supplier_partner_id, profiles(full_name, phone, city, territories(name)), supplier:partners!orders_supplier_partner_id_fkey(id, name, phone), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost_price))",
       )
       .eq("id", orderId)
       .eq("company_id", companyId)
