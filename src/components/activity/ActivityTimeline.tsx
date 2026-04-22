@@ -202,6 +202,12 @@ export function ActivityTimeline(props: Props) {
         <div className="flex flex-wrap gap-1.5 mb-3">
           {FILTERS.map((f) => {
             const active = filter === f.key;
+            const count =
+              counts == null
+                ? null
+                : f.key === "all"
+                ? counts.all
+                : f.types.reduce((sum, t) => sum + (counts[t] ?? 0), 0);
             return (
               <Button
                 key={f.key}
@@ -212,6 +218,9 @@ export function ActivityTimeline(props: Props) {
                 className="h-7 px-2.5 text-xs"
               >
                 {f.label}
+                {count != null && (
+                  <span className="ms-1 opacity-70">({count})</span>
+                )}
               </Button>
             );
           })}
