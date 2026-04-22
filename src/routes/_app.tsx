@@ -5,8 +5,9 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { CartSheet } from "@/components/CartSheet";
 import { useAuth } from "@/hooks/useAuth";
+import { useTenant } from "@/hooks/useTenant";
 import { CartProvider } from "@/hooks/useCart";
-import { Leaf } from "lucide-react";
+import { Leaf, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -14,12 +15,31 @@ export const Route = createFileRoute("/_app")({
 
 // Routes a Platform Owner (super_admin without admin role) should never see.
 const DISTRIBUTOR_ONLY_PREFIXES = ["/dashboard", "/products", "/quick-order", "/orders", "/loyalty"];
+// Routes that require the user to belong to the resolved tenant company.
+const TENANT_SCOPED_PREFIXES = ["/dashboard", "/products", "/quick-order", "/orders", "/loyalty"];
 
 function AppLayout() {
-  const { session, loading, isSuperAdmin, roles } = useAuth();
+  const { session, loading, isSuperAdmin, roles, companyId } = useAuth();
+  const tenant = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
   const isPlatformOwner = isSuperAdmin && !roles.includes("admin");
+
+  const path = location.pathname;
+  const onTenantScopedRoute = TENANT_SCOPED_PREFIXES.some(
+    (p) => path === p || path.startsWith(p + "/"),
+  );
+  // Tenant mismatch: tenant resolved from host doesn't match the user's company.
+  // Super admins bypass this check (they can operate cross-tenant).
+  const tenantMismatch =
+    !loading &&
+    !tenant.loading &&
+    !isSuperAdmin &&
+    onTenantScopedRoute &&
+    tenant.kind === "tenant" &&
+    !!tenant.company &&
+    !!companyId &&
+    tenant.company.id !== companyId;
 
   useEffect(() => {
     if (loading) return;
@@ -28,7 +48,6 @@ function AppLayout() {
       return;
     }
     if (isPlatformOwner) {
-      const path = location.pathname;
       const onDistributorRoute = DISTRIBUTOR_ONLY_PREFIXES.some(
         (p) => path === p || path.startsWith(p + "/"),
       );
@@ -38,13 +57,43 @@ function AppLayout() {
         navigate({ to: "/super-admin" });
       }
     }
-  }, [session, loading, isPlatformOwner, location.pathname, navigate]);
+  }, [session, loading, isPlatformOwner, path, navigate]);
 
-  if (loading || !session) {
+  if (loading || !session || (onTenantScopedRoute && tenant.loading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-soft" dir="rtl">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-primary shadow-glow">
           <Leaf className="h-7 w-7 text-primary-foreground animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  if (tenantMismatch) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center bg-gradient-soft p-6"
+        dir="rtl"
+      >
+        <div className="max-w-md rounded-2xl border bg-card p-8 text-center shadow-elegant">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10">
+            <ShieldAlert className="h-7 w-7 text-destructive" />
+          </div>
+          <h1 className="mb-2 text-xl font-bold">لا يمكن الوصول إلى هذه البوابة</h1>
+          <p className="mb-6 text-sm text-muted-foreground">
+            حسابك لا ينتمي إلى شركة{" "}
+            <span className="font-semibold text-foreground">
+              {tenant.company?.display_name ?? tenant.company?.name}
+            </span>
+            . يرجى تسجيل الدخول من البوابة الخاصة بشركتك.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/login" })}
+            className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90"
+          >
+            تسجيل الدخول
+          </button>
         </div>
       </div>
     );
