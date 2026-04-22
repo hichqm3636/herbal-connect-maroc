@@ -737,6 +737,79 @@ function OrderDetails() {
         )}
       </Card>
 
+      {/* WooCommerce supplier sync — DB is source of truth, Woo is fulfilment. */}
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold text-sm text-muted-foreground">
+            مزامنة المورد (WooCommerce)
+          </h2>
+          {sendingToSupplier && (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+          )}
+        </div>
+
+        {order.external_id ? (
+          <div className="space-y-1.5 text-sm">
+            <p className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+              <CheckCircle2 className="h-4 w-4" />
+              تم الإرسال إلى المورد
+            </p>
+            <p className="text-xs text-muted-foreground">
+              معرّف الطلب لدى المورد:{" "}
+              <span className="font-mono" dir="ltr">
+                #{order.external_id}
+              </span>
+            </p>
+            {order.external_status && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                الحالة لدى المورد:
+                <Badge variant="outline" className="text-xs">
+                  {order.external_status}
+                </Badge>
+              </p>
+            )}
+          </div>
+        ) : order.sync_error ? (
+          <div className="space-y-2">
+            <p className="text-xs text-destructive break-words">
+              فشل الإرسال: {order.sync_error}
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={sendingToSupplier}
+              onClick={() => handleSendToWoo("retry")}
+            >
+              {sendingToSupplier ? (
+                <Loader2 className="h-4 w-4 animate-spin ml-1" />
+              ) : (
+                <Send className="h-4 w-4 ml-1" />
+              )}
+              إعادة المحاولة
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              لم يُرسل هذا الطلب إلى المورد بعد. يتم الإرسال تلقائيًا عند الموافقة على الطلب،
+              ويمكنك أيضًا إرساله يدويًا.
+            </p>
+            <Button
+              size="sm"
+              disabled={sendingToSupplier}
+              onClick={() => handleSendToWoo("send")}
+            >
+              {sendingToSupplier ? (
+                <Loader2 className="h-4 w-4 animate-spin ml-1" />
+              ) : (
+                <Send className="h-4 w-4 ml-1" />
+              )}
+              إرسال للمورد
+            </Button>
+          </div>
+        )}
+      </Card>
+
       <Card className="p-4 space-y-3">
         <h2 className="font-semibold text-sm text-muted-foreground">المنتجات</h2>
         {/* Mobile cards */}
