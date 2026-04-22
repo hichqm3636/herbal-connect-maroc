@@ -399,14 +399,27 @@ function AdminActivity() {
       orders: 0,
       loyalty: 0,
       admin: 0,
+      other: 0,
       pointsDelta: 0,
       orderTotalSum: 0,
     };
+    const perAction: Record<string, number> = {};
+    const adminCounts: Record<string, number> = {};
+    const distributorCounts: Record<string, number> = {};
+    let minDate: Date | null = null;
+    let maxDate: Date | null = null;
     rows.forEach((r) => {
       const m = (r.metadata ?? {}) as Record<string, unknown>;
       const changes = (m.changes ?? m.diff) as
         | Record<string, { from?: unknown; to?: unknown }>
         | undefined;
+      perAction[r.action] = (perAction[r.action] ?? 0) + 1;
+      adminCounts[r.admin_id] = (adminCounts[r.admin_id] ?? 0) + 1;
+      if (r.target_user_id)
+        distributorCounts[r.target_user_id] = (distributorCounts[r.target_user_id] ?? 0) + 1;
+      const d = new Date(r.created_at);
+      if (!minDate || d < minDate) minDate = d;
+      if (!maxDate || d > maxDate) maxDate = d;
       if (ORDER_ACTIONS.includes(r.action)) {
         totals.orders++;
         const t = Number(
@@ -426,8 +439,15 @@ function AdminActivity() {
         if (Number.isFinite(delta)) totals.pointsDelta += delta;
       } else if (ADMIN_ACTIONS.includes(r.action)) {
         totals.admin++;
+      } else {
+        totals.other++;
       }
     });
+
+    const topList = (counts: Record<string, number>, limit = 5) =>
+      Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit);
 
     const escapeHtml = (s: string) =>
       s.replace(/[&<>"']/g, (c) =>
