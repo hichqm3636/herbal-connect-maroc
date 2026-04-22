@@ -3,21 +3,29 @@ import { Separator } from "@/components/ui/separator";
 import { CartButton } from "@/components/CartSheet";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "@tanstack/react-router";
+import { useHeaderPreview } from "@/hooks/useHeaderPreview";
 
 export function AppHeader() {
   const { company } = useAuth();
   const { open, openMobile, isMobile } = useSidebar();
   const location = useLocation();
+  const [previewMode] = useHeaderPreview();
   const isOpen = isMobile ? openMobile : open;
 
   // Platform routes (Super Admin / platform admin) always show Nexora branding,
-  // never the tenant company name.
+  // never the tenant company name. The settings preview toggle can override this.
   const path = location.pathname;
-  const isPlatformRoute =
+  const routeIsPlatform =
     path === "/super-admin" ||
     path.startsWith("/super-admin/") ||
     path === "/admin" ||
     path.startsWith("/admin/");
+  const isPlatformRoute =
+    previewMode === "platform"
+      ? true
+      : previewMode === "tenant"
+        ? false
+        : routeIsPlatform;
 
   const tenantName = company?.display_name || company?.name || "DistribHub";
   const name = isPlatformRoute ? "Nexora" : tenantName;
