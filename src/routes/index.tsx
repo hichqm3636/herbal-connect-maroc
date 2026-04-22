@@ -49,7 +49,7 @@ function Index() {
 
   // Root domain → Nexora landing placeholder
   if (tenant.kind === "root") {
-    return <NexoraLanding />;
+    return <NexoraLanding isAuthenticated={!!session} />;
   }
 
   // Platform host (app.nexora.app) → Super Admin
@@ -61,7 +61,7 @@ function Index() {
   return <Navigate to={session ? "/dashboard" : "/login"} />;
 }
 
-function NexoraLanding() {
+function NexoraLanding({ isAuthenticated }: { isAuthenticated: boolean }) {
   return (
     <div
       className="flex min-h-screen flex-col items-center justify-center bg-gradient-soft p-6"
@@ -88,7 +88,7 @@ function NexoraLanding() {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <a href="https://app.nexora.app">بوابة الإدارة</a>
+              <Link to={isAuthenticated ? "/super-admin" : "/login"}>بوابة الإدارة</Link>
             </Button>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
