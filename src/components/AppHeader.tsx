@@ -6,18 +6,22 @@ import { useLocation } from "@tanstack/react-router";
 import { useHeaderPreview } from "@/hooks/useHeaderPreview";
 
 export function AppHeader() {
-  const { company } = useAuth();
+  const { company, isSuperAdmin } = useAuth();
   const { open, openMobile, isMobile } = useSidebar();
   const location = useLocation();
   const [previewMode] = useHeaderPreview();
   const isOpen = isMobile ? openMobile : open;
 
-  // Platform routes (Super Admin / platform admin) always show Nexora branding,
-  // never the tenant company name. The settings preview toggle can override this.
+  // Platform branding (Nexora) is shown when:
+  //  - the user is a super_admin (platform operator), OR
+  //  - the route is a platform route (/super-admin, /platform, /admin/*).
+  // The settings preview toggle can override this for QA.
   const path = location.pathname;
   const routeIsPlatform =
     path === "/super-admin" ||
     path.startsWith("/super-admin/") ||
+    path === "/platform" ||
+    path.startsWith("/platform/") ||
     path === "/admin" ||
     path.startsWith("/admin/");
   const isPlatformRoute =
@@ -25,12 +29,12 @@ export function AppHeader() {
       ? true
       : previewMode === "tenant"
         ? false
-        : routeIsPlatform;
+        : routeIsPlatform || isSuperAdmin;
 
   const tenantName = company?.display_name || company?.name || "DistribHub";
   const name = isPlatformRoute ? "Nexora" : tenantName;
   const logo = isPlatformRoute ? null : company?.logo_url;
-  const subtitle = isPlatformRoute ? "منصة Nexora" : "بوابة الموزعين";
+  const subtitle = isPlatformRoute ? "Platform Administration" : "بوابة الموزعين";
   const initial = name.charAt(0).toUpperCase();
   const sidebarLabel = isOpen
     ? "إغلاق الشريط الجانبي"
