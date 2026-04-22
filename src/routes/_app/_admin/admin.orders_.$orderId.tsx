@@ -188,6 +188,7 @@ function OrderDetails() {
 
   const [supplierOptions, setSupplierOptions] = useState<PartnerOption[]>([]);
   const [savingSupplier, setSavingSupplier] = useState(false);
+  const [sendingToSupplier, setSendingToSupplier] = useState(false);
 
   const load = async () => {
     if (!companyId) return;
