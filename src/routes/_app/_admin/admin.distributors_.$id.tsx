@@ -736,9 +736,63 @@ function DistributorProfile() {
           ) : null}
         </span>
       </div>
+
+      {/* WhatsApp credentials prompt: ask for password / temp code, then open the message dialog */}
+      <Dialog open={waPromptOpen} onOpenChange={setWaPromptOpen}>
+        <DialogContent dir="rtl" className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-[#25D366]" />
+              إرسال بيانات الدخول
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              أدخل كلمة المرور (أو الرمز المؤقت) ليتم تضمينها في رسالة WhatsApp.
+              لن يتم حفظها.
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-sm">كلمة المرور / الرمز</Label>
+              <Input
+                type="text"
+                value={waPassword}
+                onChange={(e) => setWaPassword(e.target.value)}
+                placeholder="مثال: Temp1234"
+                dir="ltr"
+                autoFocus
+              />
+            </div>
+          </div>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setWaPromptOpen(false)}>
+              إلغاء
+            </Button>
+            <Button
+              className="gap-2 bg-[#25D366] hover:bg-[#1ebe5b] text-white"
+              disabled={!waPassword.trim()}
+              onClick={() => {
+                setWaPromptOpen(false);
+                setWaCredsOpen(true);
+              }}
+            >
+              <MessageCircle className="h-4 w-4" />
+              متابعة
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {profile && (
+        <DistributorCredentialsDialog
+          open={waCredsOpen}
+          onOpenChange={setWaCredsOpen}
+          distributorName={profile.full_name}
+          phone={profile.phone ?? ""}
+          password={waPassword}
+        />
+      )}
     </div>
   );
-}
 
 function InfoRow({
   icon: Icon,
