@@ -150,7 +150,7 @@ function SuperAdminDashboard() {
           .eq("account_type", "distributor")
           .eq("is_active", true),
         supabase.from("orders").select("*", { count: "exact", head: true }),
-        supabase.from("orders").select("total_mad").neq("status", "cancelled"),
+        supabase.from("orders").select("total_mad, status, company_id"),
         supabase
           .from("companies")
           .select("id, name, display_name, created_at")
