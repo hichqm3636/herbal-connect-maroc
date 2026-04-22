@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, History } from "lucide-react";
+import { Loader2, History, RefreshCw } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
