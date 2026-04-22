@@ -830,6 +830,115 @@ export type Database = {
           },
         ]
       }
+      partner_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          city: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          email: string
+          expires_at: string
+          id: string
+          invite_token: string
+          partner_name: string | null
+          partner_type: Database["public"]["Enums"]["partner_type"]
+          phone: string | null
+          status: Database["public"]["Enums"]["partner_invite_status"]
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          city?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          email: string
+          expires_at?: string
+          id?: string
+          invite_token: string
+          partner_name?: string | null
+          partner_type: Database["public"]["Enums"]["partner_type"]
+          phone?: string | null
+          status?: Database["public"]["Enums"]["partner_invite_status"]
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          city?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invite_token?: string
+          partner_name?: string | null
+          partner_type?: Database["public"]["Enums"]["partner_type"]
+          phone?: string | null
+          status?: Database["public"]["Enums"]["partner_invite_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_invites_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          city: string | null
+          company_id: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string | null
+          status: Database["public"]["Enums"]["partner_status"]
+          type: Database["public"]["Enums"]["partner_type"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          city?: string | null
+          company_id: string
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["partner_status"]
+          type: Database["public"]["Enums"]["partner_type"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          city?: string | null
+          company_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["partner_status"]
+          type?: Database["public"]["Enums"]["partner_type"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partners_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1410,6 +1519,10 @@ export type Database = {
           raw_user_meta_data: Json
         }[]
       }
+      accept_partner_invite: {
+        Args: { _full_name: string; _token: string }
+        Returns: Json
+      }
       admin_exists: { Args: never; Returns: boolean }
       claim_first_admin: { Args: never; Returns: boolean }
       current_company_id: { Args: never; Returns: string }
@@ -1428,6 +1541,20 @@ export type Database = {
       level_for_points: {
         Args: { pts: number }
         Returns: Database["public"]["Enums"]["distributor_level"]
+      }
+      partner_invite_info: {
+        Args: { _token: string }
+        Returns: {
+          company_brand_color: string
+          company_display_name: string
+          company_id: string
+          company_name: string
+          email: string
+          expires_at: string
+          partner_name: string
+          partner_type: Database["public"]["Enums"]["partner_type"]
+          status: Database["public"]["Enums"]["partner_invite_status"]
+        }[]
       }
       provision_company: {
         Args: {
@@ -1493,6 +1620,8 @@ export type Database = {
         | "shipped"
         | "delivered"
         | "cancelled"
+      partner_invite_status: "pending" | "accepted" | "expired"
+      partner_status: "invited" | "active" | "suspended"
       partner_type:
         | "pharmacy"
         | "parapharmacy"
@@ -1666,6 +1795,8 @@ export const Constants = {
         "delivered",
         "cancelled",
       ],
+      partner_invite_status: ["pending", "accepted", "expired"],
+      partner_status: ["invited", "active", "suspended"],
       partner_type: [
         "pharmacy",
         "parapharmacy",
