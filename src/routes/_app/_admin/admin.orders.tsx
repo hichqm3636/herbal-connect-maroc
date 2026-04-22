@@ -50,6 +50,13 @@ import {
   STATUS_CLASSES,
   ORDER_STATUSES,
 } from "@/lib/format";
+import {
+  allowedNextStates,
+  transitionOrderStatus,
+  OrderStateError,
+  type OrderStatus,
+  type Role,
+} from "@/lib/orderStateMachine";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/_admin/admin/orders")({
@@ -139,19 +146,33 @@ function AdminOrders() {
     load();
   }, [companyId, isSuperAdmin, user?.id]);
 
-  const updateStatus = async (
-    orderId: string,
-    status: "confirmed" | "preparing" | "shipped" | "delivered" | "cancelled",
-  ) => {
+  const role: Role = isSuperAdmin ? "admin" : "admin"; // this is the admin orders board
+  const updateStatus = async (orderId: string, status: OrderStatus) => {
+    if (!user) return;
+    const order = orders.find((o) => o.id === orderId);
+    if (!order) return;
     setUpdatingId(orderId);
-    const { error } = await supabase.from("orders").update({ status }).eq("id", orderId);
-    setUpdatingId(null);
-    if (error) {
-      toast.error("تعذر تحديث الحالة");
-      return;
+    try {
+      await transitionOrderStatus({
+        orderId,
+        to: status,
+        userId: user.id,
+        role,
+        companyId: order.company_id,
+      });
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
+      toast.success(`تم تحديث الحالة: ${STATUS_LABELS[status]}`);
+    } catch (e) {
+      const msg =
+        e instanceof OrderStateError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "تعذر تحديث الحالة";
+      toast.error(msg);
+    } finally {
+      setUpdatingId(null);
     }
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
-    toast.success(`تم تحديث الحالة: ${STATUS_LABELS[status]}`);
   };
 
   const clients = useMemo(() => {
