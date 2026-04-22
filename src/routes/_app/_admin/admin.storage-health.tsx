@@ -246,6 +246,13 @@ function StorageHealthPage() {
           <p className="text-sm text-muted-foreground">
             يتحقق من أن جميع الروابط في القواعد ترجع HTTP 200.
           </p>
+          {lastScanAt && (
+            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" />
+              آخر فحص: {formatDateAr(lastScanAt)}
+              {fromCache && <Badge variant="outline" className="text-[10px]">من الذاكرة</Badge>}
+            </div>
+          )}
         </div>
         <Button onClick={loadAssets} disabled={loading || scanning}>
           {loading || scanning ? (
