@@ -9,7 +9,15 @@ import { supabase } from "@/integrations/supabase/client";
  * mutation that triggered them.
  */
 
-export type EntityType = "order" | "product" | "company" | "supplier" | "team";
+export type EntityType =
+  | "order"
+  | "product"
+  | "company"
+  | "supplier"
+  | "team"
+  | "invoice"
+  | "partner"
+  | "distributor";
 
 export interface LogActivityInput {
   companyId: string;
