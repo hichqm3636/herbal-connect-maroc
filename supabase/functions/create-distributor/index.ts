@@ -1,13 +1,7 @@
 // Edge function: admin-only distributor account management
 // Supports actions: create, reset_password, set_active
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+// Authorization is delegated to the shared authorizeCompanyAdmin helper.
+import { authorizeCompanyAdmin, corsHeaders } from "../_shared/authz.ts";
 
 type Action =
   | "create"
@@ -53,40 +47,6 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return bad("Method not allowed", 405);
 
-  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-  const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
-
-  const authHeader = req.headers.get("Authorization") ?? "";
-  if (!authHeader.startsWith("Bearer ")) return bad("غير مصرح", 401);
-
-  // Verify caller is admin
-  const userClient = createClient(SUPABASE_URL, ANON_KEY, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: userRes, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userRes.user) return bad("غير مصرح", 401);
-
-  const adminId = userRes.user.id;
-  const { data: roles, error: rolesErr } = await userClient
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", adminId);
-  if (rolesErr) return bad(rolesErr.message, 500);
-  const isSuper = (roles ?? []).some((r) => r.role === "super_admin");
-  if (!isSuper && !(roles ?? []).some((r) => r.role === "admin")) return bad("صلاحية غير كافية", 403);
-
-  // Resolve caller's company_id (admins inherit theirs; super_admin must pass it explicitly)
-  const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data: callerProfile } = await admin
-    .from("profiles")
-    .select("company_id")
-    .eq("id", adminId)
-    .maybeSingle();
-  const profileCompanyId = (callerProfile?.company_id as string | null) ?? null;
-
   let body: Payload;
   try {
     body = await req.json();
@@ -94,10 +54,14 @@ Deno.serve(async (req) => {
     return bad("صيغة غير صالحة");
   }
 
-  const action: Action = body.action ?? "create";
+  // Centralized auth: verifies JWT, role, and resolves effective company scope.
+  // super_admin may target any company by passing `companyId`; admins are
+  // pinned to their own profile.company_id.
+  const auth = await authorizeCompanyAdmin(req, { requestedCompanyId: body.companyId ?? null });
+  if ("error" in auth) return auth.error;
+  const { adminId, companyId: callerCompanyId, supabaseAdmin: admin } = auth;
 
-  // Effective company: super admin may impersonate via explicit companyId; others use their profile's.
-  const callerCompanyId = isSuper && body.companyId ? body.companyId : profileCompanyId;
+  const action: Action = body.action ?? "create";
 
   // Helper: log to admin_activity_log
   const log = async (a: string, targetId: string | null, meta: Record<string, unknown>) => {
