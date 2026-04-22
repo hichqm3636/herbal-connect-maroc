@@ -114,7 +114,8 @@ export function mapWooProductToInternal(wp: WooProduct): {
   category: string | null;
 } | null {
   if (wp.id == null) return null;
-  const name = (wp.name ?? "").trim();
+  const stripHtml = (s: string) => s.replace(/<[^>]*>?/gm, "").trim();
+  const name = stripHtml(wp.name ?? "");
   const price = Number(wp.price);
   if (!name || !Number.isFinite(price)) return null;
 
@@ -123,9 +124,11 @@ export function mapWooProductToInternal(wp: WooProduct): {
     source: SOURCE,
     sku: (wp.sku ?? "").trim() || null,
     name_ar: name,
-    description_ar: (wp.description ?? "").trim(),
+    description_ar: stripHtml(wp.description ?? ""),
     price_mad: price,
-    image_url: wp.images?.[0]?.src?.trim() || null,
+    image_url:
+      wp.images?.[0]?.src?.trim() ||
+      "https://via.placeholder.com/300?text=No+Image",
     stock: Number.isFinite(wp.stock_quantity) ? Number(wp.stock_quantity) : 0,
     category: wp.categories?.[0]?.name?.trim() || null,
   };
