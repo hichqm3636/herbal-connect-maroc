@@ -7,12 +7,35 @@
  */
 
 /**
- * Strip everything that isn't a digit. wa.me requires a phone number in
- * international format with no `+`, spaces, or dashes.
+ * Normalize a Moroccan phone number to international wa.me format (212XXXXXXXXX).
+ *
+ * Rules:
+ * - Strip all non-digit characters (spaces, dashes, parentheses, leading `+`).
+ * - If the number starts with `0`, remove that leading zero (local trunk prefix).
+ * - If the number does not already start with `212`, prepend it.
+ *
+ * Examples:
+ *   "0702208550"      -> "212702208550"
+ *   "702208550"       -> "212702208550"
+ *   "+212 702 208550" -> "212702208550"
+ *   "212702208550"    -> "212702208550"
  */
 export function normalizeWhatsappPhone(phone: string | null | undefined): string {
   if (!phone) return "";
-  return phone.replace(/\D+/g, "");
+  let p = phone.replace(/\D+/g, "");
+  if (!p) return "";
+  if (p.startsWith("00")) p = p.substring(2); // 0021260... -> 21260...
+  if (p.startsWith("0")) p = p.substring(1);
+  if (!p.startsWith("212")) p = "212" + p;
+  return p;
+}
+
+/**
+ * Public alias matching the spec name. Returns the same Morocco-normalized
+ * phone string used to build wa.me links.
+ */
+export function formatPhoneMA(phone: string | null | undefined): string {
+  return normalizeWhatsappPhone(phone);
 }
 
 /**
