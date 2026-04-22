@@ -123,6 +123,8 @@ function SuperAdminDashboard() {
   const [ordersDaily, setOrdersDaily] = useState<Array<{ date: string; label: string; count: number }>>(
     [],
   );
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [companyRevenue, setCompanyRevenue] = useState<CompanyRevenue[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
