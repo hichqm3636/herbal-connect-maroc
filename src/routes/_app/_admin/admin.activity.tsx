@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
   Activity,
   CalendarIcon,
   Download,
+  ExternalLink,
   KeyRound,
   Loader2,
   ShieldCheck,
@@ -255,6 +256,46 @@ function AdminActivity() {
       typeFilter === "all" ? Object.keys(ACTION_LABELS) : TYPE_TO_ACTIONS[typeFilter] ?? [];
     return keys.map((k) => [k, ACTION_LABELS[k] ?? k] as const);
   }, [typeFilter]);
+
+  // Per-admin breakdown for the in-app summary card.
+  interface PerAdminTotals {
+    orders: number;
+    loyalty: number;
+    admin: number;
+    other: number;
+    total: number;
+  }
+  const perAdminBreakdown = useMemo(() => {
+    const map: Record<string, PerAdminTotals> = {};
+    rows.forEach((r) => {
+      const b = (map[r.admin_id] ??= {
+        orders: 0,
+        loyalty: 0,
+        admin: 0,
+        other: 0,
+        total: 0,
+      });
+      b.total++;
+      if (ORDER_ACTIONS.includes(r.action)) b.orders++;
+      else if (LOYALTY_ACTIONS.includes(r.action)) b.loyalty++;
+      else if (ADMIN_ACTIONS.includes(r.action)) b.admin++;
+      else b.other++;
+    });
+    return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
+  }, [rows]);
+
+  // Build the search-params object passed to per-admin pages so they inherit
+  // the active filters from the global view.
+  const linkSearch = useMemo(
+    () => ({
+      type: typeFilter,
+      action: actionFilter,
+      distributor: distributorFilter,
+      from: from?.toISOString(),
+      to: to?.toISOString(),
+    }),
+    [typeFilter, actionFilter, distributorFilter, from, to],
+  );
 
   const resetFilters = () => {
     setTypeFilter("all");
@@ -893,6 +934,54 @@ function AdminActivity() {
           </div>
         )}
       </Card>
+
+      {/* Per-admin breakdown */}
+      {!loading && perAdminBreakdown.length > 0 && (
+        <Card className="p-3 shadow-soft">
+          <h2 className="text-sm font-semibold mb-2">التفصيل لكل مسؤول</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-muted-foreground border-b">
+                  <th className="text-right py-2 px-2 font-medium">المسؤول</th>
+                  <th className="text-center py-2 px-2 font-medium">طلبات</th>
+                  <th className="text-center py-2 px-2 font-medium">نقاط</th>
+                  <th className="text-center py-2 px-2 font-medium">إدارية</th>
+                  <th className="text-center py-2 px-2 font-medium">أخرى</th>
+                  <th className="text-center py-2 px-2 font-medium">الإجمالي</th>
+                  <th className="py-2 px-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {perAdminBreakdown.map(([id, b]) => (
+                  <tr key={id} className="border-b last:border-0 hover:bg-accent/30">
+                    <td className="py-2 px-2 font-medium truncate max-w-[180px]">
+                      {profiles[id] || id.slice(0, 8)}
+                    </td>
+                    <td className="text-center">{b.orders}</td>
+                    <td className="text-center">{b.loyalty}</td>
+                    <td className="text-center">{b.admin}</td>
+                    <td className="text-center">{b.other}</td>
+                    <td className="text-center font-semibold">{b.total}</td>
+                    <td className="text-left py-1 px-2">
+                      <Button asChild variant="outline" size="sm" className="gap-1 h-7 text-xs">
+                        <Link
+                          to="/admin/activity/$adminId"
+                          params={{ adminId: id }}
+                          search={linkSearch}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          عرض السجل
+                        </Link>
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {/* List */}
       {loading ? (

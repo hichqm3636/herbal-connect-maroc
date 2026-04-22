@@ -45,6 +45,7 @@ import { Route as AppAdminAdminOrdersOrderIdRouteImport } from './routes/_app/_a
 import { Route as AppAdminAdminInvoicesInvoiceIdRouteImport } from './routes/_app/_admin/admin.invoices_.$invoiceId'
 import { Route as AppAdminAdminDistributorsIdRouteImport } from './routes/_app/_admin/admin.distributors_.$id'
 import { Route as AppAdminAdminCreateOrderClientIdRouteImport } from './routes/_app/_admin/admin.create-order.$clientId'
+import { Route as AppAdminAdminActivityAdminIdRouteImport } from './routes/_app/_admin/admin.activity_.$adminId'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -234,6 +235,12 @@ const AppAdminAdminCreateOrderClientIdRoute =
     path: '/admin/create-order/$clientId',
     getParentRoute: () => AppAdminRoute,
   } as any)
+const AppAdminAdminActivityAdminIdRoute =
+  AppAdminAdminActivityAdminIdRouteImport.update({
+    id: '/admin/activity_/$adminId',
+    path: '/admin/activity/$adminId',
+    getParentRoute: () => AppAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -266,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/admin/team': typeof AppAdminAdminTeamRoute
   '/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/admin/': typeof AppAdminAdminIndexRoute
+  '/admin/activity/$adminId': typeof AppAdminAdminActivityAdminIdRoute
   '/admin/create-order/$clientId': typeof AppAdminAdminCreateOrderClientIdRoute
   '/admin/distributors/$id': typeof AppAdminAdminDistributorsIdRoute
   '/admin/invoices/$invoiceId': typeof AppAdminAdminInvoicesInvoiceIdRoute
@@ -301,6 +309,7 @@ export interface FileRoutesByTo {
   '/admin/team': typeof AppAdminAdminTeamRoute
   '/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/admin': typeof AppAdminAdminIndexRoute
+  '/admin/activity/$adminId': typeof AppAdminAdminActivityAdminIdRoute
   '/admin/create-order/$clientId': typeof AppAdminAdminCreateOrderClientIdRoute
   '/admin/distributors/$id': typeof AppAdminAdminDistributorsIdRoute
   '/admin/invoices/$invoiceId': typeof AppAdminAdminInvoicesInvoiceIdRoute
@@ -340,6 +349,7 @@ export interface FileRoutesById {
   '/_app/_admin/admin/team': typeof AppAdminAdminTeamRoute
   '/_app/_admin/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/_app/_admin/admin/': typeof AppAdminAdminIndexRoute
+  '/_app/_admin/admin/activity_/$adminId': typeof AppAdminAdminActivityAdminIdRoute
   '/_app/_admin/admin/create-order/$clientId': typeof AppAdminAdminCreateOrderClientIdRoute
   '/_app/_admin/admin/distributors_/$id': typeof AppAdminAdminDistributorsIdRoute
   '/_app/_admin/admin/invoices_/$invoiceId': typeof AppAdminAdminInvoicesInvoiceIdRoute
@@ -378,6 +388,7 @@ export interface FileRouteTypes {
     | '/admin/team'
     | '/admin/territories'
     | '/admin/'
+    | '/admin/activity/$adminId'
     | '/admin/create-order/$clientId'
     | '/admin/distributors/$id'
     | '/admin/invoices/$invoiceId'
@@ -413,6 +424,7 @@ export interface FileRouteTypes {
     | '/admin/team'
     | '/admin/territories'
     | '/admin'
+    | '/admin/activity/$adminId'
     | '/admin/create-order/$clientId'
     | '/admin/distributors/$id'
     | '/admin/invoices/$invoiceId'
@@ -451,6 +463,7 @@ export interface FileRouteTypes {
     | '/_app/_admin/admin/team'
     | '/_app/_admin/admin/territories'
     | '/_app/_admin/admin/'
+    | '/_app/_admin/admin/activity_/$adminId'
     | '/_app/_admin/admin/create-order/$clientId'
     | '/_app/_admin/admin/distributors_/$id'
     | '/_app/_admin/admin/invoices_/$invoiceId'
@@ -718,6 +731,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminCreateOrderClientIdRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/_admin/admin/activity_/$adminId': {
+      id: '/_app/_admin/admin/activity_/$adminId'
+      path: '/admin/activity/$adminId'
+      fullPath: '/admin/activity/$adminId'
+      preLoaderRoute: typeof AppAdminAdminActivityAdminIdRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
   }
 }
 
@@ -735,6 +755,7 @@ interface AppAdminRouteChildren {
   AppAdminAdminTeamRoute: typeof AppAdminAdminTeamRoute
   AppAdminAdminTerritoriesRoute: typeof AppAdminAdminTerritoriesRoute
   AppAdminAdminIndexRoute: typeof AppAdminAdminIndexRoute
+  AppAdminAdminActivityAdminIdRoute: typeof AppAdminAdminActivityAdminIdRoute
   AppAdminAdminCreateOrderClientIdRoute: typeof AppAdminAdminCreateOrderClientIdRoute
   AppAdminAdminDistributorsIdRoute: typeof AppAdminAdminDistributorsIdRoute
   AppAdminAdminInvoicesInvoiceIdRoute: typeof AppAdminAdminInvoicesInvoiceIdRoute
@@ -755,6 +776,7 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminAdminTeamRoute: AppAdminAdminTeamRoute,
   AppAdminAdminTerritoriesRoute: AppAdminAdminTerritoriesRoute,
   AppAdminAdminIndexRoute: AppAdminAdminIndexRoute,
+  AppAdminAdminActivityAdminIdRoute: AppAdminAdminActivityAdminIdRoute,
   AppAdminAdminCreateOrderClientIdRoute: AppAdminAdminCreateOrderClientIdRoute,
   AppAdminAdminDistributorsIdRoute: AppAdminAdminDistributorsIdRoute,
   AppAdminAdminInvoicesInvoiceIdRoute: AppAdminAdminInvoicesInvoiceIdRoute,
