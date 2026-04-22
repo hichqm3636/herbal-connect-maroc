@@ -590,7 +590,6 @@ function AdminProducts() {
         entityId: id,
         metadata: {
           name_ar: target?.name_ar ?? null,
-          sku: target?.sku ?? null,
           price_mad: target?.price_mad ?? null,
         },
       });
