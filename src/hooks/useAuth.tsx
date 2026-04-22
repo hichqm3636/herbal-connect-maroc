@@ -106,9 +106,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pathname, setPathname] = useState<string>(() => readPath());
 
-  // Effective company: explicit active override (sessionStorage) wins, else profile.
-  const companyId = activeCompanyId ?? profileCompanyId;
+  const isSuperAdmin = roles.includes("super_admin");
+
+  // Track route so we can flip into platform mode for super_admins on
+  // /platform, /super-admin, or /admin/* without a full reload.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sync = () => setPathname(readPath());
+    window.addEventListener("popstate", sync);
+    const origPush = window.history.pushState;
+    const origReplace = window.history.replaceState;
+    window.history.pushState = function (...args) {
+      const r = origPush.apply(this, args);
+      sync();
+      return r;
+    };
+    window.history.replaceState = function (...args) {
+      const r = origReplace.apply(this, args);
+      sync();
+      return r;
+    };
+    return () => {
+      window.removeEventListener("popstate", sync);
+      window.history.pushState = origPush;
+      window.history.replaceState = origReplace;
+    };
+  }, []);
+
+  // Platform mode: a super_admin on a platform route. In this mode we drop
+  // all tenant context (no company, no companyId) so the previously selected
+  // tenant cannot bleed into Nexora's admin UI.
+  const mode: AppMode = isSuperAdmin && pathIsPlatform(pathname) ? "platform" : "tenant";
+
+  // Effective company. Forced to null in platform mode.
+  const companyId = mode === "platform" ? null : (activeCompanyId ?? profileCompanyId);
 
   const setActiveCompany = (id: string | null) => {
     writeActiveCompany(id);
