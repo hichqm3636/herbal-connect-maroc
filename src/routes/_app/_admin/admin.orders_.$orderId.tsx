@@ -62,6 +62,14 @@ import {
   buildSupplierConfirmationMessage,
 } from "@/utils/whatsapp";
 import { logActivity } from "@/lib/activityLog";
+import {
+  TRANSITIONS,
+  allowedNextStates,
+  transitionOrderStatus,
+  OrderStateError,
+  type OrderStatus,
+  type Role,
+} from "@/lib/orderStateMachine";
 import { ActivityTimeline } from "@/components/activity/ActivityTimeline";
 import { LastEditedLabel } from "@/components/activity/LastEditedLabel";
 
@@ -132,20 +140,19 @@ interface TierInfo {
   custom: boolean;
 }
 
-type StatusKey = "confirmed" | "preparing" | "shipped" | "delivered" | "cancelled";
+type StatusKey = Exclude<OrderStatus, "pending">;
 
-const ACTIONS: {
-  status: StatusKey;
+const ACTION_META: Record<StatusKey, {
   label: string;
   icon: typeof CheckCircle2;
   variant: "default" | "outline" | "destructive";
-}[] = [
-  { status: "confirmed", label: "الموافقة على الطلب", icon: CheckCircle2, variant: "default" },
-  { status: "preparing", label: "قيد التحضير", icon: Package, variant: "outline" },
-  { status: "shipped", label: "تم الشحن", icon: Truck, variant: "outline" },
-  { status: "delivered", label: "تم التسليم", icon: PackageCheck, variant: "default" },
-  { status: "cancelled", label: "إلغاء", icon: XCircle, variant: "destructive" },
-];
+}> = {
+  confirmed: { label: "الموافقة على الطلب", icon: CheckCircle2, variant: "default" },
+  processing: { label: "قيد التحضير", icon: Package, variant: "outline" },
+  shipped: { label: "تم الشحن", icon: Truck, variant: "outline" },
+  delivered: { label: "تم التسليم", icon: PackageCheck, variant: "default" },
+  cancelled: { label: "إلغاء", icon: XCircle, variant: "destructive" },
+};
 
 function OrderDetails() {
   const { orderId } = Route.useParams();
