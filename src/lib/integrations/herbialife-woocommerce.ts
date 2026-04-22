@@ -115,7 +115,7 @@ export function mapWooProductToInternal(wp: WooProduct): {
   stock: number;
   category: string | null;
 } | null {
-  if (wp.id == null) return null;
+  if (!wp?.id) return null;
   const stripHtml = (s: string) =>
     s.replace(/<[^>]*>?/gm, "").replace(/\s+/g, " ").trim();
   const DEFAULT_IMAGE = "https://herbialife.com/wp-content/uploads/your-default.jpg";
@@ -124,12 +124,14 @@ export function mapWooProductToInternal(wp: WooProduct): {
   if (!name) return null;
 
   const rawPrice = Number(wp.price);
-  const price = Number.isFinite(rawPrice) ? rawPrice : 0;
+  if (!Number.isFinite(rawPrice)) return null;
+
+  const image = wp.images?.[0]?.src || wp.image?.src || DEFAULT_IMAGE;
 
   const stock = Number.isFinite(wp.stock_quantity)
     ? Number(wp.stock_quantity)
     : wp.stock_status === "instock"
-      ? 999
+      ? 100
       : 0;
 
   return {
@@ -138,13 +140,10 @@ export function mapWooProductToInternal(wp: WooProduct): {
     sku: (wp.sku ?? "").trim() || `woo-${wp.id}`,
     name_ar: name,
     description_ar: stripHtml(wp.description ?? ""),
-    price_mad: price,
-    image_url:
-      wp.images?.[0]?.src?.trim() ||
-      wp.image?.src?.trim() ||
-      DEFAULT_IMAGE,
+    price_mad: rawPrice,
+    image_url: image?.startsWith("http") ? image : DEFAULT_IMAGE,
     stock,
-    category: wp.categories?.[0]?.name?.trim() || null,
+    category: wp.categories?.[0]?.name?.trim().toLowerCase() || null,
   };
 }
 
