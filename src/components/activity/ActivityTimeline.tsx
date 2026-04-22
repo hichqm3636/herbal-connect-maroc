@@ -215,6 +215,12 @@ export function ActivityTimeline(props: Props) {
                 : f.key === "all"
                 ? counts.all
                 : f.types.reduce((sum, t) => sum + (counts[t] ?? 0), 0);
+            // Loading → "(...)". Error (counts === null after load) → no number.
+            const badge = countsLoading
+              ? "(...)"
+              : count == null
+              ? null
+              : `(${count})`;
             return (
               <Button
                 key={f.key}
@@ -225,9 +231,7 @@ export function ActivityTimeline(props: Props) {
                 className="h-7 px-2.5 text-xs"
               >
                 {f.label}
-                {count != null && (
-                  <span className="ms-1 opacity-70">({count})</span>
-                )}
+                {badge && <span className="ms-1 opacity-70">{badge}</span>}
               </Button>
             );
           })}
