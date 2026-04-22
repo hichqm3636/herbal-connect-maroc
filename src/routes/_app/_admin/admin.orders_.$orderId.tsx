@@ -278,6 +278,7 @@ function OrderDetails() {
   const updateSupplier = async (partnerId: string | null) => {
     if (!order) return;
     setSavingSupplier(true);
+    const before = order.supplier_partner_id ?? null;
     const { error } = await supabase
       .from("orders")
       .update({ supplier_partner_id: partnerId })
@@ -287,6 +288,18 @@ function OrderDetails() {
       toast.error("تعذر تحديث المورد");
       return;
     }
+    if (companyId) {
+      logActivity({
+        companyId,
+        action: partnerId ? "order_supplier_assigned" : "order_supplier_removed",
+        entityType: "order",
+        entityId: order.id,
+        fieldName: "supplier_partner_id",
+        oldValue: before,
+        newValue: partnerId,
+        metadata: { order_number: order.order_number },
+      });
+    }
     toast.success(partnerId ? "تم تعيين المورد" : "تم إزالة المورد");
     load();
   };
@@ -294,6 +307,7 @@ function OrderDetails() {
   const updateStatus = async (status: StatusKey) => {
     if (!order) return;
     setSaving(status);
+    const before = order.status;
     const { error } = await supabase
       .from("orders")
       .update({ status })
@@ -302,6 +316,18 @@ function OrderDetails() {
     if (error) {
       toast.error("تعذر تحديث الحالة");
       return;
+    }
+    if (companyId) {
+      logActivity({
+        companyId,
+        action: "order_status_changed",
+        entityType: "order",
+        entityId: order.id,
+        fieldName: "status",
+        oldValue: before,
+        newValue: status,
+        metadata: { order_number: order.order_number },
+      });
     }
     toast.success(`تم تحديث الحالة: ${STATUS_LABELS[status]}`);
     load();
@@ -312,6 +338,15 @@ function OrderDetails() {
     setGeneratingInvoice(true);
     try {
       await createInvoiceForOrder({ orderId: order.id });
+      if (companyId) {
+        logActivity({
+          companyId,
+          action: "order_invoice_generated",
+          entityType: "order",
+          entityId: order.id,
+          metadata: { order_number: order.order_number },
+        });
+      }
       toast.success("تم إصدار الفاتورة");
       load();
     } catch (e) {
