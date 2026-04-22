@@ -158,6 +158,26 @@ export function ActivityTimeline(props: Props) {
     filter,
   ]);
 
+  // Fetch DB-side counts per entity_type for the company view (filter badges).
+  useEffect(() => {
+    if (!isCompanyView) return;
+    let cancelled = false;
+    const allTypes: EntityType[] = FILTERS.flatMap((f) => f.types);
+    const uniqueTypes = Array.from(new Set(allTypes)) as EntityType[];
+    (async () => {
+      try {
+        const result = await fetchCompanyActivityCounts(props.companyId!, uniqueTypes);
+        if (!cancelled) setCounts(result);
+      } catch (err) {
+        console.warn("[ActivityTimeline] counts failed", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, ["companyId" in props ? props.companyId : null, rows.length]);
+
   const loadMore = async () => {
     setLoadingMore(true);
     try {
