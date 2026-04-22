@@ -380,6 +380,7 @@ function OrderDetails() {
     if (!order) return;
     setSavingNotes(true);
     const next = draft.trim() ? draft.trim() : null;
+    const before = order.admin_notes ?? null;
     const { error } = await supabase
       .from("orders")
       .update({ admin_notes: next })
@@ -388,6 +389,18 @@ function OrderDetails() {
     if (error) {
       toast.error("تعذر حفظ الملاحظة");
       return;
+    }
+    if (companyId && before !== next) {
+      logActivity({
+        companyId,
+        action: "order_admin_notes_updated",
+        entityType: "order",
+        entityId: order.id,
+        fieldName: "admin_notes",
+        oldValue: before,
+        newValue: next,
+        metadata: { order_number: order.order_number },
+      });
     }
     toast.success("تم حفظ الملاحظة");
     setEditingNotes(false);
