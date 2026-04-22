@@ -27,6 +27,7 @@ export function WhatsappContactButton({
   size = "sm",
   className,
   showPreview = true,
+  icon: Icon = MessageCircle,
   ...rest
 }: WhatsappContactButtonProps) {
   const [open, setOpen] = useState(false);
@@ -48,7 +49,7 @@ export function WhatsappContactButton({
           {...rest}
         >
           <a href={href} target="_blank" rel="noopener noreferrer">
-            <MessageCircle className="h-4 w-4" />
+            <Icon className="h-4 w-4" />
             <span>{label}</span>
           </a>
         </Button>
