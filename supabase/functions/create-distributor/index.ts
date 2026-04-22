@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
   // pinned to their own profile.company_id.
   const auth = await authorizeCompanyAdmin(req, { requestedCompanyId: body.companyId ?? null });
   if ("error" in auth) return auth.error;
-  const { adminId, companyId: callerCompanyId, isSuper, supabaseAdmin: admin } = auth;
+  const { adminId, companyId: callerCompanyId, supabaseAdmin: admin } = auth;
 
   const action: Action = body.action ?? "create";
 
