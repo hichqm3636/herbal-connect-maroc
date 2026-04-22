@@ -2,6 +2,7 @@ import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { CartButton } from "@/components/CartSheet";
 import { TenantSwitcher } from "@/components/TenantSwitcher";
+import { NotificationsBell } from "@/components/NotificationsBell";
 import { useAuth } from "@/hooks/useAuth";
 import { PLATFORM_NAME, PLATFORM_SUBTITLE, TENANT_FALLBACK_NAME } from "@/lib/platform";
 
@@ -73,6 +74,7 @@ export function AppHeader() {
       </div>
       <div className="ms-auto ps-2 shrink-0 flex items-center gap-2">
         <TenantSwitcher />
+        {!isPlatform && <NotificationsBell />}
         {!isPlatform && <CartButton />}
       </div>
     </header>
