@@ -22,24 +22,40 @@ export interface LogActivityInput {
   metadata?: Record<string, unknown>;
 }
 
+async function insertActivityRow(input: LogActivityInput, userId: string | null) {
+  const { error } = await supabase.from("activity_logs").insert({
+    company_id: input.companyId,
+    user_id: userId,
+    action: input.action,
+    entity_type: input.entityType,
+    entity_id: input.entityId ?? null,
+    field_name: input.fieldName ?? null,
+    old_value: input.oldValue == null ? null : (input.oldValue as never),
+    new_value: input.newValue == null ? null : (input.newValue as never),
+    metadata: (input.metadata ?? {}) as never,
+  } as never);
+  if (error) throw error;
+}
+
 export async function logActivity(input: LogActivityInput): Promise<void> {
+  let userId: string | null = null;
   try {
     const { data: userData } = await supabase.auth.getUser();
-    const userId = userData.user?.id ?? null;
-    await supabase.from("activity_logs").insert({
-      company_id: input.companyId,
-      user_id: userId,
-      action: input.action,
-      entity_type: input.entityType,
-      entity_id: input.entityId ?? null,
-      field_name: input.fieldName ?? null,
-      old_value: input.oldValue == null ? null : (input.oldValue as never),
-      new_value: input.newValue == null ? null : (input.newValue as never),
-      metadata: (input.metadata ?? {}) as never,
-    } as never);
-  } catch (err) {
-    // Never let logging break the calling flow.
-    console.warn("[activityLog] insert failed", err);
+    userId = userData.user?.id ?? null;
+  } catch {
+    // ignore — logging continues without a user id
+  }
+  try {
+    await insertActivityRow(input, userId);
+  } catch (firstErr) {
+    // One short-delay retry before failing silently, to absorb transient
+    // network blips or brief auth refresh windows.
+    await new Promise((r) => setTimeout(r, 400));
+    try {
+      await insertActivityRow(input, userId);
+    } catch (retryErr) {
+      console.warn("[activityLog] insert failed after retry", { firstErr, retryErr });
+    }
   }
 }
 
