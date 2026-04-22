@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Loader2, User, KeyRound, Camera, Trash2, Mail } from "lucide-react";
+import { Loader2, User, KeyRound, Camera, Trash2, Mail, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useHeaderPreview, type HeaderPreviewMode } from "@/hooks/useHeaderPreview";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/settings")({
