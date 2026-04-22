@@ -2,12 +2,27 @@ import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { CartButton } from "@/components/CartSheet";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "@tanstack/react-router";
+
 export function AppHeader() {
   const { company } = useAuth();
   const { open, openMobile, isMobile } = useSidebar();
+  const location = useLocation();
   const isOpen = isMobile ? openMobile : open;
-  const name = company?.display_name || company?.name || "DistribHub";
-  const logo = company?.logo_url;
+
+  // Platform routes (Super Admin / platform admin) always show Nexora branding,
+  // never the tenant company name.
+  const path = location.pathname;
+  const isPlatformRoute =
+    path === "/super-admin" ||
+    path.startsWith("/super-admin/") ||
+    path === "/admin" ||
+    path.startsWith("/admin/");
+
+  const tenantName = company?.display_name || company?.name || "DistribHub";
+  const name = isPlatformRoute ? "Nexora" : tenantName;
+  const logo = isPlatformRoute ? null : company?.logo_url;
+  const subtitle = isPlatformRoute ? "منصة Nexora" : "بوابة الموزعين";
   const initial = name.charAt(0).toUpperCase();
   const sidebarLabel = isOpen
     ? "إغلاق الشريط الجانبي"
@@ -51,7 +66,7 @@ export function AppHeader() {
         <div className="flex flex-col leading-tight min-w-0">
           <span className="text-xs sm:text-sm font-bold truncate">{name}</span>
           <span className="text-[10px] sm:text-[11px] text-muted-foreground truncate">
-            بوابة الموزعين
+            {subtitle}
           </span>
         </div>
       </div>
