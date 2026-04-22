@@ -23,6 +23,10 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import { MessageCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { DistributorCredentialsDialog } from "@/components/admin/DistributorCredentialsDialog";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
