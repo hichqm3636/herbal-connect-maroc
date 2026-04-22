@@ -72,6 +72,10 @@ import {
 } from "@/lib/orderStateMachine";
 import { ActivityTimeline } from "@/components/activity/ActivityTimeline";
 import { LastEditedLabel } from "@/components/activity/LastEditedLabel";
+import {
+  sendOrderToSupplier,
+  retrySendOrderToSupplier,
+} from "@/utils/woocommerce.functions";
 
 export const Route = createFileRoute("/_app/_admin/admin/orders_/$orderId")({
   component: OrderDetails,
@@ -314,6 +318,45 @@ function OrderDetails() {
     }
     toast.success(partnerId ? "تم تعيين المورد" : "تم إزالة المورد");
     load();
+  };
+
+  const handleSendToWoo = async (mode: "send" | "retry") => {
+    if (!order) return;
+    setSendingToSupplier(true);
+    try {
+      const fn = mode === "retry" ? retrySendOrderToSupplier : sendOrderToSupplier;
+      const res = await fn({ data: { orderId: order.id } });
+      if (res.ok) {
+        toast.success(
+          res.externalId
+            ? `تم الإرسال إلى المورد (#${res.externalId})`
+            : "تم الإرسال إلى المورد",
+        );
+        if (companyId) {
+          void logActivity({
+            companyId,
+            action:
+              mode === "retry"
+                ? "order_supplier_sync_retried"
+                : "order_supplier_sync_sent",
+            entityType: "order",
+            entityId: order.id,
+            metadata: {
+              order_number: order.order_number,
+              external_id: res.externalId ?? null,
+              external_status: res.externalStatus ?? null,
+            },
+          });
+        }
+      } else {
+        toast.error(res.error ?? "تعذر الإرسال إلى المورد");
+      }
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "تعذر الإرسال إلى المورد");
+    } finally {
+      setSendingToSupplier(false);
+    }
   };
 
   const updateStatus = async (status: StatusKey) => {
