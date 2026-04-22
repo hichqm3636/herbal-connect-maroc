@@ -88,7 +88,7 @@ function NexoraLanding() {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <a href="https://app.nexora.app">بوابة الإدارة</a>
+              <Link to={session ? "/super-admin" : "/login"}>بوابة الإدارة</Link>
             </Button>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
