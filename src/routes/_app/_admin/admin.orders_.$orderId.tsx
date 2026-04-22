@@ -53,6 +53,8 @@ import {
   INVOICE_STATUS_LABELS,
 } from "@/lib/invoices";
 import { toast } from "sonner";
+import { WhatsappContactButton } from "@/components/WhatsappContactButton";
+import { buildOrderWhatsappMessage } from "@/utils/whatsapp";
 
 export const Route = createFileRoute("/_app/_admin/admin/orders_/$orderId")({
   component: OrderDetails,
@@ -405,6 +407,19 @@ function OrderDetails() {
           <div>
             <p className="text-xs text-muted-foreground">الهاتف</p>
             <p className="font-medium" dir="ltr">{order.profiles?.phone || "—"}</p>
+            <div className="mt-2">
+              <WhatsappContactButton
+                phone={order.profiles?.phone}
+                message={buildOrderWhatsappMessage({
+                  distributorName: order.profiles?.full_name || "—",
+                  orderNumber: order.order_number,
+                  orderTotalMad: order.total_mad,
+                  orderId: order.id,
+                  appBaseUrl:
+                    typeof window !== "undefined" ? window.location.origin : undefined,
+                })}
+              />
+            </div>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">المدينة</p>

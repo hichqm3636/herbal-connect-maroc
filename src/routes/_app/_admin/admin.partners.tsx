@@ -15,6 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, UserPlus, Copy, Check, Network } from "lucide-react";
 import { toast } from "sonner";
+import { WhatsappContactButton } from "@/components/WhatsappContactButton";
+import { buildPartnerGreetingMessage } from "@/utils/whatsapp";
 
 export const Route = createFileRoute("/_app/_admin/admin/partners")({
   component: AdminPartnersPage,
@@ -171,6 +173,7 @@ function AdminPartnersPage() {
                   <TableHead className="text-right">البريد</TableHead>
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-right">تاريخ الإنشاء</TableHead>
+                  <TableHead className="text-right">تواصل</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -185,6 +188,13 @@ function AdminPartnersPage() {
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {new Date(p.created_at).toLocaleDateString("ar-MA")}
+                    </TableCell>
+                    <TableCell>
+                      <WhatsappContactButton
+                        phone={p.phone}
+                        message={buildPartnerGreetingMessage(p.name)}
+                        label="WhatsApp"
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
