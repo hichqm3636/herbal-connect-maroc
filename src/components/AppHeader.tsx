@@ -16,10 +16,10 @@ export function AppHeader() {
   const isPlatform = mode === "platform";
 
   const name = isPlatform
-    ? "Nexora"
-    : (company?.display_name || company?.name || "DistribHub");
+    ? PLATFORM_NAME
+    : (company?.display_name || company?.name || TENANT_FALLBACK_NAME);
   const logo = isPlatform ? null : company?.logo_url ?? null;
-  const subtitle = isPlatform ? "Platform Administration" : "بوابة الموزعين";
+  const subtitle = isPlatform ? PLATFORM_SUBTITLE : "بوابة الموزعين";
   const initial = name.charAt(0).toUpperCase();
 
   // Avoid binding the tenant brand variable in platform mode.
