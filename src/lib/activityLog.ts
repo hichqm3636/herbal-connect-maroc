@@ -173,6 +173,39 @@ export async function fetchCompanyActivityPage(
   return (data ?? []) as ActivityLogRow[];
 }
 
+/**
+ * Server-side counts of activity rows grouped by entity_type for a company.
+ *
+ * PostgREST does not expose SQL `GROUP BY`, so we issue one HEAD request per
+ * entity type with `count: "exact"`. All requests run in parallel and the
+ * counts are computed by Postgres — never by iterating a fetched array on the
+ * client.
+ */
+export async function fetchCompanyActivityCounts(
+  companyId: string,
+  entityTypes: EntityType[],
+): Promise<Record<EntityType, number> & { all: number }> {
+  const perType = await Promise.all(
+    entityTypes.map(async (t) => {
+      const { count, error } = await supabase
+        .from("activity_logs")
+        .select("*", { count: "exact", head: true })
+        .eq("company_id", companyId)
+        .eq("entity_type", t);
+      if (error) throw error;
+      return [t, count ?? 0] as const;
+    }),
+  );
+  const { count: allCount, error: allErr } = await supabase
+    .from("activity_logs")
+    .select("*", { count: "exact", head: true })
+    .eq("company_id", companyId);
+  if (allErr) throw allErr;
+  const out = { all: allCount ?? 0 } as Record<EntityType, number> & { all: number };
+  for (const [t, c] of perType) out[t] = c;
+  return out;
+}
+
 /** Paginated entity activity (offset-based, newest first). */
 export async function fetchEntityActivityPage(
   entityType: EntityType,
