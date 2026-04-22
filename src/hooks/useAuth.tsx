@@ -280,6 +280,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await loadCompany(companyId);
   };
 
+  // In platform mode, expose no tenant company at all.
+  const exposedCompany = mode === "platform" ? null : company;
+
   const value = useMemo<AuthContextValue>(() => ({
     session,
     user,
@@ -291,8 +294,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isSalesAgent: roles.includes("sales_agent"),
     accountType,
     partnerType: accountType,
+    mode,
     companyId,
-    company,
+    company: exposedCompany,
     territoryId,
     pricingTierId,
     pricingTierDiscount,
@@ -301,7 +305,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshRoles,
     refreshCompany,
     setActiveCompany,
-  }), [session, user, roles, accountType, companyId, company, territoryId, pricingTierId, pricingTierDiscount, loading]);
+  }), [session, user, roles, accountType, mode, companyId, exposedCompany, territoryId, pricingTierId, pricingTierDiscount, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
