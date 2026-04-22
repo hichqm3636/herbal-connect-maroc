@@ -829,6 +829,7 @@ export type Database = {
           payment_method: string | null
           points_earned: number
           status: Database["public"]["Enums"]["order_status"]
+          supplier_partner_id: string | null
           total_mad: number
           updated_at: string
         }
@@ -843,6 +844,7 @@ export type Database = {
           payment_method?: string | null
           points_earned?: number
           status?: Database["public"]["Enums"]["order_status"]
+          supplier_partner_id?: string | null
           total_mad?: number
           updated_at?: string
         }
@@ -857,6 +859,7 @@ export type Database = {
           payment_method?: string | null
           points_earned?: number
           status?: Database["public"]["Enums"]["order_status"]
+          supplier_partner_id?: string | null
           total_mad?: number
           updated_at?: string
         }
@@ -873,6 +876,13 @@ export type Database = {
             columns: ["distributor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_supplier_partner_id_fkey"
+            columns: ["supplier_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
             referencedColumns: ["id"]
           },
         ]

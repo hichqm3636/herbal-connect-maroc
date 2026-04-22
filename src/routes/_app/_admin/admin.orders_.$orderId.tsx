@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
+  Check,
   CheckCircle2,
   Clock,
   Download,
@@ -11,6 +12,7 @@ import {
   PackageCheck,
   Pencil,
   Receipt,
+  Send,
   Truck,
   XCircle,
 } from "lucide-react";
@@ -54,7 +56,11 @@ import {
 } from "@/lib/invoices";
 import { toast } from "sonner";
 import { WhatsappContactButton } from "@/components/WhatsappContactButton";
-import { buildOrderWhatsappMessage } from "@/utils/whatsapp";
+import {
+  buildOrderWhatsappMessage,
+  buildSupplierOrderMessage,
+  buildSupplierConfirmationMessage,
+} from "@/utils/whatsapp";
 
 export const Route = createFileRoute("/_app/_admin/admin/orders_/$orderId")({
   component: OrderDetails,
@@ -89,13 +95,25 @@ interface OrderDetail {
   payment_method: string | null;
   distributor_id: string;
   company_id: string;
+  supplier_partner_id: string | null;
   profiles: {
     full_name: string;
     phone: string | null;
     city: string | null;
     territories: { name: string } | null;
   } | null;
+  supplier: {
+    id: string;
+    name: string;
+    phone: string | null;
+  } | null;
   order_items: ItemRow[];
+}
+
+interface PartnerOption {
+  id: string;
+  name: string;
+  phone: string | null;
 }
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -154,13 +172,16 @@ function OrderDetails() {
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
 
+  const [supplierOptions, setSupplierOptions] = useState<PartnerOption[]>([]);
+  const [savingSupplier, setSavingSupplier] = useState(false);
+
   const load = async () => {
     if (!companyId) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, payment_method, distributor_id, company_id, profiles(full_name, phone, city, territories(name)), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost_price))",
+        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, payment_method, distributor_id, company_id, supplier_partner_id, profiles(full_name, phone, city, territories(name)), supplier:partners!orders_supplier_partner_id_fkey(id, name, phone), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost_price))",
       )
       .eq("id", orderId)
       .eq("company_id", companyId)
@@ -236,12 +257,36 @@ function OrderDetails() {
       .maybeSingle();
     setInvoice(inv as typeof invoice);
 
+    // Load partners that can be selected as the supplier for this order.
+    const { data: partners } = await supabase
+      .from("partners")
+      .select("id, name, phone")
+      .eq("company_id", companyId)
+      .order("name", { ascending: true });
+    setSupplierOptions((partners ?? []) as PartnerOption[]);
+
     setLoading(false);
   };
 
   useEffect(() => {
     load();
   }, [orderId, companyId]);
+
+  const updateSupplier = async (partnerId: string | null) => {
+    if (!order) return;
+    setSavingSupplier(true);
+    const { error } = await supabase
+      .from("orders")
+      .update({ supplier_partner_id: partnerId })
+      .eq("id", order.id);
+    setSavingSupplier(false);
+    if (error) {
+      toast.error("تعذر تحديث المورد");
+      return;
+    }
+    toast.success(partnerId ? "تم تعيين المورد" : "تم إزالة المورد");
+    load();
+  };
 
   const updateStatus = async (status: StatusKey) => {
     if (!order) return;
@@ -476,6 +521,87 @@ function OrderDetails() {
             </Select>
           </div>
         </div>
+      </Card>
+
+      {/* Supplier — upstream partner who fulfills this order. WhatsApp shortcut. */}
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold text-sm text-muted-foreground">المورد</h2>
+          {savingSupplier && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">اختر المورد (شريك)</p>
+            <Select
+              value={order.supplier_partner_id ?? "none"}
+              onValueChange={(v) => updateSupplier(v === "none" ? null : v)}
+              disabled={savingSupplier}
+            >
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue placeholder="— لا يوجد مورد —" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— لا يوجد مورد —</SelectItem>
+                {supplierOptions.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                    {p.phone ? ` — ${p.phone}` : " — (بدون هاتف)"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {order.supplier?.phone && (
+            <p className="text-xs text-muted-foreground" dir="ltr">
+              {order.supplier.phone}
+            </p>
+          )}
+        </div>
+
+        {order.supplier?.phone ? (
+          <div className="flex flex-col gap-3 pt-1">
+            <WhatsappContactButton
+              phone={order.supplier.phone}
+              label="Send to Supplier"
+              icon={Send}
+              message={buildSupplierOrderMessage({
+                distributorName: order.profiles?.full_name || "—",
+                orderNumber: order.order_number,
+                orderTotalMad: order.total_mad,
+                orderId: order.id,
+                itemsCount: order.order_items.reduce((s, it) => s + it.quantity, 0),
+                items: order.order_items.map((it) => ({
+                  name: it.products?.name_ar ?? "منتج محذوف",
+                  quantity: it.quantity,
+                })),
+                appBaseUrl:
+                  typeof window !== "undefined" ? window.location.origin : undefined,
+              })}
+            />
+            <WhatsappContactButton
+              phone={order.supplier.phone}
+              label="Confirm Order"
+              icon={Check}
+              message={buildSupplierConfirmationMessage({
+                distributorName: order.profiles?.full_name || "—",
+                orderNumber: order.order_number,
+                orderTotalMad: order.total_mad,
+                orderId: order.id,
+                appBaseUrl:
+                  typeof window !== "undefined" ? window.location.origin : undefined,
+              })}
+            />
+          </div>
+        ) : order.supplier_partner_id ? (
+          <p className="text-xs text-muted-foreground italic">
+            هذا المورد لا يملك رقم هاتف — أضف رقمه من صفحة الشركاء لتفعيل أزرار واتساب.
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground italic">
+            عيّن موردًا من قائمة الشركاء لتفعيل إرسال الطلب عبر واتساب.
+          </p>
+        )}
       </Card>
 
       <Card className="p-4 space-y-3">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 import { ChevronDown, MessageCircle } from "lucide-react";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { buildWhatsappLink, normalizeWhatsappPhone } from "@/utils/whatsapp";
@@ -10,6 +10,8 @@ interface WhatsappContactButtonProps extends Omit<ButtonProps, "onClick" | "asCh
   label?: string;
   /** Show an expandable preview of the pre-filled message. Default: true. */
   showPreview?: boolean;
+  /** Optional Lucide icon override (defaults to MessageCircle). */
+  icon?: ComponentType<{ className?: string }>;
 }
 
 /**
@@ -25,6 +27,7 @@ export function WhatsappContactButton({
   size = "sm",
   className,
   showPreview = true,
+  icon: Icon = MessageCircle,
   ...rest
 }: WhatsappContactButtonProps) {
   const [open, setOpen] = useState(false);
@@ -46,7 +49,7 @@ export function WhatsappContactButton({
           {...rest}
         >
           <a href={href} target="_blank" rel="noopener noreferrer">
-            <MessageCircle className="h-4 w-4" />
+            <Icon className="h-4 w-4" />
             <span>{label}</span>
           </a>
         </Button>
