@@ -24,6 +24,7 @@ import { TerritorySelect } from "@/components/admin/TerritorySelect";
 import { PARTNER_TYPE_LABELS, type PartnerType } from "@/lib/pricing";
 import { PricingTierSelect } from "@/components/admin/PricingTierSelect";
 import { useAuth } from "@/hooks/useAuth";
+import { formatPhoneMA } from "@/utils/whatsapp";
 
 /** Roles a company admin can grant to a client. */
 const CLIENT_ROLES = [
