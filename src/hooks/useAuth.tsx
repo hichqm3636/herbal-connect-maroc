@@ -206,13 +206,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setPricingTierId(tierId);
     setPricingTierDiscount(discount);
-    // Non-super users always operate within their own profile company; sync sessionStorage.
+    // Tenant context rules:
+    //  - Super admins: ALWAYS start with no active tenant. They must explicitly
+    //    pick a company from the selector. This prevents the previously
+    //    selected tenant from bleeding into Nexora's admin UI.
+    //  - Everyone else: pin sessionStorage to their own profile company.
     const isSuper = (roleRows ?? []).some((r) => r.role === "super_admin");
-    if (!isSuper && cid) {
+    if (isSuper) {
+      writeActiveCompany(null);
+      setActiveCompanyIdState(null);
+    } else if (cid) {
       writeActiveCompany(cid);
       setActiveCompanyIdState(cid);
     }
-  };
 
   // Reload company record whenever effective companyId changes.
   useEffect(() => {
