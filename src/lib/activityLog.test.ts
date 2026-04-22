@@ -78,4 +78,22 @@ describe("fetchCompanyActivityCounts", () => {
       vi.useRealTimers();
     }
   });
+
+  it("re-fetches after bumpCountsVersion() invalidates cache", async () => {
+    rpcMock
+      .mockResolvedValueOnce({
+        data: [{ entity_type: "order", count: 2 }],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [{ entity_type: "order", count: 9 }],
+        error: null,
+      });
+    const first = await fetchCompanyActivityCounts(COMPANY);
+    expect(first.order).toBe(2);
+    bumpCountsVersion();
+    const second = await fetchCompanyActivityCounts(COMPANY);
+    expect(second.order).toBe(9);
+    expect(rpcMock).toHaveBeenCalledTimes(2);
+  });
 });
