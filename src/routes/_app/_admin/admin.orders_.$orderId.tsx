@@ -1033,33 +1033,48 @@ function OrderDetails() {
         <div className="container mx-auto md:p-0">
           <p className="text-xs text-muted-foreground mb-2 hidden md:block">إجراءات الطلب</p>
           <div className="flex gap-2 overflow-x-auto md:flex-wrap">
-            {ACTIONS.map((a) => {
-              const Icon = a.icon;
-              const disabled = order.status === a.status || saving !== null;
-              return (
-                <Button
-                  key={a.status}
-                  variant={a.variant}
-                  size="sm"
-                  className="shrink-0"
-                  disabled={disabled}
-                  onClick={() => {
-                    if (a.status === "cancelled") {
-                      setConfirmCancel(true);
-                    } else {
-                      updateStatus(a.status);
-                    }
-                  }}
-                >
-                  {saving === a.status ? (
-                    <Loader2 className="h-4 w-4 animate-spin ml-1" />
-                  ) : (
-                    <Icon className="h-4 w-4 ml-1" />
-                  )}
-                  {a.label}
-                </Button>
-              );
-            })}
+            {(() => {
+              const currentStatus = (order.status === "preparing"
+                ? "processing"
+                : order.status) as OrderStatus;
+              const allowed = allowedNextStates(role, currentStatus);
+              if (allowed.length === 0) {
+                return (
+                  <p className="text-xs text-muted-foreground">
+                    لا توجد إجراءات متاحة لهذه الحالة
+                  </p>
+                );
+              }
+              return allowed.map((status) => {
+                const meta = ACTION_META[status as StatusKey];
+                if (!meta) return null;
+                const Icon = meta.icon;
+                const disabled = saving !== null;
+                return (
+                  <Button
+                    key={status}
+                    variant={meta.variant}
+                    size="sm"
+                    className="shrink-0"
+                    disabled={disabled}
+                    onClick={() => {
+                      if (status === "cancelled") {
+                        setConfirmCancel(true);
+                      } else {
+                        updateStatus(status as StatusKey);
+                      }
+                    }}
+                  >
+                    {saving === status ? (
+                      <Loader2 className="h-4 w-4 animate-spin ml-1" />
+                    ) : (
+                      <Icon className="h-4 w-4 ml-1" />
+                    )}
+                    {meta.label}
+                  </Button>
+                );
+              });
+            })()}
           </div>
         </div>
       </div>
