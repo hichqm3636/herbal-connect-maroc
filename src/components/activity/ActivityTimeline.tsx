@@ -193,7 +193,7 @@ export function ActivityTimeline(props: Props) {
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, ["companyId" in props ? props.companyId : null, rows.length]);
+  }, ["companyId" in props ? props.companyId : null, snapshot]);
 
   const loadMore = async () => {
     setLoadingMore(true);
