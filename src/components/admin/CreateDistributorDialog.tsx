@@ -58,6 +58,11 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
   const [roles, setRoles] = useState<Set<ClientRole>>(new Set(["buyer"]));
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [credentials, setCredentials] = useState<{
+    name: string;
+    phone: string;
+    password: string;
+  } | null>(null);
 
   const toggleRole = (role: ClientRole) => {
     setRoles((prev) => {
