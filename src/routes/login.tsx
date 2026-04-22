@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { Leaf, Loader2 } from "lucide-react";
@@ -255,7 +255,16 @@ function LoginPage() {
           </form>
         </Card>
 
-        <p className="mt-6 text-center text-xs text-muted-foreground">
+        {!tenant.company && (
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            ليس لديك بوابة بعد؟{" "}
+            <Link to="/signup" className="font-semibold text-primary hover:underline">
+              أنشئ بوابة شركتك
+            </Link>
+          </p>
+        )}
+
+        <p className="mt-4 text-center text-xs text-muted-foreground">
           Powered by <span className="font-semibold text-foreground">Nexora</span>
         </p>
       </div>

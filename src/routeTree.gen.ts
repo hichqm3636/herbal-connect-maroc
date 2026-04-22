@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
@@ -47,6 +48,11 @@ import { Route as AppAdminAdminDistributorsIdRouteImport } from './routes/_app/_
 import { Route as AppAdminAdminCreateOrderClientIdRouteImport } from './routes/_app/_admin/admin.create-order.$clientId'
 import { Route as AppAdminAdminActivityAdminIdRouteImport } from './routes/_app/_admin/admin.activity_.$adminId'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -246,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
   '/invoices': typeof AppInvoicesRoute
   '/loyalty': typeof AppLoyaltyRoute
@@ -283,6 +290,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
   '/invoices': typeof AppInvoicesRoute
   '/loyalty': typeof AppLoyaltyRoute
@@ -321,6 +329,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/_app/_admin': typeof AppAdminRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/invoices': typeof AppInvoicesRoute
@@ -361,6 +370,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/reset-password'
+    | '/signup'
     | '/dashboard'
     | '/invoices'
     | '/loyalty'
@@ -398,6 +408,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/reset-password'
+    | '/signup'
     | '/dashboard'
     | '/invoices'
     | '/loyalty'
@@ -435,6 +446,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/reset-password'
+    | '/signup'
     | '/_app/_admin'
     | '/_app/dashboard'
     | '/_app/invoices'
@@ -475,10 +487,18 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SignupRoute: typeof SignupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -840,6 +860,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
