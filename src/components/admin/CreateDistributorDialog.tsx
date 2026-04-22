@@ -170,6 +170,7 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
       <DialogContent dir="rtl" className="max-w-lg">
         <DialogHeader>
