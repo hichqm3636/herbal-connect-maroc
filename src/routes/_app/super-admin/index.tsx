@@ -168,15 +168,37 @@ function SuperAdminDashboard() {
           .gte("created_at", start30d.toISOString()),
       ]);
 
-      const revenue = (ordersRevenueRes.data ?? []).reduce(
-        (s, o) => s + (Number(o.total_mad) || 0),
-        0,
-      );
+      const allOrders = ordersRevenueRes.data ?? [];
+      const revenue = allOrders
+        .filter((o) => o.status !== "cancelled")
+        .reduce((s, o) => s + (Number(o.total_mad) || 0), 0);
+
+      const statusMap: Record<string, number> = {};
+      allOrders.forEach((o) => {
+        statusMap[o.status] = (statusMap[o.status] ?? 0) + 1;
+      });
 
       const cMap = new Map<string, string>();
       (companiesListRes.data ?? []).forEach((c) =>
         cMap.set(c.id, c.display_name || c.name),
       );
+
+      const revenueByCompany = new Map<string, { orders: number; revenue: number }>();
+      allOrders.forEach((o) => {
+        if (!o.company_id || o.status === "cancelled") return;
+        const cur = revenueByCompany.get(o.company_id) ?? { orders: 0, revenue: 0 };
+        cur.orders += 1;
+        cur.revenue += Number(o.total_mad) || 0;
+        revenueByCompany.set(o.company_id, cur);
+      });
+      const companyRevenueArr: CompanyRevenue[] = Array.from(revenueByCompany.entries())
+        .map(([id, v]) => ({
+          id,
+          name: cMap.get(id) ?? "—",
+          orders: v.orders,
+          revenue: v.revenue,
+        }))
+        .sort((a, b) => b.revenue - a.revenue);
 
       // Enrich recent companies with admin email + city + products count
       const recents = recentCompaniesRes.data ?? [];
