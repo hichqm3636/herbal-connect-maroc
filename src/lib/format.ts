@@ -36,7 +36,8 @@ export const LEVEL_LABELS: Record<string, string> = {
 export const STATUS_LABELS: Record<string, string> = {
   pending: "قيد الانتظار",
   confirmed: "تمت الموافقة",
-  preparing: "قيد التحضير",
+  processing: "قيد التحضير",
+  preparing: "قيد التحضير", // legacy alias — same label
   shipped: "تم الشحن",
   delivered: "تم التسليم",
   cancelled: "ملغي",
@@ -45,6 +46,7 @@ export const STATUS_LABELS: Record<string, string> = {
 export const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   pending: "outline",
   confirmed: "outline",
+  processing: "outline",
   preparing: "outline",
   shipped: "outline",
   delivered: "outline",
@@ -57,6 +59,8 @@ export const STATUS_CLASSES: Record<string, string> = {
     "border-yellow-500/30 bg-yellow-500/15 text-yellow-700 dark:text-yellow-300",
   confirmed:
     "border-blue-500/30 bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  processing:
+    "border-orange-500/30 bg-orange-500/15 text-orange-700 dark:text-orange-300",
   preparing:
     "border-orange-500/30 bg-orange-500/15 text-orange-700 dark:text-orange-300",
   shipped:
@@ -70,7 +74,7 @@ export const STATUS_CLASSES: Record<string, string> = {
 export const ORDER_STATUSES = [
   "pending",
   "confirmed",
-  "preparing",
+  "processing",
   "shipped",
   "delivered",
   "cancelled",
