@@ -13,6 +13,10 @@ import {
   Award,
   Pencil,
   X,
+  ShoppingCart,
+  Trash2,
+  Plus,
+  RefreshCw,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,12 +60,24 @@ interface ProfileLite {
 }
 
 const ACTION_LABELS: Record<string, string> = {
+  // admin actions
   create_distributor: "إنشاء موزع",
   reset_password: "إعادة تعيين كلمة المرور",
   disable_distributor: "تعطيل حساب",
   enable_distributor: "تفعيل حساب",
   update_distributor: "تعديل بيانات",
   adjust_points: "تعديل نقاط",
+  // orders
+  order_created: "إنشاء طلب",
+  order_updated: "تعديل طلب",
+  order_deleted: "حذف طلب",
+  order_status_change: "تغيير حالة الطلب",
+  order_item_added: "إضافة عنصر للطلب",
+  order_item_updated: "تعديل عنصر طلب",
+  order_item_removed: "حذف عنصر طلب",
+  // loyalty
+  loyalty_points_changed: "تغيير نقاط الولاء",
+  loyalty_transaction: "معاملة نقاط",
 };
 
 const ACTION_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -71,6 +87,15 @@ const ACTION_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   enable_distributor: ShieldCheck,
   update_distributor: Pencil,
   adjust_points: Award,
+  order_created: ShoppingCart,
+  order_updated: Pencil,
+  order_deleted: Trash2,
+  order_status_change: RefreshCw,
+  order_item_added: Plus,
+  order_item_updated: Pencil,
+  order_item_removed: Trash2,
+  loyalty_points_changed: Award,
+  loyalty_transaction: Award,
 };
 
 const ACTION_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -80,6 +105,50 @@ const ACTION_VARIANTS: Record<string, "default" | "secondary" | "destructive" | 
   enable_distributor: "default",
   update_distributor: "outline",
   adjust_points: "secondary",
+  order_created: "default",
+  order_updated: "outline",
+  order_deleted: "destructive",
+  order_status_change: "secondary",
+  order_item_added: "outline",
+  order_item_updated: "outline",
+  order_item_removed: "destructive",
+  loyalty_points_changed: "secondary",
+  loyalty_transaction: "secondary",
+};
+
+const ORDER_ACTIONS = [
+  "order_created",
+  "order_updated",
+  "order_deleted",
+  "order_status_change",
+  "order_item_added",
+  "order_item_updated",
+  "order_item_removed",
+];
+const LOYALTY_ACTIONS = ["loyalty_points_changed", "loyalty_transaction", "adjust_points"];
+const ADMIN_ACTIONS = [
+  "create_distributor",
+  "reset_password",
+  "disable_distributor",
+  "enable_distributor",
+  "update_distributor",
+];
+
+const TYPE_TO_ACTIONS: Record<string, string[]> = {
+  orders: ORDER_ACTIONS,
+  loyalty: LOYALTY_ACTIONS,
+  admin: ADMIN_ACTIONS,
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  status: "الحالة",
+  total_mad: "الإجمالي (د.م.)",
+  points_earned: "النقاط المكتسبة",
+  payment_method: "طريقة الدفع",
+  notes: "ملاحظات",
+  admin_notes: "ملاحظات الإدارة",
+  quantity: "الكمية",
+  unit_price_mad: "سعر الوحدة (د.م.)",
 };
 
 const PAGE_SIZE = 50;
@@ -87,17 +156,37 @@ const PAGE_SIZE = 50;
 function AdminActivity() {
   const [rows, setRows] = useState<LogRow[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
+  const [allDistributors, setAllDistributors] = useState<ProfileLite[]>([]);
+  const [allAdmins, setAllAdmins] = useState<ProfileLite[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
 
   // filters
+  const [typeFilter, setTypeFilter] = useState<"all" | "orders" | "loyalty" | "admin">("all");
   const [adminFilter, setAdminFilter] = useState("all");
+  const [distributorFilter, setDistributorFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
   const [from, setFrom] = useState<Date | undefined>();
   const [to, setTo] = useState<Date | undefined>();
   const [page, setPage] = useState(0);
 
   const [detail, setDetail] = useState<LogRow | null>(null);
+
+  // Load distributor + admin lists once for the filter dropdowns.
+  useEffect(() => {
+    (async () => {
+      const [{ data: dists }, { data: roleRows }] = await Promise.all([
+        supabase.from("profiles").select("id, full_name").order("full_name"),
+        supabase.from("user_roles").select("user_id").in("role", ["admin", "super_admin"]),
+      ]);
+      const distList = (dists ?? []) as ProfileLite[];
+      setAllDistributors(distList);
+      const distMap = Object.fromEntries(distList.map((d) => [d.id, d.full_name || "—"]));
+      const adminIds = new Set((roleRows ?? []).map((r) => r.user_id as string));
+      setAllAdmins(distList.filter((d) => adminIds.has(d.id)));
+      setProfiles((p) => ({ ...distMap, ...p }));
+    })();
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -108,7 +197,14 @@ function AdminActivity() {
       .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
     if (adminFilter !== "all") q = q.eq("admin_id", adminFilter);
-    if (actionFilter !== "all") q = q.eq("action", actionFilter);
+    if (distributorFilter !== "all") q = q.eq("target_user_id", distributorFilter);
+
+    if (actionFilter !== "all") {
+      q = q.eq("action", actionFilter);
+    } else if (typeFilter !== "all") {
+      q = q.in("action", TYPE_TO_ACTIONS[typeFilter]);
+    }
+
     if (from) q = q.gte("created_at", from.toISOString());
     if (to) {
       const end = new Date(to);
@@ -126,7 +222,7 @@ function AdminActivity() {
     setHasMore(list.length > PAGE_SIZE);
     setRows(list.slice(0, PAGE_SIZE));
 
-    // Resolve names
+    // Resolve any names not already in the cache.
     const ids = new Set<string>();
     list.forEach((r) => {
       ids.add(r.admin_id);
@@ -150,16 +246,19 @@ function AdminActivity() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminFilter, actionFilter, from, to, page]);
+  }, [typeFilter, adminFilter, distributorFilter, actionFilter, from, to, page]);
 
-  const adminOptions = useMemo(() => {
-    const set = new Map<string, string>();
-    rows.forEach((r) => set.set(r.admin_id, profiles[r.admin_id] || r.admin_id.slice(0, 8)));
-    return Array.from(set.entries());
-  }, [rows, profiles]);
+  // Action options shown in the action dropdown — narrowed by the type filter.
+  const actionOptions = useMemo(() => {
+    const keys =
+      typeFilter === "all" ? Object.keys(ACTION_LABELS) : TYPE_TO_ACTIONS[typeFilter] ?? [];
+    return keys.map((k) => [k, ACTION_LABELS[k] ?? k] as const);
+  }, [typeFilter]);
 
   const resetFilters = () => {
+    setTypeFilter("all");
     setAdminFilter("all");
+    setDistributorFilter("all");
     setActionFilter("all");
     setFrom(undefined);
     setTo(undefined);
@@ -195,7 +294,12 @@ function AdminActivity() {
   };
 
   const filtersActive =
-    adminFilter !== "all" || actionFilter !== "all" || from !== undefined || to !== undefined;
+    typeFilter !== "all" ||
+    adminFilter !== "all" ||
+    distributorFilter !== "all" ||
+    actionFilter !== "all" ||
+    from !== undefined ||
+    to !== undefined;
 
   return (
     <div className="space-y-6">
@@ -214,27 +318,61 @@ function AdminActivity() {
 
       {/* Filters */}
       <Card className="p-3 shadow-soft">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <Select
+            value={typeFilter}
+            onValueChange={(v) => {
+              setPage(0);
+              setActionFilter("all");
+              setTypeFilter(v as typeof typeFilter);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="نوع السجل" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل الأنواع</SelectItem>
+              <SelectItem value="orders">الطلبات</SelectItem>
+              <SelectItem value="loyalty">نقاط الولاء</SelectItem>
+              <SelectItem value="admin">إجراءات إدارية</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={actionFilter} onValueChange={(v) => { setPage(0); setActionFilter(v); }}>
+            <SelectTrigger>
+              <SelectValue placeholder="الإجراء" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل الإجراءات</SelectItem>
+              {actionOptions.map(([k, v]) => (
+                <SelectItem key={k} value={k}>{v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Select value={adminFilter} onValueChange={(v) => { setPage(0); setAdminFilter(v); }}>
             <SelectTrigger>
               <SelectValue placeholder="المسؤول" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">كل المسؤولين</SelectItem>
-              {adminOptions.map(([id, name]) => (
-                <SelectItem key={id} value={id}>{name}</SelectItem>
+              {allAdmins.map((a) => (
+                <SelectItem key={a.id} value={a.id}>{a.full_name || a.id.slice(0, 8)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <Select value={actionFilter} onValueChange={(v) => { setPage(0); setActionFilter(v); }}>
+          <Select
+            value={distributorFilter}
+            onValueChange={(v) => { setPage(0); setDistributorFilter(v); }}
+          >
             <SelectTrigger>
-              <SelectValue placeholder="نوع الإجراء" />
+              <SelectValue placeholder="الموزع" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">كل الإجراءات</SelectItem>
-              {Object.entries(ACTION_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
+              <SelectItem value="all">كل الموزعين</SelectItem>
+              {allDistributors.map((d) => (
+                <SelectItem key={d.id} value={d.id}>{d.full_name || d.id.slice(0, 8)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -374,14 +512,17 @@ function AdminActivity() {
               <Row label="الإجراء" value={ACTION_LABELS[detail.action] ?? detail.action} />
               <Row label="المسؤول" value={profiles[detail.admin_id] || detail.admin_id} />
               {detail.target_user_id && (
-                <Row label="الهدف" value={profiles[detail.target_user_id] || detail.target_user_id} />
+                <Row label="الموزع" value={profiles[detail.target_user_id] || detail.target_user_id} />
               )}
-              <div>
-                <p className="text-muted-foreground mb-1">البيانات الإضافية</p>
-                <pre className="bg-muted rounded p-2 text-xs overflow-auto max-h-64 text-left" dir="ltr">
+              <ChangesView metadata={detail.metadata ?? {}} />
+              <details>
+                <summary className="text-xs text-muted-foreground cursor-pointer">
+                  البيانات الكاملة (JSON)
+                </summary>
+                <pre className="bg-muted rounded p-2 text-xs overflow-auto max-h-64 text-left mt-2" dir="ltr">
                   {JSON.stringify(detail.metadata ?? {}, null, 2)}
                 </pre>
-              </div>
+              </details>
             </div>
           )}
         </DialogContent>
@@ -397,4 +538,90 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="font-medium truncate">{value}</span>
     </div>
   );
+}
+
+/**
+ * Renders the before/after diff stored in metadata.changes (orders/items)
+ * or metadata.before / metadata.after (creates, deletes, loyalty changes).
+ */
+function ChangesView({ metadata }: { metadata: Record<string, unknown> }) {
+  const fmt = (v: unknown): string => {
+    if (v === null || v === undefined || v === "") return "—";
+    if (typeof v === "object") return JSON.stringify(v);
+    return String(v);
+  };
+  const label = (k: string) => FIELD_LABELS[k] ?? k;
+
+  const changes = metadata.changes as Record<string, { before: unknown; after: unknown }> | undefined;
+  const before = metadata.before as Record<string, unknown> | unknown | undefined;
+  const after = metadata.after as Record<string, unknown> | unknown | undefined;
+
+  // Orders / items: structured per-field diff.
+  if (changes && typeof changes === "object" && Object.keys(changes).length > 0) {
+    return (
+      <div>
+        <p className="text-muted-foreground mb-2">التغييرات</p>
+        <div className="rounded-md border divide-y">
+          {Object.entries(changes).map(([k, v]) => (
+            <div key={k} className="grid grid-cols-3 gap-2 p-2 text-xs">
+              <span className="font-medium">{label(k)}</span>
+              <span className="text-destructive truncate" title={fmt(v.before)}>
+                {fmt(v.before)}
+              </span>
+              <span className="text-primary truncate" title={fmt(v.after)}>
+                {fmt(v.after)}
+              </span>
+            </div>
+          ))}
+          <div className="grid grid-cols-3 gap-2 p-2 text-[10px] uppercase text-muted-foreground bg-muted/40">
+            <span>الحقل</span>
+            <span>قبل</span>
+            <span>بعد</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Loyalty point updates: scalar before/after.
+  if (
+    (typeof before === "number" || typeof before === "string") &&
+    (typeof after === "number" || typeof after === "string")
+  ) {
+    const delta = metadata.delta;
+    return (
+      <div>
+        <p className="text-muted-foreground mb-2">التغيير</p>
+        <div className="rounded-md border p-3 text-sm flex items-center justify-between gap-3">
+          <span className="text-destructive font-semibold">{fmt(before)}</span>
+          <span className="text-muted-foreground">→</span>
+          <span className="text-primary font-semibold">{fmt(after)}</span>
+          {delta !== undefined && (
+            <Badge variant="outline">الفرق: {fmt(delta)}</Badge>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Snapshot (create / delete) — flat object.
+  const snapshot = (after ?? before) as Record<string, unknown> | undefined;
+  if (snapshot && typeof snapshot === "object" && Object.keys(snapshot).length > 0) {
+    const heading = after ? "البيانات بعد" : "البيانات قبل الحذف";
+    return (
+      <div>
+        <p className="text-muted-foreground mb-2">{heading}</p>
+        <div className="rounded-md border divide-y">
+          {Object.entries(snapshot).map(([k, v]) => (
+            <div key={k} className="grid grid-cols-2 gap-2 p-2 text-xs">
+              <span className="font-medium">{label(k)}</span>
+              <span className="truncate" title={fmt(v)}>{fmt(v)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
