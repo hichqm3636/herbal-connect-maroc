@@ -119,6 +119,9 @@ function DistributorProfile() {
   const [loading, setLoading] = useState(true);
   const [addingTerritory, setAddingTerritory] = useState(false);
   const [territoryToAdd, setTerritoryToAdd] = useState<string>("");
+  const [waPromptOpen, setWaPromptOpen] = useState(false);
+  const [waPassword, setWaPassword] = useState("");
+  const [waCredsOpen, setWaCredsOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
