@@ -82,6 +82,7 @@ const companyAdminSections: NavSection[] = [
     label: "الشبكة",
     icon: Network,
     items: [
+      { title: "الشركاء", url: "/admin/partners", icon: Network },
       { title: "الموزعون والعملاء", url: "/admin/distributors", icon: Users },
       { title: "المناطق", url: "/admin/territories", icon: MapPin },
     ],

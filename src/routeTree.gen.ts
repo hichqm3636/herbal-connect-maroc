@@ -14,6 +14,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AppSuperAdminRouteImport } from './routes/_app/super-admin'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppQuickOrderRouteImport } from './routes/_app/quick-order'
@@ -36,6 +37,7 @@ import { Route as AppAdminAdminStorageHealthRouteImport } from './routes/_app/_a
 import { Route as AppAdminAdminSalesAgentsRouteImport } from './routes/_app/_admin/admin.sales-agents'
 import { Route as AppAdminAdminProductsRouteImport } from './routes/_app/_admin/admin.products'
 import { Route as AppAdminAdminProductZonesRouteImport } from './routes/_app/_admin/admin.product-zones'
+import { Route as AppAdminAdminPartnersRouteImport } from './routes/_app/_admin/admin.partners'
 import { Route as AppAdminAdminOrdersRouteImport } from './routes/_app/_admin/admin.orders'
 import { Route as AppAdminAdminOrderRulesRouteImport } from './routes/_app/_admin/admin.order-rules'
 import { Route as AppAdminAdminInvoicesRouteImport } from './routes/_app/_admin/admin.invoices'
@@ -71,6 +73,11 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppSuperAdminRoute = AppSuperAdminRouteImport.update({
@@ -188,6 +195,11 @@ const AppAdminAdminProductZonesRoute =
     path: '/admin/product-zones',
     getParentRoute: () => AppAdminRoute,
   } as any)
+const AppAdminAdminPartnersRoute = AppAdminAdminPartnersRouteImport.update({
+  id: '/admin/partners',
+  path: '/admin/partners',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminAdminOrdersRoute = AppAdminAdminOrdersRouteImport.update({
   id: '/admin/orders',
   path: '/admin/orders',
@@ -268,6 +280,7 @@ export interface FileRoutesByFullPath {
   '/quick-order': typeof AppQuickOrderRoute
   '/settings': typeof AppSettingsRoute
   '/super-admin': typeof AppSuperAdminRouteWithChildren
+  '/invite/$token': typeof InviteTokenRoute
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/distributors': typeof AppSuperAdminDistributorsRoute
@@ -281,6 +294,7 @@ export interface FileRoutesByFullPath {
   '/admin/invoices': typeof AppAdminAdminInvoicesRoute
   '/admin/order-rules': typeof AppAdminAdminOrderRulesRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
+  '/admin/partners': typeof AppAdminAdminPartnersRoute
   '/admin/product-zones': typeof AppAdminAdminProductZonesRoute
   '/admin/products': typeof AppAdminAdminProductsRoute
   '/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
@@ -306,6 +320,7 @@ export interface FileRoutesByTo {
   '/products': typeof AppProductsRoute
   '/quick-order': typeof AppQuickOrderRoute
   '/settings': typeof AppSettingsRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/distributors': typeof AppSuperAdminDistributorsRoute
@@ -319,6 +334,7 @@ export interface FileRoutesByTo {
   '/admin/invoices': typeof AppAdminAdminInvoicesRoute
   '/admin/order-rules': typeof AppAdminAdminOrderRulesRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
+  '/admin/partners': typeof AppAdminAdminPartnersRoute
   '/admin/product-zones': typeof AppAdminAdminProductZonesRoute
   '/admin/products': typeof AppAdminAdminProductsRoute
   '/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
@@ -348,6 +364,7 @@ export interface FileRoutesById {
   '/_app/quick-order': typeof AppQuickOrderRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/super-admin': typeof AppSuperAdminRouteWithChildren
+  '/invite/$token': typeof InviteTokenRoute
   '/_app/products_/$productId': typeof AppProductsProductIdRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/_app/super-admin/distributors': typeof AppSuperAdminDistributorsRoute
@@ -361,6 +378,7 @@ export interface FileRoutesById {
   '/_app/_admin/admin/invoices': typeof AppAdminAdminInvoicesRoute
   '/_app/_admin/admin/order-rules': typeof AppAdminAdminOrderRulesRoute
   '/_app/_admin/admin/orders': typeof AppAdminAdminOrdersRoute
+  '/_app/_admin/admin/partners': typeof AppAdminAdminPartnersRoute
   '/_app/_admin/admin/product-zones': typeof AppAdminAdminProductZonesRoute
   '/_app/_admin/admin/products': typeof AppAdminAdminProductsRoute
   '/_app/_admin/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
@@ -389,6 +407,7 @@ export interface FileRouteTypes {
     | '/quick-order'
     | '/settings'
     | '/super-admin'
+    | '/invite/$token'
     | '/products/$productId'
     | '/super-admin/companies'
     | '/super-admin/distributors'
@@ -402,6 +421,7 @@ export interface FileRouteTypes {
     | '/admin/invoices'
     | '/admin/order-rules'
     | '/admin/orders'
+    | '/admin/partners'
     | '/admin/product-zones'
     | '/admin/products'
     | '/admin/sales-agents'
@@ -427,6 +447,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/quick-order'
     | '/settings'
+    | '/invite/$token'
     | '/products/$productId'
     | '/super-admin/companies'
     | '/super-admin/distributors'
@@ -440,6 +461,7 @@ export interface FileRouteTypes {
     | '/admin/invoices'
     | '/admin/order-rules'
     | '/admin/orders'
+    | '/admin/partners'
     | '/admin/product-zones'
     | '/admin/products'
     | '/admin/sales-agents'
@@ -468,6 +490,7 @@ export interface FileRouteTypes {
     | '/_app/quick-order'
     | '/_app/settings'
     | '/_app/super-admin'
+    | '/invite/$token'
     | '/_app/products_/$productId'
     | '/_app/super-admin/companies'
     | '/_app/super-admin/distributors'
@@ -481,6 +504,7 @@ export interface FileRouteTypes {
     | '/_app/_admin/admin/invoices'
     | '/_app/_admin/admin/order-rules'
     | '/_app/_admin/admin/orders'
+    | '/_app/_admin/admin/partners'
     | '/_app/_admin/admin/product-zones'
     | '/_app/_admin/admin/products'
     | '/_app/_admin/admin/sales-agents'
@@ -501,6 +525,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  InviteTokenRoute: typeof InviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -538,6 +563,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/super-admin': {
@@ -694,6 +726,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminProductZonesRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/_admin/admin/partners': {
+      id: '/_app/_admin/admin/partners'
+      path: '/admin/partners'
+      fullPath: '/admin/partners'
+      preLoaderRoute: typeof AppAdminAdminPartnersRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/_admin/admin/orders': {
       id: '/_app/_admin/admin/orders'
       path: '/admin/orders'
@@ -789,6 +828,7 @@ interface AppAdminRouteChildren {
   AppAdminAdminInvoicesRoute: typeof AppAdminAdminInvoicesRoute
   AppAdminAdminOrderRulesRoute: typeof AppAdminAdminOrderRulesRoute
   AppAdminAdminOrdersRoute: typeof AppAdminAdminOrdersRoute
+  AppAdminAdminPartnersRoute: typeof AppAdminAdminPartnersRoute
   AppAdminAdminProductZonesRoute: typeof AppAdminAdminProductZonesRoute
   AppAdminAdminProductsRoute: typeof AppAdminAdminProductsRoute
   AppAdminAdminSalesAgentsRoute: typeof AppAdminAdminSalesAgentsRoute
@@ -811,6 +851,7 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminAdminInvoicesRoute: AppAdminAdminInvoicesRoute,
   AppAdminAdminOrderRulesRoute: AppAdminAdminOrderRulesRoute,
   AppAdminAdminOrdersRoute: AppAdminAdminOrdersRoute,
+  AppAdminAdminPartnersRoute: AppAdminAdminPartnersRoute,
   AppAdminAdminProductZonesRoute: AppAdminAdminProductZonesRoute,
   AppAdminAdminProductsRoute: AppAdminAdminProductsRoute,
   AppAdminAdminSalesAgentsRoute: AppAdminAdminSalesAgentsRoute,
@@ -883,6 +924,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
