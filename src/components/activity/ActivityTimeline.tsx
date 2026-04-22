@@ -104,7 +104,8 @@ export function ActivityTimeline(props: Props) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [filter, setFilter] = useState<FilterKey>("all");
-  const [counts, setCounts] = useState<(Record<EntityType, number> & { all: number }) | null>(null);
+  const [counts, setCounts] = useState<(Record<string, number> & { all: number }) | null>(null);
+  const [countsLoading, setCountsLoading] = useState(true);
   const isCompanyView = "companyId" in props && !!props.companyId;
 
   const filterTypes = (key: FilterKey): EntityType[] | undefined => {
