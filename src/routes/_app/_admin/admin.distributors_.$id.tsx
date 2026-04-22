@@ -23,6 +23,16 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import { MessageCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { DistributorCredentialsDialog } from "@/components/admin/DistributorCredentialsDialog";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -115,6 +125,9 @@ function DistributorProfile() {
   const [loading, setLoading] = useState(true);
   const [addingTerritory, setAddingTerritory] = useState(false);
   const [territoryToAdd, setTerritoryToAdd] = useState<string>("");
+  const [waPromptOpen, setWaPromptOpen] = useState(false);
+  const [waPassword, setWaPassword] = useState("");
+  const [waCredsOpen, setWaCredsOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -449,13 +462,28 @@ function DistributorProfile() {
             )}
           </div>
         </div>
-        <Button
-          className="gap-2 self-start"
-          onClick={() => navigate({ to: "/admin/create-order/$clientId", params: { clientId: profile.id } })}
-        >
-          <Plus className="h-4 w-4" />
-          إنشاء طلب
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 self-start">
+          <Button
+            variant="outline"
+            className="gap-2 border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#075E54]"
+            disabled={!profile.phone}
+            onClick={() => {
+              setWaPassword("");
+              setWaPromptOpen(true);
+            }}
+            title={!profile.phone ? "لا يوجد رقم هاتف" : "إرسال بيانات الدخول عبر WhatsApp"}
+          >
+            <MessageCircle className="h-4 w-4" />
+            إرسال عبر WhatsApp
+          </Button>
+          <Button
+            className="gap-2"
+            onClick={() => navigate({ to: "/admin/create-order/$clientId", params: { clientId: profile.id } })}
+          >
+            <Plus className="h-4 w-4" />
+            إنشاء طلب
+          </Button>
+        </div>
       </div>
 
       {/* Distributor information */}
@@ -714,6 +742,61 @@ function DistributorProfile() {
           ) : null}
         </span>
       </div>
+
+      {/* WhatsApp credentials prompt: ask for password / temp code, then open the message dialog */}
+      <Dialog open={waPromptOpen} onOpenChange={setWaPromptOpen}>
+        <DialogContent dir="rtl" className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-[#25D366]" />
+              إرسال بيانات الدخول
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              أدخل كلمة المرور (أو الرمز المؤقت) ليتم تضمينها في رسالة WhatsApp.
+              لن يتم حفظها.
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-sm">كلمة المرور / الرمز</Label>
+              <Input
+                type="text"
+                value={waPassword}
+                onChange={(e) => setWaPassword(e.target.value)}
+                placeholder="مثال: Temp1234"
+                dir="ltr"
+                autoFocus
+              />
+            </div>
+          </div>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setWaPromptOpen(false)}>
+              إلغاء
+            </Button>
+            <Button
+              className="gap-2 bg-[#25D366] hover:bg-[#1ebe5b] text-white"
+              disabled={!waPassword.trim()}
+              onClick={() => {
+                setWaPromptOpen(false);
+                setWaCredsOpen(true);
+              }}
+            >
+              <MessageCircle className="h-4 w-4" />
+              متابعة
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {profile && (
+        <DistributorCredentialsDialog
+          open={waCredsOpen}
+          onOpenChange={setWaCredsOpen}
+          distributorName={profile.full_name}
+          phone={profile.phone ?? ""}
+          password={waPassword}
+        />
+      )}
     </div>
   );
 }

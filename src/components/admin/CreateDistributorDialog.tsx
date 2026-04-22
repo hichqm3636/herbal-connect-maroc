@@ -24,6 +24,8 @@ import { TerritorySelect } from "@/components/admin/TerritorySelect";
 import { PricingTierSelect } from "@/components/admin/PricingTierSelect";
 import { PARTNER_TYPE_LABELS, type PartnerType } from "@/lib/pricing";
 import { useAuth } from "@/hooks/useAuth";
+import { formatPhoneMA } from "@/utils/whatsapp";
+import { DistributorCredentialsDialog } from "@/components/admin/DistributorCredentialsDialog";
 
 interface Props {
   open: boolean;
@@ -56,6 +58,11 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
   const [roles, setRoles] = useState<Set<ClientRole>>(new Set(["buyer"]));
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [credentials, setCredentials] = useState<{
+    name: string;
+    phone: string;
+    password: string;
+  } | null>(null);
 
   const toggleRole = (role: ClientRole) => {
     setRoles((prev) => {
@@ -98,6 +105,7 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
   const submit = async () => {
     if (!validate()) return;
     setBusy(true);
+    const normalizedPhone = formatPhoneMA(form.phone);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
@@ -111,7 +119,7 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
           action: "create",
           companyId,
           fullName: form.fullName,
-          phone: form.phone,
+          phone: normalizedPhone,
           territoryId: form.territoryId,
           accountType: form.accountType,
           roles: [...roles],
@@ -144,9 +152,16 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
       }
       if (data?.error) throw new Error(data.error);
       toast.success("تم إنشاء حساب العميل بنجاح");
+      const created = {
+        name: form.fullName.trim(),
+        phone: normalizedPhone,
+        password: form.password,
+      };
       reset();
       onOpenChange(false);
       onCreated();
+      // Show WhatsApp credentials dialog so admin can send login info immediately.
+      setCredentials(created);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "تعذر الإنشاء");
     } finally {
@@ -155,6 +170,7 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
       <DialogContent dir="rtl" className="max-w-lg">
         <DialogHeader>
@@ -280,6 +296,16 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {credentials && (
+      <DistributorCredentialsDialog
+        open={!!credentials}
+        onOpenChange={(o) => !o && setCredentials(null)}
+        distributorName={credentials.name}
+        phone={credentials.phone}
+        password={credentials.password}
+      />
+    )}
+    </>
   );
 }
 
