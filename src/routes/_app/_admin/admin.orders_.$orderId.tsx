@@ -629,10 +629,22 @@ function OrderDetails() {
                 appBaseUrl:
                   typeof window !== "undefined" ? window.location.origin : undefined,
               })}
+              onSent={() => {
+                if (companyId) {
+                  logActivity({
+                    companyId,
+                    action: "order_sent_to_supplier",
+                    entityType: "order",
+                    entityId: order.id,
+                    metadata: {
+                      order_number: order.order_number,
+                      supplier_id: order.supplier_partner_id,
+                      supplier_name: order.supplier?.name ?? null,
+                    },
+                  });
+                }
+              }}
             />
-            <WhatsappContactButton
-              phone={order.supplier.phone}
-              label="Confirm Order"
               icon={Check}
               message={buildSupplierConfirmationMessage({
                 distributorName: order.profiles?.full_name || "—",
