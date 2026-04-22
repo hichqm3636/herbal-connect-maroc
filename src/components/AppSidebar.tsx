@@ -155,8 +155,9 @@ const superAdminSections: NavSection[] = [
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin, isSuperAdmin, roles, signOut, user, company } = useAuth();
-  const isPlatformOwner = isSuperAdmin && !roles.includes("admin");
+  const { isAdmin, isSuperAdmin, roles, signOut, user, company, mode } = useAuth();
+  const isPlatform = mode === "platform";
+  const isPlatformOwner = isPlatform || (isSuperAdmin && !roles.includes("admin"));
   const isCompanyAdmin = isAdmin && !isPlatformOwner;
   const isDistributor = !isAdmin && !isPlatformOwner;
   const { isMobile, setOpenMobile, state } = useSidebar();
