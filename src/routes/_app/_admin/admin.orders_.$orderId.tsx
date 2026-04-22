@@ -523,6 +523,87 @@ function OrderDetails() {
         </div>
       </Card>
 
+      {/* Supplier — upstream partner who fulfills this order. WhatsApp shortcut. */}
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold text-sm text-muted-foreground">المورد</h2>
+          {savingSupplier && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">اختر المورد (شريك)</p>
+            <Select
+              value={order.supplier_partner_id ?? "none"}
+              onValueChange={(v) => updateSupplier(v === "none" ? null : v)}
+              disabled={savingSupplier}
+            >
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue placeholder="— لا يوجد مورد —" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— لا يوجد مورد —</SelectItem>
+                {supplierOptions.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                    {p.phone ? ` — ${p.phone}` : " — (بدون هاتف)"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {order.supplier?.phone && (
+            <p className="text-xs text-muted-foreground" dir="ltr">
+              {order.supplier.phone}
+            </p>
+          )}
+        </div>
+
+        {order.supplier?.phone ? (
+          <div className="flex flex-col gap-3 pt-1">
+            <WhatsappContactButton
+              phone={order.supplier.phone}
+              label="Send to Supplier"
+              icon={Send}
+              message={buildSupplierOrderMessage({
+                distributorName: order.profiles?.full_name || "—",
+                orderNumber: order.order_number,
+                orderTotalMad: order.total_mad,
+                orderId: order.id,
+                itemsCount: order.order_items.reduce((s, it) => s + it.quantity, 0),
+                items: order.order_items.map((it) => ({
+                  name: it.products?.name_ar ?? "منتج محذوف",
+                  quantity: it.quantity,
+                })),
+                appBaseUrl:
+                  typeof window !== "undefined" ? window.location.origin : undefined,
+              })}
+            />
+            <WhatsappContactButton
+              phone={order.supplier.phone}
+              label="Confirm Order"
+              icon={Check}
+              message={buildSupplierConfirmationMessage({
+                distributorName: order.profiles?.full_name || "—",
+                orderNumber: order.order_number,
+                orderTotalMad: order.total_mad,
+                orderId: order.id,
+                appBaseUrl:
+                  typeof window !== "undefined" ? window.location.origin : undefined,
+              })}
+            />
+          </div>
+        ) : order.supplier_partner_id ? (
+          <p className="text-xs text-muted-foreground italic">
+            هذا المورد لا يملك رقم هاتف — أضف رقمه من صفحة الشركاء لتفعيل أزرار واتساب.
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground italic">
+            عيّن موردًا من قائمة الشركاء لتفعيل إرسال الطلب عبر واتساب.
+          </p>
+        )}
+      </Card>
+
       <Card className="p-4 space-y-3">
         <h2 className="font-semibold text-sm text-muted-foreground">المنتجات</h2>
         {/* Mobile cards */}
