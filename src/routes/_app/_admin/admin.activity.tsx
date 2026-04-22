@@ -695,6 +695,22 @@ function AdminActivity() {
     <tbody>${actionBreakdownRows || `<tr><td colspan="4">—</td></tr>`}</tbody>
   </table>
 
+  <h2>التفصيل لكل مسؤول</h2>
+  <table>
+    <thead><tr>
+      <th>المسؤول</th>
+      <th>طلبات</th>
+      <th>نقاط</th>
+      <th>إدارية</th>
+      <th>أخرى</th>
+      <th>مجموع تغيّر النقاط</th>
+      <th>مجموع قيم الطلبات (د.م.)</th>
+      <th>الإجمالي</th>
+    </tr></thead>
+    <tbody>${adminBreakdownRows}</tbody>
+    <tfoot>${adminBreakdownEntries.length ? adminBreakdownFooter : ""}</tfoot>
+  </table>
+
   <div class="two-col" style="margin-top:14px;">
     <div>
       <h2>أكثر المسؤولين نشاطاً</h2>
