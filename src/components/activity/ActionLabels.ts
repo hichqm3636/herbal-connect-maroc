@@ -24,6 +24,29 @@ export const ACTION_LABELS: Record<string, string> = {
   company_branding_updated: "حدّث هوية الشركة",
   company_logo_updated: "حدّث شعار الشركة",
   company_logo_removed: "حذف شعار الشركة",
+
+  // Invoices
+  invoice_created: "أنشأ الفاتورة",
+  invoice_issued: "أصدر الفاتورة",
+  invoice_updated: "حدّث الفاتورة",
+  invoice_paid: "سجّل دفع الفاتورة",
+  invoice_cancelled: "ألغى الفاتورة",
+  invoice_pdf_generated: "أنشأ ملف PDF للفاتورة",
+
+  // Partners (suppliers, pharmacies, gyms, etc.)
+  partner_created: "أضاف شريكًا",
+  partner_invited: "أرسل دعوة لشريك",
+  partner_updated: "حدّث بيانات الشريك",
+  partner_status_changed: "غيّر حالة الشريك",
+  partner_deleted: "حذف الشريك",
+
+  // Distributors
+  distributor_created: "أضاف موزعًا",
+  distributor_updated: "حدّث بيانات الموزع",
+  distributor_activated: "فعّل حساب الموزع",
+  distributor_deactivated: "عطّل حساب الموزع",
+  distributor_password_reset: "أعاد تعيين كلمة مرور الموزع",
+  distributor_pricing_updated: "حدّث تسعير الموزع",
 };
 
 export const FIELD_LABELS: Record<string, string> = {
