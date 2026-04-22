@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, History } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
@@ -39,40 +39,56 @@ interface CompanyProps extends BaseProps {
 
 type Props = EntityProps | CompanyProps;
 
-type FilterKey = "all" | "order" | "product" | "company";
+type FilterKey = "all" | "order" | "product" | "company" | "invoice" | "partner" | "distributor";
 
 const FILTERS: { key: FilterKey; label: string; types: EntityType[] }[] = [
   { key: "all", label: "الكل", types: [] },
   { key: "order", label: "الطلبات", types: ["order"] },
   { key: "product", label: "المنتجات", types: ["product"] },
-  { key: "company", label: "إعدادات الشركة", types: ["company"] },
+  { key: "invoice", label: "الفواتير", types: ["invoice"] },
+  { key: "partner", label: "الشركاء", types: ["partner", "supplier"] },
+  { key: "distributor", label: "الموزعون", types: ["distributor"] },
+  { key: "company", label: "إعدادات الشركة", types: ["company", "team"] },
 ];
 
 function EntityLink({ row, children }: { row: ActivityLogRow; children: React.ReactNode }) {
   if (!row.entity_id) return <>{children}</>;
-  if (row.entity_type === "order") {
-    return (
-      <Link
-        to="/admin/orders/$orderId"
-        params={{ orderId: row.entity_id }}
-        className="hover:underline text-primary"
-      >
-        {children}
-      </Link>
-    );
+  const id = row.entity_id;
+  switch (row.entity_type) {
+    case "order":
+      return (
+        <Link to="/admin/orders/$orderId" params={{ orderId: id }} className="hover:underline text-primary">
+          {children}
+        </Link>
+      );
+    case "product":
+      return (
+        <Link to="/products/$productId" params={{ productId: id }} className="hover:underline text-primary">
+          {children}
+        </Link>
+      );
+    case "invoice":
+      return (
+        <Link to="/admin/invoices/$invoiceId" params={{ invoiceId: id }} className="hover:underline text-primary">
+          {children}
+        </Link>
+      );
+    case "distributor":
+      return (
+        <Link to="/admin/distributors/$id" params={{ id }} className="hover:underline text-primary">
+          {children}
+        </Link>
+      );
+    case "partner":
+    case "supplier":
+      return (
+        <Link to="/admin/partners" className="hover:underline text-primary">
+          {children}
+        </Link>
+      );
+    default:
+      return <>{children}</>;
   }
-  if (row.entity_type === "product") {
-    return (
-      <Link
-        to="/products/$productId"
-        params={{ productId: row.entity_id }}
-        className="hover:underline text-primary"
-      >
-        {children}
-      </Link>
-    );
-  }
-  return <>{children}</>;
 }
 
 export function ActivityTimeline(props: Props) {
@@ -89,11 +105,17 @@ export function ActivityTimeline(props: Props) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const isCompanyView = "companyId" in props && !!props.companyId;
 
-  const fetchPage = async (offset: number): Promise<ActivityLogRow[]> => {
+  const filterTypes = (key: FilterKey): EntityType[] | undefined => {
+    if (key === "all") return undefined;
+    const types = FILTERS.find((f) => f.key === key)?.types ?? [];
+    return types.length > 0 ? types : undefined;
+  };
+
+  const fetchPage = async (offset: number, key: FilterKey): Promise<ActivityLogRow[]> => {
     if ("entityType" in props && props.entityType) {
       return fetchEntityActivityPage(props.entityType, props.entityId, offset, pageSize);
     }
-    return fetchCompanyActivityPage(props.companyId!, offset, pageSize);
+    return fetchCompanyActivityPage(props.companyId!, offset, pageSize, filterTypes(key));
   };
 
   const mergeUserNames = async (newRows: ActivityLogRow[]) => {
@@ -103,7 +125,7 @@ export function ActivityTimeline(props: Props) {
     setUsers((prev) => ({ ...prev, ...names }));
   };
 
-  // Initial load (and reload when entity / company changes).
+  // Initial load + reload when entity / company / active filter changes.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -111,7 +133,7 @@ export function ActivityTimeline(props: Props) {
       setRows([]);
       setHasMore(true);
       try {
-        const data = await fetchPage(0);
+        const data = await fetchPage(0, filter);
         if (cancelled) return;
         setRows(data);
         setHasMore(data.length === pageSize);
@@ -131,12 +153,13 @@ export function ActivityTimeline(props: Props) {
     "entityId" in props ? props.entityId : null,
     "companyId" in props ? props.companyId : null,
     pageSize,
+    filter,
   ]);
 
   const loadMore = async () => {
     setLoadingMore(true);
     try {
-      const next = await fetchPage(rows.length);
+      const next = await fetchPage(rows.length, filter);
       setRows((prev) => [...prev, ...next]);
       setHasMore(next.length === pageSize);
       await mergeUserNames(next);
@@ -146,13 +169,6 @@ export function ActivityTimeline(props: Props) {
       setLoadingMore(false);
     }
   };
-
-  const filteredRows = useMemo(() => {
-    if (filter === "all") return rows;
-    const allowed = FILTERS.find((f) => f.key === filter)?.types ?? [];
-    if (allowed.length === 0) return rows;
-    return rows.filter((r) => allowed.includes(r.entity_type as EntityType));
-  }, [rows, filter]);
 
   return (
     <Card className={`p-4 shadow-soft ${props.className ?? ""}`} dir="rtl">
@@ -164,10 +180,6 @@ export function ActivityTimeline(props: Props) {
         <div className="flex flex-wrap gap-1.5 mb-3">
           {FILTERS.map((f) => {
             const active = filter === f.key;
-            const count =
-              f.key === "all"
-                ? rows.length
-                : rows.filter((r) => f.types.includes(r.entity_type as EntityType)).length;
             return (
               <Button
                 key={f.key}
@@ -178,7 +190,6 @@ export function ActivityTimeline(props: Props) {
                 className="h-7 px-2.5 text-xs"
               >
                 {f.label}
-                <span className="ms-1 text-[10px] opacity-70">({count})</span>
               </Button>
             );
           })}
@@ -188,12 +199,12 @@ export function ActivityTimeline(props: Props) {
         <div className="flex justify-center py-6 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
         </div>
-      ) : filteredRows.length === 0 ? (
+      ) : rows.length === 0 ? (
         <p className="text-xs text-muted-foreground py-4 text-center">{emptyText}</p>
       ) : (
         <>
           <ol className="relative space-y-3 ps-4 border-s border-border">
-            {filteredRows.map((r) => (
+            {rows.map((r) => (
               <li key={r.id} className="relative">
                 <span className="absolute -start-[5px] top-1.5 h-2 w-2 rounded-full bg-primary" />
                 <div className="text-sm">
