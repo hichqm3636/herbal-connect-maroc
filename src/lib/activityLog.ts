@@ -144,6 +144,40 @@ export async function fetchCompanyActivity(
   return (data ?? []) as ActivityLogRow[];
 }
 
+/** Paginated company activity (offset-based, newest first). */
+export async function fetchCompanyActivityPage(
+  companyId: string,
+  offset: number,
+  pageSize = 50,
+): Promise<ActivityLogRow[]> {
+  const { data, error } = await supabase
+    .from("activity_logs")
+    .select("*")
+    .eq("company_id", companyId)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + pageSize - 1);
+  if (error) throw error;
+  return (data ?? []) as ActivityLogRow[];
+}
+
+/** Paginated entity activity (offset-based, newest first). */
+export async function fetchEntityActivityPage(
+  entityType: EntityType,
+  entityId: string,
+  offset: number,
+  pageSize = 50,
+): Promise<ActivityLogRow[]> {
+  const { data, error } = await supabase
+    .from("activity_logs")
+    .select("*")
+    .eq("entity_type", entityType)
+    .eq("entity_id", entityId)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + pageSize - 1);
+  if (error) throw error;
+  return (data ?? []) as ActivityLogRow[];
+}
+
 /** Resolve user_ids → display names in a single batch. */
 export async function fetchUserNames(
   userIds: string[],
