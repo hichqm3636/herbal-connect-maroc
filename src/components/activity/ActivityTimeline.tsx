@@ -160,21 +160,27 @@ export function ActivityTimeline(props: Props) {
   ]);
 
   // Fetch DB-side counts per entity_type for the company view (filter badges).
+  // Debounced 300ms to avoid spamming the RPC when filters/rows change quickly.
   useEffect(() => {
     if (!isCompanyView) return;
     let cancelled = false;
-    const allTypes: EntityType[] = FILTERS.flatMap((f) => f.types);
-    const uniqueTypes = Array.from(new Set(allTypes)) as EntityType[];
-    (async () => {
-      try {
-        const result = await fetchCompanyActivityCounts(props.companyId!, uniqueTypes);
-        if (!cancelled) setCounts(result);
-      } catch (err) {
-        console.warn("[ActivityTimeline] counts failed", err);
-      }
-    })();
+    setCountsLoading(true);
+    const timer = setTimeout(() => {
+      (async () => {
+        try {
+          const result = await fetchCompanyActivityCounts(props.companyId!);
+          if (!cancelled) setCounts(result);
+        } catch (err) {
+          console.warn("[ActivityTimeline] counts failed", err);
+          if (!cancelled) setCounts(null);
+        } finally {
+          if (!cancelled) setCountsLoading(false);
+        }
+      })();
+    }, 300);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, ["companyId" in props ? props.companyId : null, rows.length]);
