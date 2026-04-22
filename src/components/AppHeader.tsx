@@ -30,14 +30,7 @@ export function AppHeader() {
     ? "إغلاق الشريط الجانبي"
     : "فتح الشريط الجانبي";
 
-  const tenantName = company?.display_name || company?.name || "DistribHub";
-  const name = isPlatformRoute ? "Nexora" : tenantName;
-  const logo = isPlatformRoute ? null : company?.logo_url;
-  const subtitle = isPlatformRoute ? "Platform Administration" : "بوابة الموزعين";
-  const initial = name.charAt(0).toUpperCase();
-  const sidebarLabel = isOpen
-    ? "إغلاق الشريط الجانبي"
-    : "فتح الشريط الجانبي";
+
 
   return (
     <header
