@@ -257,12 +257,36 @@ function OrderDetails() {
       .maybeSingle();
     setInvoice(inv as typeof invoice);
 
+    // Load partners that can be selected as the supplier for this order.
+    const { data: partners } = await supabase
+      .from("partners")
+      .select("id, name, phone")
+      .eq("company_id", companyId)
+      .order("name", { ascending: true });
+    setSupplierOptions((partners ?? []) as PartnerOption[]);
+
     setLoading(false);
   };
 
   useEffect(() => {
     load();
   }, [orderId, companyId]);
+
+  const updateSupplier = async (partnerId: string | null) => {
+    if (!order) return;
+    setSavingSupplier(true);
+    const { error } = await supabase
+      .from("orders")
+      .update({ supplier_partner_id: partnerId })
+      .eq("id", order.id);
+    setSavingSupplier(false);
+    if (error) {
+      toast.error("تعذر تحديث المورد");
+      return;
+    }
+    toast.success(partnerId ? "تم تعيين المورد" : "تم إزالة المورد");
+    load();
+  };
 
   const updateStatus = async (status: StatusKey) => {
     if (!order) return;
