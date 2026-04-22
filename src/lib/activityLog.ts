@@ -55,15 +55,15 @@ export async function logActivity(input: LogActivityInput): Promise<void> {
   }
   try {
     await insertActivityRow(input, userId);
-    // Invalidate cached counts for this company on successful write.
-    COUNTS_CACHE.delete(input.companyId);
+    // Bump global version → all cached counts entries become stale deterministically.
+    bumpCountsVersion();
   } catch (firstErr) {
     // One short-delay retry before failing silently, to absorb transient
     // network blips or brief auth refresh windows.
     await new Promise((r) => setTimeout(r, 400));
     try {
       await insertActivityRow(input, userId);
-      COUNTS_CACHE.delete(input.companyId);
+      bumpCountsVersion();
     } catch (retryErr) {
       console.warn("[activityLog] insert failed after retry", { firstErr, retryErr });
     }
