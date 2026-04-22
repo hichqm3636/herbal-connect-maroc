@@ -966,7 +966,7 @@ function AdminActivity() {
                     <td className="text-left py-1 px-2">
                       <Button asChild variant="outline" size="sm" className="gap-1 h-7 text-xs">
                         <Link
-                          to="/admin/activity_/$adminId"
+                          to="/admin/activity/$adminId"
                           params={{ adminId: id }}
                           search={linkSearch}
                         >
