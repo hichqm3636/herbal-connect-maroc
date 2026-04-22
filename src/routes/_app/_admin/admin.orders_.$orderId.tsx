@@ -14,7 +14,6 @@ import {
   Receipt,
   Send,
   Truck,
-  Truck as TruckIcon,
   XCircle,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
