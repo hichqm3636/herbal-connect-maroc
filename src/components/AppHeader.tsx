@@ -66,7 +66,7 @@ export function AppHeader() {
         <div className="flex flex-col leading-tight min-w-0">
           <span className="text-xs sm:text-sm font-bold truncate">{name}</span>
           <span className="text-[10px] sm:text-[11px] text-muted-foreground truncate">
-            بوابة الموزعين
+            {subtitle}
           </span>
         </div>
       </div>
