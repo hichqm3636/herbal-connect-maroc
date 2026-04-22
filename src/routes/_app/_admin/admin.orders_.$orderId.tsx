@@ -750,7 +750,7 @@ function OrderDetails() {
 
         {order.external_id ? (
           <div className="space-y-1.5 text-sm">
-            <p className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+            <p className="flex items-center gap-2 text-primary">
               <CheckCircle2 className="h-4 w-4" />
               تم الإرسال إلى المورد
             </p>
