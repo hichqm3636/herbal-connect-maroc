@@ -10,6 +10,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 
 import {
   fetchCompanyActivityCounts,
+  bumpCountsVersion,
   _clearActivityCountsCache,
 } from "./activityLog";
 
