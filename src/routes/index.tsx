@@ -1,5 +1,5 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { Leaf, Building2, ArrowLeft } from "lucide-react";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { Leaf, Building2, ArrowLeft, Rocket } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -82,12 +82,18 @@ function NexoraLanding() {
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild size="lg">
-              <a href="https://app.nexora.app">بوابة الإدارة</a>
+              <Link to="/signup">
+                <Rocket className="h-4 w-4" />
+                أنشئ بوابتك الآن
+              </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <a href="mailto:hello@nexora.app">تواصل معنا</a>
+              <a href="https://app.nexora.app">بوابة الإدارة</a>
             </Button>
           </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            مجاناً للبدء — بوابتك جاهزة في أقل من 30 ثانية
+          </p>
         </div>
       </div>
       <footer className="text-[11px] text-muted-foreground">

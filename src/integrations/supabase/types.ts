@@ -1406,6 +1406,17 @@ export type Database = {
         }
         Returns: Json
       }
+      public_signup_company: {
+        Args: {
+          _admin_email: string
+          _admin_full_name: string
+          _admin_password: string
+          _brand_color?: string
+          _company_name: string
+          _company_slug: string
+        }
+        Returns: Json
+      }
       reset_monthly_sales: { Args: never; Returns: undefined }
     }
     Enums: {
