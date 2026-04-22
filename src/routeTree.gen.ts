@@ -32,6 +32,7 @@ import { Route as AppProductsProductIdRouteImport } from './routes/_app/products
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
 import { Route as AppAdminAdminTerritoriesRouteImport } from './routes/_app/_admin/admin.territories'
 import { Route as AppAdminAdminTeamRouteImport } from './routes/_app/_admin/admin.team'
+import { Route as AppAdminAdminStorageHealthRouteImport } from './routes/_app/_admin/admin.storage-health'
 import { Route as AppAdminAdminSalesAgentsRouteImport } from './routes/_app/_admin/admin.sales-agents'
 import { Route as AppAdminAdminProductsRouteImport } from './routes/_app/_admin/admin.products'
 import { Route as AppAdminAdminProductZonesRouteImport } from './routes/_app/_admin/admin.product-zones'
@@ -164,6 +165,12 @@ const AppAdminAdminTeamRoute = AppAdminAdminTeamRouteImport.update({
   path: '/admin/team',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminAdminStorageHealthRoute =
+  AppAdminAdminStorageHealthRouteImport.update({
+    id: '/admin/storage-health',
+    path: '/admin/storage-health',
+    getParentRoute: () => AppAdminRoute,
+  } as any)
 const AppAdminAdminSalesAgentsRoute =
   AppAdminAdminSalesAgentsRouteImport.update({
     id: '/admin/sales-agents',
@@ -277,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/admin/product-zones': typeof AppAdminAdminProductZonesRoute
   '/admin/products': typeof AppAdminAdminProductsRoute
   '/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
+  '/admin/storage-health': typeof AppAdminAdminStorageHealthRoute
   '/admin/team': typeof AppAdminAdminTeamRoute
   '/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/admin/': typeof AppAdminAdminIndexRoute
@@ -314,6 +322,7 @@ export interface FileRoutesByTo {
   '/admin/product-zones': typeof AppAdminAdminProductZonesRoute
   '/admin/products': typeof AppAdminAdminProductsRoute
   '/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
+  '/admin/storage-health': typeof AppAdminAdminStorageHealthRoute
   '/admin/team': typeof AppAdminAdminTeamRoute
   '/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/admin': typeof AppAdminAdminIndexRoute
@@ -355,6 +364,7 @@ export interface FileRoutesById {
   '/_app/_admin/admin/product-zones': typeof AppAdminAdminProductZonesRoute
   '/_app/_admin/admin/products': typeof AppAdminAdminProductsRoute
   '/_app/_admin/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
+  '/_app/_admin/admin/storage-health': typeof AppAdminAdminStorageHealthRoute
   '/_app/_admin/admin/team': typeof AppAdminAdminTeamRoute
   '/_app/_admin/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/_app/_admin/admin/': typeof AppAdminAdminIndexRoute
@@ -395,6 +405,7 @@ export interface FileRouteTypes {
     | '/admin/product-zones'
     | '/admin/products'
     | '/admin/sales-agents'
+    | '/admin/storage-health'
     | '/admin/team'
     | '/admin/territories'
     | '/admin/'
@@ -432,6 +443,7 @@ export interface FileRouteTypes {
     | '/admin/product-zones'
     | '/admin/products'
     | '/admin/sales-agents'
+    | '/admin/storage-health'
     | '/admin/team'
     | '/admin/territories'
     | '/admin'
@@ -472,6 +484,7 @@ export interface FileRouteTypes {
     | '/_app/_admin/admin/product-zones'
     | '/_app/_admin/admin/products'
     | '/_app/_admin/admin/sales-agents'
+    | '/_app/_admin/admin/storage-health'
     | '/_app/_admin/admin/team'
     | '/_app/_admin/admin/territories'
     | '/_app/_admin/admin/'
@@ -653,6 +666,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminTeamRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/_admin/admin/storage-health': {
+      id: '/_app/_admin/admin/storage-health'
+      path: '/admin/storage-health'
+      fullPath: '/admin/storage-health'
+      preLoaderRoute: typeof AppAdminAdminStorageHealthRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/_admin/admin/sales-agents': {
       id: '/_app/_admin/admin/sales-agents'
       path: '/admin/sales-agents'
@@ -772,6 +792,7 @@ interface AppAdminRouteChildren {
   AppAdminAdminProductZonesRoute: typeof AppAdminAdminProductZonesRoute
   AppAdminAdminProductsRoute: typeof AppAdminAdminProductsRoute
   AppAdminAdminSalesAgentsRoute: typeof AppAdminAdminSalesAgentsRoute
+  AppAdminAdminStorageHealthRoute: typeof AppAdminAdminStorageHealthRoute
   AppAdminAdminTeamRoute: typeof AppAdminAdminTeamRoute
   AppAdminAdminTerritoriesRoute: typeof AppAdminAdminTerritoriesRoute
   AppAdminAdminIndexRoute: typeof AppAdminAdminIndexRoute
@@ -793,6 +814,7 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminAdminProductZonesRoute: AppAdminAdminProductZonesRoute,
   AppAdminAdminProductsRoute: AppAdminAdminProductsRoute,
   AppAdminAdminSalesAgentsRoute: AppAdminAdminSalesAgentsRoute,
+  AppAdminAdminStorageHealthRoute: AppAdminAdminStorageHealthRoute,
   AppAdminAdminTeamRoute: AppAdminAdminTeamRoute,
   AppAdminAdminTerritoriesRoute: AppAdminAdminTerritoriesRoute,
   AppAdminAdminIndexRoute: AppAdminAdminIndexRoute,

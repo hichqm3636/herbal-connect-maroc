@@ -120,6 +120,7 @@ const companyAdminSections: NavSection[] = [
     items: [
       { title: "إعدادات الشركة", url: "/admin/branding", icon: Settings },
       { title: "الفريق والصلاحيات", url: "/admin/team", icon: UsersRound },
+      { title: "فحص صحة الوسائط", url: "/admin/storage-health", icon: Activity },
     ],
   },
 ];
