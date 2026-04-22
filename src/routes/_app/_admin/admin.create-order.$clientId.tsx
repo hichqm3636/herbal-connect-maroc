@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
 import { getUnitPrice, parseTiers, type PartnerType, PARTNER_TYPE_LABELS } from "@/lib/pricing";
+import { logActivity } from "@/lib/activityLog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/_admin/admin/create-order/$clientId")({
@@ -165,6 +166,19 @@ function CreateOrderForClient() {
       toast.error(itemsErr.message);
       return;
     }
+    void logActivity({
+      companyId: client.company_id,
+      action: "order_created",
+      entityType: "order",
+      entityId: created.id,
+      metadata: {
+        order_number: created.order_number,
+        total_mad: total,
+        items_count: itemsPayload.length,
+        source: "admin_for_client",
+        distributor_id: client.id,
+      },
+    });
     toast.success("تم إنشاء الطلب");
     navigate({ to: "/admin/orders/$orderId", params: { orderId: created.id } });
   };
