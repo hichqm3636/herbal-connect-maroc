@@ -576,10 +576,24 @@ function AdminProducts() {
 
   const remove = async (id: string) => {
     if (!confirm("حذف هذا المنتج؟")) return;
+    const target = products.find((p) => p.id === id);
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) {
       toast.error("تعذر الحذف");
       return;
+    }
+    if (companyId) {
+      void logActivity({
+        companyId,
+        action: "product_deleted",
+        entityType: "product",
+        entityId: id,
+        metadata: {
+          name_ar: target?.name_ar ?? null,
+          sku: target?.sku ?? null,
+          price_mad: target?.price_mad ?? null,
+        },
+      });
     }
     toast.success("تم الحذف");
     load();
