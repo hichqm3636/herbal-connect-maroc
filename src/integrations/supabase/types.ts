@@ -1734,6 +1734,7 @@ export type Database = {
         | "shipped"
         | "delivered"
         | "cancelled"
+        | "processing"
       partner_invite_status: "pending" | "accepted" | "expired"
       partner_status: "invited" | "active" | "suspended"
       partner_type:
@@ -1908,6 +1909,7 @@ export const Constants = {
         "shipped",
         "delivered",
         "cancelled",
+        "processing",
       ],
       partner_invite_status: ["pending", "accepted", "expired"],
       partner_status: ["invited", "active", "suspended"],

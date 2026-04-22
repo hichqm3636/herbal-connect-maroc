@@ -62,6 +62,14 @@ import {
   buildSupplierConfirmationMessage,
 } from "@/utils/whatsapp";
 import { logActivity } from "@/lib/activityLog";
+import {
+  TRANSITIONS,
+  allowedNextStates,
+  transitionOrderStatus,
+  OrderStateError,
+  type OrderStatus,
+  type Role,
+} from "@/lib/orderStateMachine";
 import { ActivityTimeline } from "@/components/activity/ActivityTimeline";
 import { LastEditedLabel } from "@/components/activity/LastEditedLabel";
 
@@ -132,25 +140,25 @@ interface TierInfo {
   custom: boolean;
 }
 
-type StatusKey = "confirmed" | "preparing" | "shipped" | "delivered" | "cancelled";
+type StatusKey = Exclude<OrderStatus, "pending">;
 
-const ACTIONS: {
-  status: StatusKey;
+const ACTION_META: Record<StatusKey, {
   label: string;
   icon: typeof CheckCircle2;
   variant: "default" | "outline" | "destructive";
-}[] = [
-  { status: "confirmed", label: "الموافقة على الطلب", icon: CheckCircle2, variant: "default" },
-  { status: "preparing", label: "قيد التحضير", icon: Package, variant: "outline" },
-  { status: "shipped", label: "تم الشحن", icon: Truck, variant: "outline" },
-  { status: "delivered", label: "تم التسليم", icon: PackageCheck, variant: "default" },
-  { status: "cancelled", label: "إلغاء", icon: XCircle, variant: "destructive" },
-];
+}> = {
+  confirmed: { label: "الموافقة على الطلب", icon: CheckCircle2, variant: "default" },
+  processing: { label: "قيد التحضير", icon: Package, variant: "outline" },
+  shipped: { label: "تم الشحن", icon: Truck, variant: "outline" },
+  delivered: { label: "تم التسليم", icon: PackageCheck, variant: "default" },
+  cancelled: { label: "إلغاء", icon: XCircle, variant: "destructive" },
+};
 
 function OrderDetails() {
   const { orderId } = Route.useParams();
   const navigate = useNavigate();
-  const { companyId } = useAuth();
+  const { companyId, user, isAdmin } = useAuth();
+  const role: Role = isAdmin ? "admin" : "distributor";
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<StatusKey | null>(null);
@@ -305,32 +313,29 @@ function OrderDetails() {
   };
 
   const updateStatus = async (status: StatusKey) => {
-    if (!order) return;
+    if (!order || !user || !companyId) return;
     setSaving(status);
-    const before = order.status;
-    const { error } = await supabase
-      .from("orders")
-      .update({ status })
-      .eq("id", order.id);
-    setSaving(null);
-    if (error) {
-      toast.error("تعذر تحديث الحالة");
-      return;
-    }
-    if (companyId) {
-      logActivity({
+    try {
+      await transitionOrderStatus({
+        orderId: order.id,
+        to: status,
+        userId: user.id,
+        role,
         companyId,
-        action: "order_status_changed",
-        entityType: "order",
-        entityId: order.id,
-        fieldName: "status",
-        oldValue: before,
-        newValue: status,
-        metadata: { order_number: order.order_number },
       });
+      toast.success(`تم تحديث الحالة: ${STATUS_LABELS[status]}`);
+      load();
+    } catch (e) {
+      const msg =
+        e instanceof OrderStateError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "تعذر تحديث الحالة";
+      toast.error(msg);
+    } finally {
+      setSaving(null);
     }
-    toast.success(`تم تحديث الحالة: ${STATUS_LABELS[status]}`);
-    load();
   };
 
   const handleGenerateInvoice = async () => {
@@ -1028,33 +1033,48 @@ function OrderDetails() {
         <div className="container mx-auto md:p-0">
           <p className="text-xs text-muted-foreground mb-2 hidden md:block">إجراءات الطلب</p>
           <div className="flex gap-2 overflow-x-auto md:flex-wrap">
-            {ACTIONS.map((a) => {
-              const Icon = a.icon;
-              const disabled = order.status === a.status || saving !== null;
-              return (
-                <Button
-                  key={a.status}
-                  variant={a.variant}
-                  size="sm"
-                  className="shrink-0"
-                  disabled={disabled}
-                  onClick={() => {
-                    if (a.status === "cancelled") {
-                      setConfirmCancel(true);
-                    } else {
-                      updateStatus(a.status);
-                    }
-                  }}
-                >
-                  {saving === a.status ? (
-                    <Loader2 className="h-4 w-4 animate-spin ml-1" />
-                  ) : (
-                    <Icon className="h-4 w-4 ml-1" />
-                  )}
-                  {a.label}
-                </Button>
-              );
-            })}
+            {(() => {
+              const currentStatus = (order.status === "preparing"
+                ? "processing"
+                : order.status) as OrderStatus;
+              const allowed = allowedNextStates(role, currentStatus);
+              if (allowed.length === 0) {
+                return (
+                  <p className="text-xs text-muted-foreground">
+                    لا توجد إجراءات متاحة لهذه الحالة
+                  </p>
+                );
+              }
+              return allowed.map((status) => {
+                const meta = ACTION_META[status as StatusKey];
+                if (!meta) return null;
+                const Icon = meta.icon;
+                const disabled = saving !== null;
+                return (
+                  <Button
+                    key={status}
+                    variant={meta.variant}
+                    size="sm"
+                    className="shrink-0"
+                    disabled={disabled}
+                    onClick={() => {
+                      if (status === "cancelled") {
+                        setConfirmCancel(true);
+                      } else {
+                        updateStatus(status as StatusKey);
+                      }
+                    }}
+                  >
+                    {saving === status ? (
+                      <Loader2 className="h-4 w-4 animate-spin ml-1" />
+                    ) : (
+                      <Icon className="h-4 w-4 ml-1" />
+                    )}
+                    {meta.label}
+                  </Button>
+                );
+              });
+            })()}
           </div>
         </div>
       </div>
