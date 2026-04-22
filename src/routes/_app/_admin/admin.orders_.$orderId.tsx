@@ -107,6 +107,9 @@ interface OrderDetail {
   distributor_id: string;
   company_id: string;
   supplier_partner_id: string | null;
+  external_id: string | null;
+  external_status: string | null;
+  sync_error: string | null;
   profiles: {
     full_name: string;
     phone: string | null;
@@ -192,7 +195,7 @@ function OrderDetails() {
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, payment_method, distributor_id, company_id, supplier_partner_id, profiles(full_name, phone, city, territories(name)), supplier:partners!orders_supplier_partner_id_fkey(id, name, phone), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost_price))",
+        "id, order_number, status, total_mad, points_earned, created_at, notes, admin_notes, payment_method, distributor_id, company_id, supplier_partner_id, external_id, external_status, sync_error, profiles(full_name, phone, city, territories(name)), supplier:partners!orders_supplier_partner_id_fkey(id, name, phone), order_items(id, quantity, unit_price_mad, cost_snapshot, products(id, name_ar, sku, image_url, rrp_price, price_mad, cost_price))",
       )
       .eq("id", orderId)
       .eq("company_id", companyId)
