@@ -15,6 +15,8 @@ import {
   type PriceTier,
 } from "@/lib/pricing";
 import { toast } from "sonner";
+import { ActivityTimeline } from "@/components/activity/ActivityTimeline";
+import { LastEditedLabel } from "@/components/activity/LastEditedLabel";
 
 export const Route = createFileRoute("/_app/products_/$productId")({
   component: ProductDetail,
@@ -393,8 +395,15 @@ function ProductDetail() {
                 ? `الحد الأدنى ${minQty} وحدة`
                 : "إضافة إلى السلة"}
           </Button>
+          <LastEditedLabel entityType="product" entityId={product.id} />
         </div>
       </div>
+
+      <ActivityTimeline
+        entityType="product"
+        entityId={product.id}
+        title="سجل المنتج"
+      />
     </div>
   );
 }

@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { withFreshSession } from "@/lib/ensureSession";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { logActivity } from "@/lib/activityLog";
+import { ActivityTimeline } from "@/components/activity/ActivityTimeline";
 
 export const Route = createFileRoute("/_app/_admin/admin/branding")({
   component: BrandingPage,
@@ -68,6 +70,15 @@ function BrandingPage() {
       });
       setLogoUrl(url);
       await refreshCompany();
+      logActivity({
+        companyId,
+        action: "company_logo_updated",
+        entityType: "company",
+        entityId: companyId,
+        fieldName: "logo_url",
+        oldValue: company?.logo_url ?? null,
+        newValue: url,
+      });
       toast.success("تم تحديث الشعار");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "تعذر رفع الشعار");
@@ -89,6 +100,15 @@ function BrandingPage() {
       });
       setLogoUrl(null);
       await refreshCompany();
+      logActivity({
+        companyId,
+        action: "company_logo_removed",
+        entityType: "company",
+        entityId: companyId,
+        fieldName: "logo_url",
+        oldValue: company?.logo_url ?? null,
+        newValue: null,
+      });
       toast.success("تم حذف الشعار");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "تعذر حذف الشعار");
@@ -110,6 +130,24 @@ function BrandingPage() {
         if (error) throw error;
       });
       await refreshCompany();
+      const before = {
+        display_name: company?.display_name ?? "",
+        brand_color: company?.brand_color ?? "",
+      };
+      const after = { display_name: displayName.trim(), brand_color: brandColor };
+      for (const f of ["display_name", "brand_color"] as const) {
+        if (before[f] !== after[f]) {
+          logActivity({
+            companyId,
+            action: "company_branding_updated",
+            entityType: "company",
+            entityId: companyId,
+            fieldName: f,
+            oldValue: before[f],
+            newValue: after[f],
+          });
+        }
+      }
       toast.success("تم حفظ الإعدادات");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "تعذر حفظ الإعدادات");
@@ -214,6 +252,12 @@ function BrandingPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ActivityTimeline
+        entityType="company"
+        entityId={companyId}
+        title="نشاط الشركة"
+      />
     </div>
   );
 }

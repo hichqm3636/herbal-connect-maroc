@@ -12,6 +12,8 @@ interface WhatsappContactButtonProps extends Omit<ButtonProps, "onClick" | "asCh
   showPreview?: boolean;
   /** Optional Lucide icon override (defaults to MessageCircle). */
   icon?: ComponentType<{ className?: string }>;
+  /** Fired when the user clicks the link (i.e. opens WhatsApp). */
+  onSent?: () => void;
 }
 
 /**
@@ -28,6 +30,7 @@ export function WhatsappContactButton({
   className,
   showPreview = true,
   icon: Icon = MessageCircle,
+  onSent,
   ...rest
 }: WhatsappContactButtonProps) {
   const [open, setOpen] = useState(false);
@@ -48,7 +51,7 @@ export function WhatsappContactButton({
           )}
           {...rest}
         >
-          <a href={href} target="_blank" rel="noopener noreferrer">
+          <a href={href} target="_blank" rel="noopener noreferrer" onClick={() => onSent?.()}>
             <Icon className="h-4 w-4" />
             <span>{label}</span>
           </a>

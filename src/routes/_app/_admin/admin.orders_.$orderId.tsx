@@ -61,6 +61,9 @@ import {
   buildSupplierOrderMessage,
   buildSupplierConfirmationMessage,
 } from "@/utils/whatsapp";
+import { logActivity } from "@/lib/activityLog";
+import { ActivityTimeline } from "@/components/activity/ActivityTimeline";
+import { LastEditedLabel } from "@/components/activity/LastEditedLabel";
 
 export const Route = createFileRoute("/_app/_admin/admin/orders_/$orderId")({
   component: OrderDetails,
@@ -275,6 +278,7 @@ function OrderDetails() {
   const updateSupplier = async (partnerId: string | null) => {
     if (!order) return;
     setSavingSupplier(true);
+    const before = order.supplier_partner_id ?? null;
     const { error } = await supabase
       .from("orders")
       .update({ supplier_partner_id: partnerId })
@@ -284,6 +288,18 @@ function OrderDetails() {
       toast.error("تعذر تحديث المورد");
       return;
     }
+    if (companyId) {
+      logActivity({
+        companyId,
+        action: partnerId ? "order_supplier_assigned" : "order_supplier_removed",
+        entityType: "order",
+        entityId: order.id,
+        fieldName: "supplier_partner_id",
+        oldValue: before,
+        newValue: partnerId,
+        metadata: { order_number: order.order_number },
+      });
+    }
     toast.success(partnerId ? "تم تعيين المورد" : "تم إزالة المورد");
     load();
   };
@@ -291,6 +307,7 @@ function OrderDetails() {
   const updateStatus = async (status: StatusKey) => {
     if (!order) return;
     setSaving(status);
+    const before = order.status;
     const { error } = await supabase
       .from("orders")
       .update({ status })
@@ -299,6 +316,18 @@ function OrderDetails() {
     if (error) {
       toast.error("تعذر تحديث الحالة");
       return;
+    }
+    if (companyId) {
+      logActivity({
+        companyId,
+        action: "order_status_changed",
+        entityType: "order",
+        entityId: order.id,
+        fieldName: "status",
+        oldValue: before,
+        newValue: status,
+        metadata: { order_number: order.order_number },
+      });
     }
     toast.success(`تم تحديث الحالة: ${STATUS_LABELS[status]}`);
     load();
@@ -309,6 +338,15 @@ function OrderDetails() {
     setGeneratingInvoice(true);
     try {
       await createInvoiceForOrder({ orderId: order.id });
+      if (companyId) {
+        logActivity({
+          companyId,
+          action: "order_invoice_generated",
+          entityType: "order",
+          entityId: order.id,
+          metadata: { order_number: order.order_number },
+        });
+      }
       toast.success("تم إصدار الفاتورة");
       load();
     } catch (e) {
@@ -342,6 +380,7 @@ function OrderDetails() {
     if (!order) return;
     setSavingNotes(true);
     const next = draft.trim() ? draft.trim() : null;
+    const before = order.admin_notes ?? null;
     const { error } = await supabase
       .from("orders")
       .update({ admin_notes: next })
@@ -350,6 +389,18 @@ function OrderDetails() {
     if (error) {
       toast.error("تعذر حفظ الملاحظة");
       return;
+    }
+    if (companyId && before !== next) {
+      logActivity({
+        companyId,
+        action: "order_admin_notes_updated",
+        entityType: "order",
+        entityId: order.id,
+        fieldName: "admin_notes",
+        oldValue: before,
+        newValue: next,
+        metadata: { order_number: order.order_number },
+      });
     }
     toast.success("تم حفظ الملاحظة");
     setEditingNotes(false);
@@ -429,6 +480,7 @@ function OrderDetails() {
           <p className="text-xs text-muted-foreground mt-1">
             {formatDateTimeAr(order.created_at)}
           </p>
+          <LastEditedLabel entityType="order" entityId={order.id} className="mt-1" />
         </div>
         <Badge
           variant={STATUS_VARIANTS[order.status]}
@@ -578,6 +630,21 @@ function OrderDetails() {
                 appBaseUrl:
                   typeof window !== "undefined" ? window.location.origin : undefined,
               })}
+              onSent={() => {
+                if (companyId) {
+                  logActivity({
+                    companyId,
+                    action: "order_sent_to_supplier",
+                    entityType: "order",
+                    entityId: order.id,
+                    metadata: {
+                      order_number: order.order_number,
+                      supplier_id: order.supplier_partner_id,
+                      supplier_name: order.supplier?.name ?? null,
+                    },
+                  });
+                }
+              }}
             />
             <WhatsappContactButton
               phone={order.supplier.phone}
@@ -591,6 +658,20 @@ function OrderDetails() {
                 appBaseUrl:
                   typeof window !== "undefined" ? window.location.origin : undefined,
               })}
+              onSent={() => {
+                if (companyId) {
+                  logActivity({
+                    companyId,
+                    action: "order_supplier_confirmation_requested",
+                    entityType: "order",
+                    entityId: order.id,
+                    metadata: {
+                      order_number: order.order_number,
+                      supplier_id: order.supplier_partner_id,
+                    },
+                  });
+                }
+              }}
             />
           </div>
         ) : order.supplier_partner_id ? (
@@ -977,6 +1058,12 @@ function OrderDetails() {
           </div>
         </div>
       </div>
+
+      <ActivityTimeline
+        entityType="order"
+        entityId={order.id}
+        title="سجل الطلب / Timeline"
+      />
 
       <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
         <AlertDialogContent>
