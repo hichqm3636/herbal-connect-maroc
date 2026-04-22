@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { authorizeSuperAdmin } from "@/server/authz";
 
 interface CreateCompanyInput {
   name: string;
@@ -36,13 +37,8 @@ export const createCompanyWithAdmin = createServerFn({ method: "POST" })
   })
   .middleware([requireSupabaseAuth])
   .handler(async ({ data, context }) => {
-    // Verify caller is super_admin
-    const { data: roles } = await context.supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId);
-    const isSuper = (roles ?? []).some((r) => r.role === "super_admin");
-    if (!isSuper) throw new Error("Only super admins can create companies");
+    // Verify caller is super_admin via shared authorization helper.
+    await authorizeSuperAdmin(context);
 
     // 1) Create auth user (email pre-confirmed since super-admin provisioned)
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
