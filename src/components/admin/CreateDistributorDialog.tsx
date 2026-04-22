@@ -24,6 +24,8 @@ import { TerritorySelect } from "@/components/admin/TerritorySelect";
 import { PricingTierSelect } from "@/components/admin/PricingTierSelect";
 import { PARTNER_TYPE_LABELS, type PartnerType } from "@/lib/pricing";
 import { useAuth } from "@/hooks/useAuth";
+import { formatPhoneMA } from "@/utils/whatsapp";
+import { DistributorCredentialsDialog } from "@/components/admin/DistributorCredentialsDialog";
 
 interface Props {
   open: boolean;
