@@ -51,6 +51,67 @@ function LoginPage() {
   const companyLogo = tenant.company?.logo_url || null;
   const companyInitial = companyName.charAt(0).toUpperCase();
 
+  /**
+   * Build the URL the user should land on after sign-in.
+   * - If we're already on the user's tenant subdomain (or platform host) → just go to /dashboard.
+   * - If we're on the root domain or a *different* tenant → redirect to the user's own
+   *   company portal so branding (logo + brand color + slug) is preserved.
+   * - Production uses real subdomains (`<slug>.nexora.app`); dev/preview falls back to
+   *   `?company=<slug>` on the current host.
+   */
+  const buildPostLoginUrl = async (userId: string): Promise<string> => {
+    const fallback = "/dashboard";
+    const { data: roleRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    const isSuper = (roleRows ?? []).some((r) => r.role === "super_admin");
+
+    // Super admins always land on the platform portal.
+    if (isSuper) {
+      if (typeof window === "undefined") return "/super-admin";
+      const host = window.location.hostname.toLowerCase();
+      if (host.endsWith(".nexora.app") && host !== "app.nexora.app") {
+        return "https://app.nexora.app/super-admin";
+      }
+      return "/super-admin";
+    }
+
+    // Resolve the user's company slug.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("company_id")
+      .eq("id", userId)
+      .maybeSingle();
+    const cid = (profile?.company_id as string | undefined | null) ?? null;
+    if (!cid) return fallback;
+
+    const { data: company } = await supabase
+      .from("companies")
+      .select("slug")
+      .eq("id", cid)
+      .maybeSingle();
+    const userSlug = (company?.slug as string | undefined) ?? null;
+    if (!userSlug) return fallback;
+
+    if (typeof window === "undefined") return fallback;
+    const host = window.location.hostname.toLowerCase();
+    const currentSlug = tenant.slug;
+
+    // Already on the right tenant portal → no host change needed.
+    if (currentSlug === userSlug) return fallback;
+
+    // Production: redirect to <slug>.nexora.app to preserve branding.
+    if (host.endsWith(".nexora.app") || host === "nexora.app") {
+      return `https://${userSlug}.nexora.app/dashboard`;
+    }
+
+    // Dev / Lovable preview: switch the ?company= param so the tenant resolver picks it up.
+    const url = new URL(window.location.origin + "/dashboard");
+    url.searchParams.set("company", userSlug);
+    return url.toString();
+  };
+
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
@@ -63,16 +124,27 @@ function LoginPage() {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.auth.signInWithPassword(parsed.data);
-    setSubmitting(false);
+    const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
     if (error) {
+      setSubmitting(false);
       const msg = error.message || "";
       const friendly = /invalid|credentials/i.test(msg) ? "بيانات الدخول غير صحيحة" : msg;
       toast.error(friendly);
       return;
     }
     toast.success("مرحباً بعودتك");
-    navigate({ to: "/dashboard" });
+    const target = data.user ? await buildPostLoginUrl(data.user.id) : "/dashboard";
+    setSubmitting(false);
+    if (target.startsWith("http")) {
+      // Cross-host redirect (different subdomain) — full page nav so the new host
+      // re-resolves the tenant and applies branding from the start.
+      window.location.assign(target);
+    } else if (target.includes("?")) {
+      // Same host but query param changed (dev/preview). Full nav so useTenant re-runs.
+      window.location.assign(target);
+    } else {
+      navigate({ to: target });
+    }
   };
 
   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
