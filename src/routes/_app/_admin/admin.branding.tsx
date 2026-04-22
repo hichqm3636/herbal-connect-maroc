@@ -49,30 +49,23 @@ function BrandingPage() {
     if (file.size > 2 * 1024 * 1024) return toast.error("الحد الأقصى 2MB");
     setUploading(true);
     try {
-      // Verify the user has an active session before attempting an upload —
-      // a missing/expired session is the most common cause of an RLS rejection
-      // on storage uploads ("new row violates row-level security policy").
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        throw new Error("انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى");
-      }
-
       const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-      // Unique path per upload — no upsert, avoids any conflict-based RLS edge cases.
       const path = `${companyId}/logo-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("company-logos")
-        .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("company-logos").getPublicUrl(path);
-      const url = pub.publicUrl;
-      // UPDATE the existing company row (never INSERT) — companies row already
-      // exists and RLS only allows admins of that company to update it.
-      const { error } = await supabase
-        .from("companies")
-        .update({ logo_url: url })
-        .eq("id", companyId);
-      if (error) throw error;
+      // Refresh session if needed, then upload + UPDATE the existing company row.
+      const url = await withFreshSession(async () => {
+        const { error: upErr } = await supabase.storage
+          .from("company-logos")
+          .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from("company-logos").getPublicUrl(path);
+        const publicUrl = pub.publicUrl;
+        const { error } = await supabase
+          .from("companies")
+          .update({ logo_url: publicUrl })
+          .eq("id", companyId);
+        if (error) throw error;
+        return publicUrl;
+      });
       setLogoUrl(url);
       await refreshCompany();
       toast.success("تم تحديث الشعار");
@@ -87,8 +80,13 @@ function BrandingPage() {
     if (!companyId) return;
     setUploading(true);
     try {
-      const { error } = await supabase.from("companies").update({ logo_url: null }).eq("id", companyId);
-      if (error) throw error;
+      await withFreshSession(async () => {
+        const { error } = await supabase
+          .from("companies")
+          .update({ logo_url: null })
+          .eq("id", companyId);
+        if (error) throw error;
+      });
       setLogoUrl(null);
       await refreshCompany();
       toast.success("تم حذف الشعار");
