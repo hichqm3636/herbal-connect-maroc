@@ -83,6 +83,7 @@ export function CartSheet() {
   const [submitting, setSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<CartItem | null>(null);
   const createOrderFn = useServerFn(createOrder);
 
   const priced: PricedLine[] = useMemo(
