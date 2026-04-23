@@ -218,8 +218,17 @@ export function CartSheet() {
       console.error("[placeOrder] createOrder failed", { raw });
       let shown = raw || "تعذّر إنشاء الطلب";
       try {
-        const parsed = JSON.parse(raw) as { reason?: string; message?: string };
-        if (parsed.reason && parsed.reason in AUTHZ_MESSAGES_AR) {
+        const parsed = JSON.parse(raw) as {
+          reason?: string;
+          message?: string;
+          error?: string;
+          product_id?: string;
+        };
+        if (parsed.error === "out_of_stock") {
+          const name =
+            items.find((i) => i.id === parsed.product_id)?.name_ar ?? "أحد المنتجات";
+          shown = `${parsed.message ?? "الكمية المطلوبة غير متوفرة في المخزون"} (${name})`;
+        } else if (parsed.reason && parsed.reason in AUTHZ_MESSAGES_AR) {
           shown = AUTHZ_MESSAGES_AR[parsed.reason as AuthzReason];
         } else if (parsed.message) {
           shown = parsed.message;

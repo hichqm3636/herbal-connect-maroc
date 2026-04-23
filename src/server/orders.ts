@@ -86,6 +86,53 @@ export const createOrder = createDistributorServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<CreateOrderResult> => {
     const { supabase, userId } = context;
 
+    // ---------------- Server-side stock validation ----------------
+    // Fetch authoritative stock + cost for every product in the order.
+    // Rules:
+    //   stock = null → unlimited (allow)
+    //   stock >= qty → allow
+    //   stock <  qty → reject with structured 400-style error
+    const productIds = data.items.map((i) => i.product_id);
+    const { data: stockRows, error: stockErr } = await supabase
+      .from("products")
+      .select("id, stock, cost_price")
+      .in("id", productIds);
+
+    if (stockErr) {
+      console.error("[createOrder] stock fetch failed", { userId, err: stockErr });
+      throw new Error("تعذّر التحقق من المخزون");
+    }
+
+    const stockMap = new Map<string, number | null>(
+      (stockRows ?? []).map((r) => [r.id, (r as { stock: number | null }).stock]),
+    );
+    const costMap = new Map<string, number | null>(
+      (stockRows ?? []).map((r) => [r.id, (r as { cost_price: number | null }).cost_price]),
+    );
+
+    for (const it of data.items) {
+      const stock = stockMap.get(it.product_id);
+      // Missing product (RLS hid it or it was deleted) — reject.
+      if (stock === undefined) {
+        throw new Error(
+          JSON.stringify({
+            error: "out_of_stock",
+            product_id: it.product_id,
+            message: "المنتج غير متوفر",
+          }),
+        );
+      }
+      if (stock !== null && stock < it.quantity) {
+        throw new Error(
+          JSON.stringify({
+            error: "out_of_stock",
+            product_id: it.product_id,
+            message: "الكمية المطلوبة غير متوفرة في المخزون",
+          }),
+        );
+      }
+    }
+
     // Generate a short order_number client-side; column is just text.
     const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
 
@@ -108,16 +155,6 @@ export const createOrder = createDistributorServerFn({ method: "POST" })
       throw new Error(orderErr?.message ?? "تعذّر إنشاء الطلب");
     }
 
-    // Snapshot product cost so historical profit reports stay accurate.
-    const productIds = data.items.map((i) => i.product_id);
-    const { data: costRows } = await supabase
-      .from("products")
-      .select("id, cost_price")
-      .in("id", productIds);
-    const costMap = new Map<string, number | null>(
-      (costRows ?? []).map((r) => [r.id, (r as { cost_price: number | null }).cost_price]),
-    );
-
     const itemsPayload = data.items.map((i) => ({
       order_id: order.id,
       product_id: i.product_id,
@@ -135,6 +172,27 @@ export const createOrder = createDistributorServerFn({ method: "POST" })
       });
       await supabase.from("orders").delete().eq("id", order.id);
       throw new Error(itemsErr.message ?? "تعذّر حفظ عناصر الطلب");
+    }
+
+    // ---------------- Decrement stock (best-effort, post-insert) ----------------
+    // We don't fail the order if a decrement fails (admin can reconcile);
+    // but we log it for visibility. Skip products with stock = null (unlimited).
+    for (const it of data.items) {
+      const current = stockMap.get(it.product_id);
+      if (current === null || current === undefined) continue;
+      const next = Math.max(0, current - it.quantity);
+      const { error: decErr } = await supabase
+        .from("products")
+        .update({ stock: next })
+        .eq("id", it.product_id);
+      if (decErr) {
+        console.error("[createOrder] stock decrement failed", {
+          product_id: it.product_id,
+          from: current,
+          to: next,
+          err: decErr,
+        });
+      }
     }
 
     return { order_id: order.id };
