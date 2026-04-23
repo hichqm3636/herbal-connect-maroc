@@ -335,6 +335,8 @@ function OrdersPage() {
                   setPreviewOrder(null);
                 }
               }}
+              disabled={!profile?.phone}
+              title={!profile?.phone ? "أضف رقم الهاتف أولاً" : undefined}
               className="bg-[#25D366] hover:bg-[#25D366]/90 text-white"
             >
               <MessageCircle className="ml-2 h-4 w-4" />
