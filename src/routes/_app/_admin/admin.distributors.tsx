@@ -799,34 +799,55 @@ function AdminDistributors() {
                         إعادة تعيين كلمة المرور
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      {d.is_active ? (
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => setConfirmDisable(d)}
-                        >
-                          <ShieldOff className="ml-2 h-4 w-4" />
-                          تعطيل الحساب
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem onClick={() => toggleActive(d, true)}>
-                          <ShieldCheck className="ml-2 h-4 w-4" />
-                          تفعيل الحساب
-                        </DropdownMenuItem>
-                      )}
-                      {bannedMap[d.id] ? (
-                        <DropdownMenuItem onClick={() => toggleBanned(d, false)}>
-                          <UserCheck className="ml-2 h-4 w-4" />
-                          رفع الحظر
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => setConfirmBan(d)}
-                        >
-                          <Ban className="ml-2 h-4 w-4" />
-                          حظر الحساب
-                        </DropdownMenuItem>
-                      )}
+                      {(() => {
+                        const targetRoles = rolesByUser[d.id] ?? [];
+                        const isSelf = user?.id === d.id;
+                        const isProtected =
+                          targetRoles.includes("admin") ||
+                          targetRoles.includes("super_admin");
+                        const cannotDisable = isSelf || isProtected;
+                        const disableTitle = isSelf
+                          ? "لا يمكنك تنفيذ هذا الإجراء على حسابك"
+                          : isProtected
+                            ? "لا يمكن تعطيل أو حظر حسابات المسؤولين"
+                            : undefined;
+                        return (
+                          <>
+                            {d.is_active ? (
+                              <DropdownMenuItem
+                                disabled={cannotDisable}
+                                title={disableTitle}
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => !cannotDisable && setConfirmDisable(d)}
+                              >
+                                <ShieldOff className="ml-2 h-4 w-4" />
+                                تعطيل الحساب
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem onClick={() => toggleActive(d, true)}>
+                                <ShieldCheck className="ml-2 h-4 w-4" />
+                                تفعيل الحساب
+                              </DropdownMenuItem>
+                            )}
+                            {bannedMap[d.id] ? (
+                              <DropdownMenuItem onClick={() => toggleBanned(d, false)}>
+                                <UserCheck className="ml-2 h-4 w-4" />
+                                رفع الحظر
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                disabled={cannotDisable}
+                                title={disableTitle}
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => !cannotDisable && setConfirmBan(d)}
+                              >
+                                <Ban className="ml-2 h-4 w-4" />
+                                حظر الحساب
+                              </DropdownMenuItem>
+                            )}
+                          </>
+                        );
+                      })()}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
