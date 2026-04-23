@@ -82,8 +82,8 @@ export interface SendOrderResult {
 
 // ---------- Config ----------
 
-const PER_PAGE = 50;
-const MAX_PAGES = 100; // safety cap
+const PER_PAGE = 100;
+const MAX_PAGES = 1000; // safety cap (very large — we want ALL products)
 const SOURCE = "herbialife" as const;
 
 interface WooConfig {
