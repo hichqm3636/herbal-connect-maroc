@@ -24,7 +24,6 @@ import { Label } from "@/components/ui/label";
 import { useCart, type CartItem } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrderRules } from "@/hooks/useOrderRules";
-import { supabase } from "@/integrations/supabase/client";
 import { formatMAD } from "@/lib/format";
 import { getUnitPrice, validateLine } from "@/lib/pricing";
 import {
@@ -33,6 +32,9 @@ import {
 } from "@/lib/distributorPricing";
 import { evaluateRules } from "@/lib/orderRules";
 import { logActivity } from "@/lib/activityLog";
+import { AUTHZ_MESSAGES_AR, type AuthzReason } from "@/lib/authzMessages";
+import { createOrder } from "@/server/orders";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
 export function CartButton() {
