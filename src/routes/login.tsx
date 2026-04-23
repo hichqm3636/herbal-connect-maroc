@@ -51,6 +51,27 @@ function LoginPage() {
       toast.error(parsed.error.issues[0].message);
       return;
     }
+
+    if (usePassword) {
+      if (!password || password.length < 6) {
+        toast.error("كلمة المرور قصيرة جداً");
+        return;
+      }
+      setSubmitting(true);
+      const { error } = await supabase.auth.signInWithPassword({
+        email: parsed.data,
+        password,
+      });
+      setSubmitting(false);
+      if (error) {
+        toast.error(error.message || "تعذر تسجيل الدخول");
+        return;
+      }
+      toast.success("مرحباً بعودتك");
+      navigate({ to: "/auth/callback" });
+      return;
+    }
+
     setSubmitting(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: parsed.data,
