@@ -704,10 +704,10 @@ function AdminDistributors() {
                           {ROLE_BADGE_LABELS[r]}
                         </Badge>
                       ))}
-                      {bannedMap[d.id] ? (
-                        <Badge variant="destructive" className="text-[10px] gap-1">
-                          <Ban className="h-3 w-3" />
-                          محظور
+                      {statusMap[d.id]?.distributor_disabled ? (
+                        <Badge variant="outline" className="text-[10px] gap-1 border-warning/40 text-warning-foreground">
+                          <ShieldOff className="h-3 w-3" />
+                          دور الموزع معطل
                         </Badge>
                       ) : d.is_active ? (
                         <Badge className="text-[10px] gap-1 bg-success/15 text-success-foreground border border-success/30 hover:bg-success/20">
@@ -823,10 +823,10 @@ function AdminDistributors() {
                                 تفعيل الحساب
                               </DropdownMenuItem>
                             )}
-                            {bannedMap[d.id] ? (
+                            {statusMap[d.id]?.distributor_disabled ? (
                               <DropdownMenuItem onClick={() => toggleBanned(d, false)}>
                                 <UserCheck className="ml-2 h-4 w-4" />
-                                رفع الحظر
+                                تفعيل دور الموزع
                               </DropdownMenuItem>
                             ) : (
                               <DropdownMenuItem
@@ -835,8 +835,8 @@ function AdminDistributors() {
                                 className="text-destructive focus:text-destructive"
                                 onClick={() => !cannotDisable && setConfirmBan(d)}
                               >
-                                <Ban className="ml-2 h-4 w-4" />
-                                حظر الحساب
+                                <ShieldOff className="ml-2 h-4 w-4" />
+                                تعطيل دور الموزع
                               </DropdownMenuItem>
                             )}
                           </>
