@@ -174,5 +174,26 @@ export const createOrder = createDistributorServerFn({ method: "POST" })
       throw new Error(itemsErr.message ?? "تعذّر حفظ عناصر الطلب");
     }
 
+    // ---------------- Decrement stock (best-effort, post-insert) ----------------
+    // We don't fail the order if a decrement fails (admin can reconcile);
+    // but we log it for visibility. Skip products with stock = null (unlimited).
+    for (const it of data.items) {
+      const current = stockMap.get(it.product_id);
+      if (current === null || current === undefined) continue;
+      const next = Math.max(0, current - it.quantity);
+      const { error: decErr } = await supabase
+        .from("products")
+        .update({ stock: next })
+        .eq("id", it.product_id);
+      if (decErr) {
+        console.error("[createOrder] stock decrement failed", {
+          product_id: it.product_id,
+          from: current,
+          to: next,
+          err: decErr,
+        });
+      }
+    }
+
     return { order_id: order.id };
   });
