@@ -16,7 +16,6 @@ interface Payload {
   action?: Action;
   // create
   email?: string;
-  password?: string;
   fullName?: string;
   phone?: string;
   territoryId?: string;
@@ -27,10 +26,9 @@ interface Payload {
   initialPoints?: number;
   // super admin impersonation: explicit company target
   companyId?: string;
-  // reset_password / set_active
+  // send_magic_link / set_active / set_banned / get_user_status
   userId?: string;
   userIds?: string[];
-  newPassword?: string;
   isActive?: boolean;
   isBanned?: boolean;
 }
