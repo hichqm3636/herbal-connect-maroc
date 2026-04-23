@@ -174,10 +174,38 @@ function LoginPage() {
                   placeholder="you@example.com"
                 />
               </div>
+              {usePassword && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">كلمة المرور</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    dir="ltr"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    للمسؤولين فقط. الموزعون يستخدمون رابط الدخول حصرياً.
+                  </p>
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                إرسال رابط الدخول
+                {usePassword ? "تسجيل الدخول" : "إرسال رابط الدخول"}
               </Button>
+              <button
+                type="button"
+                onClick={() => setUsePassword((v) => !v)}
+                className="block w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {usePassword
+                  ? "← العودة إلى رابط الدخول"
+                  : "استخدام كلمة المرور (للمسؤولين)"}
+              </button>
             </form>
           )}
         </Card>
