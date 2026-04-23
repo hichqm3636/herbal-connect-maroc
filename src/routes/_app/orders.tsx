@@ -54,6 +54,20 @@ function OrdersPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [repeatingId, setRepeatingId] = useState<string | null>(null);
   const [profile, setProfile] = useState<{ phone: string | null; city: string | null } | null>(null);
+  const [previewOrder, setPreviewOrder] = useState<Order | null>(null);
+
+  const buildMessageFor = (order: Order): string =>
+    buildWhatsAppMessage({
+      orderNumber: order.order_number,
+      createdAt: order.created_at,
+      items: order.order_items.map((it) => ({
+        name: it.products?.name_ar ?? "—",
+        qty: it.quantity,
+      })),
+      total: Number(order.total_mad),
+      city: profile?.city ?? "—",
+      phone: profile?.phone ?? "—",
+    });
 
   const handleRepeat = async (e: React.MouseEvent, orderId: string) => {
     e.stopPropagation();
@@ -76,22 +90,15 @@ function OrdersPage() {
     }
   };
 
-  const handleWhatsapp = async (e: React.MouseEvent, order: Order) => {
+  const openPreview = (e: React.MouseEvent, order: Order) => {
     e.stopPropagation();
     e.preventDefault();
-    const message = buildWhatsAppMessage({
-      orderNumber: order.order_number,
-      createdAt: order.created_at,
-      items: order.order_items.map((it) => ({
-        name: it.products?.name_ar ?? "—",
-        qty: it.quantity,
-      })),
-      total: Number(order.total_mad),
-      city: profile?.city ?? "—",
-      phone: profile?.phone ?? "—",
-    });
+    setPreviewOrder(order);
+  };
 
-    // Auto-copy the message text
+  const sendWhatsapp = async (order: Order) => {
+    const message = buildMessageFor(order);
+
     try {
       await navigator.clipboard.writeText(message);
       toast.success("تم نسخ نص الطلب");
@@ -100,16 +107,9 @@ function OrdersPage() {
     }
 
     const link = buildWhatsappLink(profile?.phone, message);
-    if (!link) {
-      // No phone on profile — fall back to wa.me without a recipient
-      window.open(
-        `https://wa.me/?text=${encodeURIComponent(message)}`,
-        "_blank",
-        "noopener,noreferrer",
-      );
-      return;
-    }
-    window.open(link, "_blank", "noopener,noreferrer");
+    const url = link || `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    setPreviewOrder(null);
   };
 
   useEffect(() => {
