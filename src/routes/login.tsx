@@ -69,29 +69,37 @@ function LoginPage() {
       }
 
       // Block password sign-in for non-admin accounts (distributors must use Magic Link).
-      // Dual-source validation: check DB roles AND JWT app_metadata for resilience
-      // against RLS issues, latency, or empty DB responses.
-      if (authData.user) {
-        const { data: roleRows } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", authData.user.id);
-        const roles = (roleRows ?? []).map((r) => r.role as string);
-        const metaRole =
-          (authData.user.app_metadata as { role?: string } | undefined)?.role;
+      // Use the authoritative session as source of truth, with dual-source role validation
+      // (DB roles + JWT app_metadata) for resilience against RLS issues, latency, or empty DB.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user;
 
-        const isAdmin =
-          roles.includes("admin") ||
-          roles.includes("super_admin") ||
-          metaRole === "admin" ||
-          metaRole === "super_admin";
+      if (!user) {
+        await supabase.auth.signOut();
+        setSubmitting(false);
+        toast.error("تعذر التحقق من الجلسة");
+        return;
+      }
 
-        if (!isAdmin) {
-          await supabase.auth.signOut();
-          setSubmitting(false);
-          toast.error("الدخول بكلمة المرور غير متاح لهذا الحساب");
-          return;
-        }
+      const { data: roleRows } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+      const roles = (roleRows ?? []).map((r) => r.role as string);
+      const metaRole =
+        (user.app_metadata as { role?: string } | undefined)?.role;
+
+      const isAdmin =
+        roles.includes("admin") ||
+        roles.includes("super_admin") ||
+        metaRole === "admin" ||
+        metaRole === "super_admin";
+
+      if (!isAdmin) {
+        await supabase.auth.signOut();
+        setSubmitting(false);
+        toast.error("الدخول بكلمة المرور غير متاح لهذا الحساب");
+        return;
       }
 
       setSubmitting(false);
