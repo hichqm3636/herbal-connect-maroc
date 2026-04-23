@@ -69,6 +69,9 @@ const distributorTopItems: NavItem[] = [
   { title: "طلباتي", url: "/orders", icon: ClipboardList },
   { title: "فواتيري", url: "/invoices", icon: Receipt },
   { title: "نقاط الولاء", url: "/loyalty", icon: Award },
+];
+
+const distributorAccountItems: NavItem[] = [
   { title: "الإعدادات", url: "/settings", icon: Settings },
 ];
 
@@ -156,7 +159,7 @@ const superAdminSections: NavSection[] = [
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin, isSuperAdmin, roles, signOut, user, company, mode } = useAuth();
+  const { isAdmin, isSuperAdmin, roles, signOut, user, company, mode, canAccessDistributorFeatures } = useAuth();
   const isPlatform = mode === "platform";
   const isPlatformOwner = isPlatform || (isSuperAdmin && !roles.includes("admin"));
   const isCompanyAdmin = isAdmin && !isPlatformOwner;
@@ -346,7 +349,8 @@ export function AppSidebar() {
 
       <SidebarContent>
         {/* Distributor (workspace user) — flat menu */}
-        {isDistributor && renderTopItems(distributorTopItems)}
+        {isDistributor && canAccessDistributorFeatures && renderTopItems(distributorTopItems)}
+        {isDistributor && renderTopItems(distributorAccountItems)}
 
         {/* Company Admin — Dashboard + grouped sections */}
         {isCompanyAdmin && (
