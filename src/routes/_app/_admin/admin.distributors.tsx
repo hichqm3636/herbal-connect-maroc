@@ -14,7 +14,7 @@ import {
   Users,
   UserCheck,
   UserPlus,
-  KeyRound,
+  Mail,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -62,7 +62,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatMAD, LEVEL_LABELS } from "@/lib/format";
 import { toast } from "sonner";
 import { CreateDistributorDialog } from "@/components/admin/CreateDistributorDialog";
-import { ResetPasswordDialog } from "@/components/admin/ResetPasswordDialog";
 import { EditClientDialog } from "@/components/admin/EditClientDialog";
 
 export const Route = createFileRoute("/_app/_admin/admin/distributors")({
@@ -125,7 +124,7 @@ function AdminDistributors() {
   // dialogs
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Distributor | null>(null);
-  const [resettingPw, setResettingPw] = useState<Distributor | null>(null);
+  const [sendingLinkTo, setSendingLinkTo] = useState<string | null>(null);
   const [pointsTarget, setPointsTarget] = useState<Distributor | null>(null);
   const [pointsDelta, setPointsDelta] = useState(0);
   const [pointsReason, setPointsReason] = useState("");
