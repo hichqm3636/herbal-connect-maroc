@@ -12,6 +12,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useRepeatOrder } from "@/hooks/useRepeatOrder";
 import {
@@ -55,6 +65,7 @@ function OrdersPage() {
   const [repeatingId, setRepeatingId] = useState<string | null>(null);
   const [profile, setProfile] = useState<{ phone: string | null; city: string | null } | null>(null);
   const [previewOrder, setPreviewOrder] = useState<Order | null>(null);
+  const [confirmOrder, setConfirmOrder] = useState<Order | null>(null);
 
   const buildMessageFor = (order: Order): string =>
     buildWhatsAppMessage({
@@ -259,7 +270,12 @@ function OrdersPage() {
               إلغاء
             </Button>
             <Button
-              onClick={() => previewOrder && sendWhatsapp(previewOrder)}
+              onClick={() => {
+                if (previewOrder) {
+                  setConfirmOrder(previewOrder);
+                  setPreviewOrder(null);
+                }
+              }}
               className="bg-[#25D366] hover:bg-[#25D366]/90 text-white"
             >
               <MessageCircle className="ml-2 h-4 w-4" />
@@ -268,6 +284,37 @@ function OrdersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!confirmOrder} onOpenChange={(open) => !open && setConfirmOrder(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد إرسال الطلب عبر WhatsApp</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل تريد فعلاً إرسال الطلب{" "}
+              <span className="font-semibold text-foreground">
+                {confirmOrder?.order_number}
+              </span>{" "}
+              عبر WhatsApp؟ سيتم نسخ النص وفتح المحادثة.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmOrder) {
+                  const order = confirmOrder;
+                  setConfirmOrder(null);
+                  void sendWhatsapp(order);
+                }
+              }}
+              className="bg-[#25D366] hover:bg-[#25D366]/90 text-white"
+            >
+              <MessageCircle className="ml-2 h-4 w-4" />
+              نعم، إرسال
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
