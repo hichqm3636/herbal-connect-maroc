@@ -31,10 +31,12 @@ interface CreateOrderInput {
   points_earned: number;
   notes: string | null;
   items: OrderItemInput[];
+  request_id: string | null;
 }
 
 interface CreateOrderResult {
   order_id: string;
+  idempotent?: boolean;
 }
 
 function validate(input: unknown): CreateOrderInput {
@@ -72,12 +74,17 @@ function validate(input: unknown): CreateOrderInput {
   });
   if (items.length > 200) throw new Error("Too many items");
   const notes = typeof o.notes === "string" ? o.notes.slice(0, 1000) : null;
+  const request_id =
+    typeof o.request_id === "string" && o.request_id.length > 0 && o.request_id.length <= 100
+      ? o.request_id
+      : null;
   return {
     company_id: o.company_id,
     total_mad: o.total_mad,
     points_earned: o.points_earned,
     notes,
     items,
+    request_id,
   };
 }
 
