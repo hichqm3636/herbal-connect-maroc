@@ -232,6 +232,37 @@ function AdminDistributors() {
     load();
   }, [companyId]);
 
+  /**
+   * Send a magic-link sign-in email to the distributor.
+   * Uses Supabase OTP (passwordless). The link redirects to /auth/callback
+   * where the user is routed by role.
+   */
+  const sendMagicLink = async (d: Distributor) => {
+    setSendingLinkTo(d.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-distributor", {
+        body: { action: "send_magic_link", userId: d.id },
+      });
+      if (error) {
+        let msg = error.message;
+        try {
+          const ctx = (error as { context?: Response }).context;
+          if (ctx) {
+            const j = await ctx.clone().json();
+            if (j?.error) msg = j.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
+      toast.success(`تم إرسال رابط الدخول إلى ${d.full_name}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "تعذر إرسال رابط الدخول");
+    } finally {
+      setSendingLinkTo(null);
+    }
+  };
+
   const territoryById = useMemo(() => {
     const m = new Map<string, string>();
     territories.forEach((t) => m.set(t.id, t.name));
@@ -787,9 +818,12 @@ function AdminDistributors() {
                         <Award className="ml-2 h-4 w-4" />
                         تعديل النقاط
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setResettingPw(d)}>
-                        <KeyRound className="ml-2 h-4 w-4" />
-                        إعادة تعيين كلمة المرور
+                      <DropdownMenuItem
+                        onClick={() => sendMagicLink(d)}
+                        disabled={sendingLinkTo === d.id}
+                      >
+                        <Mail className="ml-2 h-4 w-4" />
+                        إرسال رابط الدخول
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       {(() => {
