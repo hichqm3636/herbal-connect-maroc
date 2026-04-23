@@ -290,6 +290,35 @@ function OrdersPage() {
               راجع النص قبل الإرسال. سيتم نسخه تلقائياً عند الإرسال.
             </DialogDescription>
           </DialogHeader>
+          {!profile?.phone && (
+            <Alert variant="destructive" className="border-warning/50 bg-warning/10 text-warning-foreground">
+              <AlertCircle className="h-4 w-4 text-warning" />
+              <AlertTitle className="text-warning">لا يوجد رقم هاتف في بروفايلك</AlertTitle>
+              <AlertDescription className="text-warning-foreground/90">
+                أضف رقم WhatsApp ليُستخدم في الرسالة وفي فتح المحادثة.
+              </AlertDescription>
+              <div className="mt-3 space-y-2">
+                <Label htmlFor="wa-phone-inline" className="text-xs">
+                  رقم الهاتف (مثال: 0612345678)
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="wa-phone-inline"
+                    type="tel"
+                    inputMode="tel"
+                    dir="ltr"
+                    placeholder="0612345678"
+                    value={phoneInput}
+                    onChange={(e) => setPhoneInput(e.target.value)}
+                    className="bg-background"
+                  />
+                  <Button onClick={savePhone} disabled={savingPhone || !phoneInput.trim()}>
+                    {savingPhone ? <Loader2 className="h-4 w-4 animate-spin" /> : "حفظ"}
+                  </Button>
+                </div>
+              </div>
+            </Alert>
+          )}
           <div className="rounded-md border bg-muted/40 p-3 max-h-[50vh] overflow-y-auto">
             <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed text-right" dir="rtl">
               {previewOrder ? buildMessageFor(previewOrder) : ""}
