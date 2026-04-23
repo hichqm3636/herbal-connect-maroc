@@ -284,6 +284,37 @@ function OrdersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!confirmOrder} onOpenChange={(open) => !open && setConfirmOrder(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد إرسال الطلب عبر WhatsApp</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل تريد فعلاً إرسال الطلب{" "}
+              <span className="font-semibold text-foreground">
+                {confirmOrder?.order_number}
+              </span>{" "}
+              عبر WhatsApp؟ سيتم نسخ النص وفتح المحادثة.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmOrder) {
+                  const order = confirmOrder;
+                  setConfirmOrder(null);
+                  void sendWhatsapp(order);
+                }
+              }}
+              className="bg-[#25D366] hover:bg-[#25D366]/90 text-white"
+            >
+              <MessageCircle className="ml-2 h-4 w-4" />
+              نعم، إرسال
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
