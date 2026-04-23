@@ -5,7 +5,7 @@ import { authorizeCompanyAdmin, corsHeaders } from "../_shared/authz.ts";
 
 type Action =
   | "create"
-  | "reset_password"
+  | "send_magic_link"
   | "set_active"
   | "set_banned"
   | "get_user_status";
@@ -16,7 +16,6 @@ interface Payload {
   action?: Action;
   // create
   email?: string;
-  password?: string;
   fullName?: string;
   phone?: string;
   territoryId?: string;
@@ -27,10 +26,9 @@ interface Payload {
   initialPoints?: number;
   // super admin impersonation: explicit company target
   companyId?: string;
-  // reset_password / set_active
+  // send_magic_link / set_active / set_banned / get_user_status
   userId?: string;
   userIds?: string[];
-  newPassword?: string;
   isActive?: boolean;
   isBanned?: boolean;
 }
@@ -78,7 +76,9 @@ Deno.serve(async (req) => {
 
   if (action === "create") {
     const email = body.email?.trim().toLowerCase() ?? "";
-    const password = body.password ?? "";
+    // Passwordless flow: generate a random unguessable placeholder password.
+    // It is never shared with anyone — the user signs in via Magic Link only.
+    const password = crypto.randomUUID() + crypto.randomUUID();
     const fullName = body.fullName?.trim() ?? "";
     const phone = body.phone?.trim() ?? "";
     const territoryId = body.territoryId?.trim() ?? "";
@@ -102,8 +102,6 @@ Deno.serve(async (req) => {
     const initialPoints = Math.max(0, Math.floor(body.initialPoints ?? 0));
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return bad("بريد غير صالح");
-    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password))
-      return bad("كلمة المرور يجب أن تحتوي 8 أحرف على الأقل مع حروف وأرقام");
     if (fullName.length < 2) return bad("الاسم قصير جداً");
     if (phone.length < 6) return bad("رقم الهاتف غير صالح");
     if (!territoryId) return bad("المنطقة مطلوبة");
@@ -200,20 +198,49 @@ Deno.serve(async (req) => {
     }
 
     await log("create_distributor", created.user.id, { email, fullName, territoryId, territoryName: territory.name });
+
+    // Auto-send magic link so the new distributor can sign in immediately.
+    try {
+      const siteUrl = Deno.env.get("SITE_URL") ?? Deno.env.get("PUBLIC_SITE_URL") ?? "";
+      const redirectTo = siteUrl ? `${siteUrl.replace(/\/$/, "")}/auth/callback` : undefined;
+      await admin.auth.admin.generateLink({
+        type: "magiclink",
+        email,
+        options: redirectTo ? { redirectTo } : undefined,
+      });
+    } catch {
+      /* best-effort — account is created, link can be re-sent later */
+    }
+
     return json({ id: created.user.id, email: created.user.email });
   }
 
-  if (action === "reset_password") {
+  // Send a Magic Link sign-in email to an existing user.
+  // Accepts either { userId } (preferred — looks up the email) or { email }.
+  if (action === "send_magic_link") {
+    let email = body.email?.trim().toLowerCase() ?? "";
     const userId = body.userId ?? "";
-    const newPassword = body.newPassword ?? "";
-    if (!userId) return bad("معرّف المستخدم مفقود");
-    if (newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword))
-      return bad("كلمة المرور يجب أن تحتوي 8 أحرف على الأقل مع حروف وأرقام");
 
-    const { error } = await admin.auth.admin.updateUserById(userId, { password: newPassword });
+    if (!email && userId) {
+      const { data: u, error: uErr } = await admin.auth.admin.getUserById(userId);
+      if (uErr || !u?.user?.email) return bad("تعذّر العثور على بريد المستخدم", 404);
+      email = u.user.email.toLowerCase();
+    }
+    if (!email) return bad("البريد الإلكتروني مطلوب");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return bad("بريد غير صالح");
+
+    const siteUrl = Deno.env.get("SITE_URL") ?? Deno.env.get("PUBLIC_SITE_URL") ?? "";
+    const redirectTo = siteUrl ? `${siteUrl.replace(/\/$/, "")}/auth/callback` : undefined;
+
+    const { error } = await admin.auth.admin.generateLink({
+      type: "magiclink",
+      email,
+      options: redirectTo ? { redirectTo } : undefined,
+    });
     if (error) return bad(error.message, 400);
-    await log("reset_password", userId, {});
-    return json({ ok: true });
+
+    await log("send_magic_link", userId || null, { email });
+    return json({ ok: true, email });
   }
 
   // Shared safety guard for destructive account actions (disable / ban).

@@ -64,6 +64,7 @@ interface ProfileLite {
 
 const ACTION_LABELS: Record<string, string> = {
   create_distributor: "إنشاء موزع",
+  send_magic_link: "إرسال رابط الدخول",
   reset_password: "إعادة تعيين كلمة المرور",
   disable_distributor: "تعطيل حساب",
   enable_distributor: "تفعيل حساب",
@@ -92,6 +93,7 @@ const ORDER_ACTIONS = [
 const LOYALTY_ACTIONS = ["loyalty_points_changed", "loyalty_transaction", "adjust_points"];
 const ADMIN_ACTIONS = [
   "create_distributor",
+  "send_magic_link",
   "reset_password",
   "disable_distributor",
   "enable_distributor",
