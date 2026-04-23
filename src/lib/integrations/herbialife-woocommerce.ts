@@ -121,7 +121,9 @@ export function mapWooProductToInternal(wp: WooProduct): {
     s.replace(/<[^>]*>?/gm, "").replace(/\s+/g, " ").trim();
   const isValidUrl = (url: string) =>
     url.startsWith("http://") || url.startsWith("https://");
-  const DEFAULT_IMAGE = "https://herbialife.com/wp-content/uploads/your-default.jpg";
+  // Hosted in our own Supabase Storage so it can never break.
+  const DEFAULT_IMAGE =
+    "https://jarlejsbrxtrusfjklkg.supabase.co/storage/v1/object/public/product-images/default-product.jpg";
 
   const name = stripHtml(wp.name ?? "");
   if (!name) return null;
