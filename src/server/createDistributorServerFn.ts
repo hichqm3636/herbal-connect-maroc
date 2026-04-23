@@ -23,9 +23,11 @@
  * If you find yourself writing `createServerFn(...).middleware([...])` for a
  * distributor endpoint, USE THIS HELPER INSTEAD.
  */
-import { createServerFn, type ServerFnMethod } from "@tanstack/react-start";
+import { createServerFn } from "@tanstack/react-start";
 import { requireEnabledDistributorRole } from "@/server/middleware/requireEnabledDistributorRole";
 
-export function createDistributorServerFn(options: { method: ServerFnMethod }) {
+type CreateServerFnOptions = Parameters<typeof createServerFn>[0];
+
+export function createDistributorServerFn(options: CreateServerFnOptions) {
   return createServerFn(options).middleware([requireEnabledDistributorRole]);
 }
