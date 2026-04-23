@@ -240,6 +240,34 @@ function OrdersPage() {
           ))}
         </div>
       )}
+
+      <Dialog open={!!previewOrder} onOpenChange={(open) => !open && setPreviewOrder(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>معاينة رسالة WhatsApp</DialogTitle>
+            <DialogDescription>
+              راجع النص قبل الإرسال. سيتم نسخه تلقائياً عند الإرسال.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-md border bg-muted/40 p-3 max-h-[50vh] overflow-y-auto">
+            <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed text-right" dir="rtl">
+              {previewOrder ? buildMessageFor(previewOrder) : ""}
+            </pre>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setPreviewOrder(null)}>
+              إلغاء
+            </Button>
+            <Button
+              onClick={() => previewOrder && sendWhatsapp(previewOrder)}
+              className="bg-[#25D366] hover:bg-[#25D366]/90 text-white"
+            >
+              <MessageCircle className="ml-2 h-4 w-4" />
+              إرسال عبر WhatsApp
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
