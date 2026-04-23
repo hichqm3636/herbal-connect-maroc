@@ -176,10 +176,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("user_roles").select("role").eq("user_id", uid),
       supabase
         .from("profiles")
-        .select("account_type, company_id, territory_id")
+        .select("account_type, company_id, territory_id, is_active")
         .eq("id", uid)
         .maybeSingle(),
     ]);
+
+    // Disabled-account guard: if the profile exists and is_active === false,
+    // sign the user out immediately and surface a clear message. We allow
+    // missing profile rows (legacy / partner invite flows) to keep loading.
+    if (profile && profile.is_active === false) {
+      try {
+        const { toast } = await import("sonner");
+        toast.error("تم تعطيل حسابك. تواصل مع الإدارة.");
+      } catch {
+        /* ignore — toast is best effort */
+      }
+      await supabase.auth.signOut();
+      setRoles([]);
+      setAccountType("distributor");
+      setProfileCompanyId(null);
+      setTerritoryId(null);
+      setPricingTierId(null);
+      setPricingTierDiscount(0);
+      setCompany(null);
+      writeActiveCompany(null);
+      setActiveCompanyIdState(null);
+      return;
+    }
+
     setRoles((roleRows ?? []).map((r) => r.role as AppRole));
     setAccountType((profile?.account_type as PartnerType | undefined) ?? "distributor");
     const cid = (profile?.company_id as string | null | undefined) ?? null;

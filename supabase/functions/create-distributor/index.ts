@@ -214,10 +214,40 @@ Deno.serve(async (req) => {
     return json({ ok: true });
   }
 
+  // Shared safety guard for destructive account actions (disable / ban).
+  // Rules:
+  //  - Cannot target yourself.
+  //  - Cannot target a user holding the `admin` or `super_admin` role.
+  // The check uses the service-role client so it bypasses RLS, but we still
+  // scope the role lookup to roles that exist anywhere for that user.
+  const guardDestructiveTarget = async (
+    userId: string,
+  ): Promise<Response | null> => {
+    if (userId === adminId) {
+      return bad("لا يمكنك تنفيذ هذا الإجراء على حسابك", 403);
+    }
+    const { data: roleRows, error: rErr } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    if (rErr) return bad("تعذر التحقق من صلاحيات المستخدم", 500);
+    const targetRoles = (roleRows ?? []).map((r) => r.role as string);
+    if (targetRoles.includes("super_admin") || targetRoles.includes("admin")) {
+      return bad("لا يمكن تعطيل أو حظر حسابات المسؤولين", 403);
+    }
+    return null;
+  };
+
   if (action === "set_active") {
     const userId = body.userId ?? "";
     const isActive = !!body.isActive;
     if (!userId) return bad("معرّف المستخدم مفقود");
+
+    // Only guard the destructive direction (disable). Re-enabling is safe.
+    if (!isActive) {
+      const blocked = await guardDestructiveTarget(userId);
+      if (blocked) return blocked;
+    }
 
     const { error: pErr } = await admin
       .from("profiles")
@@ -233,6 +263,12 @@ Deno.serve(async (req) => {
     const userId = body.userId ?? "";
     const isBanned = !!body.isBanned;
     if (!userId) return bad("معرّف المستخدم مفقود");
+
+    // Only guard the destructive direction (ban). Unbanning is safe.
+    if (isBanned) {
+      const blocked = await guardDestructiveTarget(userId);
+      if (blocked) return blocked;
+    }
 
     const { error: aErr } = await admin.auth.admin.updateUserById(userId, {
       ban_duration: isBanned ? "876000h" : "none",
