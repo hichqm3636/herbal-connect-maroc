@@ -248,7 +248,9 @@ export const createOrder = createDistributorServerFn({ method: "POST" })
           .eq("request_id" as never, data.request_id as never)
           .maybeSingle();
         if (dup?.id) {
-          await restoreStock();
+          // IMPORTANT: do NOT restore stock here. The winning concurrent
+          // request already consumed the stock for this same logical order.
+          // Restoring would inflate inventory and corrupt counts.
           console.log("[createOrder] idempotent replay (post-insert race)", {
             userId,
             request_id: data.request_id,
