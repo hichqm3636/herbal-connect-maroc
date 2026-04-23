@@ -794,6 +794,35 @@ function ShopPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete-from-cart confirmation */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف المنتج من السلة؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget?.name
+                ? `سيتم حذف "${deleteTarget.name}" من سلتك.`
+                : "سيتم حذف المنتج من سلتك."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) removeItem(deleteTarget.id);
+                setDeleteTarget(null);
+              }}
+            >
+              حذف
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
