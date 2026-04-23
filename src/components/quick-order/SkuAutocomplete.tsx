@@ -13,7 +13,8 @@ interface Suggestion {
   sku: string | null;
   name_ar: string;
   price_mad: number;
-  stock: number;
+  /** null = available, qty unknown. */
+  stock: number | null;
   image_url: string | null;
   minimum_order: number;
 }
@@ -164,7 +165,13 @@ export function SkuAutocomplete({ value, onChange, onSelect, placeholder, classN
                   <span>•</span>
                   <span>{formatMAD(Number(r.price_mad))}</span>
                   <span>•</span>
-                  <span>المخزون: {r.stock}</span>
+                  <span>
+                    {r.stock === null
+                      ? "متوفر"
+                      : r.stock === 0
+                        ? "نفد المخزون"
+                        : `المخزون: ${r.stock}`}
+                  </span>
                   {r.minimum_order > 1 && (
                     <span className="rounded border border-warning/50 bg-warning/10 px-1.5 py-0.5 text-[10px] font-medium text-warning-foreground">
                       الحد الأدنى: {r.minimum_order}

@@ -64,7 +64,8 @@ interface ShopProduct {
   price_mad: number;
   image_url: string | null;
   category: string | null;
-  stock: number;
+  /** null = available, qty unknown. */
+  stock: number | null;
   rrp_price: number | null;
   pharmacy_price: number | null;
   map_price: number | null;

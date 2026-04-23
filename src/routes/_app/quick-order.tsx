@@ -35,7 +35,8 @@ interface ResolvedRow extends Row {
     name_ar: string;
     price_mad: number;
     image_url: string | null;
-    stock: number;
+    /** null = available, qty unknown. */
+    stock: number | null;
     rrp_price: number | null;
     pharmacy_price: number | null;
     map_price: number | null;
@@ -140,7 +141,16 @@ function QuickOrderPage() {
           minimum_order: found.minimum_order,
           price_tiers: parseTiers(found.price_tiers),
         };
-        if (product.stock < r.qty) {
+        // Out of stock = exactly 0. null = available (qty unknown) → allow.
+        if (product.stock === 0) {
+          return {
+            ...r,
+            status: "out_of_stock",
+            product,
+            message: "نفد المخزون",
+          };
+        }
+        if (product.stock !== null && product.stock < r.qty) {
           return {
             ...r,
             status: "out_of_stock",

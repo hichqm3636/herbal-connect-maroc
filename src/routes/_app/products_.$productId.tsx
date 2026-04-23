@@ -30,7 +30,8 @@ interface Product {
   price_mad: number;
   image_url: string | null;
   category: string | null;
-  stock: number;
+  /** null = available, qty unknown. */
+  stock: number | null;
   active: boolean;
   rrp_price: number | null;
   pharmacy_price: number | null;
@@ -152,7 +153,12 @@ function ProductDetail() {
   const mainUrl = gallery[activeIdx]?.url ?? "";
   const packSize = Math.max(1, product.pack_size || 1);
   const minQty = Math.max(packSize, product.minimum_order);
-  const maxQty = product.stock > 0 ? product.stock : minQty;
+  const maxQty =
+    product.stock === null
+      ? Number.POSITIVE_INFINITY
+      : product.stock > 0
+        ? product.stock
+        : minQty;
   const outOfStock = product.stock === 0 || !product.active;
   const showDistributorPricing =
     partnerType === "distributor" || partnerType === "master_distributor";
@@ -236,8 +242,22 @@ function ProductDetail() {
                     {formatMAD(product.rrp_price)}
                   </span>
                 )}
-              <span className="text-sm text-muted-foreground">
-                المخزون: {product.stock}
+              <span
+                className={`text-sm ${
+                  product.stock === 0
+                    ? "text-destructive font-medium"
+                    : product.stock !== null && product.stock <= 10
+                      ? "text-warning-foreground font-medium"
+                      : "text-muted-foreground"
+                }`}
+              >
+                {product.stock === null
+                  ? "متوفر"
+                  : product.stock === 0
+                    ? "نفد المخزون"
+                    : product.stock <= 10
+                      ? `${product.stock} وحدة — كمية محدودة`
+                      : `المخزون: ${product.stock} وحدة`}
               </span>
               {product.minimum_order > 1 && (
                 <Badge variant="outline" className="text-[11px] font-medium border-warning/50 text-warning-foreground bg-warning/10">
