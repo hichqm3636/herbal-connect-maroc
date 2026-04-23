@@ -69,13 +69,24 @@ function LoginPage() {
       }
 
       // Block password sign-in for non-admin accounts (distributors must use Magic Link).
+      // Dual-source validation: check DB roles AND JWT app_metadata for resilience
+      // against RLS issues, latency, or empty DB responses.
       if (authData.user) {
-        const { data: roleData } = await supabase
+        const { data: roleRows } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", authData.user.id);
-        const roles = (roleData ?? []).map((r) => r.role as string);
-        if (!roles.includes("admin") && !roles.includes("super_admin")) {
+        const roles = (roleRows ?? []).map((r) => r.role as string);
+        const metaRole =
+          (authData.user.app_metadata as { role?: string } | undefined)?.role;
+
+        const isAdmin =
+          roles.includes("admin") ||
+          roles.includes("super_admin") ||
+          metaRole === "admin" ||
+          metaRole === "super_admin";
+
+        if (!isAdmin) {
           await supabase.auth.signOut();
           setSubmitting(false);
           toast.error("الدخول بكلمة المرور غير متاح لهذا الحساب");
