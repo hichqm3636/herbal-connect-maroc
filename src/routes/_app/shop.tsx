@@ -31,6 +31,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartProduct } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
@@ -96,9 +106,11 @@ function ShopPage() {
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [cartOpen, setCartOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   // ---------------- Load catalog + order counts ----------------
   useEffect(() => {
@@ -154,25 +166,47 @@ function ShopPage() {
   }, [territoryId, isAdmin]);
 
   // ---------------- Filtering & buckets ----------------
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of products) {
+      if (p.category && p.category.trim()) set.add(p.category.trim());
+    }
+    return Array.from(set).sort();
+  }, [products]);
+
+  const topSellersAll = useMemo(
+    () =>
+      [...products]
+        .filter((p) => p.order_count > 0)
+        .sort((a, b) => b.order_count - a.order_count),
+    [products],
+  );
+  const topSellerIds = useMemo(
+    () => new Set(topSellersAll.slice(0, 12).map((p) => p.id)),
+    [topSellersAll],
+  );
+
   const filtered = useMemo(() => {
     const q = search.trim();
-    if (!q) return products;
-    return products.filter(
+    let list = products;
+    if (activeCategory === "top") {
+      list = list.filter((p) => topSellerIds.has(p.id));
+    } else if (activeCategory === "new") {
+      // newest first by created_at proxy → use last 12 by id order from DB
+      list = [...list].slice(-12).reverse();
+    } else if (activeCategory !== "all") {
+      list = list.filter((p) => (p.category ?? "").trim() === activeCategory);
+    }
+    if (!q) return list;
+    return list.filter(
       (p) =>
         p.name_ar.includes(q) ||
         (p.category ?? "").includes(q) ||
         p.description_ar.includes(q),
     );
-  }, [products, search]);
+  }, [products, search, activeCategory, topSellerIds]);
 
-  const topSellers = useMemo(
-    () =>
-      [...products]
-        .filter((p) => p.order_count > 0)
-        .sort((a, b) => b.order_count - a.order_count)
-        .slice(0, 6),
-    [products],
-  );
+  const topSellers = topSellersAll.slice(0, 6);
 
   const heroProduct = topSellers[0] ?? products[0] ?? null;
 
@@ -386,16 +420,41 @@ function ShopPage() {
         </Card>
       )}
 
-      {/* Search */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
+      {/* Sticky search + category chips */}
+      <div className="sticky top-0 z-30 -mx-4 px-4 py-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
+        <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="ابحث عن منتج…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pr-9"
+            className="pr-9 h-11"
           />
+        </div>
+        <div className="flex gap-2 overflow-x-auto mt-3 -mx-1 px-1 pb-1 snap-x">
+          {[
+            { key: "all", label: "الكل" },
+            { key: "top", label: "الأكثر طلباً" },
+            { key: "new", label: "جديد" },
+            ...categories.map((c) => ({ key: c, label: c })),
+          ].map((chip) => {
+            const active = activeCategory === chip.key;
+            return (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => setActiveCategory(chip.key)}
+                className={`snap-start shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card text-muted-foreground border-border hover:bg-muted"
+                }`}
+                aria-pressed={active}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -456,12 +515,15 @@ function ShopPage() {
                 Math.max(p.minimum_order || 1, 6),
               );
               const outOfStock = p.stock === 0;
+              const isTop = topSellerIds.has(p.id);
               return (
                 <Card
                   key={p.id}
-                  className="overflow-hidden flex flex-col shadow-soft hover:shadow-elegant transition-shadow"
+                  className={`overflow-hidden flex flex-col shadow-soft hover:shadow-elegant transition-shadow ${
+                    outOfStock ? "opacity-60" : ""
+                  }`}
                 >
-                  <div className="aspect-square bg-muted overflow-hidden">
+                  <div className="relative aspect-square bg-muted overflow-hidden">
                     {p.image_url && (
                       <img
                         src={p.image_url}
@@ -470,6 +532,23 @@ function ShopPage() {
                         className="h-full w-full object-cover"
                       />
                     )}
+                    <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                      {isTop && (
+                        <Badge className="gap-1 bg-warning/90 text-warning-foreground border-0 text-[10px]">
+                          <Flame className="h-2.5 w-2.5" /> الأكثر طلباً
+                        </Badge>
+                      )}
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] border-0 ${
+                          outOfStock
+                            ? "bg-destructive/90 text-destructive-foreground"
+                            : "bg-success/90 text-success-foreground"
+                        }`}
+                      >
+                        {outOfStock ? "نفذ المخزون" : "متوفر"}
+                      </Badge>
+                    </div>
                   </div>
                   <div className="p-3 flex flex-col gap-2 flex-1">
                     <p className="text-sm font-semibold leading-snug line-clamp-2 flex-1">
@@ -480,16 +559,10 @@ function ShopPage() {
                         <p className="text-base font-bold text-primary leading-tight">
                           {formatMAD(unitPrice)}
                         </p>
-                        {outOfStock ? (
-                          <span className="text-[10px] text-destructive font-medium">
-                            نفذ المخزون
+                        {p.minimum_order > 1 && (
+                          <span className="text-[10px] text-muted-foreground">
+                            حد أدنى: {p.minimum_order}
                           </span>
-                        ) : (
-                          p.minimum_order > 1 && (
-                            <span className="text-[10px] text-muted-foreground">
-                              حد أدنى: {p.minimum_order}
-                            </span>
-                          )
                         )}
                       </div>
                       <Button
@@ -497,7 +570,7 @@ function ShopPage() {
                         onClick={() => addProduct(p)}
                         disabled={outOfStock}
                         aria-label={`إضافة ${p.name_ar}`}
-                        className="h-9 w-9 shrink-0 rounded-full shadow-md"
+                        className="h-10 w-10 shrink-0 rounded-full shadow-md transition-transform active:scale-90"
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
@@ -617,10 +690,11 @@ function ShopPage() {
                           size="icon"
                           variant="outline"
                           className="h-7 w-7"
+                          disabled={item.qty <= minOrder}
                           onClick={() => {
-                            const next = item.qty - pack;
-                            if (next < minOrder) removeItem(item.id);
-                            else setQty(item.id, next);
+                            // Never remove via "-": clamp to minOrder.
+                            const next = Math.max(minOrder, item.qty - pack);
+                            if (next !== item.qty) setQty(item.id, next);
                           }}
                           aria-label="إنقاص"
                         >
@@ -642,7 +716,9 @@ function ShopPage() {
                           size="icon"
                           variant="ghost"
                           className="h-7 w-7 mr-auto text-destructive"
-                          onClick={() => removeItem(item.id)}
+                          onClick={() =>
+                            setDeleteTarget({ id: item.id, name: item.name_ar })
+                          }
                           aria-label="حذف"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -718,6 +794,35 @@ function ShopPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete-from-cart confirmation */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف المنتج من السلة؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget?.name
+                ? `سيتم حذف "${deleteTarget.name}" من سلتك.`
+                : "سيتم حذف المنتج من سلتك."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) removeItem(deleteTarget.id);
+                setDeleteTarget(null);
+              }}
+            >
+              حذف
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
