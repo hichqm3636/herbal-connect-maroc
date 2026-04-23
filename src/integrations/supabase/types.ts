@@ -1662,6 +1662,10 @@ export type Database = {
         Args: { _company_id: string }
         Returns: string
       }
+      has_enabled_distributor_role: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
