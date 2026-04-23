@@ -181,10 +181,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle(),
     ]);
 
-    // Disabled-account guard: if the profile exists and is_active === false,
-    // sign the user out immediately and surface a clear message. We allow
-    // missing profile rows (legacy / partner invite flows) to keep loading.
-    if (profile && profile.is_active === false) {
+    // Disabled-account guard: enforce is_active=false ONLY for non-admin users.
+    // Super admins and admins are NEVER locked out by is_active — this prevents
+    // an admin from accidentally banning themselves or another admin and
+    // bricking the tenant. Distributors / buyers / sellers / sales agents are
+    // signed out immediately if their profile is disabled.
+    const userRoles = (roleRows ?? []).map((r) => r.role as AppRole);
+    const isPrivileged =
+      userRoles.includes("super_admin") || userRoles.includes("admin");
+    if (profile && profile.is_active === false && !isPrivileged) {
       try {
         const { toast } = await import("sonner");
         toast.error("تم تعطيل حسابك. تواصل مع الإدارة.");
@@ -204,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    setRoles((roleRows ?? []).map((r) => r.role as AppRole));
+    setRoles(userRoles);
     setAccountType((profile?.account_type as PartnerType | undefined) ?? "distributor");
     const cid = (profile?.company_id as string | null | undefined) ?? null;
     setProfileCompanyId(cid);
