@@ -29,8 +29,10 @@ function LoginPage() {
   const { session, loading } = useAuth();
   const tenant = useTenant();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [usePassword, setUsePassword] = useState(false);
 
   // If we already have a session, bounce to /auth/callback so it routes by role.
   useEffect(() => {
@@ -49,6 +51,27 @@ function LoginPage() {
       toast.error(parsed.error.issues[0].message);
       return;
     }
+
+    if (usePassword) {
+      if (!password || password.length < 6) {
+        toast.error("كلمة المرور قصيرة جداً");
+        return;
+      }
+      setSubmitting(true);
+      const { error } = await supabase.auth.signInWithPassword({
+        email: parsed.data,
+        password,
+      });
+      setSubmitting(false);
+      if (error) {
+        toast.error(error.message || "تعذر تسجيل الدخول");
+        return;
+      }
+      toast.success("مرحباً بعودتك");
+      navigate({ to: "/auth/callback" });
+      return;
+    }
+
     setSubmitting(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: parsed.data,
@@ -151,10 +174,38 @@ function LoginPage() {
                   placeholder="you@example.com"
                 />
               </div>
+              {usePassword && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">كلمة المرور</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    dir="ltr"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    للمسؤولين فقط. الموزعون يستخدمون رابط الدخول حصرياً.
+                  </p>
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                إرسال رابط الدخول
+                {usePassword ? "تسجيل الدخول" : "إرسال رابط الدخول"}
               </Button>
+              <button
+                type="button"
+                onClick={() => setUsePassword((v) => !v)}
+                className="block w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {usePassword
+                  ? "← العودة إلى رابط الدخول"
+                  : "استخدام كلمة المرور (للمسؤولين)"}
+              </button>
             </form>
           )}
         </Card>
