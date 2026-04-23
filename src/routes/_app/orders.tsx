@@ -43,6 +43,12 @@ export const Route = createFileRoute("/_app/orders")({
   head: () => ({ meta: [{ title: "طلباتي — DistribHub" }] }),
 });
 
+/** Morocco mobile after normalization: "212" + 9 digits = 12 chars. */
+function isValidMaPhone(raw: string | null | undefined): boolean {
+  const n = normalizeWhatsappPhone(raw ?? "");
+  return n.length === 12 && n.startsWith("212");
+}
+
 interface OrderItem {
   id: string;
   quantity: number;
