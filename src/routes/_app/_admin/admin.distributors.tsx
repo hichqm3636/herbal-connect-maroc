@@ -898,12 +898,7 @@ function AdminDistributors() {
         onSaved={load}
       />
 
-      {/* Reset password */}
-      <ResetPasswordDialog
-        userId={resettingPw?.id ?? null}
-        fullName={resettingPw?.full_name}
-        onClose={() => setResettingPw(null)}
-      />
+
 
       {/* Adjust points */}
       <Dialog open={!!pointsTarget} onOpenChange={(o) => !o && setPointsTarget(null)}>
