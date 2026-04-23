@@ -375,14 +375,6 @@ function OrdersPage() {
               {previewOrder ? buildMessageFor(previewOrder) : ""}
             </pre>
           </div>
-              </Alert>
-            );
-          })()}
-          <div className="rounded-md border bg-muted/40 p-3 max-h-[50vh] overflow-y-auto">
-            <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed text-right" dir="rtl">
-              {previewOrder ? buildMessageFor(previewOrder) : ""}
-            </pre>
-          </div>
           <DialogFooter className="gap-2 sm:gap-2">
             <Button variant="outline" onClick={() => setPreviewOrder(null)}>
               إلغاء
