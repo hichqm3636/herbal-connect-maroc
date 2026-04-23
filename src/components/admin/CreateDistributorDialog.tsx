@@ -48,7 +48,6 @@ const empty = {
   pricingTierId: "" as string,
   customDiscount: "" as string,
   email: "",
-  password: "",
   initialPoints: 0,
 };
 
@@ -61,7 +60,7 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
   const [credentials, setCredentials] = useState<{
     name: string;
     phone: string;
-    password: string;
+    email: string;
   } | null>(null);
 
   const toggleRole = (role: ClientRole) => {
@@ -87,8 +86,6 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
     if (!form.email.trim()) e.email = "البريد الإلكتروني مطلوب";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
       e.email = "بريد إلكتروني غير صالح";
-    if (form.password.length < 8 || !/[A-Za-z]/.test(form.password) || !/[0-9]/.test(form.password))
-      e.password = "8 أحرف على الأقل مع حروف وأرقام";
     if (roles.size === 0) e.roles = "اختر دوراً واحداً على الأقل";
     if (form.customDiscount.trim() !== "") {
       const n = Number(form.customDiscount);
@@ -106,6 +103,7 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
     if (!validate()) return;
     setBusy(true);
     const normalizedPhone = formatPhoneMA(form.phone);
+    const emailLc = form.email.trim().toLowerCase();
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
@@ -126,8 +124,7 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
           pricingTierId: form.pricingTierId || null,
           customDiscountPercent:
             form.customDiscount.trim() === "" ? null : Number(form.customDiscount),
-          email: form.email,
-          password: form.password,
+          email: emailLc,
           initialPoints: form.initialPoints,
         },
       });
@@ -151,16 +148,16 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
         throw new Error(msg);
       }
       if (data?.error) throw new Error(data.error);
-      toast.success("تم إنشاء حساب العميل بنجاح");
+      toast.success("تم إنشاء الحساب وإرسال رابط الدخول");
       const created = {
         name: form.fullName.trim(),
         phone: normalizedPhone,
-        password: form.password,
+        email: emailLc,
       };
       reset();
       onOpenChange(false);
       onCreated();
-      // Show WhatsApp credentials dialog so admin can send login info immediately.
+      // Show WhatsApp dialog so admin can also share login info via WhatsApp.
       setCredentials(created);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "تعذر الإنشاء");
@@ -265,15 +262,6 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
               />
             </Field>
           </div>
-          <Field label="كلمة المرور (8+ أحرف، حروف وأرقام)" error={errors.password} required>
-            <Input
-              type="text"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="شارك كلمة المرور مع العميل"
-              dir="ltr"
-            />
-          </Field>
           <Field label="نقاط ولاء ابتدائية" error={errors.initialPoints}>
             <Input
               type="number"
@@ -284,6 +272,10 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
               }
             />
           </Field>
+          <p className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            🔐 سيتم إرسال رابط دخول آمن (Magic Link) إلى البريد الإلكتروني للعميل.
+            لا حاجة لكلمة مرور.
+          </p>
         </div>
         <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
@@ -291,7 +283,7 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
           </Button>
           <Button onClick={submit} disabled={busy}>
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            إنشاء الحساب
+            إنشاء الحساب وإرسال رابط الدخول
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -302,7 +294,7 @@ export function CreateDistributorDialog({ open, onOpenChange, onCreated }: Props
         onOpenChange={(o) => !o && setCredentials(null)}
         distributorName={credentials.name}
         phone={credentials.phone}
-        password={credentials.password}
+        email={credentials.email}
       />
     )}
     </>
