@@ -880,6 +880,7 @@ export type Database = {
           order_number: string
           payment_method: string | null
           points_earned: number
+          request_id: string | null
           status: Database["public"]["Enums"]["order_status"]
           supplier_partner_id: string | null
           sync_error: string | null
@@ -898,6 +899,7 @@ export type Database = {
           order_number: string
           payment_method?: string | null
           points_earned?: number
+          request_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           supplier_partner_id?: string | null
           sync_error?: string | null
@@ -916,6 +918,7 @@ export type Database = {
           order_number?: string
           payment_method?: string | null
           points_earned?: number
+          request_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           supplier_partner_id?: string | null
           sync_error?: string | null
