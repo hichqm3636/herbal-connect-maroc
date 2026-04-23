@@ -58,15 +58,32 @@ function LoginPage() {
         return;
       }
       setSubmitting(true);
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: parsed.data,
         password,
       });
-      setSubmitting(false);
       if (error) {
+        setSubmitting(false);
         toast.error(error.message || "تعذر تسجيل الدخول");
         return;
       }
+
+      // Block password sign-in for non-admin accounts (distributors must use Magic Link).
+      if (authData.user) {
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", authData.user.id);
+        const roles = (roleData ?? []).map((r) => r.role as string);
+        if (!roles.includes("admin") && !roles.includes("super_admin")) {
+          await supabase.auth.signOut();
+          setSubmitting(false);
+          toast.error("الدخول بكلمة المرور غير متاح لهذا الحساب");
+          return;
+        }
+      }
+
+      setSubmitting(false);
       toast.success("مرحباً بعودتك");
       navigate({ to: "/auth/callback" });
       return;
