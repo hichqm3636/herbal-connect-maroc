@@ -93,6 +93,34 @@ export const createOrder = createDistributorServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<CreateOrderResult> => {
     const { supabase, userId } = context;
 
+    // ---------------- Idempotency check ----------------
+    // If the same `request_id` was already used by this company, return the
+    // existing order id instead of creating a duplicate. Makes client retries
+    // safe under flaky networks. The (company_id, request_id) unique index
+    // also enforces this at the DB level as a final safety net.
+    if (data.request_id) {
+      const { data: existing, error: idemErr } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("company_id", data.company_id)
+        .eq("request_id" as never, data.request_id as never)
+        .maybeSingle();
+      if (idemErr) {
+        console.warn("[createOrder] idempotency lookup failed (continuing)", {
+          userId,
+          request_id: data.request_id,
+          err: idemErr.message,
+        });
+      } else if (existing?.id) {
+        console.log("[createOrder] idempotent replay", {
+          userId,
+          request_id: data.request_id,
+          order_id: existing.id,
+        });
+        return { order_id: existing.id, idempotent: true };
+      }
+    }
+
     // ---------------- Server-side stock validation ----------------
     // Fetch authoritative stock + cost for every product in the order.
     // Rules:
