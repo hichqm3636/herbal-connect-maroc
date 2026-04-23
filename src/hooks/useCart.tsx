@@ -7,7 +7,8 @@ export interface CartProduct {
   /** Legacy fallback price; used when wholesale fields are absent. */
   price_mad: number;
   image_url: string | null;
-  stock: number;
+  /** null = available but quantity unknown (e.g. WooCommerce instock w/o qty). */
+  stock: number | null;
   // Wholesale fields (optional for backward compat)
   rrp_price?: number | null;
   pharmacy_price?: number | null;
