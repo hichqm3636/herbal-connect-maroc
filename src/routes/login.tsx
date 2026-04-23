@@ -29,8 +29,10 @@ function LoginPage() {
   const { session, loading } = useAuth();
   const tenant = useTenant();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [usePassword, setUsePassword] = useState(false);
 
   // If we already have a session, bounce to /auth/callback so it routes by role.
   useEffect(() => {
