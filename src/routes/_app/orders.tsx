@@ -183,15 +183,15 @@ function OrdersPage() {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="border-t divide-y">
-                    <div className="p-3 bg-muted/30 flex justify-end gap-2">
+                    <div className="p-3 bg-muted/30 flex justify-end gap-2 flex-wrap">
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={(e) => handleWhatsapp(e, o)}
+                        onClick={(e) => openPreview(e, o)}
                         className="text-[#25D366] hover:text-[#25D366] hover:bg-[#25D366]/10"
                       >
-                        <MessageCircle className="ml-2 h-4 w-4" />
-                        إرسال عبر WhatsApp
+                        <Eye className="ml-2 h-4 w-4" />
+                        معاينة رسالة WhatsApp
                       </Button>
                       <Button
                         size="sm"
