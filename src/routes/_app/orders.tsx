@@ -1,9 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, ChevronDown, ClipboardList, Copy, Loader2, MessageCircle, Repeat2 } from "lucide-react";
+import { Check, ChevronDown, ClipboardList, Copy, Eye, Loader2, MessageCircle, Repeat2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useRepeatOrder } from "@/hooks/useRepeatOrder";
 import {
