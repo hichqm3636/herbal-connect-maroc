@@ -296,19 +296,35 @@ function OrdersPage() {
               راجع النص قبل الإرسال. سيتم نسخه تلقائياً عند الإرسال.
             </DialogDescription>
           </DialogHeader>
-          {!profile?.phone && (() => {
+          {(() => {
+            const savedPhone = profile?.phone ?? "";
+            const savedValid = isValidMaPhone(savedPhone);
+            if (savedValid) return null;
+
             const trimmed = phoneInput.trim();
-            const normalized = normalizeWhatsappPhone(trimmed);
             const hasInput = trimmed.length > 0;
-            // Morocco mobile: "212" + 9 digits = 12 chars total.
-            const isValid = normalized.length === 12 && normalized.startsWith("212");
-            const showError = hasInput && !isValid;
+            const inputValid = isValidMaPhone(trimmed);
+            const showError = hasInput && !inputValid;
+            const savedInvalidNotEmpty = !!savedPhone && !savedValid;
+
             return (
               <Alert variant="destructive" className="border-warning/50 bg-warning/10 text-warning-foreground">
                 <AlertCircle className="h-4 w-4 text-warning" />
-                <AlertTitle className="text-warning">لا يوجد رقم هاتف في بروفايلك</AlertTitle>
+                <AlertTitle className="text-warning">
+                  {savedInvalidNotEmpty
+                    ? "رقم الهاتف المحفوظ غير صالح"
+                    : "لا يوجد رقم هاتف في بروفايلك"}
+                </AlertTitle>
                 <AlertDescription className="text-warning-foreground/90">
-                  أضف رقم WhatsApp ليُستخدم في الرسالة وفي فتح المحادثة.
+                  {savedInvalidNotEmpty ? (
+                    <>
+                      الرقم الحالي{" "}
+                      <span dir="ltr" className="font-mono">{savedPhone}</span>{" "}
+                      لا يطابق تنسيق رقم مغربي صحيح. يرجى تحديثه قبل الإرسال.
+                    </>
+                  ) : (
+                    "أضف رقم WhatsApp ليُستخدم في الرسالة وفي فتح المحادثة."
+                  )}
                 </AlertDescription>
                 <div className="mt-3 space-y-2">
                   <Label htmlFor="wa-phone-inline" className="text-xs">
@@ -326,7 +342,7 @@ function OrdersPage() {
                       aria-invalid={showError}
                       className={`bg-background ${showError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
-                    <Button onClick={savePhone} disabled={savingPhone || !isValid}>
+                    <Button onClick={savePhone} disabled={savingPhone || !inputValid}>
                       {savingPhone ? <Loader2 className="h-4 w-4 animate-spin" /> : "حفظ"}
                     </Button>
                   </div>
@@ -351,6 +367,14 @@ function OrdersPage() {
                     </p>
                   )}
                 </div>
+              </Alert>
+            );
+          })()}
+          <div className="rounded-md border bg-muted/40 p-3 max-h-[50vh] overflow-y-auto">
+            <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed text-right" dir="rtl">
+              {previewOrder ? buildMessageFor(previewOrder) : ""}
+            </pre>
+          </div>
               </Alert>
             );
           })()}
