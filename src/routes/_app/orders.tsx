@@ -290,35 +290,64 @@ function OrdersPage() {
               راجع النص قبل الإرسال. سيتم نسخه تلقائياً عند الإرسال.
             </DialogDescription>
           </DialogHeader>
-          {!profile?.phone && (
-            <Alert variant="destructive" className="border-warning/50 bg-warning/10 text-warning-foreground">
-              <AlertCircle className="h-4 w-4 text-warning" />
-              <AlertTitle className="text-warning">لا يوجد رقم هاتف في بروفايلك</AlertTitle>
-              <AlertDescription className="text-warning-foreground/90">
-                أضف رقم WhatsApp ليُستخدم في الرسالة وفي فتح المحادثة.
-              </AlertDescription>
-              <div className="mt-3 space-y-2">
-                <Label htmlFor="wa-phone-inline" className="text-xs">
-                  رقم الهاتف (مثال: 0612345678)
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="wa-phone-inline"
-                    type="tel"
-                    inputMode="tel"
-                    dir="ltr"
-                    placeholder="0612345678"
-                    value={phoneInput}
-                    onChange={(e) => setPhoneInput(e.target.value)}
-                    className="bg-background"
-                  />
-                  <Button onClick={savePhone} disabled={savingPhone || !phoneInput.trim()}>
-                    {savingPhone ? <Loader2 className="h-4 w-4 animate-spin" /> : "حفظ"}
-                  </Button>
+          {!profile?.phone && (() => {
+            const trimmed = phoneInput.trim();
+            const normalized = normalizeWhatsappPhone(trimmed);
+            const hasInput = trimmed.length > 0;
+            // Morocco mobile: "212" + 9 digits = 12 chars total.
+            const isValid = normalized.length === 12 && normalized.startsWith("212");
+            const showError = hasInput && !isValid;
+            return (
+              <Alert variant="destructive" className="border-warning/50 bg-warning/10 text-warning-foreground">
+                <AlertCircle className="h-4 w-4 text-warning" />
+                <AlertTitle className="text-warning">لا يوجد رقم هاتف في بروفايلك</AlertTitle>
+                <AlertDescription className="text-warning-foreground/90">
+                  أضف رقم WhatsApp ليُستخدم في الرسالة وفي فتح المحادثة.
+                </AlertDescription>
+                <div className="mt-3 space-y-2">
+                  <Label htmlFor="wa-phone-inline" className="text-xs">
+                    رقم الهاتف (مثال: 0612345678)
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="wa-phone-inline"
+                      type="tel"
+                      inputMode="tel"
+                      dir="ltr"
+                      placeholder="0612345678"
+                      value={phoneInput}
+                      onChange={(e) => setPhoneInput(e.target.value)}
+                      aria-invalid={showError}
+                      className={`bg-background ${showError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    />
+                    <Button onClick={savePhone} disabled={savingPhone || !isValid}>
+                      {savingPhone ? <Loader2 className="h-4 w-4 animate-spin" /> : "حفظ"}
+                    </Button>
+                  </div>
+                  {showError ? (
+                    <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2.5 text-xs space-y-1.5" dir="rtl">
+                      <p className="font-semibold text-destructive flex items-center gap-1.5">
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        رقم الهاتف غير صالح
+                      </p>
+                      <p className="text-destructive/90">
+                        يجب أن يكون رقم هاتف مغربي صحيح (10 أرقام محلياً أو 12 رقماً دولياً).
+                      </p>
+                      <ul className="list-disc pr-4 space-y-0.5 text-destructive/90">
+                        <li><span dir="ltr" className="font-mono">0612345678</span> — محلي بصفر بادئ</li>
+                        <li><span dir="ltr" className="font-mono">+212612345678</span> — دولي مع <span dir="ltr">+212</span></li>
+                        <li><span dir="ltr" className="font-mono">212612345678</span> — دولي بدون +</li>
+                      </ul>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground" dir="rtl">
+                      تنسيقات مقبولة: <span dir="ltr" className="font-mono">0612345678</span> أو <span dir="ltr" className="font-mono">+212612345678</span>
+                    </p>
+                  )}
                 </div>
-              </div>
-            </Alert>
-          )}
+              </Alert>
+            );
+          })()}
           <div className="rounded-md border bg-muted/40 p-3 max-h-[50vh] overflow-y-auto">
             <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed text-right" dir="rtl">
               {previewOrder ? buildMessageFor(previewOrder) : ""}
