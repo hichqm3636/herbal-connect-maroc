@@ -134,31 +134,26 @@ export const createOrder = createDistributorServerFn({ method: "POST" })
     }
 
     // ---------------- Decrement stock FIRST (race-condition safe) ----------------
-    // Use conditional update with `.gte("stock", quantity)` as guard.
-    // If two requests race, only one will satisfy the guard; the other
-    // gets 0 rows updated and we reject + roll back already-decremented items.
-    // Skip products with stock = null (unlimited).
+    // Use the atomic `adjust_product_stock` RPC which performs a relative
+    // update (`stock = stock - qty`) guarded by `stock >= qty` at the DB
+    // level. This avoids overwriting concurrent updates from other orders.
+    // The stockMap above is used ONLY for pre-validation; the actual
+    // decrement relies on the live DB row.
     const decremented: { product_id: string; quantity: number }[] = [];
     for (const it of data.items) {
-      const current = stockMap.get(it.product_id);
-      if (current === null || current === undefined) continue;
+      // Skip unlimited-stock items (stock = null) — RPC handles this internally.
+      const { data: ok, error: decErr } = await supabase.rpc("adjust_product_stock", {
+        _product_id: it.product_id,
+        _delta: -it.quantity,
+      });
 
-      const { data: updatedRows, error: decErr } = await supabase
-        .from("products")
-        .update({ stock: current - it.quantity })
-        .eq("id", it.product_id)
-        .gte("stock", it.quantity)
-        .select("id");
-
-      if (decErr || !updatedRows || updatedRows.length === 0) {
-        // Roll back any prior decrements in this request.
+      if (decErr || ok !== true) {
+        // Roll back any prior decrements via relative increment.
         for (const prev of decremented) {
-          const prevStock = stockMap.get(prev.product_id);
-          if (prevStock === null || prevStock === undefined) continue;
-          await supabase
-            .from("products")
-            .update({ stock: prevStock })
-            .eq("id", prev.product_id);
+          await supabase.rpc("adjust_product_stock", {
+            _product_id: prev.product_id,
+            _delta: prev.quantity,
+          });
         }
         console.error("[createOrder] stock decrement guard failed", {
           product_id: it.product_id,
@@ -176,15 +171,14 @@ export const createOrder = createDistributorServerFn({ method: "POST" })
       decremented.push({ product_id: it.product_id, quantity: it.quantity });
     }
 
-    // Helper to restore stock on downstream failure.
+    // Helper to restore stock on downstream failure — relative increment,
+    // never an absolute overwrite, so concurrent orders are not clobbered.
     const restoreStock = async () => {
       for (const prev of decremented) {
-        const prevStock = stockMap.get(prev.product_id);
-        if (prevStock === null || prevStock === undefined) continue;
-        await supabase
-          .from("products")
-          .update({ stock: prevStock })
-          .eq("id", prev.product_id);
+        await supabase.rpc("adjust_product_stock", {
+          _product_id: prev.product_id,
+          _delta: prev.quantity,
+        });
       }
     };
 
