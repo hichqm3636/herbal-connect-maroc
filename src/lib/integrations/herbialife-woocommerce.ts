@@ -233,9 +233,13 @@ export async function fetchAndSyncWooProducts(
   let created = 0;
   let updated = 0;
   let failed = 0;
+  let totalFetched = 0;
+  let totalPagesHeader: number | null = null;
 
   for (let page = 1; page <= MAX_PAGES; page++) {
-    const url = `${cfg.baseUrl}/wp-json/wc/v3/products?status=publish&stock_status=instock&per_page=${PER_PAGE}&page=${page}`;
+    // Fetch ALL products (no status / stock_status filter) — we want a
+    // complete mirror of the WooCommerce catalog.
+    const url = `${cfg.baseUrl}/wp-json/wc/v3/products?per_page=${PER_PAGE}&page=${page}`;
     let res: Response;
     try {
       res = await fetch(url, { headers: { Authorization: cfg.authHeader } });
@@ -251,6 +255,9 @@ export async function fetchAndSyncWooProducts(
     }
 
     if (!res.ok) {
+      // WooCommerce returns 400 "rest_invalid_param" when paging past the end.
+      // Treat that as "we're done" rather than a hard failure.
+      if (res.status === 400 && page > 1) break;
       const body = await res.text().catch(() => "");
       return {
         ok: false,
@@ -262,8 +269,16 @@ export async function fetchAndSyncWooProducts(
       };
     }
 
+    // Capture X-WP-TotalPages once for an accurate stop condition.
+    if (totalPagesHeader === null) {
+      const hdr = res.headers.get("x-wp-totalpages");
+      const parsed = hdr ? Number(hdr) : NaN;
+      if (Number.isFinite(parsed) && parsed > 0) totalPagesHeader = parsed;
+    }
+
     const products = (await res.json()) as WooProduct[];
     if (!Array.isArray(products) || products.length === 0) break;
+    totalFetched += products.length;
 
     // Resolve which external_ids already exist for this company (for upsert routing).
     const externalIds = products
@@ -336,8 +351,16 @@ export async function fetchAndSyncWooProducts(
       }
     }
 
+    // Stop conditions:
+    //   1. Authoritative: X-WP-TotalPages header reached.
+    //   2. Fallback: page returned fewer than PER_PAGE items (last page).
+    if (totalPagesHeader !== null && page >= totalPagesHeader) break;
     if (products.length < PER_PAGE) break;
   }
+
+  console.log(
+    `Woo sync: fetched ${totalFetched} products (created=${created}, updated=${updated}, failed=${failed}, totalPages=${totalPagesHeader ?? "?"})`,
+  );
 
   return { ok: true, created, updated, failed, errors: errors.slice(0, 20) };
 }
