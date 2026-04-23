@@ -680,10 +680,11 @@ function ShopPage() {
                           size="icon"
                           variant="outline"
                           className="h-7 w-7"
+                          disabled={item.qty <= minOrder}
                           onClick={() => {
-                            const next = item.qty - pack;
-                            if (next < minOrder) removeItem(item.id);
-                            else setQty(item.id, next);
+                            // Never remove via "-": clamp to minOrder.
+                            const next = Math.max(minOrder, item.qty - pack);
+                            if (next !== item.qty) setQty(item.id, next);
                           }}
                           aria-label="إنقاص"
                         >
@@ -705,7 +706,9 @@ function ShopPage() {
                           size="icon"
                           variant="ghost"
                           className="h-7 w-7 mr-auto text-destructive"
-                          onClick={() => removeItem(item.id)}
+                          onClick={() =>
+                            setDeleteTarget({ id: item.id, name: item.name_ar })
+                          }
                           aria-label="حذف"
                         >
                           <Trash2 className="h-3 w-3" />
