@@ -65,6 +65,7 @@ function OrdersPage() {
   const [repeatingId, setRepeatingId] = useState<string | null>(null);
   const [profile, setProfile] = useState<{ phone: string | null; city: string | null } | null>(null);
   const [previewOrder, setPreviewOrder] = useState<Order | null>(null);
+  const [confirmOrder, setConfirmOrder] = useState<Order | null>(null);
 
   const buildMessageFor = (order: Order): string =>
     buildWhatsAppMessage({
