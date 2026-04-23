@@ -96,9 +96,11 @@ function ShopPage() {
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [cartOpen, setCartOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   // ---------------- Load catalog + order counts ----------------
   useEffect(() => {
