@@ -170,86 +170,79 @@ export function CartSheet() {
     );
     const points = Math.floor(orderTotal / 100);
     const trimmedNotes = notes.trim();
-    const orderPayload = {
-      distributor_id: user.id,
-      company_id: companyId,
-      total_mad: orderTotal,
-      points_earned: points,
-      status: "pending" as const,
-      notes: trimmedNotes ? trimmedNotes : null,
-    };
-    console.log("[placeOrder] inserting order", orderPayload);
-    const { data: order, error } = await supabase
-      .from("orders")
-      .insert(orderPayload as never)
-      .select("id")
-      .single();
-    if (error || !order) {
-      console.error("[placeOrder] order insert failed", { error, payload: orderPayload });
-      toast.error(`تعذر إنشاء الطلب: ${error?.message ?? "خطأ غير معروف"}`);
-      setSubmitting(false);
-      return;
-    }
-    // Snapshot product cost at order time so historical profit reports stay
-    // accurate even if the admin updates cost later.
-    const productIds = priced.map((l) => l.item.id);
-    const { data: costRows } = await supabase
-      .from("products")
-      .select("id, cost_price")
-      .in("id", productIds);
-    const costMap = new Map<string, number | null>(
-      (costRows ?? []).map((r) => [
-        r.id as string,
-        (r as { cost_price: number | null }).cost_price,
-      ]),
-    );
-    const orderItems = expectedLines.map(({ line, expected }) => ({
-      order_id: order.id,
+    const itemsPayload = expectedLines.map(({ line, expected }) => ({
       product_id: line.item.id,
       quantity: line.item.qty,
       unit_price_mad: expected,
-      cost_snapshot: costMap.get(line.item.id) ?? null,
     }));
-    const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);
-    if (itemsErr) {
-      console.error("[placeOrder] order_items insert failed", { itemsErr, orderItems });
-      const msg = itemsErr.message ?? "";
-      if (msg.includes("غير متاح في منطقة الموزع") || msg.includes("not available")) {
-        toast.error("هذا المنتج غير متاح في منطقتك");
-      } else if (msg.includes("غير مُعيَّن لأي منطقة")) {
-        toast.error("لا يمكن إرسال الطلب: لم يتم تعيين منطقة لحسابك");
-      } else if (msg.includes("الحد الأدنى للطلب (")) {
-        // Per-product minimum quantity trigger — message already includes product name.
-        toast.error(msg);
-      } else if (msg.includes("الحد الأدنى للطلب هو")) {
-        // Per-company minimum order amount trigger.
-        toast.error(msg);
-      } else {
-        toast.error(`تعذر حفظ عناصر الطلب: ${itemsErr.message}`);
-      }
-      // Roll back the parent order so we don't leave an empty order behind.
-      await supabase.from("orders").delete().eq("id", order.id);
-      setSubmitting(false);
-      return;
-    }
-    void logActivity({
-      companyId,
-      action: "order_created",
-      entityType: "order",
-      entityId: order.id,
-      metadata: {
-        total_mad: orderTotal,
-        items_count: orderItems.length,
-        points_earned: points,
-        source: "cart",
-      },
+
+    console.log("[placeOrder] calling createOrder server fn", {
+      total_mad: orderTotal,
+      items_count: itemsPayload.length,
     });
-    toast.success(`تم إرسال الطلب بنجاح • +${points} نقطة`);
-    clear();
-    setNotes("");
-    setConfirmOpen(false);
-    setOpen(false);
-    setSubmitting(false);
+
+    try {
+      const result = await createOrderFn({
+        data: {
+          company_id: companyId,
+          total_mad: orderTotal,
+          points_earned: points,
+          notes: trimmedNotes ? trimmedNotes : null,
+          items: itemsPayload,
+        },
+      });
+
+      void logActivity({
+        companyId,
+        action: "order_created",
+        entityType: "order",
+        entityId: result.order_id,
+        metadata: {
+          total_mad: orderTotal,
+          items_count: itemsPayload.length,
+          points_earned: points,
+          source: "cart",
+        },
+      });
+      toast.success(`تم إرسال الطلب بنجاح • +${points} نقطة`);
+      clear();
+      setNotes("");
+      setConfirmOpen(false);
+      setOpen(false);
+    } catch (err) {
+      // TanStack Start surfaces server errors as plain Error instances.
+      // For 403 from `requireEnabledDistributorRole` the body JSON is
+      // serialized into the message; try to parse it and map via
+      // AUTHZ_MESSAGES_AR. Falls back to the raw server message.
+      const raw = err instanceof Error ? err.message : String(err);
+      console.error("[placeOrder] createOrder failed", { raw });
+      let shown = raw || "تعذّر إنشاء الطلب";
+      try {
+        const parsed = JSON.parse(raw) as { reason?: string; message?: string };
+        if (parsed.reason && parsed.reason in AUTHZ_MESSAGES_AR) {
+          shown = AUTHZ_MESSAGES_AR[parsed.reason as AuthzReason];
+        } else if (parsed.message) {
+          shown = parsed.message;
+        }
+      } catch {
+        // Map a few well-known plain-text errors from RLS triggers.
+        if (raw.includes("غير متاح في منطقة الموزع")) {
+          shown = "هذا المنتج غير متاح في منطقتك";
+        } else if (raw.includes("غير مُعيَّن لأي منطقة")) {
+          shown = "لا يمكن إرسال الطلب: لم يتم تعيين منطقة لحسابك";
+        } else if (raw.includes("الحد الأدنى للطلب")) {
+          shown = raw;
+        } else if (
+          raw.toLowerCase().includes("forbidden") ||
+          raw.includes("403")
+        ) {
+          shown = AUTHZ_MESSAGES_AR.distributor_role_disabled;
+        }
+      }
+      toast.error(shown);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
