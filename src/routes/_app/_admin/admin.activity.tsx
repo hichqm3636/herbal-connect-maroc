@@ -64,6 +64,7 @@ interface ProfileLite {
 const ACTION_LABELS: Record<string, string> = {
   // admin actions
   create_distributor: "إنشاء موزع",
+  send_magic_link: "إرسال رابط الدخول",
   reset_password: "إعادة تعيين كلمة المرور",
   disable_distributor: "تعطيل حساب",
   enable_distributor: "تفعيل حساب",
@@ -84,6 +85,7 @@ const ACTION_LABELS: Record<string, string> = {
 
 const ACTION_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   create_distributor: UserPlus,
+  send_magic_link: KeyRound,
   reset_password: KeyRound,
   disable_distributor: ShieldOff,
   enable_distributor: ShieldCheck,
@@ -102,6 +104,7 @@ const ACTION_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
 
 const ACTION_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   create_distributor: "default",
+  send_magic_link: "secondary",
   reset_password: "secondary",
   disable_distributor: "destructive",
   enable_distributor: "default",
@@ -130,6 +133,7 @@ const ORDER_ACTIONS = [
 const LOYALTY_ACTIONS = ["loyalty_points_changed", "loyalty_transaction", "adjust_points"];
 const ADMIN_ACTIONS = [
   "create_distributor",
+  "send_magic_link",
   "reset_password",
   "disable_distributor",
   "enable_distributor",
