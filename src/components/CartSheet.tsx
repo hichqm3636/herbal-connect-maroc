@@ -83,6 +83,7 @@ export function CartSheet() {
   const [submitting, setSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<CartItem | null>(null);
   const createOrderFn = useServerFn(createOrder);
 
   const priced: PricedLine[] = useMemo(
@@ -318,10 +319,10 @@ export function CartSheet() {
                         size="icon"
                         variant="outline"
                         className="h-7 w-7"
+                        disabled={item.qty <= minOrder}
                         onClick={() => {
-                          const next = item.qty - pack;
-                          if (next < minOrder) removeItem(item.id);
-                          else setQty(item.id, next);
+                          const next = Math.max(minOrder, item.qty - pack);
+                          if (next !== item.qty) setQty(item.id, next);
                         }}
                         aria-label="إنقاص"
                       >
@@ -348,7 +349,8 @@ export function CartSheet() {
                         size="icon"
                         variant="ghost"
                         className="h-7 w-7 mr-auto text-destructive"
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => setDeleteTarget(item)}
+                        aria-label="حذف"
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -451,6 +453,33 @@ export function CartSheet() {
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               تأكيد
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف المنتج من السلة؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget
+                ? `سيتم حذف "${deleteTarget.name_ar}" من السلة.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteTarget) removeItem(deleteTarget.id);
+                setDeleteTarget(null);
+              }}
+            >
+              حذف
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
