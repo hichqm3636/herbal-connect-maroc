@@ -95,10 +95,11 @@ function LoginPage() {
         metaRole === "admin" ||
         metaRole === "super_admin";
 
-      // Fallback safety: only block when DB roles actually loaded.
-      // If roles query failed (null) AND metadata is empty → do NOT block admin.
-      const rolesLoaded = roleRows !== null;
-      if (!isAdmin && rolesLoaded) {
+      // Fallback safety: only block when DB roles actually loaded AND no admin metadata.
+      // If roles query failed (not an array) OR metadata says admin → do NOT block.
+      const rolesLoaded = Array.isArray(roleRows);
+      const hasMeta = metaRole === "admin" || metaRole === "super_admin";
+      if (!isAdmin && rolesLoaded && !hasMeta) {
         await supabase.auth.signOut();
         setSubmitting(false);
         toast.error("الدخول بكلمة المرور غير متاح لهذا الحساب");
