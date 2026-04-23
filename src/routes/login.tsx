@@ -95,7 +95,10 @@ function LoginPage() {
         metaRole === "admin" ||
         metaRole === "super_admin";
 
-      if (!isAdmin) {
+      // Fallback safety: only block when DB roles actually loaded.
+      // If roles query failed (null) AND metadata is empty → do NOT block admin.
+      const rolesLoaded = roleRows !== null;
+      if (!isAdmin && rolesLoaded) {
         await supabase.auth.signOut();
         setSubmitting(false);
         toast.error("الدخول بكلمة المرور غير متاح لهذا الحساب");
