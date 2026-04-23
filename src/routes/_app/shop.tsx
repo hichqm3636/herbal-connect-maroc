@@ -455,6 +455,7 @@ function ShopPage() {
                 partnerType,
                 Math.max(p.minimum_order || 1, 6),
               );
+              const outOfStock = p.stock === 0;
               return (
                 <Card
                   key={p.id}
@@ -479,15 +480,22 @@ function ShopPage() {
                         <p className="text-base font-bold text-primary leading-tight">
                           {formatMAD(unitPrice)}
                         </p>
-                        {p.minimum_order > 1 && (
-                          <span className="text-[10px] text-muted-foreground">
-                            حد أدنى: {p.minimum_order}
+                        {outOfStock ? (
+                          <span className="text-[10px] text-destructive font-medium">
+                            نفذ المخزون
                           </span>
+                        ) : (
+                          p.minimum_order > 1 && (
+                            <span className="text-[10px] text-muted-foreground">
+                              حد أدنى: {p.minimum_order}
+                            </span>
+                          )
                         )}
                       </div>
                       <Button
                         size="icon"
                         onClick={() => addProduct(p)}
+                        disabled={outOfStock}
                         aria-label={`إضافة ${p.name_ar}`}
                         className="h-9 w-9 shrink-0 rounded-full shadow-md"
                       >
