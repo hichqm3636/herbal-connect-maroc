@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, ChevronDown, ClipboardList, Copy, Eye, Loader2, MessageCircle, Repeat2 } from "lucide-react";
+import { AlertCircle, Check, ChevronDown, ClipboardList, Copy, Eye, Loader2, MessageCircle, Repeat2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { normalizeWhatsappPhone } from "@/utils/whatsapp";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
