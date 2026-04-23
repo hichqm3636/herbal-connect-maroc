@@ -579,7 +579,13 @@ function AdminProducts() {
     const target = products.find((p) => p.id === id);
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) {
-      toast.error("تعذر الحذف");
+      console.error("Product delete failed:", error);
+      const isFk = error.code === "23503" || /foreign key|violates/i.test(error.message);
+      toast.error(
+        isFk
+          ? "لا يمكن حذف المنتج لارتباطه بطلبات أو فواتير سابقة. يمكنك تعطيله بدلاً من حذفه."
+          : `تعذر الحذف: ${error.message}`,
+      );
       return;
     }
     if (companyId) {
