@@ -410,16 +410,41 @@ function ShopPage() {
         </Card>
       )}
 
-      {/* Search */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
+      {/* Sticky search + category chips */}
+      <div className="sticky top-0 z-30 -mx-4 px-4 py-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
+        <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="ابحث عن منتج…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pr-9"
+            className="pr-9 h-11"
           />
+        </div>
+        <div className="flex gap-2 overflow-x-auto mt-3 -mx-1 px-1 pb-1 snap-x">
+          {[
+            { key: "all", label: "الكل" },
+            { key: "top", label: "الأكثر طلباً" },
+            { key: "new", label: "جديد" },
+            ...categories.map((c) => ({ key: c, label: c })),
+          ].map((chip) => {
+            const active = activeCategory === chip.key;
+            return (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => setActiveCategory(chip.key)}
+                className={`snap-start shrink-0 px-3 h-8 rounded-full text-xs font-medium border transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card text-muted-foreground border-border hover:bg-muted"
+                }`}
+                aria-pressed={active}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
