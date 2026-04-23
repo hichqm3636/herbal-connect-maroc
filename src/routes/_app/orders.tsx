@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, ChevronDown, ClipboardList, Copy, Loader2, Repeat2 } from "lucide-react";
+import { Check, ChevronDown, ClipboardList, Copy, Loader2, MessageCircle, Repeat2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD, formatDateTimeAr, STATUS_LABELS, STATUS_VARIANTS, STATUS_CLASSES } from "@/lib/format";
+import { buildWhatsAppMessage, buildWhatsappLink } from "@/utils/whatsapp";
 
 export const Route = createFileRoute("/_app/orders")({
   component: OrdersPage,
