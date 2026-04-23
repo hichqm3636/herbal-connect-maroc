@@ -166,6 +166,22 @@ export interface WhatsappOrderSummary {
   total: number;
   city: string;
   phone: string;
+  /** Optional human-readable order number (e.g. "ORD-2026-0142"). */
+  orderNumber?: string;
+  /** Optional ISO timestamp or Date for when the order was created. */
+  createdAt?: string | Date;
+}
+
+function formatOrderDateAr(value: string | Date): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("ar-MA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 /**
@@ -174,8 +190,14 @@ export interface WhatsappOrderSummary {
  */
 export function buildWhatsAppMessage(order: WhatsappOrderSummary): string {
   const lines = order.items.map((i) => `- ${i.name} ×${i.qty}`);
+  const header: string[] = ["🛒 طلب جديد"];
+  if (order.orderNumber) header.push(`🧾 رقم الطلب: ${order.orderNumber}`);
+  if (order.createdAt) {
+    const formatted = formatOrderDateAr(order.createdAt);
+    if (formatted) header.push(`🗓️ التاريخ: ${formatted}`);
+  }
   return `
-🛒 طلب جديد
+${header.join("\n")}
 
 📦 المنتجات:
 ${lines.join("\n")}
