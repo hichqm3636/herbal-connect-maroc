@@ -133,7 +133,62 @@ export const createOrder = createDistributorServerFn({ method: "POST" })
       }
     }
 
-    // Generate a short order_number client-side; column is just text.
+    // ---------------- Decrement stock FIRST (race-condition safe) ----------------
+    // Use conditional update with `.gte("stock", quantity)` as guard.
+    // If two requests race, only one will satisfy the guard; the other
+    // gets 0 rows updated and we reject + roll back already-decremented items.
+    // Skip products with stock = null (unlimited).
+    const decremented: { product_id: string; quantity: number }[] = [];
+    for (const it of data.items) {
+      const current = stockMap.get(it.product_id);
+      if (current === null || current === undefined) continue;
+
+      const { data: updatedRows, error: decErr } = await supabase
+        .from("products")
+        .update({ stock: current - it.quantity })
+        .eq("id", it.product_id)
+        .gte("stock", it.quantity)
+        .select("id");
+
+      if (decErr || !updatedRows || updatedRows.length === 0) {
+        // Roll back any prior decrements in this request.
+        for (const prev of decremented) {
+          const prevStock = stockMap.get(prev.product_id);
+          if (prevStock === null || prevStock === undefined) continue;
+          await supabase
+            .from("products")
+            .update({ stock: prevStock })
+            .eq("id", prev.product_id);
+        }
+        console.error("[createOrder] stock decrement guard failed", {
+          product_id: it.product_id,
+          requested: it.quantity,
+          err: decErr,
+        });
+        throw new Error(
+          JSON.stringify({
+            error: "out_of_stock",
+            product_id: it.product_id,
+            message: "الكمية لم تعد متوفرة",
+          }),
+        );
+      }
+      decremented.push({ product_id: it.product_id, quantity: it.quantity });
+    }
+
+    // Helper to restore stock on downstream failure.
+    const restoreStock = async () => {
+      for (const prev of decremented) {
+        const prevStock = stockMap.get(prev.product_id);
+        if (prevStock === null || prevStock === undefined) continue;
+        await supabase
+          .from("products")
+          .update({ stock: prevStock })
+          .eq("id", prev.product_id);
+      }
+    };
+
+    // ---------------- Create the order AFTER stock is reserved ----------------
     const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
 
     const { data: order, error: orderErr } = await supabase
@@ -151,7 +206,11 @@ export const createOrder = createDistributorServerFn({ method: "POST" })
       .single();
 
     if (orderErr || !order) {
-      console.error("[createOrder] insert order failed", { userId, err: orderErr });
+      console.error("[createOrder] insert order failed — restoring stock", {
+        userId,
+        err: orderErr,
+      });
+      await restoreStock();
       throw new Error(orderErr?.message ?? "تعذّر إنشاء الطلب");
     }
 
@@ -165,34 +224,14 @@ export const createOrder = createDistributorServerFn({ method: "POST" })
 
     const { error: itemsErr } = await supabase.from("order_items").insert(itemsPayload);
     if (itemsErr) {
-      console.error("[createOrder] insert items failed — rolling back", {
+      console.error("[createOrder] insert items failed — rolling back order + stock", {
         userId,
         order_id: order.id,
         err: itemsErr,
       });
       await supabase.from("orders").delete().eq("id", order.id);
+      await restoreStock();
       throw new Error(itemsErr.message ?? "تعذّر حفظ عناصر الطلب");
-    }
-
-    // ---------------- Decrement stock (best-effort, post-insert) ----------------
-    // We don't fail the order if a decrement fails (admin can reconcile);
-    // but we log it for visibility. Skip products with stock = null (unlimited).
-    for (const it of data.items) {
-      const current = stockMap.get(it.product_id);
-      if (current === null || current === undefined) continue;
-      const next = Math.max(0, current - it.quantity);
-      const { error: decErr } = await supabase
-        .from("products")
-        .update({ stock: next })
-        .eq("id", it.product_id);
-      if (decErr) {
-        console.error("[createOrder] stock decrement failed", {
-          product_id: it.product_id,
-          from: current,
-          to: next,
-          err: decErr,
-        });
-      }
     }
 
     return { order_id: order.id };
