@@ -128,28 +128,38 @@ export function mapWooProductToInternal(wp: WooProduct): {
     s.replace(/<[^>]*>?/gm, "").replace(/\s+/g, " ").trim();
   const isValidUrl = (url: string) =>
     url.startsWith("http://") || url.startsWith("https://");
-  // Hosted in our own Supabase Storage so it can never break.
-  const DEFAULT_IMAGE =
-    "https://jarlejsbrxtrusfjklkg.supabase.co/storage/v1/object/public/product-images/default-product.jpg";
 
   const name = stripHtml(wp.name ?? "");
   if (!name) return null;
 
+  // Price may be empty for variable products → fall back to 0 so we still
+  // import them. Pricing extras (tiers) are handled internally.
   const rawPrice = Number(wp.price);
-  if (!Number.isFinite(rawPrice)) return null;
+  const price_mad = Number.isFinite(rawPrice) ? rawPrice : 0;
 
-  const imageCandidate =
+  // Image: support variable products by falling back to first variation image.
+  // Variations may be number[] (just IDs) or full objects depending on Woo
+  // response shape — we only read `.image?.src` when available.
+  const variationImage =
+    Array.isArray(wp.variations) && wp.variations.length > 0
+      ? typeof wp.variations[0] === "object"
+        ? (wp.variations[0] as WooVariation).image?.src
+        : undefined
+      : undefined;
+
+  const imageRaw =
     wp.images?.[0]?.src?.trim() ||
-    wp.images?.[1]?.src?.trim() ||
+    variationImage?.trim() ||
     wp.image?.src?.trim() ||
-    DEFAULT_IMAGE;
+    "";
+  // No fallback to a default image: keep null so UI can render its own
+  // placeholder, and we never silently drop a product because it lacks one.
+  const image_url = imageRaw && isValidUrl(imageRaw) ? imageRaw : null;
 
   // Stock semantics:
-  //   - WooCommerce returns a finite, non-null stock_quantity → use as-is.
-  //   - stock_status === "instock" but no quantity → null (= "available, qty unknown").
-  //     We MUST NOT invent a fake number (used to be 100) because distributors
-  //     would see false abundance and place orders we can't fulfill.
-  //   - Otherwise → 0 (out of stock).
+  //   - finite stock_quantity → use as-is.
+  //   - stock_status === "instock" but no quantity → null (qty unknown).
+  //   - otherwise → 0.
   const stock: number | null =
     wp.stock_quantity !== null && Number.isFinite(wp.stock_quantity)
       ? Number(wp.stock_quantity)
@@ -163,8 +173,8 @@ export function mapWooProductToInternal(wp: WooProduct): {
     sku: (wp.sku ?? "").trim() || `woo-${wp.id}`,
     name_ar: name,
     description_ar: stripHtml(wp.description || wp.short_description || ""),
-    price_mad: rawPrice,
-    image_url: isValidUrl(imageCandidate) ? imageCandidate : DEFAULT_IMAGE,
+    price_mad,
+    image_url,
     stock,
     category:
       wp.categories?.[0]?.name?.trim().toLowerCase() || "uncategorized",
