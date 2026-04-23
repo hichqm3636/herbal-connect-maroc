@@ -508,8 +508,8 @@ function AdminDistributors() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="إجمالي الموزعين" value={String(summary.total)} icon={Users} accent="primary" />
         <StatCard label="مفعلون" value={String(summary.active)} icon={ShieldCheck} accent="success" />
-        <StatCard label="معطلون" value={String(summary.inactive)} icon={ShieldOff} accent="muted" />
-        <StatCard label="محظورون" value={String(summary.banned)} icon={Ban} accent="warning" />
+        <StatCard label="حسابات معطلة" value={String(summary.inactive)} icon={ShieldOff} accent="muted" />
+        <StatCard label="دور الموزع معطل" value={String(summary.distributorDisabled)} icon={UserCheck} accent="warning" />
       </div>
 
       {/* Quick filter pills */}
@@ -518,8 +518,8 @@ function AdminDistributors() {
           [
             { key: "all", label: "الكل", count: summary.total },
             { key: "active", label: "مفعلون", count: summary.active },
-            { key: "disabled", label: "معطلون", count: summary.inactive },
-            { key: "banned", label: "محظورون", count: summary.banned },
+            { key: "disabled", label: "دور الموزع معطل", count: summary.distributorDisabled },
+            { key: "banned", label: "حسابات معطلة", count: summary.inactive },
           ] as const
         ).map((pill) => {
           const isActive = statusFilter === pill.key;
@@ -612,8 +612,8 @@ function AdminDistributors() {
             <SelectContent>
               <SelectItem value="all">كل الحالات</SelectItem>
               <SelectItem value="active">مفعل</SelectItem>
-              <SelectItem value="disabled">معطل</SelectItem>
-              <SelectItem value="banned">محظور</SelectItem>
+              <SelectItem value="disabled">دور الموزع معطل</SelectItem>
+              <SelectItem value="banned">الحساب معطل</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -644,11 +644,11 @@ function AdminDistributors() {
             </Button>
             <Button size="sm" variant="outline" className="gap-1" onClick={() => setBulkConfirm("unban")} disabled={bulkBusy}>
               <UserCheck className="h-4 w-4" />
-              رفع الحظر
+              تفعيل دور الموزع
             </Button>
             <Button size="sm" variant="destructive" className="gap-1" onClick={() => setBulkConfirm("ban")} disabled={bulkBusy}>
-              <Ban className="h-4 w-4" />
-              حظر
+              <ShieldOff className="h-4 w-4" />
+              تعطيل دور الموزع
             </Button>
           </div>
         </Card>
