@@ -118,7 +118,7 @@ export function useRepeatOrder() {
         setLoading(false);
       }
     },
-    [user, addItem, openCart, clear],
+    [user, isDistributorDisabled, addItem, openCart, clear],
   );
 
   return { repeat, loading };
