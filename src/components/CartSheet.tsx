@@ -227,8 +227,18 @@ export function CartSheet() {
       // serialized into the message; try to parse it and map via
       // AUTHZ_MESSAGES_AR. Falls back to the raw server message.
       const raw = err instanceof Error ? err.message : String(err);
-      console.error("[placeOrder] createOrder failed", { raw });
+      console.error("[placeOrder] createOrder failed", { request_id: requestId, raw });
+      // Cart is intentionally NOT cleared on failure — user keeps their items.
       let shown = raw || "تعذّر إنشاء الطلب";
+      const lower = raw.toLowerCase();
+      if (
+        lower.includes("failed to fetch") ||
+        lower.includes("networkerror") ||
+        lower.includes("network request failed") ||
+        lower.includes("load failed")
+      ) {
+        shown = "فشل الاتصال، حاول مرة أخرى";
+      } else
       try {
         const parsed = JSON.parse(raw) as {
           reason?: string;
