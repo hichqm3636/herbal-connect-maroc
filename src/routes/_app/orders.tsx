@@ -43,6 +43,12 @@ export const Route = createFileRoute("/_app/orders")({
   head: () => ({ meta: [{ title: "طلباتي — DistribHub" }] }),
 });
 
+/** Morocco mobile after normalization: "212" + 9 digits = 12 chars. */
+function isValidMaPhone(raw: string | null | undefined): boolean {
+  const n = normalizeWhatsappPhone(raw ?? "");
+  return n.length === 12 && n.startsWith("212");
+}
+
 interface OrderItem {
   id: string;
   quantity: number;
@@ -290,19 +296,35 @@ function OrdersPage() {
               راجع النص قبل الإرسال. سيتم نسخه تلقائياً عند الإرسال.
             </DialogDescription>
           </DialogHeader>
-          {!profile?.phone && (() => {
+          {(() => {
+            const savedPhone = profile?.phone ?? "";
+            const savedValid = isValidMaPhone(savedPhone);
+            if (savedValid) return null;
+
             const trimmed = phoneInput.trim();
-            const normalized = normalizeWhatsappPhone(trimmed);
             const hasInput = trimmed.length > 0;
-            // Morocco mobile: "212" + 9 digits = 12 chars total.
-            const isValid = normalized.length === 12 && normalized.startsWith("212");
-            const showError = hasInput && !isValid;
+            const inputValid = isValidMaPhone(trimmed);
+            const showError = hasInput && !inputValid;
+            const savedInvalidNotEmpty = !!savedPhone && !savedValid;
+
             return (
               <Alert variant="destructive" className="border-warning/50 bg-warning/10 text-warning-foreground">
                 <AlertCircle className="h-4 w-4 text-warning" />
-                <AlertTitle className="text-warning">لا يوجد رقم هاتف في بروفايلك</AlertTitle>
+                <AlertTitle className="text-warning">
+                  {savedInvalidNotEmpty
+                    ? "رقم الهاتف المحفوظ غير صالح"
+                    : "لا يوجد رقم هاتف في بروفايلك"}
+                </AlertTitle>
                 <AlertDescription className="text-warning-foreground/90">
-                  أضف رقم WhatsApp ليُستخدم في الرسالة وفي فتح المحادثة.
+                  {savedInvalidNotEmpty ? (
+                    <>
+                      الرقم الحالي{" "}
+                      <span dir="ltr" className="font-mono">{savedPhone}</span>{" "}
+                      لا يطابق تنسيق رقم مغربي صحيح. يرجى تحديثه قبل الإرسال.
+                    </>
+                  ) : (
+                    "أضف رقم WhatsApp ليُستخدم في الرسالة وفي فتح المحادثة."
+                  )}
                 </AlertDescription>
                 <div className="mt-3 space-y-2">
                   <Label htmlFor="wa-phone-inline" className="text-xs">
@@ -320,7 +342,7 @@ function OrdersPage() {
                       aria-invalid={showError}
                       className={`bg-background ${showError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
-                    <Button onClick={savePhone} disabled={savingPhone || !isValid}>
+                    <Button onClick={savePhone} disabled={savingPhone || !inputValid}>
                       {savingPhone ? <Loader2 className="h-4 w-4 animate-spin" /> : "حفظ"}
                     </Button>
                   </div>
@@ -364,8 +386,8 @@ function OrdersPage() {
                   setPreviewOrder(null);
                 }
               }}
-              disabled={!profile?.phone}
-              title={!profile?.phone ? "أضف رقم الهاتف أولاً" : undefined}
+              disabled={!isValidMaPhone(profile?.phone)}
+              title={!isValidMaPhone(profile?.phone) ? "أضف رقم هاتف صالح أولاً" : undefined}
               className="bg-[#25D366] hover:bg-[#25D366]/90 text-white"
             >
               <MessageCircle className="ml-2 h-4 w-4" />
@@ -397,7 +419,7 @@ function OrdersPage() {
                   void sendWhatsapp(order);
                 }
               }}
-              disabled={!profile?.phone}
+              disabled={!isValidMaPhone(profile?.phone)}
               className="bg-[#25D366] hover:bg-[#25D366]/90 text-white disabled:opacity-50 disabled:pointer-events-auto disabled:cursor-not-allowed"
             >
               <MessageCircle className="ml-2 h-4 w-4" />
