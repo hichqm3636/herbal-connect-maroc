@@ -72,6 +72,8 @@ function OrdersPage() {
     e.stopPropagation();
     e.preventDefault();
     const message = buildWhatsAppMessage({
+      orderNumber: order.order_number,
+      createdAt: order.created_at,
       items: order.order_items.map((it) => ({
         name: it.products?.name_ar ?? "—",
         qty: it.quantity,
