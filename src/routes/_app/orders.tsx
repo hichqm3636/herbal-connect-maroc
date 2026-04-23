@@ -270,7 +270,12 @@ function OrdersPage() {
               إلغاء
             </Button>
             <Button
-              onClick={() => previewOrder && sendWhatsapp(previewOrder)}
+              onClick={() => {
+                if (previewOrder) {
+                  setConfirmOrder(previewOrder);
+                  setPreviewOrder(null);
+                }
+              }}
               className="bg-[#25D366] hover:bg-[#25D366]/90 text-white"
             >
               <MessageCircle className="ml-2 h-4 w-4" />
