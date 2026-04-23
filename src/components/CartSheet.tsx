@@ -129,6 +129,7 @@ export function CartSheet() {
     items.length > 0 && blockedLines.length === 0 && rulesResult.ok;
 
   const placeOrder = async () => {
+    if (submitting) return;
     if (!user || items.length === 0) return;
     if (!companyId) {
       toast.error("لا توجد شركة نشطة");
@@ -177,7 +178,13 @@ export function CartSheet() {
       unit_price_mad: expected,
     }));
 
+    const requestId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
     console.log("[placeOrder] calling createOrder server fn", {
+      request_id: requestId,
       total_mad: orderTotal,
       items_count: itemsPayload.length,
     });
@@ -191,6 +198,10 @@ export function CartSheet() {
           notes: trimmedNotes ? trimmedNotes : null,
           items: itemsPayload,
         },
+      });
+      console.log("[placeOrder] order created", {
+        request_id: requestId,
+        order_id: result.order_id,
       });
 
       void logActivity({
@@ -216,8 +227,18 @@ export function CartSheet() {
       // serialized into the message; try to parse it and map via
       // AUTHZ_MESSAGES_AR. Falls back to the raw server message.
       const raw = err instanceof Error ? err.message : String(err);
-      console.error("[placeOrder] createOrder failed", { raw });
+      console.error("[placeOrder] createOrder failed", { request_id: requestId, raw });
+      // Cart is intentionally NOT cleared on failure — user keeps their items.
       let shown = raw || "تعذّر إنشاء الطلب";
+      const lower = raw.toLowerCase();
+      if (
+        lower.includes("failed to fetch") ||
+        lower.includes("networkerror") ||
+        lower.includes("network request failed") ||
+        lower.includes("load failed")
+      ) {
+        shown = "فشل الاتصال، حاول مرة أخرى";
+      } else
       try {
         const parsed = JSON.parse(raw) as {
           reason?: string;
@@ -452,7 +473,7 @@ export function CartSheet() {
               disabled={submitting}
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              تأكيد
+              {submitting ? "جاري الإرسال..." : "تأكيد"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
