@@ -23,10 +23,16 @@ export interface WooCategory {
   slug?: string;
 }
 
+export interface WooVariation {
+  id?: number;
+  image?: WooImage;
+}
+
 export interface WooProduct {
   id?: number;
   sku?: string;
   name?: string;
+  type?: string;
   description?: string;
   short_description?: string;
   price?: string;
@@ -34,6 +40,7 @@ export interface WooProduct {
   stock_status?: string;
   images?: WooImage[];
   image?: WooImage;
+  variations?: WooVariation[] | number[];
   categories?: WooCategory[];
 }
 
@@ -75,8 +82,8 @@ export interface SendOrderResult {
 
 // ---------- Config ----------
 
-const PER_PAGE = 50;
-const MAX_PAGES = 100; // safety cap
+const PER_PAGE = 100;
+const MAX_PAGES = 1000; // safety cap (very large — we want ALL products)
 const SOURCE = "herbialife" as const;
 
 interface WooConfig {
@@ -121,28 +128,38 @@ export function mapWooProductToInternal(wp: WooProduct): {
     s.replace(/<[^>]*>?/gm, "").replace(/\s+/g, " ").trim();
   const isValidUrl = (url: string) =>
     url.startsWith("http://") || url.startsWith("https://");
-  // Hosted in our own Supabase Storage so it can never break.
-  const DEFAULT_IMAGE =
-    "https://jarlejsbrxtrusfjklkg.supabase.co/storage/v1/object/public/product-images/default-product.jpg";
 
   const name = stripHtml(wp.name ?? "");
   if (!name) return null;
 
+  // Price may be empty for variable products → fall back to 0 so we still
+  // import them. Pricing extras (tiers) are handled internally.
   const rawPrice = Number(wp.price);
-  if (!Number.isFinite(rawPrice)) return null;
+  const price_mad = Number.isFinite(rawPrice) ? rawPrice : 0;
 
-  const imageCandidate =
+  // Image: support variable products by falling back to first variation image.
+  // Variations may be number[] (just IDs) or full objects depending on Woo
+  // response shape — we only read `.image?.src` when available.
+  const variationImage =
+    Array.isArray(wp.variations) && wp.variations.length > 0
+      ? typeof wp.variations[0] === "object"
+        ? (wp.variations[0] as WooVariation).image?.src
+        : undefined
+      : undefined;
+
+  const imageRaw =
     wp.images?.[0]?.src?.trim() ||
-    wp.images?.[1]?.src?.trim() ||
+    variationImage?.trim() ||
     wp.image?.src?.trim() ||
-    DEFAULT_IMAGE;
+    "";
+  // No fallback to a default image: keep null so UI can render its own
+  // placeholder, and we never silently drop a product because it lacks one.
+  const image_url = imageRaw && isValidUrl(imageRaw) ? imageRaw : null;
 
   // Stock semantics:
-  //   - WooCommerce returns a finite, non-null stock_quantity → use as-is.
-  //   - stock_status === "instock" but no quantity → null (= "available, qty unknown").
-  //     We MUST NOT invent a fake number (used to be 100) because distributors
-  //     would see false abundance and place orders we can't fulfill.
-  //   - Otherwise → 0 (out of stock).
+  //   - finite stock_quantity → use as-is.
+  //   - stock_status === "instock" but no quantity → null (qty unknown).
+  //   - otherwise → 0.
   const stock: number | null =
     wp.stock_quantity !== null && Number.isFinite(wp.stock_quantity)
       ? Number(wp.stock_quantity)
@@ -156,8 +173,8 @@ export function mapWooProductToInternal(wp: WooProduct): {
     sku: (wp.sku ?? "").trim() || `woo-${wp.id}`,
     name_ar: name,
     description_ar: stripHtml(wp.description || wp.short_description || ""),
-    price_mad: rawPrice,
-    image_url: isValidUrl(imageCandidate) ? imageCandidate : DEFAULT_IMAGE,
+    price_mad,
+    image_url,
     stock,
     category:
       wp.categories?.[0]?.name?.trim().toLowerCase() || "uncategorized",
@@ -216,9 +233,13 @@ export async function fetchAndSyncWooProducts(
   let created = 0;
   let updated = 0;
   let failed = 0;
+  let totalFetched = 0;
+  let totalPagesHeader: number | null = null;
 
   for (let page = 1; page <= MAX_PAGES; page++) {
-    const url = `${cfg.baseUrl}/wp-json/wc/v3/products?status=publish&stock_status=instock&per_page=${PER_PAGE}&page=${page}`;
+    // Fetch ALL products (no status / stock_status filter) — we want a
+    // complete mirror of the WooCommerce catalog.
+    const url = `${cfg.baseUrl}/wp-json/wc/v3/products?per_page=${PER_PAGE}&page=${page}`;
     let res: Response;
     try {
       res = await fetch(url, { headers: { Authorization: cfg.authHeader } });
@@ -234,6 +255,9 @@ export async function fetchAndSyncWooProducts(
     }
 
     if (!res.ok) {
+      // WooCommerce returns 400 "rest_invalid_param" when paging past the end.
+      // Treat that as "we're done" rather than a hard failure.
+      if (res.status === 400 && page > 1) break;
       const body = await res.text().catch(() => "");
       return {
         ok: false,
@@ -245,8 +269,16 @@ export async function fetchAndSyncWooProducts(
       };
     }
 
+    // Capture X-WP-TotalPages once for an accurate stop condition.
+    if (totalPagesHeader === null) {
+      const hdr = res.headers.get("x-wp-totalpages");
+      const parsed = hdr ? Number(hdr) : NaN;
+      if (Number.isFinite(parsed) && parsed > 0) totalPagesHeader = parsed;
+    }
+
     const products = (await res.json()) as WooProduct[];
     if (!Array.isArray(products) || products.length === 0) break;
+    totalFetched += products.length;
 
     // Resolve which external_ids already exist for this company (for upsert routing).
     const externalIds = products
@@ -319,8 +351,16 @@ export async function fetchAndSyncWooProducts(
       }
     }
 
+    // Stop conditions:
+    //   1. Authoritative: X-WP-TotalPages header reached.
+    //   2. Fallback: page returned fewer than PER_PAGE items (last page).
+    if (totalPagesHeader !== null && page >= totalPagesHeader) break;
     if (products.length < PER_PAGE) break;
   }
+
+  console.log(
+    `Woo sync: fetched ${totalFetched} products (created=${created}, updated=${updated}, failed=${failed}, totalPages=${totalPagesHeader ?? "?"})`,
+  );
 
   return { ok: true, created, updated, failed, errors: errors.slice(0, 20) };
 }
