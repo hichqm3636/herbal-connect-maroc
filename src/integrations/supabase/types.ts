@@ -1248,7 +1248,7 @@ export type Database = {
           rrp_price: number | null
           sku: string | null
           source: string
-          stock: number
+          stock: number | null
           updated_at: string
         }
         Insert: {
@@ -1273,7 +1273,7 @@ export type Database = {
           rrp_price?: number | null
           sku?: string | null
           source?: string
-          stock?: number
+          stock?: number | null
           updated_at?: string
         }
         Update: {
@@ -1298,7 +1298,7 @@ export type Database = {
           rrp_price?: number | null
           sku?: string | null
           source?: string
-          stock?: number
+          stock?: number | null
           updated_at?: string
         }
         Relationships: [
