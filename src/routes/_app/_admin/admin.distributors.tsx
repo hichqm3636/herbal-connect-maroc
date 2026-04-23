@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Award,
-  Ban,
   Clock,
   Download,
   Loader2,
@@ -138,13 +137,8 @@ function AdminDistributors() {
 
   // auth status keyed by user id
   const [statusMap, setStatusMap] = useState<
-    Record<string, { banned: boolean; last_sign_in_at: string | null }>
+    Record<string, { distributor_disabled: boolean; last_sign_in_at: string | null }>
   >({});
-  const bannedMap = useMemo(() => {
-    const m: Record<string, boolean> = {};
-    for (const id of Object.keys(statusMap)) m[id] = !!statusMap[id].banned;
-    return m;
-  }, [statusMap]);
 
   // bulk selection
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -209,7 +203,7 @@ function AdminDistributors() {
     setRolesByUser(rMap);
     setLoading(false);
 
-    // Fetch banned status + last sign-in from auth.users via edge function
+    // Fetch distributor-role status + last sign-in
     if (profiles.length > 0) {
       try {
         const { data } = await supabase.functions.invoke("create-distributor", {
@@ -217,12 +211,12 @@ function AdminDistributors() {
         });
         const statuses = (data?.statuses ?? {}) as Record<
           string,
-          { banned: boolean; last_sign_in_at: string | null }
+          { distributor_disabled: boolean; last_sign_in_at: string | null }
         >;
-        const map: Record<string, { banned: boolean; last_sign_in_at: string | null }> = {};
+        const map: Record<string, { distributor_disabled: boolean; last_sign_in_at: string | null }> = {};
         for (const id of Object.keys(statuses)) {
           map[id] = {
-            banned: !!statuses[id].banned,
+            distributor_disabled: !!statuses[id].distributor_disabled,
             last_sign_in_at: statuses[id].last_sign_in_at ?? null,
           };
         }
@@ -254,14 +248,14 @@ function AdminDistributors() {
   const summary = useMemo(() => {
     let active = 0;
     let inactive = 0;
-    let banned = 0;
+    let distributorDisabled = 0;
     for (const d of list) {
-      if (bannedMap[d.id]) banned++;
+      if (statusMap[d.id]?.distributor_disabled) distributorDisabled++;
       else if (d.is_active) active++;
       else inactive++;
     }
-    return { total: list.length, active, inactive, banned };
-  }, [list, bannedMap]);
+    return { total: list.length, active, inactive, distributorDisabled };
+  }, [list, statusMap]);
 
   const roleCounts = useMemo(() => {
     let buyer = 0, seller = 0, sales_agent = 0;
@@ -281,13 +275,13 @@ function AdminDistributors() {
         return false;
       if (territoryFilter !== "all" && d.territory_id !== territoryFilter) return false;
       if (roleFilter !== "all" && !(rolesByUser[d.id] ?? []).includes(roleFilter)) return false;
-      const isBanned = !!bannedMap[d.id];
-      if (statusFilter === "active" && (!d.is_active || isBanned)) return false;
-      if (statusFilter === "disabled" && (d.is_active || isBanned)) return false;
-      if (statusFilter === "banned" && !isBanned) return false;
+      const isDistributorDisabled = !!statusMap[d.id]?.distributor_disabled;
+      if (statusFilter === "active" && (!d.is_active || isDistributorDisabled)) return false;
+      if (statusFilter === "disabled" && !isDistributorDisabled) return false;
+      if (statusFilter === "banned" && !isDistributorDisabled) return false;
       return true;
     });
-  }, [list, search, territoryFilter, statusFilter, roleFilter, rolesByUser, bannedMap]);
+  }, [list, search, territoryFilter, statusFilter, roleFilter, rolesByUser, statusMap]);
 
   const formatLastLogin = (iso: string | null | undefined): string => {
     if (!iso) return "لم يسجل الدخول بعد";
@@ -514,8 +508,8 @@ function AdminDistributors() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="إجمالي الموزعين" value={String(summary.total)} icon={Users} accent="primary" />
         <StatCard label="مفعلون" value={String(summary.active)} icon={ShieldCheck} accent="success" />
-        <StatCard label="معطلون" value={String(summary.inactive)} icon={ShieldOff} accent="muted" />
-        <StatCard label="محظورون" value={String(summary.banned)} icon={Ban} accent="warning" />
+        <StatCard label="حسابات معطلة" value={String(summary.inactive)} icon={ShieldOff} accent="muted" />
+        <StatCard label="دور الموزع معطل" value={String(summary.distributorDisabled)} icon={UserCheck} accent="warning" />
       </div>
 
       {/* Quick filter pills */}
@@ -524,8 +518,8 @@ function AdminDistributors() {
           [
             { key: "all", label: "الكل", count: summary.total },
             { key: "active", label: "مفعلون", count: summary.active },
-            { key: "disabled", label: "معطلون", count: summary.inactive },
-            { key: "banned", label: "محظورون", count: summary.banned },
+            { key: "disabled", label: "دور الموزع معطل", count: summary.distributorDisabled },
+            { key: "banned", label: "حسابات معطلة", count: summary.inactive },
           ] as const
         ).map((pill) => {
           const isActive = statusFilter === pill.key;
@@ -618,8 +612,8 @@ function AdminDistributors() {
             <SelectContent>
               <SelectItem value="all">كل الحالات</SelectItem>
               <SelectItem value="active">مفعل</SelectItem>
-              <SelectItem value="disabled">معطل</SelectItem>
-              <SelectItem value="banned">محظور</SelectItem>
+              <SelectItem value="disabled">دور الموزع معطل</SelectItem>
+              <SelectItem value="banned">الحساب معطل</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -650,11 +644,11 @@ function AdminDistributors() {
             </Button>
             <Button size="sm" variant="outline" className="gap-1" onClick={() => setBulkConfirm("unban")} disabled={bulkBusy}>
               <UserCheck className="h-4 w-4" />
-              رفع الحظر
+              تفعيل دور الموزع
             </Button>
             <Button size="sm" variant="destructive" className="gap-1" onClick={() => setBulkConfirm("ban")} disabled={bulkBusy}>
-              <Ban className="h-4 w-4" />
-              حظر
+              <ShieldOff className="h-4 w-4" />
+              تعطيل دور الموزع
             </Button>
           </div>
         </Card>
@@ -710,10 +704,10 @@ function AdminDistributors() {
                           {ROLE_BADGE_LABELS[r]}
                         </Badge>
                       ))}
-                      {bannedMap[d.id] ? (
-                        <Badge variant="destructive" className="text-[10px] gap-1">
-                          <Ban className="h-3 w-3" />
-                          محظور
+                      {statusMap[d.id]?.distributor_disabled ? (
+                        <Badge variant="outline" className="text-[10px] gap-1 border-warning/40 text-warning-foreground">
+                          <ShieldOff className="h-3 w-3" />
+                          دور الموزع معطل
                         </Badge>
                       ) : d.is_active ? (
                         <Badge className="text-[10px] gap-1 bg-success/15 text-success-foreground border border-success/30 hover:bg-success/20">
@@ -829,10 +823,10 @@ function AdminDistributors() {
                                 تفعيل الحساب
                               </DropdownMenuItem>
                             )}
-                            {bannedMap[d.id] ? (
+                            {statusMap[d.id]?.distributor_disabled ? (
                               <DropdownMenuItem onClick={() => toggleBanned(d, false)}>
                                 <UserCheck className="ml-2 h-4 w-4" />
-                                رفع الحظر
+                                تفعيل دور الموزع
                               </DropdownMenuItem>
                             ) : (
                               <DropdownMenuItem
@@ -841,8 +835,8 @@ function AdminDistributors() {
                                 className="text-destructive focus:text-destructive"
                                 onClick={() => !cannotDisable && setConfirmBan(d)}
                               >
-                                <Ban className="ml-2 h-4 w-4" />
-                                حظر الحساب
+                                <ShieldOff className="ml-2 h-4 w-4" />
+                                تعطيل دور الموزع
                               </DropdownMenuItem>
                             )}
                           </>

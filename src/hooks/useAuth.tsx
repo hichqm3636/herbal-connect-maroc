@@ -30,6 +30,8 @@ interface AuthContextValue {
   isBuyer: boolean;
   isSeller: boolean;
   isSalesAgent: boolean;
+  canAccessDistributorFeatures: boolean;
+  isDistributorDisabled: boolean;
   /** Business classification of the account (pharmacy, distributor, etc). */
   accountType: PartnerType;
   /** @deprecated use `accountType`. Kept for back-compat. */
@@ -70,6 +72,7 @@ function readPath(): string {
 }
 
 const ACTIVE_COMPANY_KEY = "active_company_id";
+const DISTRIBUTOR_ROLES: AppRole[] = ["buyer", "seller", "sales_agent", "distributor"];
 
 function readActiveCompany(): string | null {
   if (typeof window === "undefined") return null;
@@ -101,6 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [territoryId, setTerritoryId] = useState<string | null>(null);
   const [pricingTierId, setPricingTierId] = useState<string | null>(null);
   const [pricingTierDiscount, setPricingTierDiscount] = useState<number>(0);
+  const [canAccessDistributorFeatures, setCanAccessDistributorFeatures] = useState(false);
+  const [hasDistributorRole, setHasDistributorRole] = useState(false);
   const [activeCompanyId, setActiveCompanyIdState] = useState<string | null>(() =>
     readActiveCompany(),
   );
@@ -169,11 +174,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTerritoryId(null);
       setPricingTierId(null);
       setPricingTierDiscount(0);
+      setCanAccessDistributorFeatures(false);
+      setHasDistributorRole(false);
       setCompany(null);
       return;
     }
     const [{ data: roleRows }, { data: profile }] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", uid),
+      supabase.from("user_roles").select("role, is_enabled").eq("user_id", uid),
       supabase
         .from("profiles")
         .select("account_type, company_id, territory_id, is_active")
@@ -181,35 +188,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle(),
     ]);
 
-    // Disabled-account guard: enforce is_active=false ONLY for non-admin users.
-    // Super admins and admins are NEVER locked out by is_active — this prevents
-    // an admin from accidentally banning themselves or another admin and
-    // bricking the tenant. Distributors / buyers / sellers / sales agents are
-    // signed out immediately if their profile is disabled.
-    const userRoles = (roleRows ?? []).map((r) => r.role as AppRole);
-    const isPrivileged =
+    const typedRoleRows = (roleRows ?? []) as { role: AppRole; is_enabled?: boolean | null }[];
+    const enabledRoleRows = typedRoleRows.filter((r) => r.is_enabled !== false);
+    const userRoles = enabledRoleRows.map((r) => r.role);
+    const hasPrivilegedRole =
       userRoles.includes("super_admin") || userRoles.includes("admin");
-    if (profile && profile.is_active === false && !isPrivileged) {
-      try {
-        const { toast } = await import("sonner");
-        toast.error("تم تعطيل حسابك. تواصل مع الإدارة.");
-      } catch {
-        /* ignore — toast is best effort */
-      }
-      await supabase.auth.signOut();
-      setRoles([]);
-      setAccountType("distributor");
-      setProfileCompanyId(null);
-      setTerritoryId(null);
-      setPricingTierId(null);
-      setPricingTierDiscount(0);
-      setCompany(null);
-      writeActiveCompany(null);
-      setActiveCompanyIdState(null);
-      return;
-    }
+    const hasAnyDistributorRole = typedRoleRows.some((r) => DISTRIBUTOR_ROLES.includes(r.role));
+    const hasEnabledDistributorRole = enabledRoleRows.some((r) => DISTRIBUTOR_ROLES.includes(r.role));
+    const distributorProfileActive = profile?.is_active !== false;
+    const distributorAccessEnabled = distributorProfileActive && hasEnabledDistributorRole;
 
     setRoles(userRoles);
+    setCanAccessDistributorFeatures(distributorAccessEnabled);
+    setHasDistributorRole(hasAnyDistributorRole);
     setAccountType((profile?.account_type as PartnerType | undefined) ?? "distributor");
     const cid = (profile?.company_id as string | null | undefined) ?? null;
     setProfileCompanyId(cid);
@@ -240,7 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     //    pick a company from the selector. This prevents the previously
     //    selected tenant from bleeding into Nexora's admin UI.
     //  - Everyone else: pin sessionStorage to their own profile company.
-    const isSuper = (roleRows ?? []).some((r) => r.role === "super_admin");
+    const isSuper = hasPrivilegedRole && userRoles.includes("super_admin");
     if (isSuper) {
       writeActiveCompany(null);
       setActiveCompanyIdState(null);
@@ -266,6 +257,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccountType("distributor");
         setProfileCompanyId(null);
         setTerritoryId(null);
+        setPricingTierId(null);
+        setPricingTierDiscount(0);
+        setCanAccessDistributorFeatures(false);
+        setHasDistributorRole(false);
         setCompany(null);
         writeActiveCompany(null);
         setActiveCompanyIdState(null);
@@ -323,6 +318,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isBuyer: roles.includes("buyer"),
     isSeller: roles.includes("seller") || roles.includes("distributor"),
     isSalesAgent: roles.includes("sales_agent"),
+    canAccessDistributorFeatures,
+    isDistributorDisabled: hasDistributorRole && !canAccessDistributorFeatures,
     accountType,
     partnerType: accountType,
     mode,
@@ -336,7 +333,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshRoles,
     refreshCompany,
     setActiveCompany,
-  }), [session, user, roles, accountType, mode, companyId, exposedCompany, territoryId, pricingTierId, pricingTierDiscount, loading]);
+  }), [session, user, roles, canAccessDistributorFeatures, hasDistributorRole, accountType, mode, companyId, exposedCompany, territoryId, pricingTierId, pricingTierDiscount, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
