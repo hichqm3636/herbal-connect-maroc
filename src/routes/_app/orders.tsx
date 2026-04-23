@@ -368,7 +368,8 @@ function OrdersPage() {
                   void sendWhatsapp(order);
                 }
               }}
-              className="bg-[#25D366] hover:bg-[#25D366]/90 text-white"
+              disabled={!profile?.phone}
+              className="bg-[#25D366] hover:bg-[#25D366]/90 text-white disabled:opacity-50 disabled:pointer-events-auto disabled:cursor-not-allowed"
             >
               <MessageCircle className="ml-2 h-4 w-4" />
               نعم، إرسال
