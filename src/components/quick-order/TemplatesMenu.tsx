@@ -21,6 +21,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
+import { authzMessageForSupabaseError } from "@/lib/authzMessages";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 export interface TemplateItem {
@@ -41,6 +43,7 @@ interface Props {
 }
 
 export function TemplatesMenu({ currentItems, onLoad }: Props) {
+  const { isDistributorDisabled } = useAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
