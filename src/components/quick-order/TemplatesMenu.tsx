@@ -111,7 +111,8 @@ export function TemplatesMenu({ currentItems, onLoad }: Props) {
     });
     setSaving(false);
     if (error) {
-      toast.error("تعذّر حفظ القالب");
+      const authzMsg = authzMessageForSupabaseError(error, { isDistributorDisabled });
+      toast.error(authzMsg ?? "تعذّر حفظ القالب");
       return;
     }
     toast.success(`تم حفظ القالب "${trimmed}"`);

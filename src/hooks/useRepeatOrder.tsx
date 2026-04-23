@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { parseTiers } from "@/lib/pricing";
+import { AUTHZ_MESSAGES_AR } from "@/lib/authzMessages";
 
 interface RepeatResult {
   added: number;
@@ -18,7 +19,7 @@ interface RepeatResult {
  *   and the user's pricing tier (handled in CartSheet).
  */
 export function useRepeatOrder() {
-  const { user } = useAuth();
+  const { user, isDistributorDisabled } = useAuth();
   const { addItem, openCart, clear } = useCart();
   const [loading, setLoading] = useState(false);
 
@@ -26,6 +27,10 @@ export function useRepeatOrder() {
     async (orderId: string, opts?: { replaceCart?: boolean }): Promise<RepeatResult | null> => {
       if (!user) {
         toast.error("الرجاء تسجيل الدخول");
+        return null;
+      }
+      if (isDistributorDisabled) {
+        toast.error(AUTHZ_MESSAGES_AR.distributor_role_disabled);
         return null;
       }
       setLoading(true);
