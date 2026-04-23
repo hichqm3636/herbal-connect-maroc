@@ -189,16 +189,43 @@ export function CartSheet() {
       items_count: itemsPayload.length,
     });
 
+    const isNetworkError = (e: unknown) => {
+      const m = e instanceof Error ? e.message : String(e);
+      const lower = m.toLowerCase();
+      return (
+        lower.includes("failed to fetch") ||
+        lower.includes("load failed") ||
+        lower.includes("networkerror") ||
+        lower.includes("network request failed")
+      );
+    };
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const payload = {
+      data: {
+        company_id: companyId,
+        total_mad: orderTotal,
+        points_earned: points,
+        notes: trimmedNotes ? trimmedNotes : null,
+        items: itemsPayload,
+        request_id: requestId,
+      },
+    };
+
     try {
-      const result = await createOrderFn({
-        data: {
-          company_id: companyId,
-          total_mad: orderTotal,
-          points_earned: points,
-          notes: trimmedNotes ? trimmedNotes : null,
-          items: itemsPayload,
-        },
-      });
+      let result;
+      try {
+        result = await createOrderFn(payload);
+      } catch (firstErr) {
+        if (isNetworkError(firstErr)) {
+          console.warn("[placeOrder] network error — retrying once", {
+            request_id: requestId,
+          });
+          await wait(1000);
+          result = await createOrderFn(payload);
+        } else {
+          throw firstErr;
+        }
+      }
       console.log("[placeOrder] order created", {
         request_id: requestId,
         order_id: result.order_id,
