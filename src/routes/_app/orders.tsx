@@ -70,6 +70,32 @@ function OrdersPage() {
   const [profile, setProfile] = useState<{ phone: string | null; city: string | null } | null>(null);
   const [previewOrder, setPreviewOrder] = useState<Order | null>(null);
   const [confirmOrder, setConfirmOrder] = useState<Order | null>(null);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [savingPhone, setSavingPhone] = useState(false);
+
+  const savePhone = async () => {
+    if (!user) return;
+    const trimmed = phoneInput.trim();
+    const normalized = normalizeWhatsappPhone(trimmed);
+    // Morocco numbers normalize to "212" + 9 digits = 12 digits total.
+    if (!normalized || normalized.length < 11 || normalized.length > 13) {
+      toast.error("رقم الهاتف غير صالح");
+      return;
+    }
+    setSavingPhone(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ phone: trimmed })
+      .eq("id", user.id);
+    setSavingPhone(false);
+    if (error) {
+      toast.error("تعذر حفظ الرقم");
+      return;
+    }
+    setProfile((p) => ({ phone: trimmed, city: p?.city ?? null }));
+    setPhoneInput("");
+    toast.success("تم حفظ رقم الهاتف");
+  };
 
   const buildMessageFor = (order: Order): string =>
     buildWhatsAppMessage({
