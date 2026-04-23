@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Award,
-  Ban,
   Clock,
   Download,
   Loader2,
@@ -138,13 +137,8 @@ function AdminDistributors() {
 
   // auth status keyed by user id
   const [statusMap, setStatusMap] = useState<
-    Record<string, { banned: boolean; last_sign_in_at: string | null }>
+    Record<string, { distributor_disabled: boolean; last_sign_in_at: string | null }>
   >({});
-  const bannedMap = useMemo(() => {
-    const m: Record<string, boolean> = {};
-    for (const id of Object.keys(statusMap)) m[id] = !!statusMap[id].banned;
-    return m;
-  }, [statusMap]);
 
   // bulk selection
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -209,7 +203,7 @@ function AdminDistributors() {
     setRolesByUser(rMap);
     setLoading(false);
 
-    // Fetch banned status + last sign-in from auth.users via edge function
+    // Fetch distributor-role status + last sign-in
     if (profiles.length > 0) {
       try {
         const { data } = await supabase.functions.invoke("create-distributor", {
@@ -217,12 +211,12 @@ function AdminDistributors() {
         });
         const statuses = (data?.statuses ?? {}) as Record<
           string,
-          { banned: boolean; last_sign_in_at: string | null }
+          { distributor_disabled: boolean; last_sign_in_at: string | null }
         >;
-        const map: Record<string, { banned: boolean; last_sign_in_at: string | null }> = {};
+        const map: Record<string, { distributor_disabled: boolean; last_sign_in_at: string | null }> = {};
         for (const id of Object.keys(statuses)) {
           map[id] = {
-            banned: !!statuses[id].banned,
+            distributor_disabled: !!statuses[id].distributor_disabled,
             last_sign_in_at: statuses[id].last_sign_in_at ?? null,
           };
         }
@@ -254,14 +248,14 @@ function AdminDistributors() {
   const summary = useMemo(() => {
     let active = 0;
     let inactive = 0;
-    let banned = 0;
+    let distributorDisabled = 0;
     for (const d of list) {
-      if (bannedMap[d.id]) banned++;
+      if (statusMap[d.id]?.distributor_disabled) distributorDisabled++;
       else if (d.is_active) active++;
       else inactive++;
     }
-    return { total: list.length, active, inactive, banned };
-  }, [list, bannedMap]);
+    return { total: list.length, active, inactive, distributorDisabled };
+  }, [list, statusMap]);
 
   const roleCounts = useMemo(() => {
     let buyer = 0, seller = 0, sales_agent = 0;
@@ -281,13 +275,13 @@ function AdminDistributors() {
         return false;
       if (territoryFilter !== "all" && d.territory_id !== territoryFilter) return false;
       if (roleFilter !== "all" && !(rolesByUser[d.id] ?? []).includes(roleFilter)) return false;
-      const isBanned = !!bannedMap[d.id];
-      if (statusFilter === "active" && (!d.is_active || isBanned)) return false;
-      if (statusFilter === "disabled" && (d.is_active || isBanned)) return false;
-      if (statusFilter === "banned" && !isBanned) return false;
+      const isDistributorDisabled = !!statusMap[d.id]?.distributor_disabled;
+      if (statusFilter === "active" && (!d.is_active || isDistributorDisabled)) return false;
+      if (statusFilter === "disabled" && !isDistributorDisabled) return false;
+      if (statusFilter === "banned" && !isDistributorDisabled) return false;
       return true;
     });
-  }, [list, search, territoryFilter, statusFilter, roleFilter, rolesByUser, bannedMap]);
+  }, [list, search, territoryFilter, statusFilter, roleFilter, rolesByUser, statusMap]);
 
   const formatLastLogin = (iso: string | null | undefined): string => {
     if (!iso) return "لم يسجل الدخول بعد";
