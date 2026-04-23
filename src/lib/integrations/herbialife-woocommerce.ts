@@ -23,10 +23,16 @@ export interface WooCategory {
   slug?: string;
 }
 
+export interface WooVariation {
+  id?: number;
+  image?: WooImage;
+}
+
 export interface WooProduct {
   id?: number;
   sku?: string;
   name?: string;
+  type?: string;
   description?: string;
   short_description?: string;
   price?: string;
@@ -34,6 +40,7 @@ export interface WooProduct {
   stock_status?: string;
   images?: WooImage[];
   image?: WooImage;
+  variations?: WooVariation[] | number[];
   categories?: WooCategory[];
 }
 
