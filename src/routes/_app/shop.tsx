@@ -505,12 +505,15 @@ function ShopPage() {
                 Math.max(p.minimum_order || 1, 6),
               );
               const outOfStock = p.stock === 0;
+              const isTop = topSellerIds.has(p.id);
               return (
                 <Card
                   key={p.id}
-                  className="overflow-hidden flex flex-col shadow-soft hover:shadow-elegant transition-shadow"
+                  className={`overflow-hidden flex flex-col shadow-soft hover:shadow-elegant transition-shadow ${
+                    outOfStock ? "opacity-60" : ""
+                  }`}
                 >
-                  <div className="aspect-square bg-muted overflow-hidden">
+                  <div className="relative aspect-square bg-muted overflow-hidden">
                     {p.image_url && (
                       <img
                         src={p.image_url}
@@ -519,6 +522,23 @@ function ShopPage() {
                         className="h-full w-full object-cover"
                       />
                     )}
+                    <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                      {isTop && (
+                        <Badge className="gap-1 bg-warning/90 text-warning-foreground border-0 text-[10px]">
+                          <Flame className="h-2.5 w-2.5" /> الأكثر طلباً
+                        </Badge>
+                      )}
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] border-0 ${
+                          outOfStock
+                            ? "bg-destructive/90 text-destructive-foreground"
+                            : "bg-success/90 text-success-foreground"
+                        }`}
+                      >
+                        {outOfStock ? "نفذ المخزون" : "متوفر"}
+                      </Badge>
+                    </div>
                   </div>
                   <div className="p-3 flex flex-col gap-2 flex-1">
                     <p className="text-sm font-semibold leading-snug line-clamp-2 flex-1">
@@ -529,16 +549,10 @@ function ShopPage() {
                         <p className="text-base font-bold text-primary leading-tight">
                           {formatMAD(unitPrice)}
                         </p>
-                        {outOfStock ? (
-                          <span className="text-[10px] text-destructive font-medium">
-                            نفذ المخزون
+                        {p.minimum_order > 1 && (
+                          <span className="text-[10px] text-muted-foreground">
+                            حد أدنى: {p.minimum_order}
                           </span>
-                        ) : (
-                          p.minimum_order > 1 && (
-                            <span className="text-[10px] text-muted-foreground">
-                              حد أدنى: {p.minimum_order}
-                            </span>
-                          )
                         )}
                       </div>
                       <Button
@@ -546,7 +560,7 @@ function ShopPage() {
                         onClick={() => addProduct(p)}
                         disabled={outOfStock}
                         aria-label={`إضافة ${p.name_ar}`}
-                        className="h-9 w-9 shrink-0 rounded-full shadow-md"
+                        className="h-10 w-10 shrink-0 rounded-full shadow-md transition-transform active:scale-90"
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
