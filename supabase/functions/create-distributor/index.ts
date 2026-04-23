@@ -10,6 +10,8 @@ type Action =
   | "set_banned"
   | "get_user_status";
 
+const DISTRIBUTOR_ROLE_NAMES = ["distributor", "buyer", "seller", "sales_agent"] as const;
+
 interface Payload {
   action?: Action;
   // create
@@ -270,12 +272,14 @@ Deno.serve(async (req) => {
       if (blocked) return blocked;
     }
 
-    const { error: aErr } = await admin.auth.admin.updateUserById(userId, {
-      ban_duration: isBanned ? "876000h" : "none",
-    });
-    if (aErr) return bad(aErr.message, 400);
+    const { error: roleErr } = await admin
+      .from("user_roles")
+      .update({ is_enabled: !isBanned })
+      .eq("user_id", userId)
+      .in("role", [...DISTRIBUTOR_ROLE_NAMES]);
+    if (roleErr) return bad(roleErr.message, 400);
 
-    await log(isBanned ? "ban_user" : "unban_user", userId, {});
+    await log(isBanned ? "disable_distributor_roles" : "enable_distributor_roles", userId, {});
     return json({ ok: true });
   }
 
@@ -286,34 +290,30 @@ Deno.serve(async (req) => {
     const statuses: Record<
       string,
       {
-        banned: boolean;
-        banned_until: string | null;
+        distributor_disabled: boolean;
         last_sign_in_at: string | null;
         email: string | null;
       }
     > = {};
-    // Process sequentially — admin.getUserById is fast enough for typical company sizes
     for (const id of ids) {
-      const { data, error } = await admin.auth.admin.getUserById(id);
+      const [{ data, error }, { data: roleRows }, { data: profileRow }] = await Promise.all([
+        admin.auth.admin.getUserById(id),
+        admin.from("user_roles").select("role, is_enabled").eq("user_id", id),
+        admin.from("profiles").select("is_active").eq("id", id).maybeSingle(),
+      ]);
       if (error || !data?.user) {
-        statuses[id] = {
-          banned: false,
-          banned_until: null,
-          last_sign_in_at: null,
-          email: null,
-        };
+        statuses[id] = { distributor_disabled: false, last_sign_in_at: null, email: null };
         continue;
       }
-      const u = data.user as unknown as {
-        banned_until?: string | null;
-        last_sign_in_at?: string | null;
-        email?: string | null;
-      };
-      const bu = u.banned_until ?? null;
-      const banned = !!bu && new Date(bu).getTime() > Date.now();
+      const distributorRoleRows = ((roleRows ?? []) as { role: string; is_enabled?: boolean | null }[])
+        .filter((row) => DISTRIBUTOR_ROLE_NAMES.includes(row.role as (typeof DISTRIBUTOR_ROLE_NAMES)[number]));
+      const hasDistributorRole = distributorRoleRows.length > 0;
+      const hasEnabledDistributorRole = distributorRoleRows.some((row) => row.is_enabled !== false);
+      const distributorDisabled =
+        (profileRow?.is_active === false) || (hasDistributorRole && !hasEnabledDistributorRole);
+      const u = data.user as unknown as { last_sign_in_at?: string | null; email?: string | null };
       statuses[id] = {
-        banned,
-        banned_until: bu,
+        distributor_disabled: distributorDisabled,
         last_sign_in_at: u.last_sign_in_at ?? null,
         email: u.email ?? null,
       };
