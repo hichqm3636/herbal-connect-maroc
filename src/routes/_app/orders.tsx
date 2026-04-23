@@ -1,9 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, ChevronDown, ClipboardList, Copy, Loader2, MessageCircle, Repeat2 } from "lucide-react";
+import { Check, ChevronDown, ClipboardList, Copy, Eye, Loader2, MessageCircle, Repeat2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useRepeatOrder } from "@/hooks/useRepeatOrder";
 import {
@@ -46,6 +54,20 @@ function OrdersPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [repeatingId, setRepeatingId] = useState<string | null>(null);
   const [profile, setProfile] = useState<{ phone: string | null; city: string | null } | null>(null);
+  const [previewOrder, setPreviewOrder] = useState<Order | null>(null);
+
+  const buildMessageFor = (order: Order): string =>
+    buildWhatsAppMessage({
+      orderNumber: order.order_number,
+      createdAt: order.created_at,
+      items: order.order_items.map((it) => ({
+        name: it.products?.name_ar ?? "—",
+        qty: it.quantity,
+      })),
+      total: Number(order.total_mad),
+      city: profile?.city ?? "—",
+      phone: profile?.phone ?? "—",
+    });
 
   const handleRepeat = async (e: React.MouseEvent, orderId: string) => {
     e.stopPropagation();
@@ -68,22 +90,15 @@ function OrdersPage() {
     }
   };
 
-  const handleWhatsapp = async (e: React.MouseEvent, order: Order) => {
+  const openPreview = (e: React.MouseEvent, order: Order) => {
     e.stopPropagation();
     e.preventDefault();
-    const message = buildWhatsAppMessage({
-      orderNumber: order.order_number,
-      createdAt: order.created_at,
-      items: order.order_items.map((it) => ({
-        name: it.products?.name_ar ?? "—",
-        qty: it.quantity,
-      })),
-      total: Number(order.total_mad),
-      city: profile?.city ?? "—",
-      phone: profile?.phone ?? "—",
-    });
+    setPreviewOrder(order);
+  };
 
-    // Auto-copy the message text
+  const sendWhatsapp = async (order: Order) => {
+    const message = buildMessageFor(order);
+
     try {
       await navigator.clipboard.writeText(message);
       toast.success("تم نسخ نص الطلب");
@@ -92,16 +107,9 @@ function OrdersPage() {
     }
 
     const link = buildWhatsappLink(profile?.phone, message);
-    if (!link) {
-      // No phone on profile — fall back to wa.me without a recipient
-      window.open(
-        `https://wa.me/?text=${encodeURIComponent(message)}`,
-        "_blank",
-        "noopener,noreferrer",
-      );
-      return;
-    }
-    window.open(link, "_blank", "noopener,noreferrer");
+    const url = link || `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    setPreviewOrder(null);
   };
 
   useEffect(() => {
@@ -175,15 +183,15 @@ function OrdersPage() {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="border-t divide-y">
-                    <div className="p-3 bg-muted/30 flex justify-end gap-2">
+                    <div className="p-3 bg-muted/30 flex justify-end gap-2 flex-wrap">
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={(e) => handleWhatsapp(e, o)}
+                        onClick={(e) => openPreview(e, o)}
                         className="text-[#25D366] hover:text-[#25D366] hover:bg-[#25D366]/10"
                       >
-                        <MessageCircle className="ml-2 h-4 w-4" />
-                        إرسال عبر WhatsApp
+                        <Eye className="ml-2 h-4 w-4" />
+                        معاينة رسالة WhatsApp
                       </Button>
                       <Button
                         size="sm"
@@ -232,6 +240,34 @@ function OrdersPage() {
           ))}
         </div>
       )}
+
+      <Dialog open={!!previewOrder} onOpenChange={(open) => !open && setPreviewOrder(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>معاينة رسالة WhatsApp</DialogTitle>
+            <DialogDescription>
+              راجع النص قبل الإرسال. سيتم نسخه تلقائياً عند الإرسال.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-md border bg-muted/40 p-3 max-h-[50vh] overflow-y-auto">
+            <pre className="text-sm whitespace-pre-wrap font-sans leading-relaxed text-right" dir="rtl">
+              {previewOrder ? buildMessageFor(previewOrder) : ""}
+            </pre>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setPreviewOrder(null)}>
+              إلغاء
+            </Button>
+            <Button
+              onClick={() => previewOrder && sendWhatsapp(previewOrder)}
+              className="bg-[#25D366] hover:bg-[#25D366]/90 text-white"
+            >
+              <MessageCircle className="ml-2 h-4 w-4" />
+              إرسال عبر WhatsApp
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
