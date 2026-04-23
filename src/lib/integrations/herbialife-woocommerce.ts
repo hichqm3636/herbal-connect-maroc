@@ -170,7 +170,9 @@ export function mapWooProductToInternal(wp: WooProduct): {
   return {
     external_id: String(wp.id),
     source: SOURCE,
-    sku: (wp.sku ?? "").trim() || `woo-${wp.id}`,
+    // Store SKU only if WooCommerce actually has one. No generated fallback —
+    // uniqueness is enforced on (company_id, external_id), not sku.
+    sku: wp.sku?.trim() || null,
     name_ar: name,
     description_ar: stripHtml(wp.description || wp.short_description || ""),
     price_mad,
