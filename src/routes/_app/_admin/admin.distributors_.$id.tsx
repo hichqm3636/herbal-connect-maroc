@@ -125,9 +125,9 @@ function DistributorProfile() {
   const [loading, setLoading] = useState(true);
   const [addingTerritory, setAddingTerritory] = useState(false);
   const [territoryToAdd, setTerritoryToAdd] = useState<string>("");
-  const [waPromptOpen, setWaPromptOpen] = useState(false);
-  const [waPassword, setWaPassword] = useState("");
   const [waCredsOpen, setWaCredsOpen] = useState(false);
+  const [sendingLink, setSendingLink] = useState(false);
+  const [profileEmail, setProfileEmail] = useState<string>("");
 
   const load = async () => {
     setLoading(true);
@@ -466,15 +466,28 @@ function DistributorProfile() {
           <Button
             variant="outline"
             className="gap-2 border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#075E54]"
-            disabled={!profile.phone}
-            onClick={() => {
-              setWaPassword("");
-              setWaPromptOpen(true);
+            disabled={!profile.phone || sendingLink}
+            onClick={async () => {
+              setSendingLink(true);
+              try {
+                const { data, error } = await supabase.functions.invoke("create-distributor", {
+                  body: { action: "send_magic_link", userId: profile.id },
+                });
+                if (error) throw new Error(error.message);
+                if (data?.error) throw new Error(data.error);
+                if (data?.email) setProfileEmail(data.email);
+                toast.success("تم إرسال رابط الدخول إلى بريد العميل");
+                setWaCredsOpen(true);
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "تعذر إرسال رابط الدخول");
+              } finally {
+                setSendingLink(false);
+              }
             }}
-            title={!profile.phone ? "لا يوجد رقم هاتف" : "إرسال بيانات الدخول عبر WhatsApp"}
+            title={!profile.phone ? "لا يوجد رقم هاتف" : "إرسال رابط دخول وإخبار العميل عبر WhatsApp"}
           >
             <MessageCircle className="h-4 w-4" />
-            إرسال عبر WhatsApp
+            إرسال رابط الدخول
           </Button>
           <Button
             className="gap-2"
@@ -743,58 +756,13 @@ function DistributorProfile() {
         </span>
       </div>
 
-      {/* WhatsApp credentials prompt: ask for password / temp code, then open the message dialog */}
-      <Dialog open={waPromptOpen} onOpenChange={setWaPromptOpen}>
-        <DialogContent dir="rtl" className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-[#25D366]" />
-              إرسال بيانات الدخول
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">
-              أدخل كلمة المرور (أو الرمز المؤقت) ليتم تضمينها في رسالة WhatsApp.
-              لن يتم حفظها.
-            </p>
-            <div className="space-y-1.5">
-              <Label className="text-sm">كلمة المرور / الرمز</Label>
-              <Input
-                type="text"
-                value={waPassword}
-                onChange={(e) => setWaPassword(e.target.value)}
-                placeholder="مثال: Temp1234"
-                dir="ltr"
-                autoFocus
-              />
-            </div>
-          </div>
-          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setWaPromptOpen(false)}>
-              إلغاء
-            </Button>
-            <Button
-              className="gap-2 bg-[#25D366] hover:bg-[#1ebe5b] text-white"
-              disabled={!waPassword.trim()}
-              onClick={() => {
-                setWaPromptOpen(false);
-                setWaCredsOpen(true);
-              }}
-            >
-              <MessageCircle className="h-4 w-4" />
-              متابعة
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {profile && (
         <DistributorCredentialsDialog
           open={waCredsOpen}
           onOpenChange={setWaCredsOpen}
           distributorName={profile.full_name}
           phone={profile.phone ?? ""}
-          password={waPassword}
+          email={profileEmail}
         />
       )}
     </div>

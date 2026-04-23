@@ -14,7 +14,7 @@ import {
   Users,
   UserCheck,
   UserPlus,
-  KeyRound,
+  Mail,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -62,7 +62,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatMAD, LEVEL_LABELS } from "@/lib/format";
 import { toast } from "sonner";
 import { CreateDistributorDialog } from "@/components/admin/CreateDistributorDialog";
-import { ResetPasswordDialog } from "@/components/admin/ResetPasswordDialog";
 import { EditClientDialog } from "@/components/admin/EditClientDialog";
 
 export const Route = createFileRoute("/_app/_admin/admin/distributors")({
@@ -125,7 +124,7 @@ function AdminDistributors() {
   // dialogs
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Distributor | null>(null);
-  const [resettingPw, setResettingPw] = useState<Distributor | null>(null);
+  const [sendingLinkTo, setSendingLinkTo] = useState<string | null>(null);
   const [pointsTarget, setPointsTarget] = useState<Distributor | null>(null);
   const [pointsDelta, setPointsDelta] = useState(0);
   const [pointsReason, setPointsReason] = useState("");
@@ -232,6 +231,37 @@ function AdminDistributors() {
   useEffect(() => {
     load();
   }, [companyId]);
+
+  /**
+   * Send a magic-link sign-in email to the distributor.
+   * Uses Supabase OTP (passwordless). The link redirects to /auth/callback
+   * where the user is routed by role.
+   */
+  const sendMagicLink = async (d: Distributor) => {
+    setSendingLinkTo(d.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-distributor", {
+        body: { action: "send_magic_link", userId: d.id },
+      });
+      if (error) {
+        let msg = error.message;
+        try {
+          const ctx = (error as { context?: Response }).context;
+          if (ctx) {
+            const j = await ctx.clone().json();
+            if (j?.error) msg = j.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
+      toast.success(`تم إرسال رابط الدخول إلى ${d.full_name}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "تعذر إرسال رابط الدخول");
+    } finally {
+      setSendingLinkTo(null);
+    }
+  };
 
   const territoryById = useMemo(() => {
     const m = new Map<string, string>();
@@ -788,9 +818,12 @@ function AdminDistributors() {
                         <Award className="ml-2 h-4 w-4" />
                         تعديل النقاط
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setResettingPw(d)}>
-                        <KeyRound className="ml-2 h-4 w-4" />
-                        إعادة تعيين كلمة المرور
+                      <DropdownMenuItem
+                        onClick={() => sendMagicLink(d)}
+                        disabled={sendingLinkTo === d.id}
+                      >
+                        <Mail className="ml-2 h-4 w-4" />
+                        إرسال رابط الدخول
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       {(() => {
@@ -865,12 +898,7 @@ function AdminDistributors() {
         onSaved={load}
       />
 
-      {/* Reset password */}
-      <ResetPasswordDialog
-        userId={resettingPw?.id ?? null}
-        fullName={resettingPw?.full_name}
-        onClose={() => setResettingPw(null)}
-      />
+
 
       {/* Adjust points */}
       <Dialog open={!!pointsTarget} onOpenChange={(o) => !o && setPointsTarget(null)}>

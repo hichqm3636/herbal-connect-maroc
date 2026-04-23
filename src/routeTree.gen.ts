@@ -10,11 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AppSuperAdminRouteImport } from './routes/_app/super-admin'
 import { Route as AppShopRouteImport } from './routes/_app/shop'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
@@ -58,11 +58,6 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -80,6 +75,11 @@ const IndexRoute = IndexRouteImport.update({
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
   path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppSuperAdminRoute = AppSuperAdminRouteImport.update({
@@ -283,7 +283,6 @@ const AppAdminAdminActivityAdminIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
   '/invoices': typeof AppInvoicesRoute
@@ -294,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/shop': typeof AppShopRoute
   '/super-admin': typeof AppSuperAdminRouteWithChildren
+  '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -326,7 +326,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
   '/invoices': typeof AppInvoicesRoute
@@ -336,6 +335,7 @@ export interface FileRoutesByTo {
   '/quick-order': typeof AppQuickOrderRoute
   '/settings': typeof AppSettingsRoute
   '/shop': typeof AppShopRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -370,7 +370,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_app/_admin': typeof AppAdminRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
@@ -382,6 +381,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/shop': typeof AppShopRoute
   '/_app/super-admin': typeof AppSuperAdminRouteWithChildren
+  '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
   '/_app/products_/$productId': typeof AppProductsProductIdRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -416,7 +416,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
-    | '/reset-password'
     | '/signup'
     | '/dashboard'
     | '/invoices'
@@ -427,6 +426,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop'
     | '/super-admin'
+    | '/auth/callback'
     | '/invite/$token'
     | '/products/$productId'
     | '/super-admin/companies'
@@ -459,7 +459,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
-    | '/reset-password'
     | '/signup'
     | '/dashboard'
     | '/invoices'
@@ -469,6 +468,7 @@ export interface FileRouteTypes {
     | '/quick-order'
     | '/settings'
     | '/shop'
+    | '/auth/callback'
     | '/invite/$token'
     | '/products/$productId'
     | '/super-admin/companies'
@@ -502,7 +502,6 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/login'
-    | '/reset-password'
     | '/signup'
     | '/_app/_admin'
     | '/_app/dashboard'
@@ -514,6 +513,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/shop'
     | '/_app/super-admin'
+    | '/auth/callback'
     | '/invite/$token'
     | '/_app/products_/$productId'
     | '/_app/super-admin/companies'
@@ -548,8 +548,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   InviteTokenRoute: typeof InviteTokenRoute
 }
 
@@ -560,13 +560,6 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -595,6 +588,13 @@ declare module '@tanstack/react-router' {
       path: '/invite/$token'
       fullPath: '/invite/$token'
       preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/super-admin': {
@@ -965,8 +965,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport

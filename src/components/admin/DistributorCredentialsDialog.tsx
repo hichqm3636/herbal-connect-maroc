@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Check, MessageCircle, Phone } from "lucide-react";
+import { Copy, Check, MessageCircle, Phone, Mail } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,24 +21,26 @@ interface Props {
   onOpenChange: (o: boolean) => void;
   distributorName: string;
   phone: string;
-  password: string;
+  /** Email address the distributor will receive the magic link on. */
+  email: string;
+  /** Optional override of the login URL shown in the message. */
   loginUrl?: string;
 }
 
 /**
- * Reusable dialog that shows a pre-filled WhatsApp credentials message
- * and gives the admin two actions:
+ * Reusable dialog that shows a pre-filled WhatsApp message instructing the
+ * distributor to check their email for a magic-link sign-in. Gives the admin:
  *   1. "إرسال عبر WhatsApp"  → opens wa.me?text=...
  *   2. "نسخ الرسالة"          → clipboard fallback if WhatsApp won't open
  *
- * Phone is normalized for Morocco (212XXXXXXXXX) before building the link.
+ * The actual sign-in link is delivered by Supabase via email (no password).
  */
 export function DistributorCredentialsDialog({
   open,
   onOpenChange,
   distributorName,
   phone,
-  password,
+  email,
   loginUrl,
 }: Props) {
   const [copied, setCopied] = useState(false);
@@ -46,7 +48,7 @@ export function DistributorCredentialsDialog({
   const message = buildDistributorCredentialsMessage({
     distributorName,
     phone,
-    password,
+    email,
     loginUrl,
   });
   const waHref = buildWhatsappLink(phone, message);
@@ -69,15 +71,23 @@ export function DistributorCredentialsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageCircle className="h-5 w-5 text-[#25D366]" />
-            إرسال بيانات الدخول عبر WhatsApp
+            مشاركة تعليمات الدخول عبر WhatsApp
           </DialogTitle>
           <DialogDescription>
-            راجع الرسالة قبل الإرسال. سيتم فتح WhatsApp في نافذة جديدة.
+            تم إرسال رابط الدخول إلى بريد العميل. يمكنك أيضاً إخباره عبر
+            WhatsApp ليتفقّد بريده.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
-          <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs">
+          <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-1">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Mail className="h-3.5 w-3.5" />
+              <span>البريد الإلكتروني:</span>
+              <span dir="ltr" className="font-mono text-foreground">
+                {email || "—"}
+              </span>
+            </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Phone className="h-3.5 w-3.5" />
               <span>رقم الإرسال:</span>
@@ -98,7 +108,7 @@ export function DistributorCredentialsDialog({
 
           {!phoneValid && (
             <p className="text-xs text-destructive">
-              رقم الهاتف غير صالح — يرجى تحديث الملف قبل الإرسال.
+              رقم الهاتف غير صالح — يمكنك نسخ الرسالة وإرسالها يدوياً.
             </p>
           )}
         </div>

@@ -212,9 +212,10 @@ ${lines.join("\n")}
 
 export interface DistributorCredentialsContext {
   distributorName: string;
-  /** Raw phone — will be normalized for display in the message body. */
+  /** Raw phone — kept for display/normalization fallback. */
   phone: string;
-  password: string;
+  /** Email address where the magic-link sign-in was sent. */
+  email: string;
   /** Login URL shown in the message. Defaults to the public app URL. */
   loginUrl?: string;
 }
@@ -222,24 +223,29 @@ export interface DistributorCredentialsContext {
 const DEFAULT_LOGIN_URL = "https://herbialife-maroc.lovable.app";
 
 /**
- * Welcome / credentials message sent to a freshly-created distributor.
- * Matches the spec template exactly (Arabic, with login URL + phone + password).
+ * Welcome message sent to a freshly-created distributor.
+ *
+ * Passwordless flow: the distributor receives a "magic link" sign-in email
+ * from Supabase. This WhatsApp message tells them to check that email and
+ * follow the link — no password is shared anywhere.
  */
 export function buildDistributorCredentialsMessage(
   ctx: DistributorCredentialsContext,
 ): string {
   const loginUrl = (ctx.loginUrl ?? DEFAULT_LOGIN_URL).replace(/\/$/, "");
-  const displayPhone = normalizeWhatsappPhone(ctx.phone) || ctx.phone;
   return [
     `السلام عليكم ${ctx.distributorName}،`,
     "",
     "تم إنشاء حسابك في منصة Herbialife Partner Hub.",
     "",
-    `🔗 رابط الدخول: ${loginUrl}`,
-    `📱 رقم الدخول: ${displayPhone}`,
-    `🔐 كلمة المرور: ${ctx.password}`,
+    "🔐 الدخول بدون كلمة مرور — Magic Link",
+    `📧 تفقّد بريدك الإلكتروني: ${ctx.email}`,
+    "ستجد رسالة من المنصة تحتوي على رابط دخول آمن.",
+    "اضغط على الرابط لإكمال تسجيل الدخول.",
     "",
-    "يرجى تغيير كلمة المرور بعد أول دخول.",
+    `🔗 صفحة الدخول: ${loginUrl}/login`,
+    "",
+    "الرابط صالح لفترة محدودة. إذا انتهى، اطلب رابطاً جديداً من صفحة الدخول.",
     "",
     "مرحبا بك معنا 🤝",
   ].join("\n");
