@@ -156,6 +156,38 @@ export function buildSupplierConfirmationMessage(ctx: OrderNotificationContext):
   ].join("\n");
 }
 
+export interface WhatsappOrderItem {
+  name: string;
+  qty: number;
+}
+
+export interface WhatsappOrderSummary {
+  items: WhatsappOrderItem[];
+  total: number;
+  city: string;
+  phone: string;
+}
+
+/**
+ * Build a customer-facing order summary message in Arabic.
+ * Used for quick "new order" notifications via WhatsApp.
+ */
+export function buildWhatsAppMessage(order: WhatsappOrderSummary): string {
+  const lines = order.items.map((i) => `- ${i.name} ×${i.qty}`);
+  return `
+🛒 طلب جديد
+
+📦 المنتجات:
+${lines.join("\n")}
+
+💰 المجموع: ${formatTotal(order.total)} درهم
+📍 المدينة: ${order.city}
+📞 الهاتف: ${order.phone}
+
+شكراً لك 🙏
+`.trim();
+}
+
 export interface DistributorCredentialsContext {
   distributorName: string;
   /** Raw phone — will be normalized for display in the message body. */
