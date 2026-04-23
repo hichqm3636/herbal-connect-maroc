@@ -220,21 +220,43 @@ export const createOrder = createDistributorServerFn({ method: "POST" })
     // ---------------- Create the order AFTER stock is reserved ----------------
     const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
 
+    const insertPayload: Record<string, unknown> = {
+      distributor_id: userId,
+      company_id: data.company_id,
+      total_mad: data.total_mad,
+      points_earned: data.points_earned,
+      status: "pending",
+      notes: data.notes,
+      order_number: orderNumber,
+    };
+    if (data.request_id) insertPayload.request_id = data.request_id;
+
     const { data: order, error: orderErr } = await supabase
       .from("orders")
-      .insert({
-        distributor_id: userId,
-        company_id: data.company_id,
-        total_mad: data.total_mad,
-        points_earned: data.points_earned,
-        status: "pending",
-        notes: data.notes,
-        order_number: orderNumber,
-      })
+      .insert(insertPayload as never)
       .select("id")
       .single();
 
     if (orderErr || !order) {
+      // Race: another concurrent request with the same request_id won.
+      // The unique index (company_id, request_id) raises code '23505'.
+      if (data.request_id && (orderErr?.code === "23505" || /duplicate key/i.test(orderErr?.message ?? ""))) {
+        const { data: dup } = await supabase
+          .from("orders")
+          .select("id")
+          .eq("company_id", data.company_id)
+          .eq("request_id" as never, data.request_id as never)
+          .maybeSingle();
+        if (dup?.id) {
+          await restoreStock();
+          console.log("[createOrder] idempotent replay (post-insert race)", {
+            userId,
+            request_id: data.request_id,
+            order_id: dup.id,
+          });
+          return { order_id: dup.id, idempotent: true };
+        }
+      }
       console.error("[createOrder] insert order failed — restoring stock", {
         userId,
         err: orderErr,
