@@ -21,7 +21,27 @@ import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-function logForbidden(userId: string, reason: string) {
+/**
+ * Reason codes returned to the client in the 403 response body.
+ * Keep these stable — the frontend may map them to localized messages.
+ * Do NOT include user ids, emails, role rows, or any tenant data in the body.
+ */
+type ForbiddenReason = "distributor_role_disabled" | "no_distributor_role";
+
+const REASON_MESSAGES_AR: Record<ForbiddenReason, string> = {
+  // Distributor role exists but was disabled by an admin.
+  distributor_role_disabled: "حساب الموزع معطّل. يرجى التواصل مع الإدارة.",
+  // User has no distributor role at all (e.g. pure buyer / sales agent).
+  no_distributor_role: "لا تملك صلاحية الوصول كموزع.",
+};
+
+function logAuthz(
+  level: "warn" | "error",
+  status: number,
+  userId: string,
+  reason: string,
+  extra?: Record<string, string>,
+) {
   let path = "<unknown>";
   try {
     const req = getRequest();
@@ -29,8 +49,22 @@ function logForbidden(userId: string, reason: string) {
   } catch {
     // getRequest can throw outside a request scope — ignore for logging.
   }
-  console.warn(
-    `[authz][403] requireEnabledDistributorRole user=${userId} path=${path} reason=${reason}`,
+  const extras = extra
+    ? " " + Object.entries(extra).map(([k, v]) => `${k}=${v}`).join(" ")
+    : "";
+  const line = `[authz][${status}] mw=requireEnabledDistributorRole user=${userId} path=${path} reason=${reason}${extras}`;
+  if (level === "error") console.error(line);
+  else console.warn(line);
+}
+
+function forbidden(reason: ForbiddenReason, userId: string): never {
+  logAuthz("warn", 403, userId, reason);
+  throw new Response(
+    JSON.stringify({ error: "forbidden", reason, message: REASON_MESSAGES_AR[reason] }),
+    {
+      status: 403,
+      headers: { "content-type": "application/json; charset=utf-8" },
+    },
   );
 }
 
@@ -45,9 +79,7 @@ export const requireEnabledDistributorRole = createMiddleware({ type: "function"
       .eq("user_id", userId);
 
     if (error) {
-      console.error(
-        `[authz][500] requireEnabledDistributorRole user=${userId} error=${error.message}`,
-      );
+      logAuthz("error", 500, userId, "role_query_failed", { msg: error.message });
       throw new Response("Authorization check failed", { status: 500 });
     }
 
@@ -62,11 +94,10 @@ export const requireEnabledDistributorRole = createMiddleware({ type: "function"
       const hasDisabledDistributor = roles.some(
         (r) => r.role === "distributor" && r.is_enabled === false,
       );
-      logForbidden(
-        userId,
+      forbidden(
         hasDisabledDistributor ? "distributor_role_disabled" : "no_distributor_role",
+        userId,
       );
-      throw new Response("Distributor access disabled", { status: 403 });
     }
 
     return next({
