@@ -178,7 +178,13 @@ export function CartSheet() {
       unit_price_mad: expected,
     }));
 
+    const requestId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
     console.log("[placeOrder] calling createOrder server fn", {
+      request_id: requestId,
       total_mad: orderTotal,
       items_count: itemsPayload.length,
     });
@@ -192,6 +198,10 @@ export function CartSheet() {
           notes: trimmedNotes ? trimmedNotes : null,
           items: itemsPayload,
         },
+      });
+      console.log("[placeOrder] order created", {
+        request_id: requestId,
+        order_id: result.order_id,
       });
 
       void logActivity({
