@@ -156,25 +156,47 @@ function ShopPage() {
   }, [territoryId, isAdmin]);
 
   // ---------------- Filtering & buckets ----------------
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of products) {
+      if (p.category && p.category.trim()) set.add(p.category.trim());
+    }
+    return Array.from(set).sort();
+  }, [products]);
+
+  const topSellersAll = useMemo(
+    () =>
+      [...products]
+        .filter((p) => p.order_count > 0)
+        .sort((a, b) => b.order_count - a.order_count),
+    [products],
+  );
+  const topSellerIds = useMemo(
+    () => new Set(topSellersAll.slice(0, 12).map((p) => p.id)),
+    [topSellersAll],
+  );
+
   const filtered = useMemo(() => {
     const q = search.trim();
-    if (!q) return products;
-    return products.filter(
+    let list = products;
+    if (activeCategory === "top") {
+      list = list.filter((p) => topSellerIds.has(p.id));
+    } else if (activeCategory === "new") {
+      // newest first by created_at proxy → use last 12 by id order from DB
+      list = [...list].slice(-12).reverse();
+    } else if (activeCategory !== "all") {
+      list = list.filter((p) => (p.category ?? "").trim() === activeCategory);
+    }
+    if (!q) return list;
+    return list.filter(
       (p) =>
         p.name_ar.includes(q) ||
         (p.category ?? "").includes(q) ||
         p.description_ar.includes(q),
     );
-  }, [products, search]);
+  }, [products, search, activeCategory, topSellerIds]);
 
-  const topSellers = useMemo(
-    () =>
-      [...products]
-        .filter((p) => p.order_count > 0)
-        .sort((a, b) => b.order_count - a.order_count)
-        .slice(0, 6),
-    [products],
-  );
+  const topSellers = topSellersAll.slice(0, 6);
 
   const heroProduct = topSellers[0] ?? products[0] ?? null;
 
