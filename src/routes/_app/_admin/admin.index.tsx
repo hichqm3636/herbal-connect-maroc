@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_app/_admin/admin/")({
 interface LowStockProduct {
   id: string;
   name_ar: string;
-  stock: number;
+  stock: number | null;
   low_stock_threshold: number;
 }
 
@@ -110,9 +110,14 @@ function AdminDashboard() {
         .eq("company_id", companyId)
         .eq("active", true);
       const low = (prods ?? [])
-        .filter((p) => p.stock <= (p.low_stock_threshold ?? 5))
-        .sort((a, b) => a.stock - b.stock);
-      setLowStock(low as LowStockProduct[]);
+        // null stock = "available, qty unknown" → never considered low.
+        .filter(
+          (p): p is LowStockProduct =>
+            typeof p.stock === "number" &&
+            p.stock <= (p.low_stock_threshold ?? 5),
+        )
+        .sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0));
+      setLowStock(low);
 
       setBreakdown(counts);
       setStats({

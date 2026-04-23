@@ -113,7 +113,7 @@ export function mapWooProductToInternal(wp: WooProduct): {
   description_ar: string;
   price_mad: number;
   image_url: string | null;
-  stock: number;
+  stock: number | null;
   category: string | null;
 } | null {
   if (!wp?.id) return null;
@@ -121,7 +121,9 @@ export function mapWooProductToInternal(wp: WooProduct): {
     s.replace(/<[^>]*>?/gm, "").replace(/\s+/g, " ").trim();
   const isValidUrl = (url: string) =>
     url.startsWith("http://") || url.startsWith("https://");
-  const DEFAULT_IMAGE = "https://herbialife.com/wp-content/uploads/your-default.jpg";
+  // Hosted in our own Supabase Storage so it can never break.
+  const DEFAULT_IMAGE =
+    "https://jarlejsbrxtrusfjklkg.supabase.co/storage/v1/object/public/product-images/default-product.jpg";
 
   const name = stripHtml(wp.name ?? "");
   if (!name) return null;
@@ -135,11 +137,18 @@ export function mapWooProductToInternal(wp: WooProduct): {
     wp.image?.src?.trim() ||
     DEFAULT_IMAGE;
 
-  const stock = Number.isFinite(wp.stock_quantity)
-    ? Number(wp.stock_quantity)
-    : wp.stock_status === "instock"
-      ? 100
-      : 0;
+  // Stock semantics:
+  //   - WooCommerce returns a finite, non-null stock_quantity → use as-is.
+  //   - stock_status === "instock" but no quantity → null (= "available, qty unknown").
+  //     We MUST NOT invent a fake number (used to be 100) because distributors
+  //     would see false abundance and place orders we can't fulfill.
+  //   - Otherwise → 0 (out of stock).
+  const stock: number | null =
+    wp.stock_quantity !== null && Number.isFinite(wp.stock_quantity)
+      ? Number(wp.stock_quantity)
+      : wp.stock_status === "instock"
+        ? null
+        : 0;
 
   return {
     external_id: String(wp.id),
