@@ -45,6 +45,7 @@ function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [repeatingId, setRepeatingId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<{ phone: string | null; city: string | null } | null>(null);
 
   const handleRepeat = async (e: React.MouseEvent, orderId: string) => {
     e.stopPropagation();
@@ -67,15 +68,57 @@ function OrdersPage() {
     }
   };
 
+  const handleWhatsapp = async (e: React.MouseEvent, order: Order) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const message = buildWhatsAppMessage({
+      items: order.order_items.map((it) => ({
+        name: it.products?.name_ar ?? "—",
+        qty: it.quantity,
+      })),
+      total: Number(order.total_mad),
+      city: profile?.city ?? "—",
+      phone: profile?.phone ?? "—",
+    });
+
+    // Auto-copy the message text
+    try {
+      await navigator.clipboard.writeText(message);
+      toast.success("تم نسخ نص الطلب");
+    } catch {
+      // Non-fatal: still open WhatsApp even if clipboard fails
+    }
+
+    const link = buildWhatsappLink(profile?.phone, message);
+    if (!link) {
+      // No phone on profile — fall back to wa.me without a recipient
+      window.open(
+        `https://wa.me/?text=${encodeURIComponent(message)}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
+      return;
+    }
+    window.open(link, "_blank", "noopener,noreferrer");
+  };
+
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data } = await supabase
-        .from("orders")
-        .select("id, order_number, status, total_mad, points_earned, created_at, notes, order_items(id, quantity, unit_price_mad, products(name_ar, image_url))")
-        .eq("distributor_id", user.id)
-        .order("created_at", { ascending: false });
-      setOrders((data as unknown as Order[]) ?? []);
+      const [{ data: ordersData }, { data: profileData }] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("id, order_number, status, total_mad, points_earned, created_at, notes, order_items(id, quantity, unit_price_mad, products(name_ar, image_url))")
+          .eq("distributor_id", user.id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("phone, city")
+          .eq("id", user.id)
+          .maybeSingle(),
+      ]);
+      setOrders((ordersData as unknown as Order[]) ?? []);
+      setProfile((profileData as { phone: string | null; city: string | null } | null) ?? null);
     })();
   }, [user]);
 
