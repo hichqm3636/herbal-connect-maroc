@@ -314,34 +314,10 @@ function AdminProducts() {
 
   const ensureProductId = async (): Promise<string | null> => {
     if (editing) return editing.id;
-    if (!form.name_ar.trim()) {
-      toast.error("أدخل اسم المنتج أولاً قبل رفع الصور");
-      return null;
-    }
-    if (!companyId) {
-      toast.error("لا توجد شركة مرتبطة بحسابك");
-      return null;
-    }
-    const { data, error } = await supabase
-      .from("products")
-      .insert({
-        name_ar: form.name_ar,
-        description_ar: form.description_ar,
-        price_mad: form.price_mad,
-        category: form.category || null,
-        stock: form.stock,
-        active: form.active,
-        points_per_unit: form.points_per_unit,
-        company_id: companyId,
-      })
-      .select("*")
-      .single();
-    if (error || !data) {
-      toast.error("تعذر إنشاء المنتج");
-      return null;
-    }
-    setEditing({ ...(data as unknown as Omit<Product, "price_tiers">), price_tiers: parseTiers((data as { price_tiers?: unknown }).price_tiers) });
-    return data.id;
+    // Catalog is Woo-only: products must originate from WooCommerce sync
+    // (external_id is now NOT NULL). Manual creation is disabled.
+    toast.error("لا يمكن إنشاء منتجات يدوياً. المنتجات تُضاف فقط عبر مزامنة WooCommerce.");
+    return null;
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -835,18 +811,9 @@ function AdminProducts() {
           updated++;
         }
       } else {
-        if (!companyId) {
-          errors.push(`السطر ${r.line} (${r.sku}): لا توجد شركة`);
-          continue;
-        }
-        const { error } = await supabase
-          .from("products")
-          .insert({ ...payload, description_ar: "", active: true, company_id: companyId });
-        if (error) {
-          errors.push(`السطر ${r.line} (${r.sku}): ${error.message}`);
-        } else {
-          created++;
-        }
+        // Catalog is Woo-only: cannot create new products from CSV. Only
+        // existing products (matched by SKU) can be updated.
+        errors.push(`السطر ${r.line} (${r.sku}): منتج غير موجود — الكاتالوج يُضاف فقط عبر مزامنة WooCommerce`);
       }
     }
 
@@ -961,18 +928,8 @@ function AdminProducts() {
             updated++;
           }
         } else {
-          if (!companyId) {
-            errors.push(`السطر ${lineNum} (${sku}): لا توجد شركة`);
-            continue;
-          }
-          const { error } = await supabase
-            .from("products")
-            .insert({ ...payload, description_ar: "", active: true, company_id: companyId });
-          if (error) {
-            errors.push(`السطر ${lineNum} (${sku}): ${error.message}`);
-          } else {
-            created++;
-          }
+          // Catalog is Woo-only: cannot create new products from CSV.
+          errors.push(`السطر ${lineNum} (${sku}): منتج غير موجود — الكاتالوج يُضاف فقط عبر مزامنة WooCommerce`);
         }
       }
 
