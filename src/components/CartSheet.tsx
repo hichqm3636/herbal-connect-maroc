@@ -129,6 +129,7 @@ export function CartSheet() {
     items.length > 0 && blockedLines.length === 0 && rulesResult.ok;
 
   const placeOrder = async () => {
+    if (submitting) return;
     if (!user || items.length === 0) return;
     if (!companyId) {
       toast.error("لا توجد شركة نشطة");
