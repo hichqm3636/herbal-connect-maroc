@@ -1,27 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { requireUserSession } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { authorizeCompanyAdmin } from "@/server/authz";
 
 /**
  * Server functions for managing WooCommerce supplier credentials.
  *
- * All operations require the caller to be an admin (or super admin) of the
- * supplier's company. Credentials NEVER leave the server in cleartext —
- * `consumer_secret` is masked when listed.
+ * Admin (or super admin) of the supplier's company only. Credentials never
+ * leave the server in cleartext — `consumer_secret` is masked on read.
  */
 
 const PLACEHOLDER = "env://default";
-
-function isPlaceholder(v: string | null | undefined): boolean {
-  return !v || v === PLACEHOLDER;
-}
-
-function mask(secret: string | null | undefined): string {
-  if (isPlaceholder(secret)) return "";
-  const s = String(secret);
-  if (s.length <= 4) return "••••";
-  return "••••••" + s.slice(-4);
-}
+const isPlaceholder = (v: string | null | undefined) => !v || v === PLACEHOLDER;
+const mask = (s: string | null | undefined) => {
+  if (isPlaceholder(s)) return "";
+  const v = String(s);
+  return v.length <= 4 ? "••••" : "••••••" + v.slice(-4);
+};
 
 export interface SupplierListItem {
   id: string;
@@ -38,31 +33,11 @@ export interface SupplierListItem {
   is_default: boolean;
 }
 
-async function assertAdminAndGetCompany(): Promise<{ companyId: string; isSuperAdmin: boolean }> {
-  const { user } = await requireUserSession();
-  // Load profile + roles
-  const [{ data: profile }, { data: roles }] = await Promise.all([
-    supabaseAdmin.from("profiles").select("company_id").eq("id", user.id).maybeSingle(),
-    supabaseAdmin.from("user_roles").select("role, company_id, is_enabled").eq("user_id", user.id),
-  ]);
-  const isSuperAdmin = (roles ?? []).some((r) => r.role === "super_admin" && r.is_enabled);
-  const companyId = profile?.company_id ?? null;
-  if (!isSuperAdmin) {
-    const isAdmin = (roles ?? []).some(
-      (r) => r.role === "admin" && r.is_enabled && r.company_id === companyId,
-    );
-    if (!isAdmin || !companyId) {
-      throw new Error("صلاحية غير كافية");
-    }
-  }
-  if (!companyId) throw new Error("الشركة غير محددة");
-  return { companyId, isSuperAdmin };
-}
-
-/** List suppliers for the current admin's company. Auto-creates default if none. */
-export const listSuppliers = createServerFn({ method: "GET" }).handler(
-  async (): Promise<SupplierListItem[]> => {
-    const { companyId } = await assertAdminAndGetCompany();
+export const listSuppliers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<SupplierListItem[]> => {
+    const { companyId } = await authorizeCompanyAdmin(context);
+    if (!companyId) return [];
 
     let { data: rows } = await supabaseAdmin
       .from("suppliers" as never)
@@ -73,8 +48,6 @@ export const listSuppliers = createServerFn({ method: "GET" }).handler(
       .order("is_default", { ascending: false })
       .order("created_at", { ascending: true });
 
-    // Auto-create a default supplier row if none exists, so the UI always has
-    // something to edit.
     if (!rows || rows.length === 0) {
       const { data: created, error } = await supabaseAdmin
         .from("suppliers" as never)
@@ -118,34 +91,33 @@ export const listSuppliers = createServerFn({ method: "GET" }).handler(
       is_active: r.is_active,
       is_default: r.is_default,
     }));
-  },
-);
+  });
 
 interface UpdateSupplierInput {
   id: string;
   name?: string;
   domain?: string;
   consumer_key?: string;
-  /** Pass empty string to leave unchanged. */
+  /** Empty/undefined = leave unchanged. */
   consumer_secret?: string;
   is_active?: boolean;
   is_default?: boolean;
 }
 
-/** Update credentials / flags for a supplier. Empty secret = keep existing. */
 export const updateSupplier = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: UpdateSupplierInput) => input)
-  .handler(async ({ data }) => {
-    const { companyId, isSuperAdmin } = await assertAdminAndGetCompany();
+  .handler(async ({ data, context }) => {
+    const { companyId, isSuper } = await authorizeCompanyAdmin(context);
 
-    // Confirm the supplier belongs to this company (super admin can edit any)
     const { data: existing } = await supabaseAdmin
       .from("suppliers" as never)
-      .select("id, company_id, consumer_secret, is_default")
+      .select("id, company_id")
       .eq("id", data.id)
       .maybeSingle();
     if (!existing) throw new Error("المورّد غير موجود");
-    if (!isSuperAdmin && (existing as { company_id: string }).company_id !== companyId) {
+    const supplierCompanyId = (existing as { company_id: string }).company_id;
+    if (!isSuper && supplierCompanyId !== companyId) {
       throw new Error("صلاحية غير كافية");
     }
 
@@ -170,12 +142,11 @@ export const updateSupplier = createServerFn({ method: "POST" })
 
     if (Object.keys(update).length === 0) return { ok: true, changed: false };
 
-    // If marking this supplier as default, unset other defaults for the company.
     if (update.is_default === true) {
       await supabaseAdmin
         .from("suppliers" as never)
         .update({ is_default: false } as never)
-        .eq("company_id", (existing as { company_id: string }).company_id)
+        .eq("company_id", supplierCompanyId)
         .neq("id", data.id);
     }
 
@@ -189,24 +160,21 @@ export const updateSupplier = createServerFn({ method: "POST" })
 
 interface TestConnectionInput {
   id?: string;
-  /** Or provide ad-hoc credentials to test before saving. */
   domain?: string;
   consumer_key?: string;
   consumer_secret?: string;
 }
 
-/** Test WooCommerce credentials by hitting `/wp-json/wc/v3/products?per_page=1`. */
 export const testSupplierConnection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: TestConnectionInput) => input)
-  .handler(async ({ data }): Promise<{ ok: boolean; status: number; message: string }> => {
-    await assertAdminAndGetCompany();
+  .handler(async ({ data, context }): Promise<{ ok: boolean; status: number; message: string }> => {
+    await authorizeCompanyAdmin(context);
 
     let domain = data.domain?.trim() ?? "";
     let key = data.consumer_key?.trim() ?? "";
     let secret = data.consumer_secret?.trim() ?? "";
 
-    // If id provided and any field is empty, fall back to stored credentials
-    // (resolving env placeholders).
     if (data.id && (!domain || !key || !secret)) {
       const { data: row } = await supabaseAdmin
         .from("suppliers" as never)
@@ -232,15 +200,9 @@ export const testSupplierConnection = createServerFn({ method: "POST" })
     const auth = "Basic " + btoa(`${key}:${secret}`);
     try {
       const res = await fetch(url, { headers: { Authorization: auth } });
-      if (res.ok) {
-        return { ok: true, status: res.status, message: "Connection successful" };
-      }
+      if (res.ok) return { ok: true, status: res.status, message: "Connection successful" };
       const body = await res.text().catch(() => "");
-      return {
-        ok: false,
-        status: res.status,
-        message: body.slice(0, 200) || `HTTP ${res.status}`,
-      };
+      return { ok: false, status: res.status, message: body.slice(0, 200) || `HTTP ${res.status}` };
     } catch (e) {
       return { ok: false, status: 0, message: (e as Error).message };
     }
