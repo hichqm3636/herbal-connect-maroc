@@ -25,6 +25,7 @@ import {
   BarChart3,
   Cog,
   Briefcase,
+  Server,
 } from "lucide-react";
 import {
   Sidebar,
