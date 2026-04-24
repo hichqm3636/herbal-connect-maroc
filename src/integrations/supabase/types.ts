@@ -1252,6 +1252,7 @@ export type Database = {
           sku: string | null
           source: string
           stock: number | null
+          supplier_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1277,6 +1278,7 @@ export type Database = {
           sku?: string | null
           source?: string
           stock?: number | null
+          supplier_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1302,6 +1304,7 @@ export type Database = {
           sku?: string | null
           source?: string
           stock?: number | null
+          supplier_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1310,6 +1313,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -1522,6 +1532,56 @@ export type Database = {
         }
         Relationships: []
       }
+      suppliers: {
+        Row: {
+          company_id: string
+          consumer_key: string
+          consumer_secret: string
+          created_at: string
+          domain: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          updated_at: string
+          webhook_secret: string
+        }
+        Insert: {
+          company_id: string
+          consumer_key: string
+          consumer_secret: string
+          created_at?: string
+          domain: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Update: {
+          company_id?: string
+          consumer_key?: string
+          consumer_secret?: string
+          created_at?: string
+          domain?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       territories: {
         Row: {
           city: string | null
@@ -1629,6 +1689,53 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      woo_webhook_deliveries: {
+        Row: {
+          delivery_id: string
+          error: string | null
+          id: string
+          payload_hash: string | null
+          processed_at: string | null
+          received_at: string
+          resource_id: string | null
+          status: string
+          supplier_id: string
+          topic: string | null
+        }
+        Insert: {
+          delivery_id: string
+          error?: string | null
+          id?: string
+          payload_hash?: string | null
+          processed_at?: string | null
+          received_at?: string
+          resource_id?: string | null
+          status?: string
+          supplier_id: string
+          topic?: string | null
+        }
+        Update: {
+          delivery_id?: string
+          error?: string | null
+          id?: string
+          payload_hash?: string | null
+          processed_at?: string | null
+          received_at?: string
+          resource_id?: string | null
+          status?: string
+          supplier_id?: string
+          topic?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "woo_webhook_deliveries_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]

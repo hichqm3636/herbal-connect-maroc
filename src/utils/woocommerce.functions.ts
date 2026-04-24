@@ -15,9 +15,9 @@ import {
  */
 
 export const syncWooCommerceProducts = createServerFn({ method: "POST" })
-  .inputValidator((input: { companyId: string }) => input)
+  .inputValidator((input: { companyId: string; supplierId?: string }) => input)
   .handler(async ({ data }): Promise<SyncProductsResult> => {
-    return fetchAndSyncWooProducts(data.companyId);
+    return fetchAndSyncWooProducts(data.companyId, data.supplierId);
   });
 
 export const sendOrderToSupplier = createServerFn({ method: "POST" })
