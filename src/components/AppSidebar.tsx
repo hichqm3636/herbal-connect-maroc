@@ -25,6 +25,7 @@ import {
   BarChart3,
   Cog,
   Briefcase,
+  Server,
 } from "lucide-react";
 import {
   Sidebar,
@@ -125,6 +126,7 @@ const companyAdminSections: NavSection[] = [
     items: [
       { title: "إعدادات الشركة", url: "/admin/branding", icon: Settings },
       { title: "الفريق والصلاحيات", url: "/admin/team", icon: UsersRound },
+      { title: "الموردون (WooCommerce)", url: "/admin/suppliers", icon: Server },
       { title: "فحص صحة الوسائط", url: "/admin/storage-health", icon: Activity },
     ],
   },

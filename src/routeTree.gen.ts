@@ -35,6 +35,7 @@ import { Route as AppProductsProductIdRouteImport } from './routes/_app/products
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
 import { Route as AppAdminAdminTerritoriesRouteImport } from './routes/_app/_admin/admin.territories'
 import { Route as AppAdminAdminTeamRouteImport } from './routes/_app/_admin/admin.team'
+import { Route as AppAdminAdminSuppliersRouteImport } from './routes/_app/_admin/admin.suppliers'
 import { Route as AppAdminAdminStorageHealthRouteImport } from './routes/_app/_admin/admin.storage-health'
 import { Route as AppAdminAdminSalesAgentsRouteImport } from './routes/_app/_admin/admin.sales-agents'
 import { Route as AppAdminAdminProductsRouteImport } from './routes/_app/_admin/admin.products'
@@ -185,6 +186,11 @@ const AppAdminAdminTeamRoute = AppAdminAdminTeamRouteImport.update({
   path: '/admin/team',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminAdminSuppliersRoute = AppAdminAdminSuppliersRouteImport.update({
+  id: '/admin/suppliers',
+  path: '/admin/suppliers',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminAdminStorageHealthRoute =
   AppAdminAdminStorageHealthRouteImport.update({
     id: '/admin/storage-health',
@@ -321,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/admin/products': typeof AppAdminAdminProductsRoute
   '/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
   '/admin/storage-health': typeof AppAdminAdminStorageHealthRoute
+  '/admin/suppliers': typeof AppAdminAdminSuppliersRoute
   '/admin/team': typeof AppAdminAdminTeamRoute
   '/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/admin/': typeof AppAdminAdminIndexRoute
@@ -364,6 +371,7 @@ export interface FileRoutesByTo {
   '/admin/products': typeof AppAdminAdminProductsRoute
   '/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
   '/admin/storage-health': typeof AppAdminAdminStorageHealthRoute
+  '/admin/suppliers': typeof AppAdminAdminSuppliersRoute
   '/admin/team': typeof AppAdminAdminTeamRoute
   '/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/admin': typeof AppAdminAdminIndexRoute
@@ -411,6 +419,7 @@ export interface FileRoutesById {
   '/_app/_admin/admin/products': typeof AppAdminAdminProductsRoute
   '/_app/_admin/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
   '/_app/_admin/admin/storage-health': typeof AppAdminAdminStorageHealthRoute
+  '/_app/_admin/admin/suppliers': typeof AppAdminAdminSuppliersRoute
   '/_app/_admin/admin/team': typeof AppAdminAdminTeamRoute
   '/_app/_admin/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/_app/_admin/admin/': typeof AppAdminAdminIndexRoute
@@ -457,6 +466,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/sales-agents'
     | '/admin/storage-health'
+    | '/admin/suppliers'
     | '/admin/team'
     | '/admin/territories'
     | '/admin/'
@@ -500,6 +510,7 @@ export interface FileRouteTypes {
     | '/admin/products'
     | '/admin/sales-agents'
     | '/admin/storage-health'
+    | '/admin/suppliers'
     | '/admin/team'
     | '/admin/territories'
     | '/admin'
@@ -546,6 +557,7 @@ export interface FileRouteTypes {
     | '/_app/_admin/admin/products'
     | '/_app/_admin/admin/sales-agents'
     | '/_app/_admin/admin/storage-health'
+    | '/_app/_admin/admin/suppliers'
     | '/_app/_admin/admin/team'
     | '/_app/_admin/admin/territories'
     | '/_app/_admin/admin/'
@@ -750,6 +762,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminTeamRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/_admin/admin/suppliers': {
+      id: '/_app/_admin/admin/suppliers'
+      path: '/admin/suppliers'
+      fullPath: '/admin/suppliers'
+      preLoaderRoute: typeof AppAdminAdminSuppliersRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/_admin/admin/storage-health': {
       id: '/_app/_admin/admin/storage-health'
       path: '/admin/storage-health'
@@ -893,6 +912,7 @@ interface AppAdminRouteChildren {
   AppAdminAdminProductsRoute: typeof AppAdminAdminProductsRoute
   AppAdminAdminSalesAgentsRoute: typeof AppAdminAdminSalesAgentsRoute
   AppAdminAdminStorageHealthRoute: typeof AppAdminAdminStorageHealthRoute
+  AppAdminAdminSuppliersRoute: typeof AppAdminAdminSuppliersRoute
   AppAdminAdminTeamRoute: typeof AppAdminAdminTeamRoute
   AppAdminAdminTerritoriesRoute: typeof AppAdminAdminTerritoriesRoute
   AppAdminAdminIndexRoute: typeof AppAdminAdminIndexRoute
@@ -917,6 +937,7 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminAdminProductsRoute: AppAdminAdminProductsRoute,
   AppAdminAdminSalesAgentsRoute: AppAdminAdminSalesAgentsRoute,
   AppAdminAdminStorageHealthRoute: AppAdminAdminStorageHealthRoute,
+  AppAdminAdminSuppliersRoute: AppAdminAdminSuppliersRoute,
   AppAdminAdminTeamRoute: AppAdminAdminTeamRoute,
   AppAdminAdminTerritoriesRoute: AppAdminAdminTerritoriesRoute,
   AppAdminAdminIndexRoute: AppAdminAdminIndexRoute,
