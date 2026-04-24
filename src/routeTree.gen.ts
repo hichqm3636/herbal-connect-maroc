@@ -26,6 +26,7 @@ import { Route as AppInvoicesRouteImport } from './routes/_app/invoices'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppAdminRouteImport } from './routes/_app/_admin'
 import { Route as AppSuperAdminIndexRouteImport } from './routes/_app/super-admin/index'
+import { Route as ApiPublicWooWebhookRouteImport } from './routes/api/public/woo-webhook'
 import { Route as AppSuperAdminPricingTiersRouteImport } from './routes/_app/super-admin/pricing-tiers'
 import { Route as AppSuperAdminOrderRulesRouteImport } from './routes/_app/super-admin/order-rules'
 import { Route as AppSuperAdminDistributorsRouteImport } from './routes/_app/super-admin/distributors'
@@ -135,6 +136,11 @@ const AppSuperAdminIndexRoute = AppSuperAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppSuperAdminRoute,
+} as any)
+const ApiPublicWooWebhookRoute = ApiPublicWooWebhookRouteImport.update({
+  id: '/api/public/woo-webhook',
+  path: '/api/public/woo-webhook',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppSuperAdminPricingTiersRoute =
   AppSuperAdminPricingTiersRouteImport.update({
@@ -300,6 +306,7 @@ export interface FileRoutesByFullPath {
   '/super-admin/distributors': typeof AppSuperAdminDistributorsRoute
   '/super-admin/order-rules': typeof AppSuperAdminOrderRulesRoute
   '/super-admin/pricing-tiers': typeof AppSuperAdminPricingTiersRoute
+  '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/super-admin/': typeof AppSuperAdminIndexRoute
   '/admin/activity': typeof AppAdminAdminActivityRoute
   '/admin/analytics': typeof AppAdminAdminAnalyticsRoute
@@ -342,6 +349,7 @@ export interface FileRoutesByTo {
   '/super-admin/distributors': typeof AppSuperAdminDistributorsRoute
   '/super-admin/order-rules': typeof AppSuperAdminOrderRulesRoute
   '/super-admin/pricing-tiers': typeof AppSuperAdminPricingTiersRoute
+  '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/super-admin': typeof AppSuperAdminIndexRoute
   '/admin/activity': typeof AppAdminAdminActivityRoute
   '/admin/analytics': typeof AppAdminAdminAnalyticsRoute
@@ -388,6 +396,7 @@ export interface FileRoutesById {
   '/_app/super-admin/distributors': typeof AppSuperAdminDistributorsRoute
   '/_app/super-admin/order-rules': typeof AppSuperAdminOrderRulesRoute
   '/_app/super-admin/pricing-tiers': typeof AppSuperAdminPricingTiersRoute
+  '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/_app/super-admin/': typeof AppSuperAdminIndexRoute
   '/_app/_admin/admin/activity': typeof AppAdminAdminActivityRoute
   '/_app/_admin/admin/analytics': typeof AppAdminAdminAnalyticsRoute
@@ -433,6 +442,7 @@ export interface FileRouteTypes {
     | '/super-admin/distributors'
     | '/super-admin/order-rules'
     | '/super-admin/pricing-tiers'
+    | '/api/public/woo-webhook'
     | '/super-admin/'
     | '/admin/activity'
     | '/admin/analytics'
@@ -475,6 +485,7 @@ export interface FileRouteTypes {
     | '/super-admin/distributors'
     | '/super-admin/order-rules'
     | '/super-admin/pricing-tiers'
+    | '/api/public/woo-webhook'
     | '/super-admin'
     | '/admin/activity'
     | '/admin/analytics'
@@ -520,6 +531,7 @@ export interface FileRouteTypes {
     | '/_app/super-admin/distributors'
     | '/_app/super-admin/order-rules'
     | '/_app/super-admin/pricing-tiers'
+    | '/api/public/woo-webhook'
     | '/_app/super-admin/'
     | '/_app/_admin/admin/activity'
     | '/_app/_admin/admin/analytics'
@@ -551,6 +563,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  ApiPublicWooWebhookRoute: typeof ApiPublicWooWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -673,6 +686,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/super-admin/'
       preLoaderRoute: typeof AppSuperAdminIndexRouteImport
       parentRoute: typeof AppSuperAdminRoute
+    }
+    '/api/public/woo-webhook': {
+      id: '/api/public/woo-webhook'
+      path: '/api/public/woo-webhook'
+      fullPath: '/api/public/woo-webhook'
+      preLoaderRoute: typeof ApiPublicWooWebhookRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/super-admin/pricing-tiers': {
       id: '/_app/super-admin/pricing-tiers'
@@ -968,6 +988,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   InviteTokenRoute: InviteTokenRoute,
+  ApiPublicWooWebhookRoute: ApiPublicWooWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
