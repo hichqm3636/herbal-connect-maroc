@@ -40,6 +40,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { logActivity, logFieldChanges } from "@/lib/activityLog";
 import { formatMAD } from "@/lib/format";
