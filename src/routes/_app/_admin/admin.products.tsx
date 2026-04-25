@@ -666,6 +666,12 @@ function AdminProducts() {
         }
       }
 
+      // Helper: a CSV cell is "explicitly provided" only when present and non-empty.
+      const hasValue = (v: unknown): boolean => {
+        if (v === undefined || v === null) return false;
+        return String(v).trim() !== "";
+      };
+
       const preview: CsvPreviewRow[] = rows.map((row, idx) => {
         const sku = (row.sku ?? "").trim();
         const name = (row.name ?? row.name_ar ?? "").trim();
@@ -711,6 +717,21 @@ function AdminProducts() {
           statusLabel = "Invalid minimum_order";
         }
 
+        const has_pharmacy_price = hasValue(row.pharmacy_price);
+        const has_map_price = hasValue(row.map_price);
+        const has_any_tier =
+          hasValue(row.distributor_6) ||
+          hasValue(row.distributor_12) ||
+          hasValue(row.distributor_24);
+
+        const appliedFields: string[] = [];
+        const skippedFields: string[] = [];
+        (has_pharmacy_price ? appliedFields : skippedFields).push("pharmacy_price");
+        (has_map_price ? appliedFields : skippedFields).push("map_price");
+        (has_any_tier ? appliedFields : skippedFields).push("price_tiers");
+        // cost_price is never set via this CSV — always skipped.
+        skippedFields.push("cost_price");
+
         return {
           line: idx + 2,
           name,
@@ -726,11 +747,17 @@ function AdminProducts() {
           tier_12: numOrNull(row.distributor_12),
           tier_24: numOrNull(row.distributor_24),
           minimum_order,
+          has_pharmacy_price,
+          has_map_price,
+          has_any_tier,
           status,
           statusLabel,
           willUpdate: !!sku && existingSet.has(sku),
+          appliedFields,
+          skippedFields,
         };
       });
+
 
       setPreviewRows(preview);
       setPreviewOpen(true);
