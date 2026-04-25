@@ -806,8 +806,12 @@ function AdminProducts() {
     // cost_price) are NEVER overwritten unless the CSV explicitly provides a
     // non-empty value. Auto-derivation from RRP is intentionally NOT applied
     // here — derivation can silently overwrite manually-set wholesale prices.
-    const buildSafePayload = (r: CsvPreviewRow): Record<string, unknown> => {
-      const payload: Record<string, unknown> = {
+    type ProductUpdate = Parameters<
+      ReturnType<typeof supabase.from<"products">>["update"]
+    >[0];
+
+    const buildSafePayload = (r: CsvPreviewRow): ProductUpdate => {
+      const payload: ProductUpdate = {
         sku: r.sku,
         name_ar: r.name,
         price_mad: r.price,
@@ -825,12 +829,11 @@ function AdminProducts() {
         payload.map_price = r.map_price;
       }
       if (r.has_any_tier) {
-        const tiers = [
+        payload.price_tiers = [
           { min_qty: 6, price: r.tier_6 ?? 0 },
           { min_qty: 12, price: r.tier_12 ?? 0 },
           { min_qty: 24, price: r.tier_24 ?? 0 },
         ];
-        payload.price_tiers = tiers;
       }
       // cost_price is intentionally never set via CSV import.
       return payload;
