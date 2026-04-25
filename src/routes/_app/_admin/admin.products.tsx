@@ -91,9 +91,17 @@ interface CsvPreviewRow {
   tier_12: number | null;
   tier_24: number | null;
   minimum_order: number;
+  // Presence flags: true ONLY when the CSV column had a non-empty value.
+  // Used to safely skip internal pricing fields when not explicitly provided.
+  has_pharmacy_price: boolean;
+  has_map_price: boolean;
+  has_any_tier: boolean;
   status: "ok" | "missing_sku" | "missing_name" | "invalid_price" | "invalid_min_order";
   statusLabel: string;
   willUpdate: boolean;
+  // Diagnostic: which sensitive fields will be applied vs skipped.
+  appliedFields: string[];
+  skippedFields: string[];
 }
 
 interface ProductImage {
