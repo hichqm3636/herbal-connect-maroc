@@ -40,6 +40,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { logActivity, logFieldChanges } from "@/lib/activityLog";
 import { formatMAD } from "@/lib/format";
@@ -91,9 +92,17 @@ interface CsvPreviewRow {
   tier_12: number | null;
   tier_24: number | null;
   minimum_order: number;
+  // Presence flags: true ONLY when the CSV column had a non-empty value.
+  // Used to safely skip internal pricing fields when not explicitly provided.
+  has_pharmacy_price: boolean;
+  has_map_price: boolean;
+  has_any_tier: boolean;
   status: "ok" | "missing_sku" | "missing_name" | "invalid_price" | "invalid_min_order";
   statusLabel: string;
   willUpdate: boolean;
+  // Diagnostic: which sensitive fields will be applied vs skipped.
+  appliedFields: string[];
+  skippedFields: string[];
 }
 
 interface ProductImage {
@@ -658,6 +667,12 @@ function AdminProducts() {
         }
       }
 
+      // Helper: a CSV cell is "explicitly provided" only when present and non-empty.
+      const hasValue = (v: unknown): boolean => {
+        if (v === undefined || v === null) return false;
+        return String(v).trim() !== "";
+      };
+
       const preview: CsvPreviewRow[] = rows.map((row, idx) => {
         const sku = (row.sku ?? "").trim();
         const name = (row.name ?? row.name_ar ?? "").trim();
@@ -703,6 +718,21 @@ function AdminProducts() {
           statusLabel = "Invalid minimum_order";
         }
 
+        const has_pharmacy_price = hasValue(row.pharmacy_price);
+        const has_map_price = hasValue(row.map_price);
+        const has_any_tier =
+          hasValue(row.distributor_6) ||
+          hasValue(row.distributor_12) ||
+          hasValue(row.distributor_24);
+
+        const appliedFields: string[] = [];
+        const skippedFields: string[] = [];
+        (has_pharmacy_price ? appliedFields : skippedFields).push("pharmacy_price");
+        (has_map_price ? appliedFields : skippedFields).push("map_price");
+        (has_any_tier ? appliedFields : skippedFields).push("price_tiers");
+        // cost_price is never set via this CSV — always skipped.
+        skippedFields.push("cost_price");
+
         return {
           line: idx + 2,
           name,
@@ -718,11 +748,17 @@ function AdminProducts() {
           tier_12: numOrNull(row.distributor_12),
           tier_24: numOrNull(row.distributor_24),
           minimum_order,
+          has_pharmacy_price,
+          has_map_price,
+          has_any_tier,
           status,
           statusLabel,
           willUpdate: !!sku && existingSet.has(sku),
+          appliedFields,
+          skippedFields,
         };
       });
+
 
       setPreviewRows(preview);
       setPreviewOpen(true);
@@ -766,38 +802,52 @@ function AdminProducts() {
       }
     }
 
-    for (const r of valid) {
-      // Build wholesale fields. Auto-derive missing tiers from RRP.
-      const rrp = r.rrp_price ?? r.price;
-      const derived = rrp > 0 ? deriveWholesaleFromRRP(rrp) : null;
+    // SAFE PAYLOAD BUILDER
+    // Sensitive internal pricing fields (pharmacy_price, map_price, price_tiers,
+    // cost_price) are NEVER overwritten unless the CSV explicitly provides a
+    // non-empty value. Auto-derivation from RRP is intentionally NOT applied
+    // here — derivation can silently overwrite manually-set wholesale prices.
+    type ProductUpdate = Database["public"]["Tables"]["products"]["Update"];
 
-      const tiers = [
-        {
-          min_qty: 6,
-          price: r.tier_6 ?? derived?.price_tiers[0].price ?? 0,
-        },
-        {
-          min_qty: 12,
-          price: r.tier_12 ?? derived?.price_tiers[1].price ?? 0,
-        },
-        {
-          min_qty: 24,
-          price: r.tier_24 ?? derived?.price_tiers[2].price ?? 0,
-        },
-      ];
-
-      const payload = {
+    const buildSafePayload = (r: CsvPreviewRow): ProductUpdate => {
+      const payload: ProductUpdate = {
         sku: r.sku,
         name_ar: r.name,
         price_mad: r.price,
         category: r.category || null,
         stock: r.stock,
-        rrp_price: r.rrp_price,
-        pharmacy_price: r.pharmacy_price ?? derived?.pharmacy_price ?? null,
-        map_price: r.map_price ?? derived?.map_price ?? null,
-        price_tiers: tiers,
         minimum_order: r.minimum_order,
       };
+      if (r.rrp_price !== null) payload.rrp_price = r.rrp_price;
+
+      // Sensitive fields — only set if explicitly provided in the CSV row.
+      if (r.has_pharmacy_price && r.pharmacy_price !== null) {
+        payload.pharmacy_price = r.pharmacy_price;
+      }
+      if (r.has_map_price && r.map_price !== null) {
+        payload.map_price = r.map_price;
+      }
+      if (r.has_any_tier) {
+        payload.price_tiers = [
+          { min_qty: 6, price: r.tier_6 ?? 0 },
+          { min_qty: 12, price: r.tier_12 ?? 0 },
+          { min_qty: 24, price: r.tier_24 ?? 0 },
+        ];
+      }
+      // cost_price is intentionally never set via CSV import.
+      return payload;
+    };
+
+    for (const r of valid) {
+      const payload = buildSafePayload(r);
+
+      // Diagnostic logging (no secrets) — which fields are applied vs skipped.
+      console.info(
+        `[CSV import] ${r.sku} → applied:`,
+        Object.keys(payload),
+        "| skipped sensitive:",
+        r.skippedFields,
+      );
 
       const existingId = existingMap.get(r.sku);
       if (existingId) {
@@ -816,6 +866,7 @@ function AdminProducts() {
         errors.push(`السطر ${r.line} (${r.sku}): منتج غير موجود — الكاتالوج يُضاف فقط عبر مزامنة WooCommerce`);
       }
     }
+
 
     const failedSkus = new Set<string>();
     for (const e of errors) {
@@ -1528,6 +1579,13 @@ function AdminProducts() {
                   أخطاء: <strong>{previewRows.filter((r) => r.status !== "ok").length}</strong>
                 </span>
               </div>
+              <div className="rounded-md border bg-muted/40 p-3 text-xs space-y-1">
+                <div className="font-semibold text-foreground">حماية الأسعار الداخلية</div>
+                <div className="text-muted-foreground">
+                  الحقول الحساسة (<code>pharmacy_price</code>, <code>map_price</code>, <code>price_tiers</code>, <code>cost_price</code>)
+                  لن تُحدَّث إلا إذا كانت الخانة في CSV غير فارغة. <code>cost_price</code> لا يُستورد أبداً عبر CSV.
+                </div>
+              </div>
               <div className="border rounded-md max-h-[50vh] overflow-auto">
                 <Table>
                   <TableHeader>
@@ -1536,6 +1594,7 @@ function AdminProducts() {
                       <TableHead>SKU</TableHead>
                       <TableHead>السعر</TableHead>
                       <TableHead>الحالة</TableHead>
+                      <TableHead>حقول حساسة</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1552,6 +1611,20 @@ function AdminProducts() {
                           ) : (
                             <Badge variant="destructive">{r.statusLabel}</Badge>
                           )}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <div className="flex flex-col gap-1">
+                            {r.appliedFields.length > 0 && (
+                              <span className="text-primary">
+                                ✓ تطبيق: {r.appliedFields.join(", ")}
+                              </span>
+                            )}
+                            {r.skippedFields.length > 0 && (
+                              <span className="text-muted-foreground">
+                                ⊘ تخطّي: {r.skippedFields.join(", ")}
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
