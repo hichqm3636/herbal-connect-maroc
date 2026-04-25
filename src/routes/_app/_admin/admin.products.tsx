@@ -1626,8 +1626,6 @@ function AdminProducts() {
                             )}
                           </div>
                         </TableCell>
-
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
