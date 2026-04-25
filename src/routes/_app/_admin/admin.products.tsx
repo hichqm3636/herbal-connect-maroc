@@ -801,38 +801,51 @@ function AdminProducts() {
       }
     }
 
-    for (const r of valid) {
-      // Build wholesale fields. Auto-derive missing tiers from RRP.
-      const rrp = r.rrp_price ?? r.price;
-      const derived = rrp > 0 ? deriveWholesaleFromRRP(rrp) : null;
-
-      const tiers = [
-        {
-          min_qty: 6,
-          price: r.tier_6 ?? derived?.price_tiers[0].price ?? 0,
-        },
-        {
-          min_qty: 12,
-          price: r.tier_12 ?? derived?.price_tiers[1].price ?? 0,
-        },
-        {
-          min_qty: 24,
-          price: r.tier_24 ?? derived?.price_tiers[2].price ?? 0,
-        },
-      ];
-
-      const payload = {
+    // SAFE PAYLOAD BUILDER
+    // Sensitive internal pricing fields (pharmacy_price, map_price, price_tiers,
+    // cost_price) are NEVER overwritten unless the CSV explicitly provides a
+    // non-empty value. Auto-derivation from RRP is intentionally NOT applied
+    // here — derivation can silently overwrite manually-set wholesale prices.
+    const buildSafePayload = (r: CsvPreviewRow): Record<string, unknown> => {
+      const payload: Record<string, unknown> = {
         sku: r.sku,
         name_ar: r.name,
         price_mad: r.price,
         category: r.category || null,
         stock: r.stock,
-        rrp_price: r.rrp_price,
-        pharmacy_price: r.pharmacy_price ?? derived?.pharmacy_price ?? null,
-        map_price: r.map_price ?? derived?.map_price ?? null,
-        price_tiers: tiers,
         minimum_order: r.minimum_order,
       };
+      if (r.rrp_price !== null) payload.rrp_price = r.rrp_price;
+
+      // Sensitive fields — only set if explicitly provided in the CSV row.
+      if (r.has_pharmacy_price && r.pharmacy_price !== null) {
+        payload.pharmacy_price = r.pharmacy_price;
+      }
+      if (r.has_map_price && r.map_price !== null) {
+        payload.map_price = r.map_price;
+      }
+      if (r.has_any_tier) {
+        const tiers = [
+          { min_qty: 6, price: r.tier_6 ?? 0 },
+          { min_qty: 12, price: r.tier_12 ?? 0 },
+          { min_qty: 24, price: r.tier_24 ?? 0 },
+        ];
+        payload.price_tiers = tiers;
+      }
+      // cost_price is intentionally never set via CSV import.
+      return payload;
+    };
+
+    for (const r of valid) {
+      const payload = buildSafePayload(r);
+
+      // Diagnostic logging (no secrets) — which fields are applied vs skipped.
+      console.info(
+        `[CSV import] ${r.sku} → applied:`,
+        Object.keys(payload),
+        "| skipped sensitive:",
+        r.skippedFields,
+      );
 
       const existingId = existingMap.get(r.sku);
       if (existingId) {
@@ -851,6 +864,7 @@ function AdminProducts() {
         errors.push(`السطر ${r.line} (${r.sku}): منتج غير موجود — الكاتالوج يُضاف فقط عبر مزامنة WooCommerce`);
       }
     }
+
 
     const failedSkus = new Set<string>();
     for (const e of errors) {
