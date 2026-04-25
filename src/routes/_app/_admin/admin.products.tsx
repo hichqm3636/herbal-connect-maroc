@@ -1579,6 +1579,13 @@ function AdminProducts() {
                   أخطاء: <strong>{previewRows.filter((r) => r.status !== "ok").length}</strong>
                 </span>
               </div>
+              <div className="rounded-md border bg-muted/40 p-3 text-xs space-y-1">
+                <div className="font-semibold text-foreground">حماية الأسعار الداخلية</div>
+                <div className="text-muted-foreground">
+                  الحقول الحساسة (<code>pharmacy_price</code>, <code>map_price</code>, <code>price_tiers</code>, <code>cost_price</code>)
+                  لن تُحدَّث إلا إذا كانت الخانة في CSV غير فارغة. <code>cost_price</code> لا يُستورد أبداً عبر CSV.
+                </div>
+              </div>
               <div className="border rounded-md max-h-[50vh] overflow-auto">
                 <Table>
                   <TableHeader>
@@ -1587,6 +1594,7 @@ function AdminProducts() {
                       <TableHead>SKU</TableHead>
                       <TableHead>السعر</TableHead>
                       <TableHead>الحالة</TableHead>
+                      <TableHead>حقول حساسة</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1603,6 +1611,22 @@ function AdminProducts() {
                           ) : (
                             <Badge variant="destructive">{r.statusLabel}</Badge>
                           )}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <div className="flex flex-col gap-1">
+                            {r.appliedFields.length > 0 && (
+                              <span className="text-primary">
+                                ✓ تطبيق: {r.appliedFields.join(", ")}
+                              </span>
+                            )}
+                            {r.skippedFields.length > 0 && (
+                              <span className="text-muted-foreground">
+                                ⊘ تخطّي: {r.skippedFields.join(", ")}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+
                         </TableCell>
                       </TableRow>
                     ))}
