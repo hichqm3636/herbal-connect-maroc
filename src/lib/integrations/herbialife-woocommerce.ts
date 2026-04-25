@@ -495,12 +495,16 @@ export async function upsertWooProductFromWebhook(
   }
 
   if (existing?.id) {
+    // STRICT: webhook sync is READ-ONLY for internal pricing.
+    // Same protection contract as fetchAndSyncWooProducts above —
+    // never write pharmacy_price, map_price, price_tiers, cost_price,
+    // rrp_price, points_per_unit, minimum_order, pack_size.
     const { error } = await supabaseAdmin
       .from("products")
       .update({
         name_ar: mapped.name_ar,
         description_ar: mapped.description_ar,
-        price_mad: mapped.price_mad,
+        price_mad: mapped.price_mad, // retail price from Woo
         image_url: mapped.image_url,
         stock: mapped.stock,
         category: mapped.category,
