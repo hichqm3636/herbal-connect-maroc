@@ -806,9 +806,7 @@ function AdminProducts() {
     // cost_price) are NEVER overwritten unless the CSV explicitly provides a
     // non-empty value. Auto-derivation from RRP is intentionally NOT applied
     // here — derivation can silently overwrite manually-set wholesale prices.
-    type ProductUpdate = Parameters<
-      ReturnType<typeof supabase.from<"products">>["update"]
-    >[0];
+    type ProductUpdate = Database["public"]["Tables"]["products"]["Update"];
 
     const buildSafePayload = (r: CsvPreviewRow): ProductUpdate => {
       const payload: ProductUpdate = {
