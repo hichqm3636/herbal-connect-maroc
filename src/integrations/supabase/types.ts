@@ -878,6 +878,7 @@ export type Database = {
           id: string
           notes: string | null
           order_number: string
+          partner_id: string | null
           payment_method: string | null
           points_earned: number
           request_id: string | null
@@ -897,6 +898,7 @@ export type Database = {
           id?: string
           notes?: string | null
           order_number: string
+          partner_id?: string | null
           payment_method?: string | null
           points_earned?: number
           request_id?: string | null
@@ -916,6 +918,7 @@ export type Database = {
           id?: string
           notes?: string | null
           order_number?: string
+          partner_id?: string | null
           payment_method?: string | null
           points_earned?: number
           request_id?: string | null
@@ -948,6 +951,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      partner_commissions: {
+        Row: {
+          amount_mad: number
+          approved_at: string | null
+          approved_by: string | null
+          base_amount_mad: number
+          company_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          order_id: string
+          paid_at: string | null
+          partner_id: string
+          rate_percent: number
+          status: Database["public"]["Enums"]["commission_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount_mad?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          base_amount_mad?: number
+          company_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id: string
+          paid_at?: string | null
+          partner_id: string
+          rate_percent?: number
+          status?: Database["public"]["Enums"]["commission_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount_mad?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          base_amount_mad?: number
+          company_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id?: string
+          paid_at?: string | null
+          partner_id?: string
+          rate_percent?: number
+          status?: Database["public"]["Enums"]["commission_status"]
+          updated_at?: string
+        }
+        Relationships: []
       }
       partner_invites: {
         Row: {
@@ -1848,6 +1902,8 @@ export type Database = {
         | "buyer"
         | "seller"
         | "sales_agent"
+        | "partner"
+      commission_status: "pending" | "approved" | "paid" | "rejected"
       distributor_level:
         | "distributor"
         | "senior_consultant"
@@ -2020,7 +2076,9 @@ export const Constants = {
         "buyer",
         "seller",
         "sales_agent",
+        "partner",
       ],
+      commission_status: ["pending", "approved", "paid", "rejected"],
       distributor_level: [
         "distributor",
         "senior_consultant",
