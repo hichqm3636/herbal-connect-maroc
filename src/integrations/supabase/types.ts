@@ -1842,6 +1842,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_partner: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       level_for_points: {
         Args: { pts: number }
