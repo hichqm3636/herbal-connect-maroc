@@ -33,6 +33,7 @@ import { Route as AppSuperAdminDistributorsRouteImport } from './routes/_app/sup
 import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-admin/companies'
 import { Route as AppProductsProductIdRouteImport } from './routes/_app/products_.$productId'
 import { Route as AppPartnerEarningsRouteImport } from './routes/_app/partner.earnings'
+import { Route as AppPartnerCatalogRouteImport } from './routes/_app/partner.catalog'
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
 import { Route as AppAdminAdminTerritoriesRouteImport } from './routes/_app/_admin/admin.territories'
 import { Route as AppAdminAdminTeamRouteImport } from './routes/_app/_admin/admin.team'
@@ -176,6 +177,11 @@ const AppPartnerEarningsRoute = AppPartnerEarningsRouteImport.update({
   path: '/partner/earnings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPartnerCatalogRoute = AppPartnerCatalogRouteImport.update({
+  id: '/partner/catalog',
+  path: '/partner/catalog',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminAdminIndexRoute = AppAdminAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
@@ -313,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/super-admin': typeof AppSuperAdminRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/partner/catalog': typeof AppPartnerCatalogRoute
   '/partner/earnings': typeof AppPartnerEarningsRoute
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -358,6 +365,7 @@ export interface FileRoutesByTo {
   '/shop': typeof AppShopRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/partner/catalog': typeof AppPartnerCatalogRoute
   '/partner/earnings': typeof AppPartnerEarningsRoute
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -407,6 +415,7 @@ export interface FileRoutesById {
   '/_app/super-admin': typeof AppSuperAdminRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/_app/partner/catalog': typeof AppPartnerCatalogRoute
   '/_app/partner/earnings': typeof AppPartnerEarningsRoute
   '/_app/products_/$productId': typeof AppProductsProductIdRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -455,6 +464,7 @@ export interface FileRouteTypes {
     | '/super-admin'
     | '/auth/callback'
     | '/invite/$token'
+    | '/partner/catalog'
     | '/partner/earnings'
     | '/products/$productId'
     | '/super-admin/companies'
@@ -500,6 +510,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/auth/callback'
     | '/invite/$token'
+    | '/partner/catalog'
     | '/partner/earnings'
     | '/products/$productId'
     | '/super-admin/companies'
@@ -548,6 +559,7 @@ export interface FileRouteTypes {
     | '/_app/super-admin'
     | '/auth/callback'
     | '/invite/$token'
+    | '/_app/partner/catalog'
     | '/_app/partner/earnings'
     | '/_app/products_/$productId'
     | '/_app/super-admin/companies'
@@ -758,6 +770,13 @@ declare module '@tanstack/react-router' {
       path: '/partner/earnings'
       fullPath: '/partner/earnings'
       preLoaderRoute: typeof AppPartnerEarningsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/partner/catalog': {
+      id: '/_app/partner/catalog'
+      path: '/partner/catalog'
+      fullPath: '/partner/catalog'
+      preLoaderRoute: typeof AppPartnerCatalogRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/_admin/admin/': {
@@ -1002,6 +1021,7 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppShopRoute: typeof AppShopRoute
   AppSuperAdminRoute: typeof AppSuperAdminRouteWithChildren
+  AppPartnerCatalogRoute: typeof AppPartnerCatalogRoute
   AppPartnerEarningsRoute: typeof AppPartnerEarningsRoute
   AppProductsProductIdRoute: typeof AppProductsProductIdRoute
 }
@@ -1017,6 +1037,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppShopRoute: AppShopRoute,
   AppSuperAdminRoute: AppSuperAdminRouteWithChildren,
+  AppPartnerCatalogRoute: AppPartnerCatalogRoute,
   AppPartnerEarningsRoute: AppPartnerEarningsRoute,
   AppProductsProductIdRoute: AppProductsProductIdRoute,
 }
