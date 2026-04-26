@@ -9,6 +9,7 @@ export type AppRole =
   | "buyer"
   | "seller"
   | "sales_agent"
+  | "partner"
   | "distributor"; // legacy — kept so existing rows still parse
 
 export interface Company {
