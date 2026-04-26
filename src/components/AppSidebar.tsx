@@ -26,6 +26,7 @@ import {
   Cog,
   Briefcase,
   Server,
+  Wallet,
 } from "lucide-react";
 import {
   Sidebar,
