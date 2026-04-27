@@ -170,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = async (uid: string | undefined) => {
     if (!uid) {
       setRoles([]);
-      setAccountType("distributor");
+      setAccountType(null);
       setProfileCompanyId(null);
       setTerritoryId(null);
       setPricingTierId(null);
