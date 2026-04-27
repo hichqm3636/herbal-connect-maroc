@@ -16,9 +16,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, UserPlus, Copy, Check, Network, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsappContactButton } from "@/components/WhatsappContactButton";
-import { buildPartnerGreetingMessage, buildPartnerInviteMessage } from "@/utils/whatsapp";
-import { buildWhatsappLink } from "@/utils/whatsapp";
-import { useAuth as useAuthForCompany } from "@/hooks/useAuth";
+import {
+  buildPartnerGreetingMessage,
+  buildPartnerInviteMessage,
+  buildWhatsappLink,
+} from "@/utils/whatsapp";
 
 export const Route = createFileRoute("/_app/_admin/admin/partners")({
   component: AdminPartnersPage,
