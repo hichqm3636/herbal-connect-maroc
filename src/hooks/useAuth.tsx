@@ -258,7 +258,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTimeout(() => loadProfile(newSession.user.id), 0);
       } else {
         setRoles([]);
-        setAccountType("distributor");
+        setAccountType(null);
         setProfileCompanyId(null);
         setTerritoryId(null);
         setPricingTierId(null);
