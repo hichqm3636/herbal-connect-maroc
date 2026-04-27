@@ -314,7 +314,7 @@ function InviteDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   companyId: string | null;
-  onInvited: (url: string, email: string) => void;
+  onInvited: (url: string, email: string, partnerName: string | null, phone: string | null) => void;
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
