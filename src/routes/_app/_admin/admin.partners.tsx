@@ -13,10 +13,12 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, UserPlus, Copy, Check, Network } from "lucide-react";
+import { Loader2, UserPlus, Copy, Check, Network, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsappContactButton } from "@/components/WhatsappContactButton";
-import { buildPartnerGreetingMessage } from "@/utils/whatsapp";
+import { buildPartnerGreetingMessage, buildPartnerInviteMessage } from "@/utils/whatsapp";
+import { buildWhatsappLink } from "@/utils/whatsapp";
+import { useAuth as useAuthForCompany } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/_app/_admin/admin/partners")({
   component: AdminPartnersPage,
