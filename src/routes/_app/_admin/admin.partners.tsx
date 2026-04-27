@@ -13,10 +13,14 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, UserPlus, Copy, Check, Network } from "lucide-react";
+import { Loader2, UserPlus, Copy, Check, Network, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsappContactButton } from "@/components/WhatsappContactButton";
-import { buildPartnerGreetingMessage } from "@/utils/whatsapp";
+import {
+  buildPartnerGreetingMessage,
+  buildPartnerInviteMessage,
+  buildWhatsappLink,
+} from "@/utils/whatsapp";
 
 export const Route = createFileRoute("/_app/_admin/admin/partners")({
   component: AdminPartnersPage,
@@ -41,6 +45,7 @@ interface InviteRow {
   email: string;
   partner_type: PartnerType;
   partner_name: string | null;
+  phone: string | null;
   invite_token: string;
   status: "pending" | "accepted" | "expired";
   expires_at: string;
@@ -78,13 +83,16 @@ function inviteUrl(token: string): string {
 }
 
 function AdminPartnersPage() {
-  const { companyId } = useAuth();
+  const { companyId, company } = useAuth();
+  const companyName = company?.display_name || company?.name || "منصتنا";
   const [partners, setPartners] = useState<PartnerRow[]>([]);
   const [invites, setInvites] = useState<InviteRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | PartnerType>("all");
   const [open, setOpen] = useState(false);
-  const [lastInvite, setLastInvite] = useState<{ url: string; email: string } | null>(null);
+  const [lastInvite, setLastInvite] = useState<
+    { url: string; email: string; partnerName: string | null; phone: string | null } | null
+  >(null);
 
   const load = async () => {
     if (!companyId) return;
@@ -122,8 +130,8 @@ function AdminPartnersPage() {
           open={open}
           onOpenChange={setOpen}
           companyId={companyId}
-          onInvited={(url, email) => {
-            setLastInvite({ url, email });
+          onInvited={(url, email, partnerName, phone) => {
+            setLastInvite({ url, email, partnerName, phone });
             void load();
           }}
         />
@@ -131,14 +139,60 @@ function AdminPartnersPage() {
 
       {lastInvite && (
         <Card className="p-4 bg-primary/5 border-primary/30">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-semibold">
-              تم إنشاء دعوة لـ <span className="text-primary">{lastInvite.email}</span>
-            </p>
-            <p className="text-xs text-muted-foreground">
-              انسخ الرابط وأرسله للشريك ليكمل التسجيل.
-            </p>
+          <div className="flex flex-col gap-3">
+            <div>
+              <p className="text-sm font-semibold">
+                ✅ تم إنشاء دعوة لـ <span className="text-primary">{lastInvite.email}</span>
+              </p>
+              <p className="text-sm font-bold mt-2">
+                انسخ الرابط وأرسله للشريك ليكمل التسجيل.
+              </p>
+            </div>
             <CopyLink url={lastInvite.url} />
+            <div className="flex gap-2 flex-wrap">
+              {lastInvite.phone && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="bg-[#25D366] hover:bg-[#1ebe57] text-white"
+                  asChild
+                >
+                  <a
+                    href={buildWhatsappLink(
+                      lastInvite.phone,
+                      buildPartnerInviteMessage({
+                        partnerName: lastInvite.partnerName,
+                        companyName,
+                        inviteUrl: lastInvite.url,
+                      }),
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageCircle className="h-4 w-4 ml-2" /> إرسال عبر WhatsApp
+                  </a>
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                asChild
+              >
+                <a
+                  href={`mailto:${lastInvite.email}?subject=${encodeURIComponent(
+                    `دعوة للانضمام إلى ${companyName}`,
+                  )}&body=${encodeURIComponent(
+                    buildPartnerInviteMessage({
+                      partnerName: lastInvite.partnerName,
+                      companyName,
+                      inviteUrl: lastInvite.url,
+                    }),
+                  )}`}
+                >
+                  إرسال عبر البريد
+                </a>
+              </Button>
+            </div>
           </div>
         </Card>
       )}
@@ -207,21 +261,53 @@ function AdminPartnersPage() {
       {pendingInvites.length > 0 && (
         <Card className="p-4">
           <h2 className="font-semibold mb-3">دعوات معلقة ({pendingInvites.length})</h2>
-          <div className="space-y-2">
-            {pendingInvites.map((i) => (
-              <div
-                key={i.id}
-                className="flex items-center justify-between gap-3 p-3 rounded-md border bg-muted/30 flex-wrap"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{i.email}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {TYPE_LABEL[i.partner_type]} · تنتهي {new Date(i.expires_at).toLocaleDateString("ar-MA")}
-                  </p>
+          <p className="text-xs text-muted-foreground mb-3">
+            انسخ الرابط وأرسله للشريك ليكمل التسجيل.
+          </p>
+          <div className="space-y-3">
+            {pendingInvites.map((i) => {
+              const url = inviteUrl(i.invite_token);
+              const waLink = i.phone
+                ? buildWhatsappLink(
+                    i.phone,
+                    buildPartnerInviteMessage({
+                      partnerName: i.partner_name,
+                      companyName,
+                      inviteUrl: url,
+                    }),
+                  )
+                : "";
+              return (
+                <div
+                  key={i.id}
+                  className="flex flex-col gap-2 p-3 rounded-md border bg-muted/30"
+                >
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {i.partner_name ? `${i.partner_name} · ` : ""}{i.email}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {TYPE_LABEL[i.partner_type]} · تنتهي{" "}
+                        {new Date(i.expires_at).toLocaleDateString("ar-MA")}
+                      </p>
+                    </div>
+                    {waLink && (
+                      <Button
+                        size="sm"
+                        className="bg-[#25D366] hover:bg-[#1ebe57] text-white"
+                        asChild
+                      >
+                        <a href={waLink} target="_blank" rel="noopener noreferrer">
+                          <MessageCircle className="h-4 w-4 ml-2" /> WhatsApp
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                  <CopyLink url={url} />
                 </div>
-                <CopyLink url={inviteUrl(i.invite_token)} />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       )}
@@ -260,7 +346,7 @@ function InviteDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   companyId: string | null;
-  onInvited: (url: string, email: string) => void;
+  onInvited: (url: string, email: string, partnerName: string | null, phone: string | null) => void;
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -321,7 +407,7 @@ function InviteDialog({
     }
 
     toast.success("تم إنشاء الدعوة");
-    onInvited(inviteUrl(token), cleanEmail);
+    onInvited(inviteUrl(token), cleanEmail, name.trim() || null, phone.trim() || null);
     reset();
     onOpenChange(false);
   };

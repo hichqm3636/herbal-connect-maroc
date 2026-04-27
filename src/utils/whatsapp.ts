@@ -94,6 +94,30 @@ export function buildPartnerGreetingMessage(partnerName: string): string {
   return `مرحبا ${partnerName}، نتواصل معك من فريق Nexora.`;
 }
 
+/**
+ * Build the WhatsApp message body sent to a freshly-invited partner.
+ * Includes the secure invite link they should open to complete signup.
+ */
+export function buildPartnerInviteMessage(params: {
+  partnerName?: string | null;
+  companyName: string;
+  inviteUrl: string;
+}): string {
+  const greeting = params.partnerName?.trim()
+    ? `مرحبا ${params.partnerName.trim()}،`
+    : "مرحبا،";
+  return [
+    greeting,
+    "",
+    `تمت دعوتك للانضمام إلى ${params.companyName} كشريك.`,
+    "اضغط على الرابط أدناه لإكمال تسجيلك:",
+    "",
+    params.inviteUrl,
+    "",
+    "الرابط آمن وصالح لفترة محدودة.",
+  ].join("\n");
+}
+
 export interface SupplierOrderItem {
   name: string;
   quantity: number;
