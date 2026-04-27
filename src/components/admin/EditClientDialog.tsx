@@ -140,15 +140,21 @@ export function EditClientDialog({ client, onClose, onSaved }: Props) {
     // Only send account_type if it was actually changed by the admin.
     // This prevents accidental overwrites with stale form values and lets the
     // database protection trigger enforce its rules cleanly.
+    const normalizedPhone = formatPhoneMA(form.phone);
     const accountTypeChanged =
       form.account_type !== "" && form.account_type !== originalAccountType;
-    const profileUpdate: Record<string, unknown> = {
+    const profileUpdate: {
+      full_name: string;
+      phone: string;
+      territory_id: string;
+      account_type?: PartnerType;
+    } = {
       full_name: form.full_name.trim(),
       phone: normalizedPhone,
       territory_id: form.territory_id,
     };
     if (accountTypeChanged) {
-      profileUpdate.account_type = form.account_type;
+      profileUpdate.account_type = form.account_type as PartnerType;
     }
 
     const { error: profErr } = await supabase
