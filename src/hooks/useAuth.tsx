@@ -33,10 +33,10 @@ interface AuthContextValue {
   isSalesAgent: boolean;
   canAccessDistributorFeatures: boolean;
   isDistributorDisabled: boolean;
-  /** Business classification of the account (pharmacy, distributor, etc). */
-  accountType: PartnerType;
+  /** Business classification of the account (pharmacy, distributor, etc). `null` when no profile row exists yet. */
+  accountType: PartnerType | null;
   /** @deprecated use `accountType`. Kept for back-compat. */
-  partnerType: PartnerType;
+  partnerType: PartnerType | null;
   /** Current UI mode. In `platform` mode no tenant context is loaded. */
   mode: AppMode;
   companyId: string | null;
