@@ -261,21 +261,53 @@ function AdminPartnersPage() {
       {pendingInvites.length > 0 && (
         <Card className="p-4">
           <h2 className="font-semibold mb-3">دعوات معلقة ({pendingInvites.length})</h2>
-          <div className="space-y-2">
-            {pendingInvites.map((i) => (
-              <div
-                key={i.id}
-                className="flex items-center justify-between gap-3 p-3 rounded-md border bg-muted/30 flex-wrap"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{i.email}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {TYPE_LABEL[i.partner_type]} · تنتهي {new Date(i.expires_at).toLocaleDateString("ar-MA")}
-                  </p>
+          <p className="text-xs text-muted-foreground mb-3">
+            انسخ الرابط وأرسله للشريك ليكمل التسجيل.
+          </p>
+          <div className="space-y-3">
+            {pendingInvites.map((i) => {
+              const url = inviteUrl(i.invite_token);
+              const waLink = i.phone
+                ? buildWhatsappLink(
+                    i.phone,
+                    buildPartnerInviteMessage({
+                      partnerName: i.partner_name,
+                      companyName,
+                      inviteUrl: url,
+                    }),
+                  )
+                : "";
+              return (
+                <div
+                  key={i.id}
+                  className="flex flex-col gap-2 p-3 rounded-md border bg-muted/30"
+                >
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {i.partner_name ? `${i.partner_name} · ` : ""}{i.email}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {TYPE_LABEL[i.partner_type]} · تنتهي{" "}
+                        {new Date(i.expires_at).toLocaleDateString("ar-MA")}
+                      </p>
+                    </div>
+                    {waLink && (
+                      <Button
+                        size="sm"
+                        className="bg-[#25D366] hover:bg-[#1ebe57] text-white"
+                        asChild
+                      >
+                        <a href={waLink} target="_blank" rel="noopener noreferrer">
+                          <MessageCircle className="h-4 w-4 ml-2" /> WhatsApp
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                  <CopyLink url={url} />
                 </div>
-                <CopyLink url={inviteUrl(i.invite_token)} />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       )}
