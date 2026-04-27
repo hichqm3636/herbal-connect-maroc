@@ -137,16 +137,23 @@ export function EditClientDialog({ client, onClose, onSaved }: Props) {
 
     setBusy(true);
 
-    // 1. Profile (account_type lives here; cast as the generated enum until types regen)
-    const normalizedPhone = formatPhoneMA(form.phone);
+    // Only send account_type if it was actually changed by the admin.
+    // This prevents accidental overwrites with stale form values and lets the
+    // database protection trigger enforce its rules cleanly.
+    const accountTypeChanged =
+      form.account_type !== "" && form.account_type !== originalAccountType;
+    const profileUpdate: Record<string, unknown> = {
+      full_name: form.full_name.trim(),
+      phone: normalizedPhone,
+      territory_id: form.territory_id,
+    };
+    if (accountTypeChanged) {
+      profileUpdate.account_type = form.account_type;
+    }
+
     const { error: profErr } = await supabase
       .from("profiles")
-      .update({
-        full_name: form.full_name.trim(),
-        phone: normalizedPhone,
-        territory_id: form.territory_id,
-        account_type: form.account_type,
-      })
+      .update(profileUpdate)
       .eq("id", client.id);
     if (profErr) {
       setBusy(false);
