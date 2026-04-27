@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
-  const [accountType, setAccountType] = useState<PartnerType>("distributor");
+  const [accountType, setAccountType] = useState<PartnerType | null>(null);
   const [profileCompanyId, setProfileCompanyId] = useState<string | null>(null);
   const [territoryId, setTerritoryId] = useState<string | null>(null);
   const [pricingTierId, setPricingTierId] = useState<string | null>(null);
