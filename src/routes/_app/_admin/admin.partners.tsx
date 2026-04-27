@@ -45,6 +45,7 @@ interface InviteRow {
   email: string;
   partner_type: PartnerType;
   partner_name: string | null;
+  phone: string | null;
   invite_token: string;
   status: "pending" | "accepted" | "expired";
   expires_at: string;
