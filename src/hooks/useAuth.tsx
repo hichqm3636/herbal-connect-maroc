@@ -202,6 +202,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoles(userRoles);
     setCanAccessDistributorFeatures(distributorAccessEnabled);
     setHasDistributorRole(hasAnyDistributorRole);
+    // Preserve account_type exactly as stored (business type: pharmacy/gym/etc.).
+    // Only fall back to "distributor" when no profile row exists at all.
     setAccountType((profile?.account_type as PartnerType | undefined) ?? "distributor");
     const cid = (profile?.company_id as string | null | undefined) ?? null;
     setProfileCompanyId(cid);
