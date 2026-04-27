@@ -187,7 +187,7 @@ export interface LineValidation {
  */
 export function validateLine(
   product: PricedProduct,
-  partnerType: PartnerType,
+  partnerType: PartnerType | null,
   qty: number,
   unitPrice: number,
   productName?: string,
