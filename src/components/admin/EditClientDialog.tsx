@@ -56,10 +56,12 @@ export function EditClientDialog({ client, onClose, onSaved }: Props) {
     full_name: "",
     phone: "",
     territory_id: "",
-    account_type: "distributor" as PartnerType,
+    // Empty string means "no value loaded yet / unset" — never silently default to "distributor".
+    account_type: "" as PartnerType | "",
     pricing_tier_id: "" as string,
     custom_discount: "" as string,
   });
+  const [originalAccountType, setOriginalAccountType] = useState<PartnerType | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<Set<ClientRole>>(new Set(["buyer"]));
   const [busy, setBusy] = useState(false);
   const [loadingMeta, setLoadingMeta] = useState(false);
