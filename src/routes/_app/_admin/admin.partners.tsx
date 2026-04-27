@@ -130,8 +130,8 @@ function AdminPartnersPage() {
           open={open}
           onOpenChange={setOpen}
           companyId={companyId}
-          onInvited={(url, email) => {
-            setLastInvite({ url, email });
+          onInvited={(url, email, partnerName, phone) => {
+            setLastInvite({ url, email, partnerName, phone });
             void load();
           }}
         />
@@ -139,14 +139,60 @@ function AdminPartnersPage() {
 
       {lastInvite && (
         <Card className="p-4 bg-primary/5 border-primary/30">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-semibold">
-              تم إنشاء دعوة لـ <span className="text-primary">{lastInvite.email}</span>
-            </p>
-            <p className="text-xs text-muted-foreground">
-              انسخ الرابط وأرسله للشريك ليكمل التسجيل.
-            </p>
+          <div className="flex flex-col gap-3">
+            <div>
+              <p className="text-sm font-semibold">
+                ✅ تم إنشاء دعوة لـ <span className="text-primary">{lastInvite.email}</span>
+              </p>
+              <p className="text-sm font-bold mt-2">
+                انسخ الرابط وأرسله للشريك ليكمل التسجيل.
+              </p>
+            </div>
             <CopyLink url={lastInvite.url} />
+            <div className="flex gap-2 flex-wrap">
+              {lastInvite.phone && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="bg-[#25D366] hover:bg-[#1ebe57] text-white"
+                  asChild
+                >
+                  <a
+                    href={buildWhatsappLink(
+                      lastInvite.phone,
+                      buildPartnerInviteMessage({
+                        partnerName: lastInvite.partnerName,
+                        companyName,
+                        inviteUrl: lastInvite.url,
+                      }),
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageCircle className="h-4 w-4 ml-2" /> إرسال عبر WhatsApp
+                  </a>
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                asChild
+              >
+                <a
+                  href={`mailto:${lastInvite.email}?subject=${encodeURIComponent(
+                    `دعوة للانضمام إلى ${companyName}`,
+                  )}&body=${encodeURIComponent(
+                    buildPartnerInviteMessage({
+                      partnerName: lastInvite.partnerName,
+                      companyName,
+                      inviteUrl: lastInvite.url,
+                    }),
+                  )}`}
+                >
+                  إرسال عبر البريد
+                </a>
+              </Button>
+            </div>
           </div>
         </Card>
       )}
