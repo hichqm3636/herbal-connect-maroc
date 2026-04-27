@@ -83,13 +83,16 @@ function inviteUrl(token: string): string {
 }
 
 function AdminPartnersPage() {
-  const { companyId } = useAuth();
+  const { companyId, company } = useAuth();
+  const companyName = company?.display_name || company?.name || "منصتنا";
   const [partners, setPartners] = useState<PartnerRow[]>([]);
   const [invites, setInvites] = useState<InviteRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | PartnerType>("all");
   const [open, setOpen] = useState(false);
-  const [lastInvite, setLastInvite] = useState<{ url: string; email: string } | null>(null);
+  const [lastInvite, setLastInvite] = useState<
+    { url: string; email: string; partnerName: string | null; phone: string | null } | null
+  >(null);
 
   const load = async () => {
     if (!companyId) return;
