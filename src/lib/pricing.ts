@@ -125,7 +125,7 @@ export interface UnitPriceResult {
  */
 export function getUnitPrice(
   product: PricedProduct,
-  partnerType: PartnerType,
+  partnerType: PartnerType | null,
   qty: number,
 ): UnitPriceResult {
   const fallbackRrp =
