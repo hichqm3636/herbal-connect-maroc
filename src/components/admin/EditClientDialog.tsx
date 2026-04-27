@@ -71,12 +71,13 @@ export function EditClientDialog({ client, onClose, onSaved }: Props) {
     const initialAccountType =
       (client.account_type as PartnerType | null) ??
       (client.partner_type as PartnerType | null) ??
-      "distributor";
+      null;
+    setOriginalAccountType(initialAccountType);
     setForm({
       full_name: client.full_name ?? "",
       phone: client.phone ?? "",
       territory_id: client.territory_id ?? "",
-      account_type: initialAccountType,
+      account_type: initialAccountType ?? "",
       pricing_tier_id: "",
       custom_discount: "",
     });
