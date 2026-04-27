@@ -375,7 +375,7 @@ function InviteDialog({
     }
 
     toast.success("تم إنشاء الدعوة");
-    onInvited(inviteUrl(token), cleanEmail);
+    onInvited(inviteUrl(token), cleanEmail, name.trim() || null, phone.trim() || null);
     reset();
     onOpenChange(false);
   };
