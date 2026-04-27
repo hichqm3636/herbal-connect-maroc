@@ -56,10 +56,12 @@ export function EditClientDialog({ client, onClose, onSaved }: Props) {
     full_name: "",
     phone: "",
     territory_id: "",
-    account_type: "distributor" as PartnerType,
+    // Empty string means "no value loaded yet / unset" — never silently default to "distributor".
+    account_type: "" as PartnerType | "",
     pricing_tier_id: "" as string,
     custom_discount: "" as string,
   });
+  const [originalAccountType, setOriginalAccountType] = useState<PartnerType | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<Set<ClientRole>>(new Set(["buyer"]));
   const [busy, setBusy] = useState(false);
   const [loadingMeta, setLoadingMeta] = useState(false);
@@ -69,12 +71,13 @@ export function EditClientDialog({ client, onClose, onSaved }: Props) {
     const initialAccountType =
       (client.account_type as PartnerType | null) ??
       (client.partner_type as PartnerType | null) ??
-      "distributor";
+      null;
+    setOriginalAccountType(initialAccountType);
     setForm({
       full_name: client.full_name ?? "",
       phone: client.phone ?? "",
       territory_id: client.territory_id ?? "",
-      account_type: initialAccountType,
+      account_type: initialAccountType ?? "",
       pricing_tier_id: "",
       custom_discount: "",
     });
@@ -134,16 +137,29 @@ export function EditClientDialog({ client, onClose, onSaved }: Props) {
 
     setBusy(true);
 
-    // 1. Profile (account_type lives here; cast as the generated enum until types regen)
+    // Only send account_type if it was actually changed by the admin.
+    // This prevents accidental overwrites with stale form values and lets the
+    // database protection trigger enforce its rules cleanly.
     const normalizedPhone = formatPhoneMA(form.phone);
+    const accountTypeChanged =
+      form.account_type !== "" && form.account_type !== originalAccountType;
+    const profileUpdate: {
+      full_name: string;
+      phone: string;
+      territory_id: string;
+      account_type?: PartnerType;
+    } = {
+      full_name: form.full_name.trim(),
+      phone: normalizedPhone,
+      territory_id: form.territory_id,
+    };
+    if (accountTypeChanged) {
+      profileUpdate.account_type = form.account_type as PartnerType;
+    }
+
     const { error: profErr } = await supabase
       .from("profiles")
-      .update({
-        full_name: form.full_name.trim(),
-        phone: normalizedPhone,
-        territory_id: form.territory_id,
-        account_type: form.account_type,
-      })
+      .update(profileUpdate)
       .eq("id", client.id);
     if (profErr) {
       setBusy(false);

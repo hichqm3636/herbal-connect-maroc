@@ -33,10 +33,10 @@ interface AuthContextValue {
   isSalesAgent: boolean;
   canAccessDistributorFeatures: boolean;
   isDistributorDisabled: boolean;
-  /** Business classification of the account (pharmacy, distributor, etc). */
-  accountType: PartnerType;
+  /** Business classification of the account (pharmacy, distributor, etc). `null` when no profile row exists yet. */
+  accountType: PartnerType | null;
   /** @deprecated use `accountType`. Kept for back-compat. */
-  partnerType: PartnerType;
+  partnerType: PartnerType | null;
   /** Current UI mode. In `platform` mode no tenant context is loaded. */
   mode: AppMode;
   companyId: string | null;
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
-  const [accountType, setAccountType] = useState<PartnerType>("distributor");
+  const [accountType, setAccountType] = useState<PartnerType | null>(null);
   const [profileCompanyId, setProfileCompanyId] = useState<string | null>(null);
   const [territoryId, setTerritoryId] = useState<string | null>(null);
   const [pricingTierId, setPricingTierId] = useState<string | null>(null);
@@ -170,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = async (uid: string | undefined) => {
     if (!uid) {
       setRoles([]);
-      setAccountType("distributor");
+      setAccountType(null);
       setProfileCompanyId(null);
       setTerritoryId(null);
       setPricingTierId(null);
@@ -203,8 +203,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCanAccessDistributorFeatures(distributorAccessEnabled);
     setHasDistributorRole(hasAnyDistributorRole);
     // Preserve account_type exactly as stored (business type: pharmacy/gym/etc.).
-    // Only fall back to "distributor" when no profile row exists at all.
-    setAccountType((profile?.account_type as PartnerType | undefined) ?? "distributor");
+    // NEVER silently fall back to "distributor" — expose null when missing so
+    // the UI can distinguish "unknown" from "actually a distributor".
+    setAccountType((profile?.account_type as PartnerType | undefined) ?? null);
     const cid = (profile?.company_id as string | null | undefined) ?? null;
     setProfileCompanyId(cid);
     setTerritoryId((profile?.territory_id as string | null | undefined) ?? null);
@@ -257,7 +258,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTimeout(() => loadProfile(newSession.user.id), 0);
       } else {
         setRoles([]);
-        setAccountType("distributor");
+        setAccountType(null);
         setProfileCompanyId(null);
         setTerritoryId(null);
         setPricingTierId(null);
