@@ -4,9 +4,9 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { CartSheet } from "@/components/CartSheet";
+import { CartSheet } from "@/components/CartSheet";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
-import { CartProvider } from "@/hooks/useCart";
 import { Leaf, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/_app")({
