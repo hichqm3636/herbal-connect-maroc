@@ -296,7 +296,51 @@ function BrandingPage() {
         </CardContent>
       </Card>
 
-      <ActivityTimeline
+      <Card className="shadow-soft">
+        <CardHeader>
+          <CardTitle>الدفع والتواصل</CardTitle>
+          <CardDescription>
+            هذه المعلومات تظهر للعميل بعد إرسال الطلب — استخدمها لشرح طريقة الدفع
+            وأرقام التواصل.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="contactPhone">رقم التواصل</Label>
+            <Input
+              id="contactPhone"
+              type="tel"
+              value={contactPhone}
+              onChange={(e) => setContactPhone(e.target.value)}
+              placeholder="+212 6XX XXX XXX"
+              dir="ltr"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="paymentInstructions">تعليمات الدفع</Label>
+            <Textarea
+              id="paymentInstructions"
+              value={paymentInstructions}
+              onChange={(e) => setPaymentInstructions(e.target.value)}
+              rows={5}
+              maxLength={1000}
+              placeholder={
+                "مثال:\n— الدفع عند الاستلام متاح\n— تحويل بنكي: BMCE — 011 780 0000 1234\n— واتساب لتأكيد الطلب: +212 6XX XXX XXX"
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              {paymentInstructions.length}/1000
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={savePayment} disabled={savingPayment}>
+              {savingPayment && <Loader2 className="h-4 w-4 animate-spin" />}
+              حفظ
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
         entityType="company"
         entityId={companyId}
         title="نشاط الشركة"
