@@ -1,5 +1,6 @@
 import { ShoppingCart, Plus, Minus, Trash2, Loader2, AlertTriangle } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -85,6 +86,18 @@ export function CartSheet() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<CartItem | null>(null);
   const createOrderFn = useServerFn(createOrder);
+  const navigate = useNavigate();
+
+  // Marketplace mode: any cart item carrying a `vendor_id` means the cart
+  // belongs to an external vendor's micro-store (decentralized order flow).
+  // In that case, skip the legacy distributor checkout and route to /checkout.
+  const isMarketplaceCart = useMemo(
+    () =>
+      items.some(
+        (i) => typeof (i as unknown as { vendor_id?: string }).vendor_id === "string",
+      ),
+    [items],
+  );
 
   const priced: PricedLine[] = useMemo(
     () =>
@@ -456,8 +469,15 @@ export function CartSheet() {
               <span className="text-lg font-bold">{formatMAD(total)}</span>
             </div>
             <Button
-              onClick={() => setConfirmOpen(true)}
-              disabled={submitting || !canCheckout}
+              onClick={() => {
+                if (isMarketplaceCart) {
+                  setOpen(false);
+                  navigate({ to: "/checkout" });
+                  return;
+                }
+                setConfirmOpen(true);
+              }}
+              disabled={submitting || (!isMarketplaceCart && !canCheckout)}
               className="w-full"
               size="lg"
             >
