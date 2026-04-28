@@ -21,7 +21,10 @@ function BrandingPage() {
   const [displayName, setDisplayName] = useState("");
   const [brandColor, setBrandColor] = useState("#16a34a");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [paymentInstructions, setPaymentInstructions] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
   const [saving, setSaving] = useState(false);
+  const [savingPayment, setSavingPayment] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -32,6 +35,45 @@ function BrandingPage() {
       setLogoUrl(company.logo_url);
     }
   }, [company]);
+
+  // Load payment fields (not in the cached useAuth company object)
+  useEffect(() => {
+    if (!companyId) return;
+    let alive = true;
+    (async () => {
+      const { data } = await supabase
+        .from("companies")
+        .select("payment_instructions, contact_phone")
+        .eq("id", companyId)
+        .maybeSingle();
+      if (!alive || !data) return;
+      setPaymentInstructions(data.payment_instructions ?? "");
+      setContactPhone(data.contact_phone ?? "");
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [companyId]);
+
+  const savePayment = async () => {
+    if (!companyId) return;
+    setSavingPayment(true);
+    try {
+      const { error } = await supabase
+        .from("companies")
+        .update({
+          payment_instructions: paymentInstructions,
+          contact_phone: contactPhone.trim() || null,
+        })
+        .eq("id", companyId);
+      if (error) throw error;
+      toast.success("تم حفظ بيانات الدفع والتواصل");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "تعذر الحفظ");
+    } finally {
+      setSavingPayment(false);
+    }
+  };
 
   if (!companyId) {
     return (
