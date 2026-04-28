@@ -2,6 +2,7 @@ import { Outlet, createRootRoute, HeadContent, Scripts, Link } from "@tanstack/r
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
+import { CartProvider } from "@/hooks/useCart";
 
 import appCss from "../styles.css?url";
 
@@ -75,8 +76,10 @@ function RootComponent() {
   return (
     <TenantProvider>
       <AuthProvider>
-        <Outlet />
-        <Toaster position="top-center" richColors />
+        <CartProvider>
+          <Outlet />
+          <Toaster position="top-center" richColors />
+        </CartProvider>
       </AuthProvider>
     </TenantProvider>
   );

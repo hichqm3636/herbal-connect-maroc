@@ -9,10 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VendorsRouteImport } from './routes/vendors'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StoreSlugRouteImport } from './routes/store.$slug'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AppSuperAdminRouteImport } from './routes/_app/super-admin'
@@ -57,6 +59,11 @@ import { Route as AppAdminAdminDistributorsIdRouteImport } from './routes/_app/_
 import { Route as AppAdminAdminCreateOrderClientIdRouteImport } from './routes/_app/_admin/admin.create-order.$clientId'
 import { Route as AppAdminAdminActivityAdminIdRouteImport } from './routes/_app/_admin/admin.activity_.$adminId'
 
+const VendorsRoute = VendorsRouteImport.update({
+  id: '/vendors',
+  path: '/vendors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -74,6 +81,11 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreSlugRoute = StoreSlugRouteImport.update({
+  id: '/store/$slug',
+  path: '/store/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
@@ -308,6 +320,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/vendors': typeof VendorsRoute
   '/dashboard': typeof AppDashboardRoute
   '/invoices': typeof AppInvoicesRoute
   '/loyalty': typeof AppLoyaltyRoute
@@ -319,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/super-admin': typeof AppSuperAdminRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/store/$slug': typeof StoreSlugRoute
   '/partner/catalog': typeof AppPartnerCatalogRoute
   '/partner/earnings': typeof AppPartnerEarningsRoute
   '/products/$productId': typeof AppProductsProductIdRoute
@@ -355,6 +369,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/vendors': typeof VendorsRoute
   '/dashboard': typeof AppDashboardRoute
   '/invoices': typeof AppInvoicesRoute
   '/loyalty': typeof AppLoyaltyRoute
@@ -365,6 +380,7 @@ export interface FileRoutesByTo {
   '/shop': typeof AppShopRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/store/$slug': typeof StoreSlugRoute
   '/partner/catalog': typeof AppPartnerCatalogRoute
   '/partner/earnings': typeof AppPartnerEarningsRoute
   '/products/$productId': typeof AppProductsProductIdRoute
@@ -403,6 +419,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/vendors': typeof VendorsRoute
   '/_app/_admin': typeof AppAdminRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/invoices': typeof AppInvoicesRoute
@@ -415,6 +432,7 @@ export interface FileRoutesById {
   '/_app/super-admin': typeof AppSuperAdminRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/store/$slug': typeof StoreSlugRoute
   '/_app/partner/catalog': typeof AppPartnerCatalogRoute
   '/_app/partner/earnings': typeof AppPartnerEarningsRoute
   '/_app/products_/$productId': typeof AppProductsProductIdRoute
@@ -453,6 +471,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
+    | '/vendors'
     | '/dashboard'
     | '/invoices'
     | '/loyalty'
@@ -464,6 +483,7 @@ export interface FileRouteTypes {
     | '/super-admin'
     | '/auth/callback'
     | '/invite/$token'
+    | '/store/$slug'
     | '/partner/catalog'
     | '/partner/earnings'
     | '/products/$productId'
@@ -500,6 +520,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/signup'
+    | '/vendors'
     | '/dashboard'
     | '/invoices'
     | '/loyalty'
@@ -510,6 +531,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/auth/callback'
     | '/invite/$token'
+    | '/store/$slug'
     | '/partner/catalog'
     | '/partner/earnings'
     | '/products/$productId'
@@ -547,6 +569,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/signup'
+    | '/vendors'
     | '/_app/_admin'
     | '/_app/dashboard'
     | '/_app/invoices'
@@ -559,6 +582,7 @@ export interface FileRouteTypes {
     | '/_app/super-admin'
     | '/auth/callback'
     | '/invite/$token'
+    | '/store/$slug'
     | '/_app/partner/catalog'
     | '/_app/partner/earnings'
     | '/_app/products_/$productId'
@@ -597,13 +621,22 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  VendorsRoute: typeof VendorsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  StoreSlugRoute: typeof StoreSlugRoute
   ApiPublicWooWebhookRoute: typeof ApiPublicWooWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vendors': {
+      id: '/vendors'
+      path: '/vendors'
+      fullPath: '/vendors'
+      preLoaderRoute: typeof VendorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -630,6 +663,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store/$slug': {
+      id: '/store/$slug'
+      path: '/store/$slug'
+      fullPath: '/store/$slug'
+      preLoaderRoute: typeof StoreSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
@@ -1049,8 +1089,10 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  VendorsRoute: VendorsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   InviteTokenRoute: InviteTokenRoute,
+  StoreSlugRoute: StoreSlugRoute,
   ApiPublicWooWebhookRoute: ApiPublicWooWebhookRoute,
 }
 export const routeTree = rootRouteImport
