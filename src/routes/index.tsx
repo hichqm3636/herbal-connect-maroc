@@ -88,6 +88,9 @@ function NexoraLanding({ isAuthenticated }: { isAuthenticated: boolean }) {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
+              <Link to="/vendors">تصفّح البائعين</Link>
+            </Button>
+            <Button asChild size="lg" variant="ghost">
               <Link to={isAuthenticated ? "/super-admin" : "/login"}>بوابة الإدارة</Link>
             </Button>
           </div>
