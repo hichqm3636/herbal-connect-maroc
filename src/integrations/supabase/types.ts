@@ -105,34 +105,40 @@ export type Database = {
       companies: {
         Row: {
           brand_color: string
+          contact_phone: string | null
           created_at: string
           display_name: string
           id: string
           is_listed: boolean
           logo_url: string | null
           name: string
+          payment_instructions: string
           slug: string
           updated_at: string
         }
         Insert: {
           brand_color?: string
+          contact_phone?: string | null
           created_at?: string
           display_name?: string
           id?: string
           is_listed?: boolean
           logo_url?: string | null
           name: string
+          payment_instructions?: string
           slug: string
           updated_at?: string
         }
         Update: {
           brand_color?: string
+          contact_phone?: string | null
           created_at?: string
           display_name?: string
           id?: string
           is_listed?: boolean
           logo_url?: string | null
           name?: string
+          payment_instructions?: string
           slug?: string
           updated_at?: string
         }
