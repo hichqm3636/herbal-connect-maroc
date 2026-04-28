@@ -108,6 +108,7 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+          is_listed: boolean
           logo_url: string | null
           name: string
           slug: string
@@ -118,6 +119,7 @@ export type Database = {
           created_at?: string
           display_name?: string
           id?: string
+          is_listed?: boolean
           logo_url?: string | null
           name: string
           slug: string
@@ -128,6 +130,7 @@ export type Database = {
           created_at?: string
           display_name?: string
           id?: string
+          is_listed?: boolean
           logo_url?: string | null
           name?: string
           slug?: string
