@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { withFreshSession } from "@/lib/ensureSession";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,7 +22,10 @@ function BrandingPage() {
   const [displayName, setDisplayName] = useState("");
   const [brandColor, setBrandColor] = useState("#16a34a");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [paymentInstructions, setPaymentInstructions] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
   const [saving, setSaving] = useState(false);
+  const [savingPayment, setSavingPayment] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -32,6 +36,45 @@ function BrandingPage() {
       setLogoUrl(company.logo_url);
     }
   }, [company]);
+
+  // Load payment fields (not in the cached useAuth company object)
+  useEffect(() => {
+    if (!companyId) return;
+    let alive = true;
+    (async () => {
+      const { data } = await supabase
+        .from("companies")
+        .select("payment_instructions, contact_phone")
+        .eq("id", companyId)
+        .maybeSingle();
+      if (!alive || !data) return;
+      setPaymentInstructions(data.payment_instructions ?? "");
+      setContactPhone(data.contact_phone ?? "");
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [companyId]);
+
+  const savePayment = async () => {
+    if (!companyId) return;
+    setSavingPayment(true);
+    try {
+      const { error } = await supabase
+        .from("companies")
+        .update({
+          payment_instructions: paymentInstructions,
+          contact_phone: contactPhone.trim() || null,
+        })
+        .eq("id", companyId);
+      if (error) throw error;
+      toast.success("تم حفظ بيانات الدفع والتواصل");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "تعذر الحفظ");
+    } finally {
+      setSavingPayment(false);
+    }
+  };
 
   if (!companyId) {
     return (
@@ -247,6 +290,51 @@ function BrandingPage() {
           <div className="flex justify-end">
             <Button onClick={save} disabled={saving}>
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              حفظ
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-soft">
+        <CardHeader>
+          <CardTitle>الدفع والتواصل</CardTitle>
+          <CardDescription>
+            هذه المعلومات تظهر للعميل بعد إرسال الطلب — استخدمها لشرح طريقة الدفع
+            وأرقام التواصل.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="contactPhone">رقم التواصل</Label>
+            <Input
+              id="contactPhone"
+              type="tel"
+              value={contactPhone}
+              onChange={(e) => setContactPhone(e.target.value)}
+              placeholder="+212 6XX XXX XXX"
+              dir="ltr"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="paymentInstructions">تعليمات الدفع</Label>
+            <Textarea
+              id="paymentInstructions"
+              value={paymentInstructions}
+              onChange={(e) => setPaymentInstructions(e.target.value)}
+              rows={5}
+              maxLength={1000}
+              placeholder={
+                "مثال:\n— الدفع عند الاستلام متاح\n— تحويل بنكي: BMCE — 011 780 0000 1234\n— واتساب لتأكيد الطلب: +212 6XX XXX XXX"
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              {paymentInstructions.length}/1000
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={savePayment} disabled={savingPayment}>
+              {savingPayment && <Loader2 className="h-4 w-4 animate-spin" />}
               حفظ
             </Button>
           </div>
