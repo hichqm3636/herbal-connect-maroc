@@ -341,6 +341,7 @@ function BrandingPage() {
         </CardContent>
       </Card>
 
+      <ActivityTimeline
         entityType="company"
         entityId={companyId}
         title="نشاط الشركة"
