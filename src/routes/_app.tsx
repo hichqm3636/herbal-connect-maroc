@@ -110,47 +110,43 @@ function AppLayout() {
 
   if (isDistributorDisabled && onDistributorRoute) {
     return (
-      <CartProvider>
-        <SidebarProvider>
-          <div className="flex min-h-screen w-full overflow-x-hidden bg-background" dir="rtl">
-            <AppSidebar />
-            <SidebarInset className="flex flex-col min-w-0">
-              <AppHeader />
-              <main className="flex-1 p-4 md:p-6 lg:p-8 min-w-0 overflow-x-hidden">
-                <div className="flex items-center justify-center py-16">
-                  <div className="max-w-md rounded-2xl border bg-card p-8 text-center shadow-elegant">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-warning/10">
-                      <ShieldAlert className="h-7 w-7 text-warning-foreground" />
-                    </div>
-                    <h1 className="mb-2 text-xl font-bold">حساب الموزع معطل</h1>
-                    <p className="text-sm text-muted-foreground">
-                      تم تعطيل وصول الموزع إلى المتجر والطلبات. ما يزال بإمكانك تسجيل الدخول واستخدام الأدوار الإدارية المتاحة لحسابك.
-                    </p>
-                  </div>
-                </div>
-              </main>
-              <CartSheet />
-            </SidebarInset>
-          </div>
-        </SidebarProvider>
-      </CartProvider>
-    );
-  }
-
-  return (
-    <CartProvider>
       <SidebarProvider>
         <div className="flex min-h-screen w-full overflow-x-hidden bg-background" dir="rtl">
           <AppSidebar />
           <SidebarInset className="flex flex-col min-w-0">
             <AppHeader />
             <main className="flex-1 p-4 md:p-6 lg:p-8 min-w-0 overflow-x-hidden">
-              <Outlet />
+              <div className="flex items-center justify-center py-16">
+                <div className="max-w-md rounded-2xl border bg-card p-8 text-center shadow-elegant">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-warning/10">
+                    <ShieldAlert className="h-7 w-7 text-warning-foreground" />
+                  </div>
+                  <h1 className="mb-2 text-xl font-bold">حساب الموزع معطل</h1>
+                  <p className="text-sm text-muted-foreground">
+                    تم تعطيل وصول الموزع إلى المتجر والطلبات. ما يزال بإمكانك تسجيل الدخول واستخدام الأدوار الإدارية المتاحة لحسابك.
+                  </p>
+                </div>
+              </div>
             </main>
             <CartSheet />
           </SidebarInset>
         </div>
       </SidebarProvider>
-    </CartProvider>
+    );
+  }
+
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full overflow-x-hidden bg-background" dir="rtl">
+        <AppSidebar />
+        <SidebarInset className="flex flex-col min-w-0">
+          <AppHeader />
+          <main className="flex-1 p-4 md:p-6 lg:p-8 min-w-0 overflow-x-hidden">
+            <Outlet />
+          </main>
+          <CartSheet />
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 }
