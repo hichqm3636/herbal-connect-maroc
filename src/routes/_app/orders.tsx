@@ -126,6 +126,15 @@ function OrdersPage() {
     [orders],
   );
 
+  // Scroll focused order into view (deep-link from notification).
+  useEffect(() => {
+    if (!focusId || !orders) return;
+    const t = setTimeout(() => {
+      focusRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+    return () => clearTimeout(t);
+  }, [focusId, orders]);
+
   return (
     <div className="space-y-6" dir="rtl">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
