@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_app/_admin")({
 });
 
 function AdminGuard() {
-  const { isAdmin, isSuperAdmin, companyId, loading } = useAuth();
+  const { isVendor, isSuperAdmin, companyId, loading } = useAuth();
   const navigate = useNavigate();
 
   // If super admin hasn't picked a company yet, send them to the selector.
@@ -22,7 +22,7 @@ function AdminGuard() {
 
   if (loading) return null;
 
-  if (!isAdmin) {
+  if (!isVendor && !isSuperAdmin) {
     return (
       <div className="flex items-center justify-center py-20">
         <Card className="p-8 max-w-md text-center shadow-soft">
