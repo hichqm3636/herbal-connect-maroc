@@ -84,7 +84,7 @@ const vendorSections: NavSection[] = [
     label: "الكتالوج",
     icon: Package,
     items: [
-      { title: "المنتجات", url: "/admin/products", icon: Boxes },
+      { title: "المنتجات", url: "/admin/products", icon: Package },
     ],
   },
   {
