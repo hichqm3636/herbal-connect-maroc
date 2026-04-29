@@ -195,8 +195,8 @@ function CheckoutPage() {
   async function handlePlaceOrder() {
     if (!user || !vendor || cart.items.length === 0) return;
     if (!step1Valid) {
+      setTouched({ name: true, phone: true, address: true });
       setStep(1);
-      toast.error("يرجى ملء بيانات التواصل والعنوان");
       return;
     }
     setSubmitting(true);
