@@ -23,7 +23,7 @@ import { formatMAD } from "@/lib/format";
 import { toast } from "sonner";
 import { homeForRole } from "@/lib/roleRouting";
 
-export const Route = createFileRoute("/checkout")({
+export const Route = createFileRoute("/_app/checkout")({
   component: CheckoutPage,
   head: () => ({
     meta: [
