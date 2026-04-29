@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatDateAr } from "@/lib/format";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_app/_admin/admin/storage-health")({
+export const Route = createFileRoute("/_app/_vendor/vendor/storage-health")({
   component: StorageHealthPage,
   head: () => ({ meta: [{ title: "فحص صحة الوسائط" }] }),
 });

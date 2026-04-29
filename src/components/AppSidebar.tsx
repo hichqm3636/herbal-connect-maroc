@@ -17,6 +17,7 @@ import {
   BarChart3,
   Cog,
   Briefcase,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -62,9 +63,9 @@ const clientAccountItems: NavItem[] = [
   { title: "الإعدادات", url: "/settings", icon: Settings },
 ];
 
-// ---------------- Vendor (workspace owner) ----------------
+// ---------------- Vendor (workspace owner) — lives at /vendor/* ----------------
 const vendorTop: NavItem[] = [
-  { title: "لوحة التحكم", url: "/admin", icon: LayoutDashboard },
+  { title: "لوحة التحكم", url: "/vendor", icon: LayoutDashboard },
 ];
 
 const vendorSections: NavSection[] = [
@@ -73,23 +74,23 @@ const vendorSections: NavSection[] = [
     label: "المبيعات",
     icon: ShoppingCart,
     items: [
-      { title: "الطلبات", url: "/admin/orders", icon: ClipboardList },
-      { title: "الفواتير", url: "/admin/invoices", icon: Receipt },
+      { title: "الطلبات", url: "/vendor/orders", icon: ClipboardList },
+      { title: "الفواتير", url: "/vendor/invoices", icon: Receipt },
     ],
   },
   {
     id: "catalog",
     label: "الكتالوج",
     icon: Package,
-    items: [{ title: "المنتجات", url: "/admin/products", icon: Package }],
+    items: [{ title: "المنتجات", url: "/vendor/products", icon: Package }],
   },
   {
     id: "analytics",
     label: "التحليلات",
     icon: BarChart3,
     items: [
-      { title: "التقارير", url: "/admin/analytics", icon: BarChart3 },
-      { title: "سجل النشاط", url: "/admin/activity", icon: Activity },
+      { title: "التقارير", url: "/vendor/analytics", icon: BarChart3 },
+      { title: "سجل النشاط", url: "/vendor/activity", icon: Activity },
     ],
   },
   {
@@ -97,14 +98,30 @@ const vendorSections: NavSection[] = [
     label: "الإعدادات",
     icon: Cog,
     items: [
-      { title: "إعدادات المتجر", url: "/admin/branding", icon: Settings },
-      { title: "الفريق والصلاحيات", url: "/admin/team", icon: UsersRound },
-      { title: "فحص صحة الوسائط", url: "/admin/storage-health", icon: Activity },
+      { title: "إعدادات المتجر", url: "/vendor/branding", icon: Settings },
+      { title: "الفريق والصلاحيات", url: "/vendor/team", icon: UsersRound },
+      { title: "فحص صحة الوسائط", url: "/vendor/storage-health", icon: Activity },
     ],
   },
 ];
 
-// ---------------- Super Admin (platform owner) ----------------
+// ---------------- Platform Admin — lives at /admin/* ----------------
+const adminTop: NavItem[] = [
+  { title: "لوحة الإدارة", url: "/admin", icon: ShieldCheck },
+];
+
+const adminSections: NavSection[] = [
+  {
+    id: "platform-admin",
+    label: "الإدارة",
+    icon: Globe2,
+    items: [
+      { title: "الشركات", url: "/admin/companies", icon: Building2 },
+    ],
+  },
+];
+
+// ---------------- Super Admin — lives at /super-admin/* ----------------
 const superAdminTop: NavItem[] = [
   { title: "لوحة المنصة", url: "/super-admin", icon: LayoutDashboard },
 ];
@@ -125,7 +142,8 @@ export function AppSidebar() {
   const isPlatform = mode === "platform";
 
   const isClient = marketplaceRole === "client";
-  const isVendor = marketplaceRole === "vendor" || marketplaceRole === "admin";
+  const isVendor = marketplaceRole === "vendor";
+  const isAdmin = marketplaceRole === "admin";
   const isSuperAdmin = marketplaceRole === "super_admin";
 
   const { isMobile, setOpenMobile, state } = useSidebar();
@@ -134,14 +152,20 @@ export function AppSidebar() {
   const isActive = (path: string) => {
     if (path === "/super-admin") return location.pathname === "/super-admin";
     if (path === "/admin") return location.pathname === "/admin";
+    if (path === "/vendor") return location.pathname === "/vendor";
     return location.pathname === path || location.pathname.startsWith(path + "/");
   };
 
+  // Pick exactly one menu based on the canonical marketplace role.
+  // Priority is enforced by useAuth (super_admin > admin > vendor > client),
+  // so these branches are mutually exclusive.
   const activeSections: NavSection[] = isSuperAdmin
     ? superAdminSections
-    : isVendor
-      ? vendorSections
-      : [];
+    : isAdmin
+      ? adminSections
+      : isVendor
+        ? vendorSections
+        : [];
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -258,14 +282,18 @@ export function AppSidebar() {
     );
   };
 
-  // Header subtitle reflects the single canonical role.
   const headerSubtitle = isSuperAdmin
     ? PLATFORM_SUBTITLE
-    : isVendor
-      ? "مساحة عمل البائع"
-      : isClient
-        ? "حساب عميل"
-        : "";
+    : isAdmin
+      ? "إدارة المنصة"
+      : isVendor
+        ? "مساحة عمل البائع"
+        : isClient
+          ? "حساب عميل"
+          : "";
+
+  // Treat super-admin/admin as platform-chrome for the header logo.
+  const showPlatformChrome = isPlatform || isSuperAdmin || isAdmin;
 
   return (
     <Sidebar id="app-sidebar" collapsible="icon" side="right">
@@ -273,9 +301,9 @@ export function AppSidebar() {
         <div className="flex items-center gap-2 px-2 py-3">
           <div
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-glow overflow-hidden text-primary-foreground"
-            style={!isPlatform && company?.brand_color ? { backgroundColor: company.brand_color } : undefined}
+            style={!showPlatformChrome && company?.brand_color ? { backgroundColor: company.brand_color } : undefined}
           >
-            {isPlatform || isSuperAdmin ? (
+            {showPlatformChrome ? (
               <div className="flex h-full w-full items-center justify-center bg-gradient-primary">
                 <Globe2 className="h-5 w-5" />
               </div>
@@ -293,12 +321,12 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
             <span className="text-sm font-bold leading-tight truncate">
-              {isPlatform || isSuperAdmin
+              {showPlatformChrome
                 ? PLATFORM_NAME
                 : (company?.display_name || company?.name || TENANT_FALLBACK_NAME)}
             </span>
             <span className="text-xs text-muted-foreground truncate flex items-center gap-1">
-              {isSuperAdmin ? (
+              {isSuperAdmin || isAdmin ? (
                 <>
                   <Globe2 className="h-3 w-3" /> {headerSubtitle}
                 </>
@@ -323,10 +351,17 @@ export function AppSidebar() {
           </>
         )}
 
-        {isVendor && !isSuperAdmin && (
+        {isVendor && (
           <>
             {renderTopItems(vendorTop)}
             {vendorSections.map(renderSection)}
+          </>
+        )}
+
+        {isAdmin && (
+          <>
+            {renderTopItems(adminTop)}
+            {adminSections.map(renderSection)}
           </>
         )}
 
