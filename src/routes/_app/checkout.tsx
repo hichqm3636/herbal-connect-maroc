@@ -560,12 +560,20 @@ function CheckoutPage() {
 
       {/* Step 2 — Payment */}
       {step === 2 && (
-        <Card className="space-y-4 p-4 sm:p-5">
-          <div className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-bold">طريقة الدفع</h2>
+        <Card className="space-y-5 rounded-2xl p-5 sm:p-6">
+          <div className="flex items-center gap-2 border-b pb-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <CreditCard className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold leading-tight">طريقة الدفع</h2>
+              <p className="text-[11px] text-muted-foreground">
+                اختر الطريقة الأنسب لك — الدفع يتم مباشرة مع البائع
+              </p>
+            </div>
           </div>
-          <div className="grid gap-2">
+
+          <div className="grid gap-2.5">
             {PAYMENT_OPTIONS.map((opt) => {
               const active = paymentMethod === opt.value;
               const Icon = opt.icon;
@@ -574,24 +582,27 @@ function CheckoutPage() {
                   key={opt.value}
                   type="button"
                   onClick={() => setPaymentMethod(opt.value)}
-                  className={`flex items-start gap-3 rounded-lg border p-3 text-right transition ${
-                    active ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+                  aria-pressed={active}
+                  className={`group flex items-start gap-3 rounded-xl border p-3.5 text-right transition-all ${
+                    active
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-border hover:border-primary/40 hover:bg-muted/40"
                   }`}
                 >
                   <div
-                    className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                    className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors ${
                       active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-4.5 w-4.5" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold">{opt.title}</p>
-                    <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{opt.desc}</p>
                   </div>
                   <div
-                    className={`mt-1.5 h-4 w-4 shrink-0 rounded-full border-2 ${
-                      active ? "border-primary bg-primary" : "border-muted-foreground"
+                    className={`mt-1.5 h-4 w-4 shrink-0 rounded-full border-2 transition-colors ${
+                      active ? "border-primary bg-primary" : "border-muted-foreground/40 group-hover:border-primary/40"
                     }`}
                   />
                 </button>
@@ -599,34 +610,63 @@ function CheckoutPage() {
             })}
           </div>
 
+          {/* Bank-transfer block: prominent CTA + steps */}
           {paymentMethod === "bank_transfer" && (
-            <div className="space-y-3 pt-1">
-              {vendor.payment_instructions && (
-                <div className="rounded-lg border bg-muted/40 p-3">
-                  <div className="mb-1 flex items-center justify-between">
-                    <p className="text-xs font-bold">تعليمات التحويل</p>
-                    <Button size="sm" variant="ghost" className="h-6 gap-1 text-xs" onClick={copyPaymentInstructions}>
-                      <Copy className="h-3 w-3" />
-                      نسخ
-                    </Button>
-                  </div>
-                  <p className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
+            <div className="space-y-4 rounded-2xl border-2 border-primary/30 bg-primary/[0.03] p-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                  <CreditCard className="h-3.5 w-3.5" />
+                </div>
+                <h3 className="text-sm font-bold">تعليمات التحويل البنكي</h3>
+              </div>
+
+              {vendor.payment_instructions ? (
+                <div className="rounded-xl border bg-card p-3.5">
+                  <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
                     {vendor.payment_instructions}
                   </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="default"
+                    className="mt-3 w-full gap-1.5"
+                    onClick={copyPaymentInstructions}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    نسخ تعليمات التحويل
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-xl border bg-card p-3.5 text-xs text-muted-foreground">
+                  لم يضف البائع تعليمات تحويل بعد. سيتواصل معك مباشرة لإرسال التفاصيل.
                 </div>
               )}
-              <div className="space-y-1.5">
-                <Label htmlFor="ref">رقم/مرجع التحويل (اختياري)</Label>
+
+              {/* Step list — what to do */}
+              <ol className="space-y-2 text-xs">
+                {[
+                  "انسخ تعليمات التحويل أعلاه",
+                  "نفّذ التحويل من تطبيق بنكك",
+                  "أضف رقم العملية أدناه (اختياري لكن يُسرّع التأكيد)",
+                  "اضغط «تأكيد الطلب» — سيتم إخطار البائع فوراً",
+                ].map((line, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
+                      {i + 1}
+                    </span>
+                    <span className="text-muted-foreground leading-relaxed">{line}</span>
+                  </li>
+                ))}
+              </ol>
+
+              <FieldWrap id="ref" label="رقم / مرجع التحويل" hint="اختياري">
                 <Input
                   id="ref"
                   value={paymentReference}
                   onChange={(e) => setPaymentReference(e.target.value)}
                   placeholder="رقم العملية أو اسم المرسل"
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  أضف المرجع بعد إتمام التحويل لتسريع التأكيد.
-                </p>
-              </div>
+              </FieldWrap>
             </div>
           )}
 
