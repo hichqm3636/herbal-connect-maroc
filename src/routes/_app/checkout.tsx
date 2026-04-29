@@ -45,7 +45,10 @@ interface VendorInfo {
 }
 
 function CheckoutPage() {
-  const { session, user, loading: authLoading, isClient, marketplaceRole } = useAuth();
+  // Auth + client-only gating happens upstream in `_app.tsx` via the
+  // CLIENT_ONLY_PREFIXES list. By the time this component renders, we are
+  // guaranteed to have a signed-in client session.
+  const { user } = useAuth();
   const navigate = useNavigate();
   const cart = useCart();
 
@@ -69,18 +72,6 @@ function CheckoutPage() {
   const [contactPhone, setContactPhone] = useState("");
   const [shippingAddress, setShippingAddress] = useState("");
   const [notes, setNotes] = useState("");
-
-  // Auth + role gating: must be signed in AND marketplace role === client.
-  useEffect(() => {
-    if (authLoading) return;
-    if (!session) {
-      navigate({ to: "/login" });
-      return;
-    }
-    if (!isClient) {
-      navigate({ to: homeForRole(marketplaceRole) });
-    }
-  }, [authLoading, session, isClient, marketplaceRole, navigate]);
 
   // Load vendor
   useEffect(() => {
