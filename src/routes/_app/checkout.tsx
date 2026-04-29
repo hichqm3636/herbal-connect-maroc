@@ -226,10 +226,26 @@ function CheckoutPage() {
 
   const step1Valid = !errors.name && !errors.phone && !errors.address;
 
+  function focusFirstError() {
+    const target =
+      (errors.name && nameRef.current) ||
+      (errors.phone && phoneRef.current) ||
+      (errors.address && addressRef.current) ||
+      null;
+    if (!target) return;
+    // Defer to allow Step 1 to render if we just switched back.
+    requestAnimationFrame(() => {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Slight delay so the scroll finishes before focus jumps back
+      setTimeout(() => target.focus({ preventScroll: true }), 250);
+    });
+  }
+
   function goNext() {
     if (step === 1) {
       if (!step1Valid) {
         setTouched({ name: true, phone: true, address: true });
+        focusFirstError();
         return;
       }
       setStep(2);
@@ -243,6 +259,7 @@ function CheckoutPage() {
     if (!step1Valid) {
       setTouched({ name: true, phone: true, address: true });
       setStep(1);
+      focusFirstError();
       return;
     }
     setSubmitting(true);
