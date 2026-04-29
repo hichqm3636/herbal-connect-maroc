@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Package, ShoppingBag, Store } from "lucide-react";
+import { z } from "zod";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,12 +15,44 @@ import {
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
+const ordersSearchSchema = z.object({
+  focus: z.string().optional(),
+});
+
 export const Route = createFileRoute("/_app/orders")({
   component: OrdersPage,
+  validateSearch: ordersSearchSchema,
   head: () => ({
     meta: [{ title: "طلباتي — Nexora" }],
   }),
 });
+
+type PaymentStatus = "pending" | "awaiting_confirmation" | "paid" | "failed" | "refunded";
+
+const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  pending: "بانتظار الدفع",
+  awaiting_confirmation: "بانتظار التأكيد",
+  paid: "مدفوع",
+  failed: "فشل الدفع",
+  refunded: "مُسترد",
+};
+
+const PAYMENT_STATUS_CLASSES: Record<PaymentStatus, string> = {
+  pending: "bg-muted text-muted-foreground border-border",
+  awaiting_confirmation: "bg-warning/15 text-warning-foreground border-warning/30",
+  paid: "bg-success/15 text-success border-success/30",
+  failed: "bg-destructive/15 text-destructive border-destructive/30",
+  refunded: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
+};
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cod: "الدفع عند الاستلام",
+  bank_transfer: "تحويل بنكي",
+  manual: "تواصل مع البائع",
+  card: "بطاقة",
+  stripe: "Stripe",
+  cash: "نقداً",
+};
 
 interface OrderItemRow {
   id: string;
@@ -37,6 +70,7 @@ interface OrderRow {
   created_at: string;
   notes: string | null;
   payment_method: string | null;
+  payment_status: PaymentStatus;
   company_id: string;
   companies: {
     id: string;
@@ -49,9 +83,12 @@ interface OrderRow {
 
 function OrdersPage() {
   const { user, loading: authLoading } = useAuth();
+  const search = Route.useSearch();
+  const focusId = search.focus;
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const focusRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -62,7 +99,7 @@ function OrdersPage() {
       const { data, error } = await supabase
         .from("orders")
         .select(
-          `id, order_number, status, total_mad, created_at, notes, payment_method, company_id,
+          `id, order_number, status, total_mad, created_at, notes, payment_method, payment_status, company_id,
            companies:company_id ( id, name, display_name, logo_url ),
            order_items ( id, quantity, unit_price_mad, product_id,
              products:product_id ( name_ar, image_url ) )`,
@@ -88,6 +125,15 @@ function OrdersPage() {
     () => (orders ?? []).reduce((s, o) => s + Number(o.total_mad ?? 0), 0),
     [orders],
   );
+
+  // Scroll focused order into view (deep-link from notification).
+  useEffect(() => {
+    if (!focusId || !orders) return;
+    const t = setTimeout(() => {
+      focusRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+    return () => clearTimeout(t);
+  }, [focusId, orders]);
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -154,8 +200,21 @@ function OrdersPage() {
               (s, i) => s + Number(i.quantity ?? 0),
               0,
             );
+            const isFocused = focusId === order.id;
+            const payLabel = PAYMENT_STATUS_LABELS[order.payment_status] ?? order.payment_status;
+            const payClass = PAYMENT_STATUS_CLASSES[order.payment_status] ?? "";
+            const methodLabel = order.payment_method
+              ? (PAYMENT_METHOD_LABELS[order.payment_method] ?? order.payment_method)
+              : null;
             return (
-              <Card key={order.id} className="overflow-hidden">
+              <Card
+                key={order.id}
+                ref={isFocused ? focusRef : undefined}
+                className={cn(
+                  "overflow-hidden transition-all",
+                  isFocused && "ring-2 ring-primary ring-offset-2",
+                )}
+              >
                 <div className="flex flex-col gap-3 border-b bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     {order.companies?.logo_url ? (
@@ -181,12 +240,18 @@ function OrdersPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge
                       variant="outline"
                       className={cn("text-xs font-medium", statusClass)}
                     >
                       {statusLabel}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={cn("text-xs font-medium", payClass)}
+                    >
+                      {payLabel}
                     </Badge>
                     <span className="text-sm font-bold">
                       {formatMAD(order.total_mad)}
@@ -235,7 +300,7 @@ function OrdersPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/20 px-4 py-2.5 text-xs text-muted-foreground">
                   <span>
                     {itemCount} قطعة
-                    {order.payment_method ? ` · ${order.payment_method}` : ""}
+                    {methodLabel ? ` · ${methodLabel}` : ""}
                   </span>
                   {order.notes && (
                     <span className="max-w-md truncate" title={order.notes}>
