@@ -25,14 +25,6 @@ export function formatDateTimeAr(value: string | Date): string {
   }).format(d);
 }
 
-export const LEVEL_LABELS: Record<string, string> = {
-  distributor: "موزع",
-  senior_consultant: "استشاري أول",
-  success_builder: "باني النجاح",
-  supervisor: "مشرف",
-  world_team: "الفريق العالمي",
-};
-
 export const STATUS_LABELS: Record<string, string> = {
   pending: "قيد الانتظار",
   confirmed: "تمت الموافقة",
