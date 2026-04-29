@@ -130,6 +130,11 @@ function CheckoutPage() {
         .filter(Boolean)
         .join("\n");
 
+      const initialPaymentStatus =
+        paymentMethod === "bank_transfer" && paymentReference.trim()
+          ? "awaiting_confirmation"
+          : "pending";
+
       const { data: orderRow, error: orderErr } = await supabase
         .from("orders")
         .insert({
@@ -138,7 +143,9 @@ function CheckoutPage() {
           order_number: orderNumber,
           total_mad: total,
           status: "pending",
-          payment_method: "manual",
+          payment_method: paymentMethod,
+          payment_status: initialPaymentStatus,
+          payment_reference: paymentMethod === "bank_transfer" ? paymentReference.trim() || null : null,
           notes: compactNotes,
         })
         .select("id, order_number")
