@@ -1,5 +1,4 @@
-import { ShoppingCart, Plus, Minus, Trash2, Loader2, AlertTriangle } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ShoppingCart, Plus, Minus, Trash2, Package } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,36 +9,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { useCart, type CartItem } from "@/hooks/useCart";
+import { Separator } from "@/components/ui/separator";
+import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
-import { useOrderRules } from "@/hooks/useOrderRules";
 import { formatMAD } from "@/lib/format";
-import { getUnitPrice, validateLine } from "@/lib/pricing";
-import {
-  expectedDistributorUnitPrice,
-  isPriceDrift,
-} from "@/lib/distributorPricing";
-import { evaluateRules } from "@/lib/orderRules";
-import { logActivity } from "@/lib/activityLog";
-import { AUTHZ_MESSAGES_AR, type AuthzReason } from "@/lib/authzMessages";
-import { createOrder } from "@/server/orders";
-import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
 
 export function CartButton() {
   const { totalQty, openCart } = useCart();
+  const { isClient } = useAuth();
+  if (!isClient) return null;
   const label =
     totalQty > 0 ? `فتح السلة، ${totalQty} عنصر` : "فتح السلة، فارغة";
   return (
@@ -61,497 +39,119 @@ export function CartButton() {
           {totalQty}
         </span>
       )}
-      <span className="sr-only" aria-live="polite" aria-atomic="true">
-        {totalQty} عنصر في السلة
-      </span>
     </Button>
   );
 }
 
-interface PricedLine {
-  item: CartItem;
-  unitPrice: number;
-  lineTotal: number;
-  blocked: boolean;
-  message?: string;
-  reason?: "min_order" | "map_violation";
-}
-
 export function CartSheet() {
-  const { items, isOpen, setOpen, updateQty, setQty, removeItem, clear } = useCart();
-  const { user, partnerType, companyId, pricingTierId, pricingTierDiscount } = useAuth();
-  const { rules: orderRules } = useOrderRules();
-  const [submitting, setSubmitting] = useState(false);
-  const [notes, setNotes] = useState("");
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<CartItem | null>(null);
-  const createOrderFn = useServerFn(createOrder);
+  const { items, isOpen, setOpen, updateQty, removeItem, clear, total } = useCart();
+  const { isClient } = useAuth();
   const navigate = useNavigate();
 
-  // Marketplace mode: any cart item carrying a `vendor_id` means the cart
-  // belongs to an external vendor's micro-store (decentralized order flow).
-  // In that case, skip the legacy distributor checkout and route to /checkout.
-  const isMarketplaceCart = useMemo(
-    () =>
-      items.some(
-        (i) => typeof (i as unknown as { vendor_id?: string }).vendor_id === "string",
-      ),
-    [items],
-  );
+  // Strict guard: only client accounts can ever see the cart.
+  if (!isClient) return null;
 
-  const priced: PricedLine[] = useMemo(
-    () =>
-      items.map((item) => {
-        // Reconstruct PricedProduct shape from cart item
-        const pp = {
-          rrp_price: item.rrp_price ?? null,
-          pharmacy_price: item.pharmacy_price ?? null,
-          map_price: item.map_price ?? null,
-          minimum_order: item.minimum_order ?? 1,
-          price_tiers: item.price_tiers ?? [],
-          price_mad: item.price_mad,
-        };
-        const { unitPrice } = getUnitPrice(pp, partnerType, item.qty);
-        const v = validateLine(pp, partnerType, item.qty, unitPrice, item.name_ar);
-        return {
-          item,
-          unitPrice,
-          lineTotal: unitPrice * item.qty,
-          blocked: !v.ok,
-          message: v.message,
-          reason: v.reason,
-        };
-      }),
-    [items, partnerType],
-  );
-
-  const total = priced.reduce((s, l) => s + l.lineTotal, 0);
-  const blockedLines = priced.filter((l) => l.blocked);
-  const unitsCount = items.reduce((s, i) => s + i.qty, 0);
-  const pointsEarned = Math.floor(total / 100);
-  const rulesResult = useMemo(
-    () =>
-      evaluateRules(
-        orderRules,
-        { total, points: pointsEarned, unitsCount },
-        pricingTierId,
-      ),
-    [orderRules, total, pointsEarned, unitsCount, pricingTierId],
-  );
-  const canCheckout =
-    items.length > 0 && blockedLines.length === 0 && rulesResult.ok;
-
-  const placeOrder = async () => {
-    if (submitting) return;
-    if (!user || items.length === 0) return;
-    if (!companyId) {
-      toast.error("لا توجد شركة نشطة");
-      return;
-    }
-    if (!canCheckout) {
-      const msg =
-        rulesResult.failures[0]?.message ??
-        blockedLines[0]?.message ??
-        "تعذر إتمام الطلب";
-      toast.error(msg);
-      return;
-    }
-    setSubmitting(true);
-
-    // Pre-compute the authoritative tier-derived unit price for every line.
-    // This is the SINGLE source of truth used for both `orders.total_mad`
-    // and each `order_items.unit_price_mad` row.
-    const expectedLines = priced.map((l) => {
-      const product = {
-        rrp_price: l.item.rrp_price ?? null,
-        price_mad: l.item.price_mad,
-      };
-      const expected = expectedDistributorUnitPrice(product, pricingTierDiscount);
-      if (isPriceDrift(l.unitPrice, expected)) {
-        console.warn("[pricing_drift] cart vs tier mismatch", {
-          product_id: l.item.id,
-          name: l.item.name_ar,
-          cart_unit_price: l.unitPrice,
-          expected_distributor_price: expected,
-          tier_discount_percent: pricingTierDiscount,
-          base_price: product.rrp_price ?? product.price_mad,
-        });
-      }
-      return { line: l, expected };
-    });
-    const orderTotal = expectedLines.reduce(
-      (s, { line, expected }) => s + expected * line.item.qty,
-      0,
-    );
-    const points = Math.floor(orderTotal / 100);
-    const trimmedNotes = notes.trim();
-    const itemsPayload = expectedLines.map(({ line, expected }) => ({
-      product_id: line.item.id,
-      quantity: line.item.qty,
-      unit_price_mad: expected,
-    }));
-
-    const requestId =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-
-    console.log("[placeOrder] calling createOrder server fn", {
-      request_id: requestId,
-      total_mad: orderTotal,
-      items_count: itemsPayload.length,
-    });
-
-    const isNetworkError = (e: unknown) => {
-      const m = e instanceof Error ? e.message : String(e);
-      const lower = m.toLowerCase();
-      return (
-        lower.includes("failed to fetch") ||
-        lower.includes("load failed") ||
-        lower.includes("networkerror") ||
-        lower.includes("network request failed")
-      );
-    };
-    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-    const payload = {
-      data: {
-        company_id: companyId,
-        total_mad: orderTotal,
-        points_earned: points,
-        notes: trimmedNotes ? trimmedNotes : null,
-        items: itemsPayload,
-        request_id: requestId,
-      },
-    };
-
-    try {
-      let result;
-      try {
-        result = await createOrderFn(payload);
-      } catch (firstErr) {
-        if (isNetworkError(firstErr)) {
-          console.warn("[placeOrder] network error — retrying once", {
-            request_id: requestId,
-          });
-          await wait(1000);
-          result = await createOrderFn(payload);
-        } else {
-          throw firstErr;
-        }
-      }
-      console.log("[placeOrder] order created", {
-        request_id: requestId,
-        order_id: result.order_id,
-      });
-
-      void logActivity({
-        companyId,
-        action: "order_created",
-        entityType: "order",
-        entityId: result.order_id,
-        metadata: {
-          total_mad: orderTotal,
-          items_count: itemsPayload.length,
-          points_earned: points,
-          source: "cart",
-        },
-      });
-      toast.success(`تم إرسال الطلب بنجاح • +${points} نقطة`);
-      clear();
-      setNotes("");
-      setConfirmOpen(false);
-      setOpen(false);
-    } catch (err) {
-      // TanStack Start surfaces server errors as plain Error instances.
-      // For 403 from `requireEnabledDistributorRole` the body JSON is
-      // serialized into the message; try to parse it and map via
-      // AUTHZ_MESSAGES_AR. Falls back to the raw server message.
-      const raw = err instanceof Error ? err.message : String(err);
-      console.error("[placeOrder] createOrder failed", { request_id: requestId, raw });
-      // Cart is intentionally NOT cleared on failure — user keeps their items.
-      let shown = raw || "تعذّر إنشاء الطلب";
-      const lower = raw.toLowerCase();
-      if (
-        lower.includes("failed to fetch") ||
-        lower.includes("networkerror") ||
-        lower.includes("network request failed") ||
-        lower.includes("load failed")
-      ) {
-        shown = "فشل الاتصال، حاول مرة أخرى";
-      } else
-      try {
-        const parsed = JSON.parse(raw) as {
-          reason?: string;
-          message?: string;
-          error?: string;
-          product_id?: string;
-        };
-        if (parsed.error === "out_of_stock") {
-          const name =
-            items.find((i) => i.id === parsed.product_id)?.name_ar ?? "أحد المنتجات";
-          shown = `${parsed.message ?? "الكمية المطلوبة غير متوفرة في المخزون"} (${name})`;
-        } else if (parsed.reason && parsed.reason in AUTHZ_MESSAGES_AR) {
-          shown = AUTHZ_MESSAGES_AR[parsed.reason as AuthzReason];
-        } else if (parsed.message) {
-          shown = parsed.message;
-        }
-      } catch {
-        // Map a few well-known plain-text errors from RLS triggers.
-        if (raw.includes("غير متاح في منطقة الموزع")) {
-          shown = "هذا المنتج غير متاح في منطقتك";
-        } else if (raw.includes("غير مُعيَّن لأي منطقة")) {
-          shown = "لا يمكن إرسال الطلب: لم يتم تعيين منطقة لحسابك";
-        } else if (raw.includes("الحد الأدنى للطلب")) {
-          shown = raw;
-        } else if (
-          raw.toLowerCase().includes("forbidden") ||
-          raw.includes("403")
-        ) {
-          shown = AUTHZ_MESSAGES_AR.distributor_role_disabled;
-        }
-      }
-      toast.error(shown);
-    } finally {
-      setSubmitting(false);
-    }
+  const handleCheckout = () => {
+    setOpen(false);
+    navigate({ to: "/checkout" });
   };
 
   return (
     <Sheet open={isOpen} onOpenChange={setOpen}>
-      <SheetContent side="left" className="flex flex-col">
+      <SheetContent side="left" dir="rtl" className="flex flex-col w-full sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>سلة الطلب</SheetTitle>
-          <SheetDescription>راجع منتجاتك قبل إرسال الطلب</SheetDescription>
+          <SheetTitle>سلة التسوق</SheetTitle>
+          <SheetDescription>
+            راجع منتجاتك قبل المتابعة لإتمام الطلب.
+          </SheetDescription>
         </SheetHeader>
-        <div className="flex-1 overflow-y-auto py-4 space-y-3">
-          {priced.length === 0 ? (
-            <div className="text-center text-sm text-muted-foreground py-12">
-              السلة فارغة
+
+        <div className="flex-1 overflow-y-auto py-4">
+          {items.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-muted-foreground">
+              <ShoppingCart className="h-10 w-10" />
+              <p className="text-sm">سلتك فارغة</p>
             </div>
           ) : (
-            <>
-              {priced.map(({ item, unitPrice, lineTotal, blocked, message, reason }) => {
-                const pack = Math.max(1, item.pack_size ?? 1);
-                const minOrder = Math.max(1, item.minimum_order ?? 1);
-                // Round up to nearest pack multiple so we respect pack_size too.
-                const bumpTarget = Math.ceil(minOrder / pack) * pack;
-                return (
-                <div
-                  key={item.id}
-                  className={`flex gap-3 p-3 rounded-lg border bg-card ${
-                    blocked ? "border-destructive/60" : ""
-                  }`}
-                >
-                  <img
-                    src={item.image_url ?? ""}
-                    alt={item.name_ar}
-                    className="h-16 w-16 rounded-md object-cover bg-muted"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{item.name_ar}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{formatMAD(unitPrice)}</span>
-                      <span>×</span>
-                      <span>{item.qty}</span>
-                      <span className="font-semibold text-foreground">
-                        = {formatMAD(lineTotal)}
-                      </span>
-                    </div>
-                    {blocked && message && (
-                      <div className="mt-1 flex items-center gap-2 flex-wrap">
-                        <p className="text-[11px] text-destructive flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3" />
-                          {message}
-                        </p>
-                        {reason === "min_order" && item.qty < bumpTarget && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-6 px-2 text-[11px] border-warning/60 text-warning-foreground bg-warning/10 hover:bg-warning/20"
-                            onClick={() => setQty(item.id, bumpTarget)}
-                          >
-                            ضبط على {bumpTarget}
-                          </Button>
-                        )}
+            <ul className="space-y-3">
+              {items.map((item) => (
+                <li key={item.id} className="flex gap-3 rounded-lg border bg-card p-3">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-muted">
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={item.name_ar}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Package className="h-5 w-5 text-muted-foreground" />
                       </div>
                     )}
-                    <div className="flex items-center gap-2 mt-2">
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{item.name_ar}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {formatMAD(Number(item.price_mad))}
+                    </p>
+                    <div className="mt-2 flex items-center gap-1">
                       <Button
                         size="icon"
                         variant="outline"
                         className="h-7 w-7"
-                        disabled={item.qty <= minOrder}
-                        onClick={() => {
-                          const next = Math.max(minOrder, item.qty - pack);
-                          if (next !== item.qty) setQty(item.id, next);
-                        }}
-                        aria-label="إنقاص"
+                        onClick={() => updateQty(item.id, -1)}
+                        aria-label="إنقاص الكمية"
                       >
-                        <Minus className="h-3 w-3" />
+                        <Minus className="h-3.5 w-3.5" />
                       </Button>
-                      <span className="text-sm font-medium w-8 text-center tabular-nums">
-                        {item.qty}
-                      </span>
+                      <span className="w-8 text-center text-sm font-medium">{item.qty}</span>
                       <Button
                         size="icon"
                         variant="outline"
                         className="h-7 w-7"
-                        onClick={() => updateQty(item.id, pack)}
-                        aria-label="زيادة"
+                        onClick={() => updateQty(item.id, 1)}
+                        aria-label="زيادة الكمية"
                       >
-                        <Plus className="h-3 w-3" />
+                        <Plus className="h-3.5 w-3.5" />
                       </Button>
-                      {pack > 1 && (
-                        <span className="text-[10px] text-muted-foreground">
-                          ×{pack}
-                        </span>
-                      )}
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 mr-auto text-destructive"
-                        onClick={() => setDeleteTarget(item)}
+                        className="ms-auto h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={() => removeItem(item.id)}
                         aria-label="حذف"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
-                </div>
-                );
-              })}
-              <div className="space-y-2 pt-2">
-                <Label htmlFor="delivery-notes" className="text-sm">
-                  ملاحظات التوصيل (اختياري)
-                </Label>
-                <Textarea
-                  id="delivery-notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="العنوان، وقت التوصيل المفضل، أو أي تعليمات أخرى"
-                  rows={3}
-                  maxLength={500}
-                />
-                <p className="text-xs text-muted-foreground text-left">
-                  {notes.length}/500
-                </p>
-              </div>
-            </>
+                  <p className="self-start text-sm font-bold tabular-nums">
+                    {formatMAD(Number(item.price_mad) * item.qty)}
+                  </p>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
-        {priced.length > 0 && (
-          <SheetFooter className="flex-col gap-3 sm:flex-col border-t pt-4">
-            {blockedLines.length > 0 && (
-              <div className="text-xs text-destructive flex items-center gap-1.5 w-full">
-                <AlertTriangle className="h-3.5 w-3.5" />
-                صحّح المنتجات المظللة قبل إرسال الطلب
-              </div>
-            )}
-            {rulesResult.evaluations.length > 0 && (
-              <div className="w-full space-y-1.5">
-                {rulesResult.evaluations.map((e) => (
-                  <div
-                    key={e.type}
-                    className={`text-[11px] flex items-center gap-1.5 rounded-md px-2 py-1.5 border ${
-                      e.ok
-                        ? "border-success/40 bg-success/5 text-success-foreground"
-                        : "border-warning/50 bg-warning/10 text-warning-foreground"
-                    }`}
-                  >
-                    {!e.ok && <AlertTriangle className="h-3 w-3 shrink-0" />}
-                    <span>{e.message}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="flex items-center justify-between w-full">
-              <span className="text-muted-foreground">الإجمالي</span>
+
+        {items.length > 0 && (
+          <>
+            <Separator />
+            <div className="flex items-center justify-between py-3">
+              <span className="text-sm text-muted-foreground">الإجمالي</span>
               <span className="text-lg font-bold">{formatMAD(total)}</span>
             </div>
-            <Button
-              onClick={() => {
-                if (isMarketplaceCart) {
-                  setOpen(false);
-                  navigate({ to: "/checkout" });
-                  return;
-                }
-                setConfirmOpen(true);
-              }}
-              disabled={submitting || (!isMarketplaceCart && !canCheckout)}
-              className="w-full"
-              size="lg"
-            >
-              متابعة الطلب
-            </Button>
-          </SheetFooter>
+            <SheetFooter className="flex-col gap-2 sm:flex-col">
+              <Button className="w-full" size="lg" onClick={handleCheckout}>
+                إتمام الطلب
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={clear}>
+                إفراغ السلة
+              </Button>
+            </SheetFooter>
+          </>
         )}
       </SheetContent>
-      <AlertDialog open={confirmOpen} onOpenChange={(o) => !submitting && setConfirmOpen(o)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>تأكيد الطلب</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-2 text-right">
-                <div>
-                  عدد المنتجات:{" "}
-                  <span className="font-medium text-foreground">{items.length}</span>
-                </div>
-                <div>
-                  الإجمالي:{" "}
-                  <span className="font-medium text-foreground">{formatMAD(total)}</span>
-                </div>
-                {notes.trim() && (
-                  <div>
-                    ملاحظات:{" "}
-                    <span className="text-foreground whitespace-pre-wrap">{notes.trim()}</span>
-                  </div>
-                )}
-                <div className="pt-2">هل تريد تأكيد إرسال الطلب؟</div>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>إلغاء</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                placeOrder();
-              }}
-              disabled={submitting}
-            >
-              {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {submitting ? "جاري الإرسال..." : "تأكيد"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      <AlertDialog
-        open={deleteTarget !== null}
-        onOpenChange={(o) => !o && setDeleteTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>حذف المنتج من السلة؟</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deleteTarget
-                ? `سيتم حذف "${deleteTarget.name_ar}" من السلة.`
-                : ""}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                if (deleteTarget) removeItem(deleteTarget.id);
-                setDeleteTarget(null);
-              }}
-            >
-              حذف
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Sheet>
   );
 }
