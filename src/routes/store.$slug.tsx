@@ -62,7 +62,7 @@ interface StoreProduct {
 
 function VendorStorePage() {
   const { slug } = Route.useParams();
-  const { session, companyId, loading: authLoading } = useAuth();
+  const { session, isClient, marketplaceRole, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const cart = useCart();
 
@@ -157,6 +157,10 @@ function VendorStorePage() {
       navigate({ to: "/login" });
       return;
     }
+    if (!isClient) {
+      toast.error("هذا الحساب ليس حساب عميل. لا يمكن إنشاء طلبات.");
+      return;
+    }
     const cp = buildCartProduct(p);
     // Single-vendor cart enforcement
     if (cartVendorId && cartVendorId !== vendor!.id) {
@@ -236,7 +240,7 @@ function VendorStorePage() {
               <p className="text-[11px] text-muted-foreground">متجر البائع</p>
             </div>
           </div>
-          {session && cart.totalQty > 0 && (
+          {isClient && cart.totalQty > 0 && (
             <Button size="sm" variant="outline" onClick={cart.openCart} className="gap-1.5">
               <ShoppingCart className="h-4 w-4" />
               {cart.totalQty}
