@@ -329,9 +329,9 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {/* Distributor (workspace user) — flat menu */}
-        {isDistributor && canAccessDistributorFeatures && renderTopItems(distributorTopItems)}
-        {isDistributor && renderTopItems(distributorAccountItems)}
+        {/* Client (marketplace shopper) — flat menu */}
+        {isDistributor && renderTopItems(clientTopItems)}
+        {isDistributor && renderTopItems(clientAccountItems)}
 
         {/* Company Admin — Dashboard + grouped sections */}
         {isCompanyAdmin && (
