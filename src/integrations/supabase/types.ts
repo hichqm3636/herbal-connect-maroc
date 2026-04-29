@@ -1158,6 +1158,63 @@ export type Database = {
           },
         ]
       }
+      whatsapp_outbox: {
+        Row: {
+          attempts: number
+          company_id: string
+          created_at: string
+          id: string
+          kind: string
+          last_error: string | null
+          message: string
+          metadata: Json
+          next_attempt_at: string
+          notification_id: string | null
+          phone: string
+          recipient_role: string
+          recipient_user_id: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          company_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          last_error?: string | null
+          message: string
+          metadata?: Json
+          next_attempt_at?: string
+          notification_id?: string | null
+          phone: string
+          recipient_role: string
+          recipient_user_id?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          company_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          last_error?: string | null
+          message?: string
+          metadata?: Json
+          next_attempt_at?: string
+          notification_id?: string | null
+          phone?: string
+          recipient_role?: string
+          recipient_user_id?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       woo_webhook_deliveries: {
         Row: {
           delivery_id: string
@@ -1233,6 +1290,33 @@ export type Database = {
       admin_exists: { Args: never; Returns: boolean }
       claim_client_role: { Args: never; Returns: boolean }
       claim_first_admin: { Args: never; Returns: boolean }
+      claim_whatsapp_outbox: {
+        Args: { _limit?: number }
+        Returns: {
+          attempts: number
+          company_id: string
+          created_at: string
+          id: string
+          kind: string
+          last_error: string | null
+          message: string
+          metadata: Json
+          next_attempt_at: string
+          notification_id: string | null
+          phone: string
+          recipient_role: string
+          recipient_user_id: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "whatsapp_outbox"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       current_company_id: { Args: never; Returns: string }
       default_warehouse_for_company: {
         Args: { _company_id: string }
@@ -1246,6 +1330,7 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      normalize_phone_ma: { Args: { _raw: string }; Returns: string }
       provision_company: {
         Args: {
           _admin_user_id: string
