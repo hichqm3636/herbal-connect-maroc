@@ -4,7 +4,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { CartSheet } from "@/components/CartSheet";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, type MarketplaceRole } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { Leaf, ShieldAlert } from "lucide-react";
 
@@ -12,11 +12,10 @@ export const Route = createFileRoute("/_app")({
   component: AppLayout,
 });
 
-// Routes that only the `client` marketplace role may access.
+// Hard prefix isolation per role.
 const CLIENT_ONLY_PREFIXES = ["/orders"];
-// Routes that only `vendor` / `admin` may access.
-const VENDOR_ONLY_PREFIXES = ["/admin"];
-// Routes that only `super_admin` may access.
+const VENDOR_ONLY_PREFIXES = ["/vendor"];
+const ADMIN_ONLY_PREFIXES = ["/admin"];
 const SUPER_ADMIN_ONLY_PREFIXES = ["/super-admin"];
 
 function startsWithAny(path: string, prefixes: string[]): boolean {
@@ -24,21 +23,22 @@ function startsWithAny(path: string, prefixes: string[]): boolean {
 }
 
 /** Default landing route per marketplace role. */
-function homeForRole(role: "client" | "vendor" | "admin" | "super_admin" | null): string {
+export function homeForRole(role: MarketplaceRole | null): string {
   if (role === "super_admin") return "/super-admin";
-  if (role === "admin" || role === "vendor") return "/admin";
+  if (role === "admin") return "/admin";
+  if (role === "vendor") return "/vendor";
   if (role === "client") return "/vendors";
   return "/login";
 }
 
 function AppLayout() {
-  const { session, loading, marketplaceRole, isClient, isVendor, isSuperAdmin, companyId } = useAuth();
+  const { session, loading, marketplaceRole, isClient, isVendor, isSuperAdmin, roles, companyId } = useAuth();
   const tenant = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname;
+  const isPlatformAdmin = roles.includes("admin") || isSuperAdmin;
 
-  // Tenant mismatch only matters for client orders / vendor admin pages.
   const onTenantScopedRoute =
     startsWithAny(path, CLIENT_ONLY_PREFIXES) || startsWithAny(path, VENDOR_ONLY_PREFIXES);
 
@@ -52,7 +52,6 @@ function AppLayout() {
     !!companyId &&
     tenant.company.id !== companyId;
 
-  // Role-based redirects: keep each role inside its own area.
   useEffect(() => {
     if (loading) return;
     if (!session) {
@@ -62,13 +61,19 @@ function AppLayout() {
 
     const onClientRoute = startsWithAny(path, CLIENT_ONLY_PREFIXES);
     const onVendorRoute = startsWithAny(path, VENDOR_ONLY_PREFIXES);
+    const onAdminRoute = startsWithAny(path, ADMIN_ONLY_PREFIXES);
     const onSuperAdminRoute = startsWithAny(path, SUPER_ADMIN_ONLY_PREFIXES);
 
     if (onClientRoute && !isClient) {
       navigate({ to: homeForRole(marketplaceRole) });
       return;
     }
-    if (onVendorRoute && !isVendor && !isSuperAdmin) {
+    // Vendor surface is reserved for the vendor role only — admins go to /admin.
+    if (onVendorRoute && !isVendor) {
+      navigate({ to: homeForRole(marketplaceRole) });
+      return;
+    }
+    if (onAdminRoute && !isPlatformAdmin) {
       navigate({ to: homeForRole(marketplaceRole) });
       return;
     }
@@ -76,7 +81,7 @@ function AppLayout() {
       navigate({ to: homeForRole(marketplaceRole) });
       return;
     }
-  }, [session, loading, marketplaceRole, isClient, isVendor, isSuperAdmin, path, navigate]);
+  }, [session, loading, marketplaceRole, isClient, isVendor, isPlatformAdmin, isSuperAdmin, path, navigate]);
 
   if (loading || !session || (onTenantScopedRoute && tenant.loading)) {
     return (
