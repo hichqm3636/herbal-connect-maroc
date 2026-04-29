@@ -682,7 +682,7 @@ function CheckoutPage() {
 
       {/* Step 1 — Contact + delivery */}
       {step === 1 && (
-        <Card className="space-y-5 rounded-2xl p-5 sm:p-6">
+        <Card className="space-y-4 rounded-2xl p-4 sm:space-y-5 sm:p-6">
           <div className="flex items-center gap-2 border-b pb-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Truck className="h-4 w-4" />
@@ -774,7 +774,7 @@ function CheckoutPage() {
 
       {/* Step 2 — Payment */}
       {step === 2 && (
-        <Card className="space-y-5 rounded-2xl p-5 sm:p-6">
+        <Card className="space-y-4 rounded-2xl p-4 sm:space-y-5 sm:p-6">
           <div className="flex items-center gap-2 border-b pb-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <CreditCard className="h-4 w-4" />
