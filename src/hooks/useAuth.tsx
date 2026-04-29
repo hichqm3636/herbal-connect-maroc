@@ -6,11 +6,18 @@ import type { PartnerType } from "@/lib/pricing";
 export type AppRole =
   | "admin"
   | "super_admin"
+  | "vendor"
+  | "client"
+  // Legacy values kept ONLY so old rows still parse during migration.
+  // New code must rely on `marketplaceRole` exposed by useAuth().
   | "buyer"
   | "seller"
   | "sales_agent"
   | "partner"
-  | "distributor"; // legacy — kept so existing rows still parse
+  | "distributor";
+
+/** The single canonical role of a user in the marketplace model. */
+export type MarketplaceRole = "admin" | "super_admin" | "vendor" | "client";
 
 export interface Company {
   id: string;
@@ -28,6 +35,13 @@ interface AuthContextValue {
   roles: AppRole[];
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  /** Marketplace role guard — true when this user is a buyer/client account. */
+  isClient: boolean;
+  /** Marketplace role guard — true when this user owns a vendor company. */
+  isVendor: boolean;
+  /** The single canonical role for the marketplace model, or null. */
+  marketplaceRole: MarketplaceRole | null;
+  // Legacy flags kept temporarily for back-compat. Do not use in new code.
   isBuyer: boolean;
   isSeller: boolean;
   isSalesAgent: boolean;
