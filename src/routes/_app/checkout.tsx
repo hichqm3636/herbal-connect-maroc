@@ -392,34 +392,36 @@ function CheckoutPage() {
       </div>
 
       {/* Sticky Stepper */}
-      <div className="sticky top-16 z-20 -mx-4 border-b bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:px-4">
-        <ol className="flex items-center justify-between gap-2">
+      <div className="sticky top-16 z-20 -mx-4 border-b bg-background/95 px-4 py-3.5 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-5 sm:shadow-sm">
+        <ol className="flex items-center gap-1.5 sm:gap-2">
           {STEPS.map((s, idx) => {
             const isDone = step > s.id;
             const isCurrent = step === s.id;
             return (
-              <li key={s.id} className="flex flex-1 items-center gap-2">
-                <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                    isDone
-                      ? "bg-success text-success-foreground"
-                      : isCurrent
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground"
-                  }`}
-                  aria-current={isCurrent ? "step" : undefined}
-                >
-                  {isDone ? <CheckCircle2 className="h-4 w-4" /> : s.id}
+              <li key={s.id} className="flex flex-1 items-center gap-2 last:flex-none">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                      isDone
+                        ? "bg-success text-success-foreground"
+                        : isCurrent
+                          ? "bg-primary text-primary-foreground ring-4 ring-primary/15"
+                          : "bg-muted text-muted-foreground"
+                    }`}
+                    aria-current={isCurrent ? "step" : undefined}
+                  >
+                    {isDone ? <CheckCircle2 className="h-4 w-4" /> : s.id}
+                  </div>
+                  <span
+                    className={`hidden truncate text-xs font-semibold sm:inline ${
+                      isCurrent ? "text-foreground" : isDone ? "text-foreground/70" : "text-muted-foreground"
+                    }`}
+                  >
+                    {s.label}
+                  </span>
                 </div>
-                <span
-                  className={`hidden truncate text-xs font-medium sm:inline ${
-                    isCurrent ? "text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  {s.label}
-                </span>
                 {idx < STEPS.length - 1 && (
-                  <div className={`mx-1 h-px flex-1 ${isDone ? "bg-success" : "bg-border"}`} />
+                  <div className={`h-0.5 flex-1 rounded-full transition-colors ${isDone ? "bg-success" : "bg-border"}`} />
                 )}
               </li>
             );
@@ -429,44 +431,76 @@ function CheckoutPage() {
 
       {/* Step 1 — Contact + delivery */}
       {step === 1 && (
-        <Card className="space-y-4 p-4 sm:p-5">
-          <div className="flex items-center gap-2">
-            <Truck className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-bold">بيانات التواصل والتوصيل</h2>
+        <Card className="space-y-5 rounded-2xl p-5 sm:p-6">
+          <div className="flex items-center gap-2 border-b pb-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Truck className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold leading-tight">بيانات التواصل والتوصيل</h2>
+              <p className="text-[11px] text-muted-foreground">
+                نحتاج هذه المعلومات للتوصيل والتنسيق مع البائع
+              </p>
+            </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="name">الاسم الكامل *</Label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FieldWrap
+              id="name"
+              label="الاسم الكامل"
+              required
+              error={touched.name ? errors.name : null}
+            >
               <Input
                 id="name"
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
+                onBlur={() => setTouched((t) => ({ ...t, name: true }))}
                 placeholder="اسم المسؤول عن الطلب"
+                aria-invalid={touched.name && !!errors.name}
+                className={touched.name && errors.name ? "border-destructive focus-visible:ring-destructive/30" : ""}
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="phone">رقم الهاتف *</Label>
+            </FieldWrap>
+
+            <FieldWrap
+              id="phone"
+              label="رقم الهاتف"
+              required
+              error={touched.phone ? errors.phone : null}
+            >
               <Input
                 id="phone"
                 type="tel"
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
+                onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
                 placeholder="+212 6XX XXX XXX"
+                dir="ltr"
+                aria-invalid={touched.phone && !!errors.phone}
+                className={touched.phone && errors.phone ? "border-destructive focus-visible:ring-destructive/30" : ""}
               />
-            </div>
+            </FieldWrap>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="address">عنوان التوصيل *</Label>
+
+          <FieldWrap
+            id="address"
+            label="عنوان التوصيل"
+            required
+            error={touched.address ? errors.address : null}
+          >
             <Textarea
               id="address"
               value={shippingAddress}
               onChange={(e) => setShippingAddress(e.target.value)}
+              onBlur={() => setTouched((t) => ({ ...t, address: true }))}
               placeholder="العنوان الكامل، المدينة، المنطقة"
               rows={2}
+              aria-invalid={touched.address && !!errors.address}
+              className={touched.address && errors.address ? "border-destructive focus-visible:ring-destructive/30" : ""}
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="notes">ملاحظات إضافية (اختياري)</Label>
+          </FieldWrap>
+
+          <FieldWrap id="notes" label="ملاحظات إضافية" hint="اختياري">
             <Textarea
               id="notes"
               value={notes}
@@ -475,10 +509,12 @@ function CheckoutPage() {
               rows={2}
               maxLength={500}
             />
+          </FieldWrap>
+
+          <div className="flex items-start gap-2 rounded-xl bg-muted/50 p-3 text-[11px] text-muted-foreground">
+            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+            <p>ستُحفظ هذه البيانات في حسابك تلقائياً للطلبات القادمة.</p>
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            ستُحفظ هذه البيانات في حسابك تلقائياً للطلبات القادمة.
-          </p>
         </Card>
       )}
 
