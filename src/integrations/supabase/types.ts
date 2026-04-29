@@ -1041,6 +1041,30 @@ export type Database = {
         }
         Relationships: []
       }
+      super_admin_login_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string | null
+          success: boolean
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip?: string | null
+          success?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string | null
+          success?: boolean
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           company_id: string

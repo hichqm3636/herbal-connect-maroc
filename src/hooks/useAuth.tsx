@@ -239,6 +239,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     writeActiveCompany(null);
     setActiveCompanyIdState(null);
+    try {
+      sessionStorage.removeItem("super_admin_gate_ok");
+    } catch {
+      /* ignore */
+    }
     await supabase.auth.signOut();
   };
 
