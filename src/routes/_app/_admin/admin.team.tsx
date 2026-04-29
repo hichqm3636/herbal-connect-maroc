@@ -18,7 +18,7 @@ function TeamPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Link to="/admin/distributors">
+        <Link to="/admin">
           <Card className="p-5 shadow-soft hover:shadow-md transition-shadow h-full">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -34,7 +34,7 @@ function TeamPage() {
           </Card>
         </Link>
 
-        <Link to="/admin/sales-agents">
+        <Link to="/admin">
           <Card className="p-5 shadow-soft hover:shadow-md transition-shadow h-full">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success">

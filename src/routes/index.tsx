@@ -58,7 +58,7 @@ function Index() {
   }
 
   // Tenant host → distributor portal
-  return <Navigate to={session ? "/dashboard" : "/login"} />;
+  return <Navigate to={session ? "/vendors" : "/login"} />;
 }
 
 function NexoraLanding({ isAuthenticated }: { isAuthenticated: boolean }) {
