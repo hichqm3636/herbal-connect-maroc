@@ -16,48 +16,32 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StoreSlugRouteImport } from './routes/store.$slug'
-import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AppSuperAdminRouteImport } from './routes/_app/super-admin'
 import { Route as AppShopRouteImport } from './routes/_app/shop'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
-import { Route as AppQuickOrderRouteImport } from './routes/_app/quick-order'
 import { Route as AppProductsRouteImport } from './routes/_app/products'
 import { Route as AppOrdersRouteImport } from './routes/_app/orders'
-import { Route as AppLoyaltyRouteImport } from './routes/_app/loyalty'
 import { Route as AppInvoicesRouteImport } from './routes/_app/invoices'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppAdminRouteImport } from './routes/_app/_admin'
 import { Route as AppSuperAdminIndexRouteImport } from './routes/_app/super-admin/index'
 import { Route as ApiPublicWooWebhookRouteImport } from './routes/api/public/woo-webhook'
-import { Route as AppSuperAdminPricingTiersRouteImport } from './routes/_app/super-admin/pricing-tiers'
-import { Route as AppSuperAdminOrderRulesRouteImport } from './routes/_app/super-admin/order-rules'
-import { Route as AppSuperAdminDistributorsRouteImport } from './routes/_app/super-admin/distributors'
 import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-admin/companies'
 import { Route as AppProductsProductIdRouteImport } from './routes/_app/products_.$productId'
-import { Route as AppPartnerEarningsRouteImport } from './routes/_app/partner.earnings'
-import { Route as AppPartnerCatalogRouteImport } from './routes/_app/partner.catalog'
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
-import { Route as AppAdminAdminTerritoriesRouteImport } from './routes/_app/_admin/admin.territories'
 import { Route as AppAdminAdminTeamRouteImport } from './routes/_app/_admin/admin.team'
 import { Route as AppAdminAdminSuppliersRouteImport } from './routes/_app/_admin/admin.suppliers'
 import { Route as AppAdminAdminStorageHealthRouteImport } from './routes/_app/_admin/admin.storage-health'
-import { Route as AppAdminAdminSalesAgentsRouteImport } from './routes/_app/_admin/admin.sales-agents'
 import { Route as AppAdminAdminProductsRouteImport } from './routes/_app/_admin/admin.products'
-import { Route as AppAdminAdminProductZonesRouteImport } from './routes/_app/_admin/admin.product-zones'
-import { Route as AppAdminAdminPartnersRouteImport } from './routes/_app/_admin/admin.partners'
 import { Route as AppAdminAdminOrdersRouteImport } from './routes/_app/_admin/admin.orders'
-import { Route as AppAdminAdminOrderRulesRouteImport } from './routes/_app/_admin/admin.order-rules'
 import { Route as AppAdminAdminInvoicesRouteImport } from './routes/_app/_admin/admin.invoices'
-import { Route as AppAdminAdminDistributorsRouteImport } from './routes/_app/_admin/admin.distributors'
 import { Route as AppAdminAdminCompanyActivityRouteImport } from './routes/_app/_admin/admin.company-activity'
 import { Route as AppAdminAdminBrandingRouteImport } from './routes/_app/_admin/admin.branding'
 import { Route as AppAdminAdminAnalyticsRouteImport } from './routes/_app/_admin/admin.analytics'
 import { Route as AppAdminAdminActivityRouteImport } from './routes/_app/_admin/admin.activity'
 import { Route as AppAdminAdminOrdersOrderIdRouteImport } from './routes/_app/_admin/admin.orders_.$orderId'
 import { Route as AppAdminAdminInvoicesInvoiceIdRouteImport } from './routes/_app/_admin/admin.invoices_.$invoiceId'
-import { Route as AppAdminAdminDistributorsIdRouteImport } from './routes/_app/_admin/admin.distributors_.$id'
-import { Route as AppAdminAdminCreateOrderClientIdRouteImport } from './routes/_app/_admin/admin.create-order.$clientId'
 import { Route as AppAdminAdminActivityAdminIdRouteImport } from './routes/_app/_admin/admin.activity_.$adminId'
 
 const VendorsRoute = VendorsRouteImport.update({
@@ -94,11 +78,6 @@ const StoreSlugRoute = StoreSlugRouteImport.update({
   path: '/store/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const InviteTokenRoute = InviteTokenRouteImport.update({
-  id: '/invite/$token',
-  path: '/invite/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
@@ -119,11 +98,6 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
-const AppQuickOrderRoute = AppQuickOrderRouteImport.update({
-  id: '/quick-order',
-  path: '/quick-order',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppProductsRoute = AppProductsRouteImport.update({
   id: '/products',
   path: '/products',
@@ -132,11 +106,6 @@ const AppProductsRoute = AppProductsRouteImport.update({
 const AppOrdersRoute = AppOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppLoyaltyRoute = AppLoyaltyRouteImport.update({
-  id: '/loyalty',
-  path: '/loyalty',
   getParentRoute: () => AppRoute,
 } as any)
 const AppInvoicesRoute = AppInvoicesRouteImport.update({
@@ -163,23 +132,6 @@ const ApiPublicWooWebhookRoute = ApiPublicWooWebhookRouteImport.update({
   path: '/api/public/woo-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppSuperAdminPricingTiersRoute =
-  AppSuperAdminPricingTiersRouteImport.update({
-    id: '/pricing-tiers',
-    path: '/pricing-tiers',
-    getParentRoute: () => AppSuperAdminRoute,
-  } as any)
-const AppSuperAdminOrderRulesRoute = AppSuperAdminOrderRulesRouteImport.update({
-  id: '/order-rules',
-  path: '/order-rules',
-  getParentRoute: () => AppSuperAdminRoute,
-} as any)
-const AppSuperAdminDistributorsRoute =
-  AppSuperAdminDistributorsRouteImport.update({
-    id: '/distributors',
-    path: '/distributors',
-    getParentRoute: () => AppSuperAdminRoute,
-  } as any)
 const AppSuperAdminCompaniesRoute = AppSuperAdminCompaniesRouteImport.update({
   id: '/companies',
   path: '/companies',
@@ -190,27 +142,11 @@ const AppProductsProductIdRoute = AppProductsProductIdRouteImport.update({
   path: '/products/$productId',
   getParentRoute: () => AppRoute,
 } as any)
-const AppPartnerEarningsRoute = AppPartnerEarningsRouteImport.update({
-  id: '/partner/earnings',
-  path: '/partner/earnings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPartnerCatalogRoute = AppPartnerCatalogRouteImport.update({
-  id: '/partner/catalog',
-  path: '/partner/catalog',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppAdminAdminIndexRoute = AppAdminAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
   getParentRoute: () => AppAdminRoute,
 } as any)
-const AppAdminAdminTerritoriesRoute =
-  AppAdminAdminTerritoriesRouteImport.update({
-    id: '/admin/territories',
-    path: '/admin/territories',
-    getParentRoute: () => AppAdminRoute,
-  } as any)
 const AppAdminAdminTeamRoute = AppAdminAdminTeamRouteImport.update({
   id: '/admin/team',
   path: '/admin/team',
@@ -227,26 +163,9 @@ const AppAdminAdminStorageHealthRoute =
     path: '/admin/storage-health',
     getParentRoute: () => AppAdminRoute,
   } as any)
-const AppAdminAdminSalesAgentsRoute =
-  AppAdminAdminSalesAgentsRouteImport.update({
-    id: '/admin/sales-agents',
-    path: '/admin/sales-agents',
-    getParentRoute: () => AppAdminRoute,
-  } as any)
 const AppAdminAdminProductsRoute = AppAdminAdminProductsRouteImport.update({
   id: '/admin/products',
   path: '/admin/products',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminAdminProductZonesRoute =
-  AppAdminAdminProductZonesRouteImport.update({
-    id: '/admin/product-zones',
-    path: '/admin/product-zones',
-    getParentRoute: () => AppAdminRoute,
-  } as any)
-const AppAdminAdminPartnersRoute = AppAdminAdminPartnersRouteImport.update({
-  id: '/admin/partners',
-  path: '/admin/partners',
   getParentRoute: () => AppAdminRoute,
 } as any)
 const AppAdminAdminOrdersRoute = AppAdminAdminOrdersRouteImport.update({
@@ -254,22 +173,11 @@ const AppAdminAdminOrdersRoute = AppAdminAdminOrdersRouteImport.update({
   path: '/admin/orders',
   getParentRoute: () => AppAdminRoute,
 } as any)
-const AppAdminAdminOrderRulesRoute = AppAdminAdminOrderRulesRouteImport.update({
-  id: '/admin/order-rules',
-  path: '/admin/order-rules',
-  getParentRoute: () => AppAdminRoute,
-} as any)
 const AppAdminAdminInvoicesRoute = AppAdminAdminInvoicesRouteImport.update({
   id: '/admin/invoices',
   path: '/admin/invoices',
   getParentRoute: () => AppAdminRoute,
 } as any)
-const AppAdminAdminDistributorsRoute =
-  AppAdminAdminDistributorsRouteImport.update({
-    id: '/admin/distributors',
-    path: '/admin/distributors',
-    getParentRoute: () => AppAdminRoute,
-  } as any)
 const AppAdminAdminCompanyActivityRoute =
   AppAdminAdminCompanyActivityRouteImport.update({
     id: '/admin/company-activity',
@@ -303,18 +211,6 @@ const AppAdminAdminInvoicesInvoiceIdRoute =
     path: '/admin/invoices/$invoiceId',
     getParentRoute: () => AppAdminRoute,
   } as any)
-const AppAdminAdminDistributorsIdRoute =
-  AppAdminAdminDistributorsIdRouteImport.update({
-    id: '/admin/distributors_/$id',
-    path: '/admin/distributors/$id',
-    getParentRoute: () => AppAdminRoute,
-  } as any)
-const AppAdminAdminCreateOrderClientIdRoute =
-  AppAdminAdminCreateOrderClientIdRouteImport.update({
-    id: '/admin/create-order/$clientId',
-    path: '/admin/create-order/$clientId',
-    getParentRoute: () => AppAdminRoute,
-  } as any)
 const AppAdminAdminActivityAdminIdRoute =
   AppAdminAdminActivityAdminIdRouteImport.update({
     id: '/admin/activity_/$adminId',
@@ -330,45 +226,29 @@ export interface FileRoutesByFullPath {
   '/vendors': typeof VendorsRoute
   '/dashboard': typeof AppDashboardRoute
   '/invoices': typeof AppInvoicesRoute
-  '/loyalty': typeof AppLoyaltyRoute
   '/orders': typeof AppOrdersRoute
   '/products': typeof AppProductsRoute
-  '/quick-order': typeof AppQuickOrderRoute
   '/settings': typeof AppSettingsRoute
   '/shop': typeof AppShopRoute
   '/super-admin': typeof AppSuperAdminRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
-  '/invite/$token': typeof InviteTokenRoute
   '/store/$slug': typeof StoreSlugRoute
-  '/partner/catalog': typeof AppPartnerCatalogRoute
-  '/partner/earnings': typeof AppPartnerEarningsRoute
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
-  '/super-admin/distributors': typeof AppSuperAdminDistributorsRoute
-  '/super-admin/order-rules': typeof AppSuperAdminOrderRulesRoute
-  '/super-admin/pricing-tiers': typeof AppSuperAdminPricingTiersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/super-admin/': typeof AppSuperAdminIndexRoute
   '/admin/activity': typeof AppAdminAdminActivityRoute
   '/admin/analytics': typeof AppAdminAdminAnalyticsRoute
   '/admin/branding': typeof AppAdminAdminBrandingRoute
   '/admin/company-activity': typeof AppAdminAdminCompanyActivityRoute
-  '/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/admin/invoices': typeof AppAdminAdminInvoicesRoute
-  '/admin/order-rules': typeof AppAdminAdminOrderRulesRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
-  '/admin/partners': typeof AppAdminAdminPartnersRoute
-  '/admin/product-zones': typeof AppAdminAdminProductZonesRoute
   '/admin/products': typeof AppAdminAdminProductsRoute
-  '/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
   '/admin/storage-health': typeof AppAdminAdminStorageHealthRoute
   '/admin/suppliers': typeof AppAdminAdminSuppliersRoute
   '/admin/team': typeof AppAdminAdminTeamRoute
-  '/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/admin/': typeof AppAdminAdminIndexRoute
   '/admin/activity/$adminId': typeof AppAdminAdminActivityAdminIdRoute
-  '/admin/create-order/$clientId': typeof AppAdminAdminCreateOrderClientIdRoute
-  '/admin/distributors/$id': typeof AppAdminAdminDistributorsIdRoute
   '/admin/invoices/$invoiceId': typeof AppAdminAdminInvoicesInvoiceIdRoute
   '/admin/orders/$orderId': typeof AppAdminAdminOrdersOrderIdRoute
 }
@@ -380,44 +260,28 @@ export interface FileRoutesByTo {
   '/vendors': typeof VendorsRoute
   '/dashboard': typeof AppDashboardRoute
   '/invoices': typeof AppInvoicesRoute
-  '/loyalty': typeof AppLoyaltyRoute
   '/orders': typeof AppOrdersRoute
   '/products': typeof AppProductsRoute
-  '/quick-order': typeof AppQuickOrderRoute
   '/settings': typeof AppSettingsRoute
   '/shop': typeof AppShopRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/invite/$token': typeof InviteTokenRoute
   '/store/$slug': typeof StoreSlugRoute
-  '/partner/catalog': typeof AppPartnerCatalogRoute
-  '/partner/earnings': typeof AppPartnerEarningsRoute
   '/products/$productId': typeof AppProductsProductIdRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
-  '/super-admin/distributors': typeof AppSuperAdminDistributorsRoute
-  '/super-admin/order-rules': typeof AppSuperAdminOrderRulesRoute
-  '/super-admin/pricing-tiers': typeof AppSuperAdminPricingTiersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/super-admin': typeof AppSuperAdminIndexRoute
   '/admin/activity': typeof AppAdminAdminActivityRoute
   '/admin/analytics': typeof AppAdminAdminAnalyticsRoute
   '/admin/branding': typeof AppAdminAdminBrandingRoute
   '/admin/company-activity': typeof AppAdminAdminCompanyActivityRoute
-  '/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/admin/invoices': typeof AppAdminAdminInvoicesRoute
-  '/admin/order-rules': typeof AppAdminAdminOrderRulesRoute
   '/admin/orders': typeof AppAdminAdminOrdersRoute
-  '/admin/partners': typeof AppAdminAdminPartnersRoute
-  '/admin/product-zones': typeof AppAdminAdminProductZonesRoute
   '/admin/products': typeof AppAdminAdminProductsRoute
-  '/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
   '/admin/storage-health': typeof AppAdminAdminStorageHealthRoute
   '/admin/suppliers': typeof AppAdminAdminSuppliersRoute
   '/admin/team': typeof AppAdminAdminTeamRoute
-  '/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/admin': typeof AppAdminAdminIndexRoute
   '/admin/activity/$adminId': typeof AppAdminAdminActivityAdminIdRoute
-  '/admin/create-order/$clientId': typeof AppAdminAdminCreateOrderClientIdRoute
-  '/admin/distributors/$id': typeof AppAdminAdminDistributorsIdRoute
   '/admin/invoices/$invoiceId': typeof AppAdminAdminInvoicesInvoiceIdRoute
   '/admin/orders/$orderId': typeof AppAdminAdminOrdersOrderIdRoute
 }
@@ -432,45 +296,29 @@ export interface FileRoutesById {
   '/_app/_admin': typeof AppAdminRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/invoices': typeof AppInvoicesRoute
-  '/_app/loyalty': typeof AppLoyaltyRoute
   '/_app/orders': typeof AppOrdersRoute
   '/_app/products': typeof AppProductsRoute
-  '/_app/quick-order': typeof AppQuickOrderRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/shop': typeof AppShopRoute
   '/_app/super-admin': typeof AppSuperAdminRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
-  '/invite/$token': typeof InviteTokenRoute
   '/store/$slug': typeof StoreSlugRoute
-  '/_app/partner/catalog': typeof AppPartnerCatalogRoute
-  '/_app/partner/earnings': typeof AppPartnerEarningsRoute
   '/_app/products_/$productId': typeof AppProductsProductIdRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
-  '/_app/super-admin/distributors': typeof AppSuperAdminDistributorsRoute
-  '/_app/super-admin/order-rules': typeof AppSuperAdminOrderRulesRoute
-  '/_app/super-admin/pricing-tiers': typeof AppSuperAdminPricingTiersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/_app/super-admin/': typeof AppSuperAdminIndexRoute
   '/_app/_admin/admin/activity': typeof AppAdminAdminActivityRoute
   '/_app/_admin/admin/analytics': typeof AppAdminAdminAnalyticsRoute
   '/_app/_admin/admin/branding': typeof AppAdminAdminBrandingRoute
   '/_app/_admin/admin/company-activity': typeof AppAdminAdminCompanyActivityRoute
-  '/_app/_admin/admin/distributors': typeof AppAdminAdminDistributorsRoute
   '/_app/_admin/admin/invoices': typeof AppAdminAdminInvoicesRoute
-  '/_app/_admin/admin/order-rules': typeof AppAdminAdminOrderRulesRoute
   '/_app/_admin/admin/orders': typeof AppAdminAdminOrdersRoute
-  '/_app/_admin/admin/partners': typeof AppAdminAdminPartnersRoute
-  '/_app/_admin/admin/product-zones': typeof AppAdminAdminProductZonesRoute
   '/_app/_admin/admin/products': typeof AppAdminAdminProductsRoute
-  '/_app/_admin/admin/sales-agents': typeof AppAdminAdminSalesAgentsRoute
   '/_app/_admin/admin/storage-health': typeof AppAdminAdminStorageHealthRoute
   '/_app/_admin/admin/suppliers': typeof AppAdminAdminSuppliersRoute
   '/_app/_admin/admin/team': typeof AppAdminAdminTeamRoute
-  '/_app/_admin/admin/territories': typeof AppAdminAdminTerritoriesRoute
   '/_app/_admin/admin/': typeof AppAdminAdminIndexRoute
   '/_app/_admin/admin/activity_/$adminId': typeof AppAdminAdminActivityAdminIdRoute
-  '/_app/_admin/admin/create-order/$clientId': typeof AppAdminAdminCreateOrderClientIdRoute
-  '/_app/_admin/admin/distributors_/$id': typeof AppAdminAdminDistributorsIdRoute
   '/_app/_admin/admin/invoices_/$invoiceId': typeof AppAdminAdminInvoicesInvoiceIdRoute
   '/_app/_admin/admin/orders_/$orderId': typeof AppAdminAdminOrdersOrderIdRoute
 }
@@ -484,45 +332,29 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/dashboard'
     | '/invoices'
-    | '/loyalty'
     | '/orders'
     | '/products'
-    | '/quick-order'
     | '/settings'
     | '/shop'
     | '/super-admin'
     | '/auth/callback'
-    | '/invite/$token'
     | '/store/$slug'
-    | '/partner/catalog'
-    | '/partner/earnings'
     | '/products/$productId'
     | '/super-admin/companies'
-    | '/super-admin/distributors'
-    | '/super-admin/order-rules'
-    | '/super-admin/pricing-tiers'
     | '/api/public/woo-webhook'
     | '/super-admin/'
     | '/admin/activity'
     | '/admin/analytics'
     | '/admin/branding'
     | '/admin/company-activity'
-    | '/admin/distributors'
     | '/admin/invoices'
-    | '/admin/order-rules'
     | '/admin/orders'
-    | '/admin/partners'
-    | '/admin/product-zones'
     | '/admin/products'
-    | '/admin/sales-agents'
     | '/admin/storage-health'
     | '/admin/suppliers'
     | '/admin/team'
-    | '/admin/territories'
     | '/admin/'
     | '/admin/activity/$adminId'
-    | '/admin/create-order/$clientId'
-    | '/admin/distributors/$id'
     | '/admin/invoices/$invoiceId'
     | '/admin/orders/$orderId'
   fileRoutesByTo: FileRoutesByTo
@@ -534,44 +366,28 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/dashboard'
     | '/invoices'
-    | '/loyalty'
     | '/orders'
     | '/products'
-    | '/quick-order'
     | '/settings'
     | '/shop'
     | '/auth/callback'
-    | '/invite/$token'
     | '/store/$slug'
-    | '/partner/catalog'
-    | '/partner/earnings'
     | '/products/$productId'
     | '/super-admin/companies'
-    | '/super-admin/distributors'
-    | '/super-admin/order-rules'
-    | '/super-admin/pricing-tiers'
     | '/api/public/woo-webhook'
     | '/super-admin'
     | '/admin/activity'
     | '/admin/analytics'
     | '/admin/branding'
     | '/admin/company-activity'
-    | '/admin/distributors'
     | '/admin/invoices'
-    | '/admin/order-rules'
     | '/admin/orders'
-    | '/admin/partners'
-    | '/admin/product-zones'
     | '/admin/products'
-    | '/admin/sales-agents'
     | '/admin/storage-health'
     | '/admin/suppliers'
     | '/admin/team'
-    | '/admin/territories'
     | '/admin'
     | '/admin/activity/$adminId'
-    | '/admin/create-order/$clientId'
-    | '/admin/distributors/$id'
     | '/admin/invoices/$invoiceId'
     | '/admin/orders/$orderId'
   id:
@@ -585,45 +401,29 @@ export interface FileRouteTypes {
     | '/_app/_admin'
     | '/_app/dashboard'
     | '/_app/invoices'
-    | '/_app/loyalty'
     | '/_app/orders'
     | '/_app/products'
-    | '/_app/quick-order'
     | '/_app/settings'
     | '/_app/shop'
     | '/_app/super-admin'
     | '/auth/callback'
-    | '/invite/$token'
     | '/store/$slug'
-    | '/_app/partner/catalog'
-    | '/_app/partner/earnings'
     | '/_app/products_/$productId'
     | '/_app/super-admin/companies'
-    | '/_app/super-admin/distributors'
-    | '/_app/super-admin/order-rules'
-    | '/_app/super-admin/pricing-tiers'
     | '/api/public/woo-webhook'
     | '/_app/super-admin/'
     | '/_app/_admin/admin/activity'
     | '/_app/_admin/admin/analytics'
     | '/_app/_admin/admin/branding'
     | '/_app/_admin/admin/company-activity'
-    | '/_app/_admin/admin/distributors'
     | '/_app/_admin/admin/invoices'
-    | '/_app/_admin/admin/order-rules'
     | '/_app/_admin/admin/orders'
-    | '/_app/_admin/admin/partners'
-    | '/_app/_admin/admin/product-zones'
     | '/_app/_admin/admin/products'
-    | '/_app/_admin/admin/sales-agents'
     | '/_app/_admin/admin/storage-health'
     | '/_app/_admin/admin/suppliers'
     | '/_app/_admin/admin/team'
-    | '/_app/_admin/admin/territories'
     | '/_app/_admin/admin/'
     | '/_app/_admin/admin/activity_/$adminId'
-    | '/_app/_admin/admin/create-order/$clientId'
-    | '/_app/_admin/admin/distributors_/$id'
     | '/_app/_admin/admin/invoices_/$invoiceId'
     | '/_app/_admin/admin/orders_/$orderId'
   fileRoutesById: FileRoutesById
@@ -636,7 +436,6 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   VendorsRoute: typeof VendorsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
-  InviteTokenRoute: typeof InviteTokenRoute
   StoreSlugRoute: typeof StoreSlugRoute
   ApiPublicWooWebhookRoute: typeof ApiPublicWooWebhookRoute
 }
@@ -692,13 +491,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/invite/$token': {
-      id: '/invite/$token'
-      path: '/invite/$token'
-      fullPath: '/invite/$token'
-      preLoaderRoute: typeof InviteTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
@@ -727,13 +519,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/quick-order': {
-      id: '/_app/quick-order'
-      path: '/quick-order'
-      fullPath: '/quick-order'
-      preLoaderRoute: typeof AppQuickOrderRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/products': {
       id: '/_app/products'
       path: '/products'
@@ -746,13 +531,6 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/orders'
       preLoaderRoute: typeof AppOrdersRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/loyalty': {
-      id: '/_app/loyalty'
-      path: '/loyalty'
-      fullPath: '/loyalty'
-      preLoaderRoute: typeof AppLoyaltyRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/invoices': {
@@ -790,27 +568,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWooWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/super-admin/pricing-tiers': {
-      id: '/_app/super-admin/pricing-tiers'
-      path: '/pricing-tiers'
-      fullPath: '/super-admin/pricing-tiers'
-      preLoaderRoute: typeof AppSuperAdminPricingTiersRouteImport
-      parentRoute: typeof AppSuperAdminRoute
-    }
-    '/_app/super-admin/order-rules': {
-      id: '/_app/super-admin/order-rules'
-      path: '/order-rules'
-      fullPath: '/super-admin/order-rules'
-      preLoaderRoute: typeof AppSuperAdminOrderRulesRouteImport
-      parentRoute: typeof AppSuperAdminRoute
-    }
-    '/_app/super-admin/distributors': {
-      id: '/_app/super-admin/distributors'
-      path: '/distributors'
-      fullPath: '/super-admin/distributors'
-      preLoaderRoute: typeof AppSuperAdminDistributorsRouteImport
-      parentRoute: typeof AppSuperAdminRoute
-    }
     '/_app/super-admin/companies': {
       id: '/_app/super-admin/companies'
       path: '/companies'
@@ -825,32 +582,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProductsProductIdRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/partner/earnings': {
-      id: '/_app/partner/earnings'
-      path: '/partner/earnings'
-      fullPath: '/partner/earnings'
-      preLoaderRoute: typeof AppPartnerEarningsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/partner/catalog': {
-      id: '/_app/partner/catalog'
-      path: '/partner/catalog'
-      fullPath: '/partner/catalog'
-      preLoaderRoute: typeof AppPartnerCatalogRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/_admin/admin/': {
       id: '/_app/_admin/admin/'
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AppAdminAdminIndexRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/_admin/admin/territories': {
-      id: '/_app/_admin/admin/territories'
-      path: '/admin/territories'
-      fullPath: '/admin/territories'
-      preLoaderRoute: typeof AppAdminAdminTerritoriesRouteImport
       parentRoute: typeof AppAdminRoute
     }
     '/_app/_admin/admin/team': {
@@ -874,32 +610,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminStorageHealthRouteImport
       parentRoute: typeof AppAdminRoute
     }
-    '/_app/_admin/admin/sales-agents': {
-      id: '/_app/_admin/admin/sales-agents'
-      path: '/admin/sales-agents'
-      fullPath: '/admin/sales-agents'
-      preLoaderRoute: typeof AppAdminAdminSalesAgentsRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
     '/_app/_admin/admin/products': {
       id: '/_app/_admin/admin/products'
       path: '/admin/products'
       fullPath: '/admin/products'
       preLoaderRoute: typeof AppAdminAdminProductsRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/_admin/admin/product-zones': {
-      id: '/_app/_admin/admin/product-zones'
-      path: '/admin/product-zones'
-      fullPath: '/admin/product-zones'
-      preLoaderRoute: typeof AppAdminAdminProductZonesRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/_admin/admin/partners': {
-      id: '/_app/_admin/admin/partners'
-      path: '/admin/partners'
-      fullPath: '/admin/partners'
-      preLoaderRoute: typeof AppAdminAdminPartnersRouteImport
       parentRoute: typeof AppAdminRoute
     }
     '/_app/_admin/admin/orders': {
@@ -909,25 +624,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminOrdersRouteImport
       parentRoute: typeof AppAdminRoute
     }
-    '/_app/_admin/admin/order-rules': {
-      id: '/_app/_admin/admin/order-rules'
-      path: '/admin/order-rules'
-      fullPath: '/admin/order-rules'
-      preLoaderRoute: typeof AppAdminAdminOrderRulesRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
     '/_app/_admin/admin/invoices': {
       id: '/_app/_admin/admin/invoices'
       path: '/admin/invoices'
       fullPath: '/admin/invoices'
       preLoaderRoute: typeof AppAdminAdminInvoicesRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/_admin/admin/distributors': {
-      id: '/_app/_admin/admin/distributors'
-      path: '/admin/distributors'
-      fullPath: '/admin/distributors'
-      preLoaderRoute: typeof AppAdminAdminDistributorsRouteImport
       parentRoute: typeof AppAdminRoute
     }
     '/_app/_admin/admin/company-activity': {
@@ -972,20 +673,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminInvoicesInvoiceIdRouteImport
       parentRoute: typeof AppAdminRoute
     }
-    '/_app/_admin/admin/distributors_/$id': {
-      id: '/_app/_admin/admin/distributors_/$id'
-      path: '/admin/distributors/$id'
-      fullPath: '/admin/distributors/$id'
-      preLoaderRoute: typeof AppAdminAdminDistributorsIdRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/_admin/admin/create-order/$clientId': {
-      id: '/_app/_admin/admin/create-order/$clientId'
-      path: '/admin/create-order/$clientId'
-      fullPath: '/admin/create-order/$clientId'
-      preLoaderRoute: typeof AppAdminAdminCreateOrderClientIdRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
     '/_app/_admin/admin/activity_/$adminId': {
       id: '/_app/_admin/admin/activity_/$adminId'
       path: '/admin/activity/$adminId'
@@ -1001,22 +688,14 @@ interface AppAdminRouteChildren {
   AppAdminAdminAnalyticsRoute: typeof AppAdminAdminAnalyticsRoute
   AppAdminAdminBrandingRoute: typeof AppAdminAdminBrandingRoute
   AppAdminAdminCompanyActivityRoute: typeof AppAdminAdminCompanyActivityRoute
-  AppAdminAdminDistributorsRoute: typeof AppAdminAdminDistributorsRoute
   AppAdminAdminInvoicesRoute: typeof AppAdminAdminInvoicesRoute
-  AppAdminAdminOrderRulesRoute: typeof AppAdminAdminOrderRulesRoute
   AppAdminAdminOrdersRoute: typeof AppAdminAdminOrdersRoute
-  AppAdminAdminPartnersRoute: typeof AppAdminAdminPartnersRoute
-  AppAdminAdminProductZonesRoute: typeof AppAdminAdminProductZonesRoute
   AppAdminAdminProductsRoute: typeof AppAdminAdminProductsRoute
-  AppAdminAdminSalesAgentsRoute: typeof AppAdminAdminSalesAgentsRoute
   AppAdminAdminStorageHealthRoute: typeof AppAdminAdminStorageHealthRoute
   AppAdminAdminSuppliersRoute: typeof AppAdminAdminSuppliersRoute
   AppAdminAdminTeamRoute: typeof AppAdminAdminTeamRoute
-  AppAdminAdminTerritoriesRoute: typeof AppAdminAdminTerritoriesRoute
   AppAdminAdminIndexRoute: typeof AppAdminAdminIndexRoute
   AppAdminAdminActivityAdminIdRoute: typeof AppAdminAdminActivityAdminIdRoute
-  AppAdminAdminCreateOrderClientIdRoute: typeof AppAdminAdminCreateOrderClientIdRoute
-  AppAdminAdminDistributorsIdRoute: typeof AppAdminAdminDistributorsIdRoute
   AppAdminAdminInvoicesInvoiceIdRoute: typeof AppAdminAdminInvoicesInvoiceIdRoute
   AppAdminAdminOrdersOrderIdRoute: typeof AppAdminAdminOrdersOrderIdRoute
 }
@@ -1026,22 +705,14 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminAdminAnalyticsRoute: AppAdminAdminAnalyticsRoute,
   AppAdminAdminBrandingRoute: AppAdminAdminBrandingRoute,
   AppAdminAdminCompanyActivityRoute: AppAdminAdminCompanyActivityRoute,
-  AppAdminAdminDistributorsRoute: AppAdminAdminDistributorsRoute,
   AppAdminAdminInvoicesRoute: AppAdminAdminInvoicesRoute,
-  AppAdminAdminOrderRulesRoute: AppAdminAdminOrderRulesRoute,
   AppAdminAdminOrdersRoute: AppAdminAdminOrdersRoute,
-  AppAdminAdminPartnersRoute: AppAdminAdminPartnersRoute,
-  AppAdminAdminProductZonesRoute: AppAdminAdminProductZonesRoute,
   AppAdminAdminProductsRoute: AppAdminAdminProductsRoute,
-  AppAdminAdminSalesAgentsRoute: AppAdminAdminSalesAgentsRoute,
   AppAdminAdminStorageHealthRoute: AppAdminAdminStorageHealthRoute,
   AppAdminAdminSuppliersRoute: AppAdminAdminSuppliersRoute,
   AppAdminAdminTeamRoute: AppAdminAdminTeamRoute,
-  AppAdminAdminTerritoriesRoute: AppAdminAdminTerritoriesRoute,
   AppAdminAdminIndexRoute: AppAdminAdminIndexRoute,
   AppAdminAdminActivityAdminIdRoute: AppAdminAdminActivityAdminIdRoute,
-  AppAdminAdminCreateOrderClientIdRoute: AppAdminAdminCreateOrderClientIdRoute,
-  AppAdminAdminDistributorsIdRoute: AppAdminAdminDistributorsIdRoute,
   AppAdminAdminInvoicesInvoiceIdRoute: AppAdminAdminInvoicesInvoiceIdRoute,
   AppAdminAdminOrdersOrderIdRoute: AppAdminAdminOrdersOrderIdRoute,
 }
@@ -1052,17 +723,11 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 
 interface AppSuperAdminRouteChildren {
   AppSuperAdminCompaniesRoute: typeof AppSuperAdminCompaniesRoute
-  AppSuperAdminDistributorsRoute: typeof AppSuperAdminDistributorsRoute
-  AppSuperAdminOrderRulesRoute: typeof AppSuperAdminOrderRulesRoute
-  AppSuperAdminPricingTiersRoute: typeof AppSuperAdminPricingTiersRoute
   AppSuperAdminIndexRoute: typeof AppSuperAdminIndexRoute
 }
 
 const AppSuperAdminRouteChildren: AppSuperAdminRouteChildren = {
   AppSuperAdminCompaniesRoute: AppSuperAdminCompaniesRoute,
-  AppSuperAdminDistributorsRoute: AppSuperAdminDistributorsRoute,
-  AppSuperAdminOrderRulesRoute: AppSuperAdminOrderRulesRoute,
-  AppSuperAdminPricingTiersRoute: AppSuperAdminPricingTiersRoute,
   AppSuperAdminIndexRoute: AppSuperAdminIndexRoute,
 }
 
@@ -1074,15 +739,11 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppDashboardRoute: typeof AppDashboardRoute
   AppInvoicesRoute: typeof AppInvoicesRoute
-  AppLoyaltyRoute: typeof AppLoyaltyRoute
   AppOrdersRoute: typeof AppOrdersRoute
   AppProductsRoute: typeof AppProductsRoute
-  AppQuickOrderRoute: typeof AppQuickOrderRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppShopRoute: typeof AppShopRoute
   AppSuperAdminRoute: typeof AppSuperAdminRouteWithChildren
-  AppPartnerCatalogRoute: typeof AppPartnerCatalogRoute
-  AppPartnerEarningsRoute: typeof AppPartnerEarningsRoute
   AppProductsProductIdRoute: typeof AppProductsProductIdRoute
 }
 
@@ -1090,15 +751,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
   AppDashboardRoute: AppDashboardRoute,
   AppInvoicesRoute: AppInvoicesRoute,
-  AppLoyaltyRoute: AppLoyaltyRoute,
   AppOrdersRoute: AppOrdersRoute,
   AppProductsRoute: AppProductsRoute,
-  AppQuickOrderRoute: AppQuickOrderRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppShopRoute: AppShopRoute,
   AppSuperAdminRoute: AppSuperAdminRouteWithChildren,
-  AppPartnerCatalogRoute: AppPartnerCatalogRoute,
-  AppPartnerEarningsRoute: AppPartnerEarningsRoute,
   AppProductsProductIdRoute: AppProductsProductIdRoute,
 }
 
@@ -1112,7 +769,6 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   VendorsRoute: VendorsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
-  InviteTokenRoute: InviteTokenRoute,
   StoreSlugRoute: StoreSlugRoute,
   ApiPublicWooWebhookRoute: ApiPublicWooWebhookRoute,
 }
