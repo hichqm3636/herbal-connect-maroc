@@ -126,7 +126,11 @@ function AppLayout() {
       <div className="flex min-h-screen w-full flex-col overflow-x-hidden bg-background" dir="rtl">
         <MarketplaceTopBar />
         <main className="flex-1 min-w-0 overflow-x-hidden">
-          <Outlet />
+          {/* Marketplace pages may opt out of the default container by rendering
+              their own full-bleed wrapper (e.g. /store/:slug, /checkout). */}
+          <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-6 md:py-8">
+            <Outlet />
+          </div>
         </main>
         <CartSheet />
         <ReplaceCartDialog />
