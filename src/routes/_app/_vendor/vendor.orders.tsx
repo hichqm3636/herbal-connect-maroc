@@ -97,6 +97,31 @@ const NEXT_STATUS: Record<OrderStatus, OrderStatus[]> = {
   cancelled: [],
 };
 
+const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  pending: "بانتظار الدفع",
+  awaiting_confirmation: "بانتظار التأكيد",
+  paid: "مدفوع",
+  failed: "فشل الدفع",
+  refunded: "مُسترد",
+};
+
+const PAYMENT_STATUS_TONE: Record<PaymentStatus, string> = {
+  pending: "bg-muted text-muted-foreground",
+  awaiting_confirmation: "bg-warning/15 text-warning-foreground",
+  paid: "bg-success/15 text-success",
+  failed: "bg-destructive/15 text-destructive",
+  refunded: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+};
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cod: "الدفع عند الاستلام",
+  bank_transfer: "تحويل بنكي",
+  manual: "تواصل مع البائع",
+  card: "بطاقة",
+  stripe: "Stripe",
+  cash: "نقداً",
+};
+
 // Quick-filter chips shown above the table. Order matters (workflow order).
 const CHIP_STATUSES: OrderStatus[] = [
   "pending", "confirmed", "preparing", "shipped", "delivered", "cancelled",
