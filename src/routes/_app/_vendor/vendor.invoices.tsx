@@ -115,12 +115,23 @@ function VendorInvoicesPage() {
 
   const confirmPayment = async (inv: InvoiceRow) => {
     setBusy(inv.id);
+    const { data: invRow } = await supabase
+      .from("invoices")
+      .select("company_id")
+      .eq("id", inv.id)
+      .single();
+    const companyId = invRow?.company_id;
+    if (!companyId) {
+      setBusy(null);
+      toast.error("تعذر تحديد الشركة");
+      return;
+    }
     const { error: payErr } = await supabase.from("payments").insert({
       invoice_id: inv.id,
-      company_id: (await supabase.from("invoices").select("company_id").eq("id", inv.id).single()).data?.company_id,
+      company_id: companyId,
       amount: inv.total_mad,
       payment_method: "manual",
-    });
+    } as never);
     if (payErr) {
       setBusy(null);
       toast.error(payErr.message);
