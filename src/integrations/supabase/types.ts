@@ -455,11 +455,11 @@ export type Database = {
       }
       invoices: {
         Row: {
+          buyer_id: string
           company_id: string
           created_at: string
           created_by: string | null
           currency: string
-          distributor_id: string
           due_date: string | null
           id: string
           invoice_number: string
@@ -478,11 +478,11 @@ export type Database = {
           vat_rate: number
         }
         Insert: {
+          buyer_id: string
           company_id: string
           created_at?: string
           created_by?: string | null
           currency?: string
-          distributor_id: string
           due_date?: string | null
           id?: string
           invoice_number: string
@@ -501,11 +501,11 @@ export type Database = {
           vat_rate?: number
         }
         Update: {
+          buyer_id?: string
           company_id?: string
           created_at?: string
           created_by?: string | null
           currency?: string
-          distributor_id?: string
           due_date?: string | null
           id?: string
           invoice_number?: string
@@ -525,17 +525,17 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "invoices_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "invoices_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoices_distributor_id_fkey"
-            columns: ["distributor_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -686,9 +686,9 @@ export type Database = {
       orders: {
         Row: {
           admin_notes: string | null
+          buyer_id: string
           company_id: string
           created_at: string
-          distributor_id: string
           external_id: string | null
           external_status: string | null
           id: string
@@ -703,9 +703,9 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          buyer_id: string
           company_id: string
           created_at?: string
-          distributor_id: string
           external_id?: string | null
           external_status?: string | null
           id?: string
@@ -720,9 +720,9 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          buyer_id?: string
           company_id?: string
           created_at?: string
-          distributor_id?: string
           external_id?: string | null
           external_status?: string | null
           id?: string
@@ -737,17 +737,17 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "orders_buyer_fk"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "orders_distributor_fk"
-            columns: ["distributor_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
