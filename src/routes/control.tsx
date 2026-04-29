@@ -97,7 +97,19 @@ function ControlPage() {
 
     setSubmitting(true);
     try {
-      const result = await verifySuperAdminSecret({ data: { code: codeParsed.data } });
+      // Ensure the request carries the Bearer token expected by requireSupabaseAuth
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        setError("انتهت الجلسة. سجّل الدخول من جديد.");
+        setSubmitting(false);
+        return;
+      }
+
+      const result = await verifySuperAdminSecret({
+        data: { code: codeParsed.data },
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!result.ok) {
         setError(result.error);
         setSubmitting(false);
@@ -106,7 +118,8 @@ function ControlPage() {
       markSuperAdminGatePassed();
       toast.success("تم التحقق بنجاح");
       navigate({ to: "/super-admin" });
-    } catch {
+    } catch (err) {
+      console.error("verifySuperAdminSecret failed", err);
       setError("تعذّر التحقق. حاول مرة أخرى.");
       setSubmitting(false);
     }
