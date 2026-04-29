@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorsRouteImport } from './routes/vendors'
+import { Route as VendorLoginRouteImport } from './routes/vendor-login'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ControlRouteImport } from './routes/control'
@@ -41,6 +42,11 @@ import { Route as AppAdminAdminCompaniesRouteImport } from './routes/_app/_admin
 const VendorsRoute = VendorsRouteImport.update({
   id: '/vendors',
   path: '/vendors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VendorLoginRoute = VendorLoginRouteImport.update({
+  id: '/vendor-login',
+  path: '/vendor-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -183,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/control': typeof ControlRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/vendor-login': typeof VendorLoginRoute
   '/vendors': typeof VendorsRoute
   '/checkout': typeof AppCheckoutRoute
   '/orders': typeof AppOrdersRoute
@@ -210,6 +217,7 @@ export interface FileRoutesByTo {
   '/control': typeof ControlRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/vendor-login': typeof VendorLoginRoute
   '/vendors': typeof VendorsRoute
   '/checkout': typeof AppCheckoutRoute
   '/orders': typeof AppOrdersRoute
@@ -238,6 +246,7 @@ export interface FileRoutesById {
   '/control': typeof ControlRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/vendor-login': typeof VendorLoginRoute
   '/vendors': typeof VendorsRoute
   '/_app/_admin': typeof AppAdminRouteWithChildren
   '/_app/_vendor': typeof AppVendorRouteWithChildren
@@ -269,6 +278,7 @@ export interface FileRouteTypes {
     | '/control'
     | '/login'
     | '/signup'
+    | '/vendor-login'
     | '/vendors'
     | '/checkout'
     | '/orders'
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
     | '/control'
     | '/login'
     | '/signup'
+    | '/vendor-login'
     | '/vendors'
     | '/checkout'
     | '/orders'
@@ -323,6 +334,7 @@ export interface FileRouteTypes {
     | '/control'
     | '/login'
     | '/signup'
+    | '/vendor-login'
     | '/vendors'
     | '/_app/_admin'
     | '/_app/_vendor'
@@ -354,6 +366,7 @@ export interface RootRouteChildren {
   ControlRoute: typeof ControlRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  VendorLoginRoute: typeof VendorLoginRoute
   VendorsRoute: typeof VendorsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   StoreSlugRoute: typeof StoreSlugRoute
@@ -367,6 +380,13 @@ declare module '@tanstack/react-router' {
       path: '/vendors'
       fullPath: '/vendors'
       preLoaderRoute: typeof VendorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vendor-login': {
+      id: '/vendor-login'
+      path: '/vendor-login'
+      fullPath: '/vendor-login'
+      preLoaderRoute: typeof VendorLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -643,6 +663,7 @@ const rootRouteChildren: RootRouteChildren = {
   ControlRoute: ControlRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  VendorLoginRoute: VendorLoginRoute,
   VendorsRoute: VendorsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   StoreSlugRoute: StoreSlugRoute,
