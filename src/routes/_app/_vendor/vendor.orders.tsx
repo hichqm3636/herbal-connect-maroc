@@ -268,14 +268,14 @@ function VendorOrdersPage() {
     setItemsLoading(true);
     const { data } = await supabase
       .from("order_items")
-      .select("id, product_id, quantity, unit_price_mad, products(name_ar)")
+      .select("id, product_id, quantity, unit_price_mad, products:product_id(name_ar)")
       .eq("order_id", order.id);
     type Row = {
       id: string; product_id: string; quantity: number; unit_price_mad: number;
       products: { name_ar: string } | { name_ar: string }[] | null;
     };
     setItems(
-      ((data ?? []) as Row[]).map((it) => {
+      ((data ?? []) as unknown as Row[]).map((it) => {
         const prod = Array.isArray(it.products) ? it.products[0] : it.products;
         return {
           id: it.id,

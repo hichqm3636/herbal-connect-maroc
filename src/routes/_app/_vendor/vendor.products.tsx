@@ -292,6 +292,8 @@ function VendorProductsPage() {
 
     setSaving(false);
     if (error) {
+      const { handleLimitError } = await import("@/lib/limitErrors");
+      if (handleLimitError(error, "منتج")) return;
       toast.error(error.message || "فشل الحفظ");
       return;
     }

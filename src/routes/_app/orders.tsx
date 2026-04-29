@@ -14,6 +14,7 @@ import {
   STATUS_CLASSES,
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { PaymentProofUploader } from "@/components/PaymentProofUploader";
 
 const ordersSearchSchema = z.object({
   focus: z.string().optional(),
@@ -302,11 +303,20 @@ function OrdersPage() {
                     {itemCount} قطعة
                     {methodLabel ? ` · ${methodLabel}` : ""}
                   </span>
-                  {order.notes && (
-                    <span className="max-w-md truncate" title={order.notes}>
-                      📝 {order.notes}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {order.payment_method === "bank_transfer" &&
+                      order.payment_status !== "paid" && (
+                        <PaymentProofUploader
+                          orderId={order.id}
+                          companyId={order.company_id}
+                        />
+                      )}
+                    {order.notes && (
+                      <span className="max-w-md truncate" title={order.notes}>
+                        📝 {order.notes}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </Card>
             );
