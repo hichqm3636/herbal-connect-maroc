@@ -327,12 +327,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // In platform mode, expose no tenant company at all.
   const exposedCompany = mode === "platform" ? null : company;
 
+  // Compute the single canonical marketplace role. Priority:
+  // super_admin > admin (workspace owner = vendor) > vendor > client.
+  const marketplaceRole: MarketplaceRole | null = roles.includes("super_admin")
+    ? "super_admin"
+    : roles.includes("admin")
+      ? "admin"
+      : roles.includes("vendor")
+        ? "vendor"
+        : roles.includes("client")
+          ? "client"
+          : null;
+
   const value = useMemo<AuthContextValue>(() => ({
     session,
     user,
     roles,
     isAdmin: roles.includes("admin") || roles.includes("super_admin"),
     isSuperAdmin: roles.includes("super_admin"),
+    isClient: marketplaceRole === "client",
+    isVendor: marketplaceRole === "vendor" || marketplaceRole === "admin",
+    marketplaceRole,
     isBuyer: roles.includes("buyer"),
     isSeller: roles.includes("seller") || roles.includes("distributor"),
     isSalesAgent: roles.includes("sales_agent"),
@@ -351,7 +366,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshRoles,
     refreshCompany,
     setActiveCompany,
-  }), [session, user, roles, canAccessDistributorFeatures, hasDistributorRole, accountType, mode, companyId, exposedCompany, territoryId, pricingTierId, pricingTierDiscount, loading]);
+  }), [session, user, roles, marketplaceRole, canAccessDistributorFeatures, hasDistributorRole, accountType, mode, companyId, exposedCompany, territoryId, pricingTierId, pricingTierDiscount, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
