@@ -39,6 +39,8 @@ export const Route = createFileRoute("/_app/_vendor/vendor/orders")({
   head: () => ({ meta: [{ title: "الطلبات — Nexora" }] }),
 });
 
+type PaymentStatus = "pending" | "awaiting_confirmation" | "paid" | "failed" | "refunded";
+
 interface OrderRow {
   id: string;
   order_number: string;
@@ -49,6 +51,9 @@ interface OrderRow {
   notes: string | null;
   admin_notes: string | null;
   payment_method: string | null;
+  payment_status: PaymentStatus;
+  payment_reference: string | null;
+  payment_paid_at: string | null;
   buyer_name: string;
   buyer_phone: string | null;
 }
