@@ -62,7 +62,7 @@ interface StoreProduct {
 
 function VendorStorePage() {
   const { slug } = Route.useParams();
-  const { session, companyId, loading: authLoading } = useAuth();
+  const { session, isClient, marketplaceRole, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const cart = useCart();
 
@@ -157,6 +157,10 @@ function VendorStorePage() {
       navigate({ to: "/login" });
       return;
     }
+    if (!isClient) {
+      toast.error("هذا الحساب ليس حساب عميل. لا يمكن إنشاء طلبات.");
+      return;
+    }
     const cp = buildCartProduct(p);
     // Single-vendor cart enforcement
     if (cartVendorId && cartVendorId !== vendor!.id) {
@@ -236,7 +240,7 @@ function VendorStorePage() {
               <p className="text-[11px] text-muted-foreground">متجر البائع</p>
             </div>
           </div>
-          {session && cart.totalQty > 0 && (
+          {isClient && cart.totalQty > 0 && (
             <Button size="sm" variant="outline" onClick={cart.openCart} className="gap-1.5">
               <ShoppingCart className="h-4 w-4" />
               {cart.totalQty}
@@ -266,6 +270,16 @@ function VendorStorePage() {
           </Card>
         ) : (
           <>
+            {session && !isClient && (
+              <Card className="mb-4 border-warning/50 bg-warning/10 p-3 text-sm">
+                <p className="font-semibold">
+                  حسابك {marketplaceRole === "vendor" || marketplaceRole === "admin" ? "حساب بائع" : "حساب إداري"}.
+                </p>
+                <p className="mt-1 text-muted-foreground">
+                  السلة وإنشاء الطلبات متاحة لحسابات العملاء فقط. يمكنك تصفّح المنتجات ولكن لا يمكنك الشراء.
+                </p>
+              </Card>
+            )}
             <div className="relative mb-4">
               <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -315,11 +329,16 @@ function VendorStorePage() {
                         <Button
                           size="sm"
                           className="mt-2 w-full gap-1"
-                          disabled={p.stock === 0}
+                          disabled={p.stock === 0 || (!!session && !isClient)}
                           onClick={() => tryAdd(p)}
+                          title={!!session && !isClient ? "حسابك ليس حساب عميل" : undefined}
                         >
                           <ShoppingCart className="h-3.5 w-3.5" />
-                          {p.stock === 0 ? "غير متوفر" : "أضف إلى السلة"}
+                          {p.stock === 0
+                            ? "غير متوفر"
+                            : !!session && !isClient
+                              ? "للعملاء فقط"
+                              : "أضف إلى السلة"}
                         </Button>
                       </div>
                     </Card>

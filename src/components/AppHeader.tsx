@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { PLATFORM_NAME, PLATFORM_SUBTITLE, TENANT_FALLBACK_NAME } from "@/lib/platform";
 
 export function AppHeader() {
-  const { company, mode } = useAuth();
+  const { company, mode, isClient } = useAuth();
   const { open, openMobile, isMobile } = useSidebar();
   const isOpen = isMobile ? openMobile : open;
 
@@ -75,7 +75,7 @@ export function AppHeader() {
       <div className="ms-auto ps-2 shrink-0 flex items-center gap-2">
         <TenantSwitcher />
         {!isPlatform && <NotificationsBell />}
-        {!isPlatform && <CartButton />}
+        {!isPlatform && isClient && <CartButton />}
       </div>
     </header>
   );
