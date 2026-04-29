@@ -331,6 +331,25 @@ function CheckoutPage() {
     toast.success("تم نسخ تعليمات الدفع");
   }
 
+  async function markTransferDone() {
+    if (!placedOrder || markingTransfer || transferMarked) return;
+    setMarkingTransfer(true);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ payment_status: "awaiting_confirmation" })
+        .eq("id", placedOrder.id);
+      if (error) throw error;
+      setTransferMarked(true);
+      toast.success("تم إعلام البائع بأنك أتممت التحويل");
+    } catch (err) {
+      console.error("[checkout] mark transfer failed", err);
+      toast.error("تعذر تحديث حالة الدفع");
+    } finally {
+      setMarkingTransfer(false);
+    }
+  }
+
   if (vendorLoading) {
     return (
       <div className="flex items-center justify-center py-20" dir="rtl">
