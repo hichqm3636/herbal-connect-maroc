@@ -129,6 +129,8 @@ function AppLayout() {
           </main>
           {/* Cart drawer is itself gated to client role inside the component. */}
           <CartSheet />
+          {/* Single global replace-cart prompt for vendor conflicts. */}
+          <ReplaceCartDialog />
         </SidebarInset>
       </div>
     </SidebarProvider>
