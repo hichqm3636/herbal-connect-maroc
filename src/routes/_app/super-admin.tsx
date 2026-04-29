@@ -8,25 +8,38 @@ export const Route = createFileRoute("/_app/super-admin")({
 });
 
 function SuperAdminLayout() {
-  const { isSuperAdmin, loading, signOut } = useAuth();
+  const { isSuperAdmin, loading, session, roles } = useAuth();
   const navigate = useNavigate();
+
+  // Wait until we have a session AND the roles list has been hydrated
+  // before making any access decision. Without this, there's a brief
+  // window right after sign-in where loading=false but roles=[] which
+  // would wrongly trigger a sign-out and bounce back to /control.
+  const rolesReady = !!session && roles.length > 0;
 
   useEffect(() => {
     if (loading) return;
 
-    // Not a super_admin → sign out and bounce to /control
-    if (!isSuperAdmin) {
+    if (!session) {
       clearSuperAdminGate();
-      signOut().finally(() => navigate({ to: "/control" }));
+      navigate({ to: "/control" });
       return;
     }
 
-    // Super_admin but didn't pass the secret-code gate this session
+    // Session exists but roles haven't loaded yet — wait, don't sign out.
+    if (!rolesReady) return;
+
+    if (!isSuperAdmin) {
+      clearSuperAdminGate();
+      navigate({ to: "/control" });
+      return;
+    }
+
     if (!hasSuperAdminGatePassed()) {
       navigate({ to: "/control" });
     }
-  }, [loading, isSuperAdmin, navigate, signOut]);
+  }, [loading, session, rolesReady, isSuperAdmin, navigate]);
 
-  if (loading || !isSuperAdmin || !hasSuperAdminGatePassed()) return null;
+  if (loading || !rolesReady || !isSuperAdmin || !hasSuperAdminGatePassed()) return null;
   return <Outlet />;
 }
