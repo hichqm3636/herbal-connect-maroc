@@ -132,7 +132,7 @@ function CheckoutPage() {
         .from("orders")
         .insert({
           company_id: vendor.id,
-          distributor_id: user.id,
+          buyer_id: user.id,
           order_number: orderNumber,
           total_mad: total,
           status: "pending",

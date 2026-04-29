@@ -33,7 +33,7 @@ interface OrderRow {
   status: OrderStatus;
   total_mad: number;
   created_at: string;
-  distributor_id: string;
+  buyer_id: string;
   notes: string | null;
   admin_notes: string | null;
   payment_method: string | null;
@@ -96,7 +96,7 @@ function VendorOrdersPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("orders")
-      .select("id, order_number, status, total_mad, created_at, distributor_id, notes, admin_notes, payment_method")
+      .select("id, order_number, status, total_mad, created_at, buyer_id, notes, admin_notes, payment_method")
       .eq("company_id", companyId)
       .order("created_at", { ascending: false });
 

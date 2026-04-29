@@ -38,7 +38,7 @@ interface DashboardStats {
     total_mad: number;
     status: OrderStatus;
     created_at: string;
-    distributor_id: string;
+    buyer_id: string;
     buyer_name: string;
   }[];
   lowStock: { id: string; name_ar: string; stock: number; low_stock_threshold: number }[];
@@ -113,7 +113,7 @@ function VendorDashboard() {
           .eq("company_id", companyId),
         supabase
           .from("orders")
-          .select("id, order_number, total_mad, status, created_at, distributor_id")
+          .select("id, order_number, total_mad, status, created_at, buyer_id")
           .eq("company_id", companyId)
           .order("created_at", { ascending: false })
           .limit(5),
@@ -141,7 +141,7 @@ function VendorDashboard() {
       });
 
       // Resolve buyer names
-      const buyerIds = Array.from(new Set((recent ?? []).map((o) => o.distributor_id)));
+      const buyerIds = Array.from(new Set((recent ?? []).map((o) => o.buyer_id)));
       const { data: profiles } = buyerIds.length
         ? await supabase.from("profiles").select("id, full_name").in("id", buyerIds)
         : { data: [] as { id: string; full_name: string }[] };
@@ -149,7 +149,7 @@ function VendorDashboard() {
 
       const recentOrders = (recent ?? []).map((o) => ({
         ...o,
-        buyer_name: nameMap.get(o.distributor_id) || "عميل",
+        buyer_name: nameMap.get(o.buyer_id) || "عميل",
       }));
 
       const lowStock = (products ?? [])
