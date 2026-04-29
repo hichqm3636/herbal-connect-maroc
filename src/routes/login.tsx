@@ -159,7 +159,7 @@ function LoginPage() {
             {companyName}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {tenant.company ? "Distributor Portal" : "Distribution Management Platform"}
+            {tenant.company ? "Marketplace Portal" : "Marketplace Platform"}
           </p>
         </div>
 
@@ -229,7 +229,7 @@ function LoginPage() {
                     placeholder="••••••••"
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    للمسؤولين فقط. الموزعون يستخدمون رابط الدخول حصرياً.
+                    للمسؤولين فقط. باقي المستخدمين يستخدمون رابط الدخول حصرياً.
                   </p>
                 </div>
               )}

@@ -1,23 +1,16 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import type { PartnerType } from "@/lib/pricing";
 
-export type AppRole =
-  | "admin"
-  | "super_admin"
-  | "vendor"
-  | "client"
-  // Legacy values kept ONLY so old rows still parse during migration.
-  // New code must rely on `marketplaceRole` exposed by useAuth().
-  | "buyer"
-  | "seller"
-  | "sales_agent"
-  | "partner"
-  | "distributor";
+/**
+ * Marketplace role enum. Matches the DB `app_role` enum (active values).
+ * Legacy values (buyer/seller/sales_agent/partner/distributor) have been
+ * fully removed from the marketplace model.
+ */
+export type AppRole = "admin" | "super_admin" | "vendor" | "client";
 
 /** The single canonical role of a user in the marketplace model. */
-export type MarketplaceRole = "admin" | "super_admin" | "vendor" | "client";
+export type MarketplaceRole = AppRole;
 
 export interface Company {
   id: string;
@@ -41,23 +34,10 @@ interface AuthContextValue {
   isVendor: boolean;
   /** The single canonical role for the marketplace model, or null. */
   marketplaceRole: MarketplaceRole | null;
-  // Legacy flags kept temporarily for back-compat. Do not use in new code.
-  isBuyer: boolean;
-  isSeller: boolean;
-  isSalesAgent: boolean;
-  canAccessDistributorFeatures: boolean;
-  isDistributorDisabled: boolean;
-  /** Business classification of the account (pharmacy, distributor, etc). `null` when no profile row exists yet. */
-  accountType: PartnerType | null;
-  /** @deprecated use `accountType`. Kept for back-compat. */
-  partnerType: PartnerType | null;
   /** Current UI mode. In `platform` mode no tenant context is loaded. */
   mode: AppMode;
   companyId: string | null;
   company: Company | null;
-  territoryId: string | null;
-  pricingTierId: string | null;
-  pricingTierDiscount: number;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshRoles: () => Promise<void>;
@@ -87,7 +67,6 @@ function readPath(): string {
 }
 
 const ACTIVE_COMPANY_KEY = "active_company_id";
-const DISTRIBUTOR_ROLES: AppRole[] = ["buyer", "seller", "sales_agent", "distributor"];
 
 function readActiveCompany(): string | null {
   if (typeof window === "undefined") return null;
@@ -114,13 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
-  const [accountType, setAccountType] = useState<PartnerType | null>(null);
   const [profileCompanyId, setProfileCompanyId] = useState<string | null>(null);
-  const [territoryId, setTerritoryId] = useState<string | null>(null);
-  const [pricingTierId, setPricingTierId] = useState<string | null>(null);
-  const [pricingTierDiscount, setPricingTierDiscount] = useState<number>(0);
-  const [canAccessDistributorFeatures, setCanAccessDistributorFeatures] = useState(false);
-  const [hasDistributorRole, setHasDistributorRole] = useState(false);
   const [activeCompanyId, setActiveCompanyIdState] = useState<string | null>(() =>
     readActiveCompany(),
   );
@@ -184,13 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = async (uid: string | undefined) => {
     if (!uid) {
       setRoles([]);
-      setAccountType(null);
       setProfileCompanyId(null);
-      setTerritoryId(null);
-      setPricingTierId(null);
-      setPricingTierDiscount(0);
-      setCanAccessDistributorFeatures(false);
-      setHasDistributorRole(false);
       setCompany(null);
       return;
     }
@@ -206,26 +173,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const typedRoleRows = (roleRows ?? []) as { role: AppRole; is_enabled?: boolean | null }[];
     const enabledRoleRows = typedRoleRows.filter((r) => r.is_enabled !== false);
     const userRoles = enabledRoleRows.map((r) => r.role);
-    const hasPrivilegedRole =
-      userRoles.includes("super_admin") || userRoles.includes("admin");
 
     setRoles(userRoles);
-    setCanAccessDistributorFeatures(false);
-    setHasDistributorRole(false);
-    setAccountType(null);
     const profileRow = (profile ?? null) as { company_id?: string | null; is_active?: boolean } | null;
     const cid = profileRow?.company_id ?? null;
     setProfileCompanyId(cid);
-    setTerritoryId(null);
-    setPricingTierId(null);
-    setPricingTierDiscount(0);
     // Tenant context rules:
     //  - Super admins: ALWAYS start with no active tenant. They must explicitly
-    //    pick a company from the selector. This prevents the previously
-    //    selected tenant from bleeding into Nexora's admin UI.
+    //    pick a company from the selector.
     //  - Everyone else: pin sessionStorage to their own profile company.
-    const isSuper = hasPrivilegedRole && userRoles.includes("super_admin");
-    if (isSuper) {
+    if (userRoles.includes("super_admin")) {
       writeActiveCompany(null);
       setActiveCompanyIdState(null);
     } else if (cid) {
@@ -247,13 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTimeout(() => loadProfile(newSession.user.id), 0);
       } else {
         setRoles([]);
-        setAccountType(null);
         setProfileCompanyId(null);
-        setTerritoryId(null);
-        setPricingTierId(null);
-        setPricingTierDiscount(0);
-        setCanAccessDistributorFeatures(false);
-        setHasDistributorRole(false);
         setCompany(null);
         writeActiveCompany(null);
         setActiveCompanyIdState(null);
@@ -323,25 +274,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isClient: marketplaceRole === "client",
     isVendor: marketplaceRole === "vendor" || marketplaceRole === "admin",
     marketplaceRole,
-    isBuyer: roles.includes("buyer"),
-    isSeller: roles.includes("seller") || roles.includes("distributor"),
-    isSalesAgent: roles.includes("sales_agent"),
-    canAccessDistributorFeatures,
-    isDistributorDisabled: hasDistributorRole && !canAccessDistributorFeatures,
-    accountType,
-    partnerType: accountType,
     mode,
     companyId,
     company: exposedCompany,
-    territoryId,
-    pricingTierId,
-    pricingTierDiscount,
     loading,
     signOut,
     refreshRoles,
     refreshCompany,
     setActiveCompany,
-  }), [session, user, roles, marketplaceRole, canAccessDistributorFeatures, hasDistributorRole, accountType, mode, companyId, exposedCompany, territoryId, pricingTierId, pricingTierDiscount, loading]);
+  }), [session, user, roles, marketplaceRole, mode, companyId, exposedCompany, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
