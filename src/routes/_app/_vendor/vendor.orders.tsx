@@ -320,7 +320,7 @@ function VendorOrdersPage() {
   const updatePaymentStatus = async (next: PaymentStatus) => {
     if (!selected) return;
     setSavingPayment(true);
-    const patch: Record<string, unknown> = { payment_status: next };
+    const patch: { payment_status: PaymentStatus; payment_paid_at?: string } = { payment_status: next };
     if (next === "paid") patch.payment_paid_at = new Date().toISOString();
     const { error } = await supabase.from("orders").update(patch).eq("id", selected.id);
     setSavingPayment(false);
