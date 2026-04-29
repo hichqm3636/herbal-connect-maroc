@@ -620,6 +620,34 @@ function VendorOrdersPage() {
 
                 <Separator />
 
+                {/* Payment status management */}
+                <div>
+                  <h3 className="text-sm font-bold mb-3">إدارة الدفع</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {(["paid", "awaiting_confirmation", "failed", "refunded", "pending"] as PaymentStatus[])
+                      .filter((s) => s !== selected.payment_status)
+                      .map((s) => (
+                        <Button
+                          key={s}
+                          size="sm"
+                          variant={s === "paid" ? "default" : s === "failed" ? "destructive" : "outline"}
+                          disabled={savingPayment}
+                          onClick={() => updatePaymentStatus(s)}
+                        >
+                          {savingPayment && <Loader2 className="h-3 w-3 animate-spin" />}
+                          ضع كـ: {PAYMENT_STATUS_LABELS[s]}
+                        </Button>
+                      ))}
+                  </div>
+                  {selected.payment_method === "cod" && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      ملاحظة: طلبات الدفع عند الاستلام تُسجَّل تلقائياً كمدفوعة عند تأكيد التسليم.
+                    </p>
+                  )}
+                </div>
+
+                <Separator />
+
                 {/* Status transitions */}
                 {NEXT_STATUS[selected.status].length > 0 ? (
                   <div>
