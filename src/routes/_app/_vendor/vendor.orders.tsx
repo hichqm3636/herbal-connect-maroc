@@ -475,9 +475,14 @@ function VendorOrdersPage() {
                     </td>
                     <td className="px-4 py-3 font-bold whitespace-nowrap">{formatMAD(o.total_mad)}</td>
                     <td className="px-4 py-3">
-                      <Badge variant="secondary" className={STATUS_TONE[o.status]}>
-                        {STATUS_LABELS[o.status]}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="secondary" className={STATUS_TONE[o.status]}>
+                          {STATUS_LABELS[o.status]}
+                        </Badge>
+                        <Badge variant="secondary" className={cn("w-fit text-[10px]", PAYMENT_STATUS_TONE[o.payment_status])}>
+                          {PAYMENT_STATUS_LABELS[o.payment_status]}
+                        </Badge>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <Button
