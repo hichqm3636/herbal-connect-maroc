@@ -9,9 +9,10 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-function homeForRole(role: MarketplaceRole | null): "/super-admin" | "/admin" | "/vendors" | "/login" {
+function homeForRole(role: MarketplaceRole | null): "/super-admin" | "/admin" | "/vendor" | "/vendors" | "/login" {
   if (role === "super_admin") return "/super-admin";
-  if (role === "admin" || role === "vendor") return "/admin";
+  if (role === "admin") return "/admin";
+  if (role === "vendor") return "/vendor";
   if (role === "client") return "/vendors";
   return "/login";
 }

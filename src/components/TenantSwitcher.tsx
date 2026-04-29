@@ -64,7 +64,7 @@ export function TenantSwitcher() {
   const pick = (id: string) => {
     setActiveCompany(id);
     setOpen(false);
-    navigate({ to: "/admin" });
+    navigate({ to: "/super-admin" });
   };
 
   return (
