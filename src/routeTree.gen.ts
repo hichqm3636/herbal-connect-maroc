@@ -28,6 +28,7 @@ import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-
 import { Route as AppVendorVendorIndexRouteImport } from './routes/_app/_vendor/vendor.index'
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
 import { Route as AppVendorVendorTeamRouteImport } from './routes/_app/_vendor/vendor.team'
+import { Route as AppVendorVendorStorageHealthRouteImport } from './routes/_app/_vendor/vendor.storage-health'
 import { Route as AppVendorVendorProductsRouteImport } from './routes/_app/_vendor/vendor.products'
 import { Route as AppVendorVendorOrdersRouteImport } from './routes/_app/_vendor/vendor.orders'
 import { Route as AppVendorVendorInvoicesRouteImport } from './routes/_app/_vendor/vendor.invoices'
@@ -135,6 +136,12 @@ const AppVendorVendorTeamRoute = AppVendorVendorTeamRouteImport.update({
   path: '/vendor/team',
   getParentRoute: () => AppVendorRoute,
 } as any)
+const AppVendorVendorStorageHealthRoute =
+  AppVendorVendorStorageHealthRouteImport.update({
+    id: '/vendor/storage-health',
+    path: '/vendor/storage-health',
+    getParentRoute: () => AppVendorRoute,
+  } as any)
 const AppVendorVendorProductsRoute = AppVendorVendorProductsRouteImport.update({
   id: '/vendor/products',
   path: '/vendor/products',
@@ -236,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/vendor/invoices': typeof AppVendorVendorInvoicesRoute
   '/vendor/orders': typeof AppVendorVendorOrdersRoute
   '/vendor/products': typeof AppVendorVendorProductsRoute
+  '/vendor/storage-health': typeof AppVendorVendorStorageHealthRoute
   '/vendor/team': typeof AppVendorVendorTeamRoute
   '/admin/': typeof AppAdminAdminIndexRoute
   '/vendor/': typeof AppVendorVendorIndexRoute
@@ -267,6 +275,7 @@ export interface FileRoutesByTo {
   '/vendor/invoices': typeof AppVendorVendorInvoicesRoute
   '/vendor/orders': typeof AppVendorVendorOrdersRoute
   '/vendor/products': typeof AppVendorVendorProductsRoute
+  '/vendor/storage-health': typeof AppVendorVendorStorageHealthRoute
   '/vendor/team': typeof AppVendorVendorTeamRoute
   '/admin': typeof AppAdminAdminIndexRoute
   '/vendor': typeof AppVendorVendorIndexRoute
@@ -303,6 +312,7 @@ export interface FileRoutesById {
   '/_app/_vendor/vendor/invoices': typeof AppVendorVendorInvoicesRoute
   '/_app/_vendor/vendor/orders': typeof AppVendorVendorOrdersRoute
   '/_app/_vendor/vendor/products': typeof AppVendorVendorProductsRoute
+  '/_app/_vendor/vendor/storage-health': typeof AppVendorVendorStorageHealthRoute
   '/_app/_vendor/vendor/team': typeof AppVendorVendorTeamRoute
   '/_app/_admin/admin/': typeof AppAdminAdminIndexRoute
   '/_app/_vendor/vendor/': typeof AppVendorVendorIndexRoute
@@ -337,6 +347,7 @@ export interface FileRouteTypes {
     | '/vendor/invoices'
     | '/vendor/orders'
     | '/vendor/products'
+    | '/vendor/storage-health'
     | '/vendor/team'
     | '/admin/'
     | '/vendor/'
@@ -368,6 +379,7 @@ export interface FileRouteTypes {
     | '/vendor/invoices'
     | '/vendor/orders'
     | '/vendor/products'
+    | '/vendor/storage-health'
     | '/vendor/team'
     | '/admin'
     | '/vendor'
@@ -403,6 +415,7 @@ export interface FileRouteTypes {
     | '/_app/_vendor/vendor/invoices'
     | '/_app/_vendor/vendor/orders'
     | '/_app/_vendor/vendor/products'
+    | '/_app/_vendor/vendor/storage-health'
     | '/_app/_vendor/vendor/team'
     | '/_app/_admin/admin/'
     | '/_app/_vendor/vendor/'
@@ -555,6 +568,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVendorVendorTeamRouteImport
       parentRoute: typeof AppVendorRoute
     }
+    '/_app/_vendor/vendor/storage-health': {
+      id: '/_app/_vendor/vendor/storage-health'
+      path: '/vendor/storage-health'
+      fullPath: '/vendor/storage-health'
+      preLoaderRoute: typeof AppVendorVendorStorageHealthRouteImport
+      parentRoute: typeof AppVendorRoute
+    }
     '/_app/_vendor/vendor/products': {
       id: '/_app/_vendor/vendor/products'
       path: '/vendor/products'
@@ -691,6 +711,7 @@ interface AppVendorRouteChildren {
   AppVendorVendorInvoicesRoute: typeof AppVendorVendorInvoicesRoute
   AppVendorVendorOrdersRoute: typeof AppVendorVendorOrdersRoute
   AppVendorVendorProductsRoute: typeof AppVendorVendorProductsRoute
+  AppVendorVendorStorageHealthRoute: typeof AppVendorVendorStorageHealthRoute
   AppVendorVendorTeamRoute: typeof AppVendorVendorTeamRoute
   AppVendorVendorIndexRoute: typeof AppVendorVendorIndexRoute
 }
@@ -702,6 +723,7 @@ const AppVendorRouteChildren: AppVendorRouteChildren = {
   AppVendorVendorInvoicesRoute: AppVendorVendorInvoicesRoute,
   AppVendorVendorOrdersRoute: AppVendorVendorOrdersRoute,
   AppVendorVendorProductsRoute: AppVendorVendorProductsRoute,
+  AppVendorVendorStorageHealthRoute: AppVendorVendorStorageHealthRoute,
   AppVendorVendorTeamRoute: AppVendorVendorTeamRoute,
   AppVendorVendorIndexRoute: AppVendorVendorIndexRoute,
 }
