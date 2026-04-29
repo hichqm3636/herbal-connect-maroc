@@ -625,7 +625,7 @@ function CheckoutPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5" dir="rtl">
+    <div className="mx-auto max-w-3xl space-y-4 sm:space-y-5" dir="rtl">
       {/* Page header */}
       <div className="flex items-center justify-between gap-3">
         <div>
