@@ -14,6 +14,11 @@ import {
   ChevronLeft,
   Truck,
   Receipt,
+  AlertCircle,
+  Clock,
+  PackageCheck,
+  Send,
+  Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
