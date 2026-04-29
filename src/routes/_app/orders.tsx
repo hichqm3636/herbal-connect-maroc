@@ -240,12 +240,18 @@ function OrdersPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge
                       variant="outline"
                       className={cn("text-xs font-medium", statusClass)}
                     >
                       {statusLabel}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={cn("text-xs font-medium", payClass)}
+                    >
+                      {payLabel}
                     </Badge>
                     <span className="text-sm font-bold">
                       {formatMAD(order.total_mad)}
