@@ -18,16 +18,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as StoreSlugRouteImport } from './routes/store.$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
-import { Route as AppInvoicesRouteImport } from './routes/_app/invoices'
 import { Route as AppAdminRouteImport } from './routes/_app/_admin'
 import { Route as ApiPublicWooWebhookRouteImport } from './routes/api/public/woo-webhook'
-import { Route as AppProductsProductIdRouteImport } from './routes/_app/products_.$productId'
 import { Route as AppAdminAdminTeamRouteImport } from './routes/_app/_admin/admin.team'
-import { Route as AppAdminAdminSuppliersRouteImport } from './routes/_app/_admin/admin.suppliers'
 import { Route as AppAdminAdminStorageHealthRouteImport } from './routes/_app/_admin/admin.storage-health'
-import { Route as AppAdminAdminProductsRouteImport } from './routes/_app/_admin/admin.products'
-import { Route as AppAdminAdminCompanyActivityRouteImport } from './routes/_app/_admin/admin.company-activity'
-import { Route as AppAdminAdminBrandingRouteImport } from './routes/_app/_admin/admin.branding'
 
 const VendorsRoute = VendorsRouteImport.update({
   id: '/vendors',
@@ -73,11 +67,6 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
-const AppInvoicesRoute = AppInvoicesRouteImport.update({
-  id: '/invoices',
-  path: '/invoices',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppAdminRoute = AppAdminRouteImport.update({
   id: '/_admin',
   getParentRoute: () => AppRoute,
@@ -87,19 +76,9 @@ const ApiPublicWooWebhookRoute = ApiPublicWooWebhookRouteImport.update({
   path: '/api/public/woo-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppProductsProductIdRoute = AppProductsProductIdRouteImport.update({
-  id: '/products_/$productId',
-  path: '/products/$productId',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppAdminAdminTeamRoute = AppAdminAdminTeamRouteImport.update({
   id: '/admin/team',
   path: '/admin/team',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminAdminSuppliersRoute = AppAdminAdminSuppliersRouteImport.update({
-  id: '/admin/suppliers',
-  path: '/admin/suppliers',
   getParentRoute: () => AppAdminRoute,
 } as any)
 const AppAdminAdminStorageHealthRoute =
@@ -108,22 +87,6 @@ const AppAdminAdminStorageHealthRoute =
     path: '/admin/storage-health',
     getParentRoute: () => AppAdminRoute,
   } as any)
-const AppAdminAdminProductsRoute = AppAdminAdminProductsRouteImport.update({
-  id: '/admin/products',
-  path: '/admin/products',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminAdminCompanyActivityRoute =
-  AppAdminAdminCompanyActivityRouteImport.update({
-    id: '/admin/company-activity',
-    path: '/admin/company-activity',
-    getParentRoute: () => AppAdminRoute,
-  } as any)
-const AppAdminAdminBrandingRoute = AppAdminAdminBrandingRouteImport.update({
-  id: '/admin/branding',
-  path: '/admin/branding',
-  getParentRoute: () => AppAdminRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -131,17 +94,11 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/vendors': typeof VendorsRoute
-  '/invoices': typeof AppInvoicesRoute
   '/settings': typeof AppSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRoute
-  '/products/$productId': typeof AppProductsProductIdRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
-  '/admin/branding': typeof AppAdminAdminBrandingRoute
-  '/admin/company-activity': typeof AppAdminAdminCompanyActivityRoute
-  '/admin/products': typeof AppAdminAdminProductsRoute
   '/admin/storage-health': typeof AppAdminAdminStorageHealthRoute
-  '/admin/suppliers': typeof AppAdminAdminSuppliersRoute
   '/admin/team': typeof AppAdminAdminTeamRoute
 }
 export interface FileRoutesByTo {
@@ -150,17 +107,11 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/vendors': typeof VendorsRoute
-  '/invoices': typeof AppInvoicesRoute
   '/settings': typeof AppSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRoute
-  '/products/$productId': typeof AppProductsProductIdRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
-  '/admin/branding': typeof AppAdminAdminBrandingRoute
-  '/admin/company-activity': typeof AppAdminAdminCompanyActivityRoute
-  '/admin/products': typeof AppAdminAdminProductsRoute
   '/admin/storage-health': typeof AppAdminAdminStorageHealthRoute
-  '/admin/suppliers': typeof AppAdminAdminSuppliersRoute
   '/admin/team': typeof AppAdminAdminTeamRoute
 }
 export interface FileRoutesById {
@@ -172,17 +123,11 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/vendors': typeof VendorsRoute
   '/_app/_admin': typeof AppAdminRouteWithChildren
-  '/_app/invoices': typeof AppInvoicesRoute
   '/_app/settings': typeof AppSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRoute
-  '/_app/products_/$productId': typeof AppProductsProductIdRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
-  '/_app/_admin/admin/branding': typeof AppAdminAdminBrandingRoute
-  '/_app/_admin/admin/company-activity': typeof AppAdminAdminCompanyActivityRoute
-  '/_app/_admin/admin/products': typeof AppAdminAdminProductsRoute
   '/_app/_admin/admin/storage-health': typeof AppAdminAdminStorageHealthRoute
-  '/_app/_admin/admin/suppliers': typeof AppAdminAdminSuppliersRoute
   '/_app/_admin/admin/team': typeof AppAdminAdminTeamRoute
 }
 export interface FileRouteTypes {
@@ -193,17 +138,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/vendors'
-    | '/invoices'
     | '/settings'
     | '/auth/callback'
     | '/store/$slug'
-    | '/products/$productId'
     | '/api/public/woo-webhook'
-    | '/admin/branding'
-    | '/admin/company-activity'
-    | '/admin/products'
     | '/admin/storage-health'
-    | '/admin/suppliers'
     | '/admin/team'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -212,17 +151,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/vendors'
-    | '/invoices'
     | '/settings'
     | '/auth/callback'
     | '/store/$slug'
-    | '/products/$productId'
     | '/api/public/woo-webhook'
-    | '/admin/branding'
-    | '/admin/company-activity'
-    | '/admin/products'
     | '/admin/storage-health'
-    | '/admin/suppliers'
     | '/admin/team'
   id:
     | '__root__'
@@ -233,17 +166,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/vendors'
     | '/_app/_admin'
-    | '/_app/invoices'
     | '/_app/settings'
     | '/auth/callback'
     | '/store/$slug'
-    | '/_app/products_/$productId'
     | '/api/public/woo-webhook'
-    | '/_app/_admin/admin/branding'
-    | '/_app/_admin/admin/company-activity'
-    | '/_app/_admin/admin/products'
     | '/_app/_admin/admin/storage-health'
-    | '/_app/_admin/admin/suppliers'
     | '/_app/_admin/admin/team'
   fileRoutesById: FileRoutesById
 }
@@ -324,13 +251,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/invoices': {
-      id: '/_app/invoices'
-      path: '/invoices'
-      fullPath: '/invoices'
-      preLoaderRoute: typeof AppInvoicesRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/_admin': {
       id: '/_app/_admin'
       path: ''
@@ -345,25 +265,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWooWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/products_/$productId': {
-      id: '/_app/products_/$productId'
-      path: '/products/$productId'
-      fullPath: '/products/$productId'
-      preLoaderRoute: typeof AppProductsProductIdRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/_admin/admin/team': {
       id: '/_app/_admin/admin/team'
       path: '/admin/team'
       fullPath: '/admin/team'
       preLoaderRoute: typeof AppAdminAdminTeamRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/_admin/admin/suppliers': {
-      id: '/_app/_admin/admin/suppliers'
-      path: '/admin/suppliers'
-      fullPath: '/admin/suppliers'
-      preLoaderRoute: typeof AppAdminAdminSuppliersRouteImport
       parentRoute: typeof AppAdminRoute
     }
     '/_app/_admin/admin/storage-health': {
@@ -373,45 +279,16 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminStorageHealthRouteImport
       parentRoute: typeof AppAdminRoute
     }
-    '/_app/_admin/admin/products': {
-      id: '/_app/_admin/admin/products'
-      path: '/admin/products'
-      fullPath: '/admin/products'
-      preLoaderRoute: typeof AppAdminAdminProductsRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/_admin/admin/company-activity': {
-      id: '/_app/_admin/admin/company-activity'
-      path: '/admin/company-activity'
-      fullPath: '/admin/company-activity'
-      preLoaderRoute: typeof AppAdminAdminCompanyActivityRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/_admin/admin/branding': {
-      id: '/_app/_admin/admin/branding'
-      path: '/admin/branding'
-      fullPath: '/admin/branding'
-      preLoaderRoute: typeof AppAdminAdminBrandingRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
   }
 }
 
 interface AppAdminRouteChildren {
-  AppAdminAdminBrandingRoute: typeof AppAdminAdminBrandingRoute
-  AppAdminAdminCompanyActivityRoute: typeof AppAdminAdminCompanyActivityRoute
-  AppAdminAdminProductsRoute: typeof AppAdminAdminProductsRoute
   AppAdminAdminStorageHealthRoute: typeof AppAdminAdminStorageHealthRoute
-  AppAdminAdminSuppliersRoute: typeof AppAdminAdminSuppliersRoute
   AppAdminAdminTeamRoute: typeof AppAdminAdminTeamRoute
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
-  AppAdminAdminBrandingRoute: AppAdminAdminBrandingRoute,
-  AppAdminAdminCompanyActivityRoute: AppAdminAdminCompanyActivityRoute,
-  AppAdminAdminProductsRoute: AppAdminAdminProductsRoute,
   AppAdminAdminStorageHealthRoute: AppAdminAdminStorageHealthRoute,
-  AppAdminAdminSuppliersRoute: AppAdminAdminSuppliersRoute,
   AppAdminAdminTeamRoute: AppAdminAdminTeamRoute,
 }
 
@@ -421,16 +298,12 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
-  AppInvoicesRoute: typeof AppInvoicesRoute
   AppSettingsRoute: typeof AppSettingsRoute
-  AppProductsProductIdRoute: typeof AppProductsProductIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
-  AppInvoicesRoute: AppInvoicesRoute,
   AppSettingsRoute: AppSettingsRoute,
-  AppProductsProductIdRoute: AppProductsProductIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
