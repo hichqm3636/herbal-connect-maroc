@@ -106,7 +106,7 @@ function VendorOrdersPage() {
       return;
     }
 
-    const buyerIds = Array.from(new Set((data ?? []).map((o) => o.distributor_id)));
+    const buyerIds = Array.from(new Set((data ?? []).map((o) => o.buyer_id)));
     const { data: profiles } = buyerIds.length
       ? await supabase.from("profiles").select("id, full_name, phone").in("id", buyerIds)
       : { data: [] as { id: string; full_name: string; phone: string | null }[] };
@@ -116,8 +116,8 @@ function VendorOrdersPage() {
       (data ?? []).map((o) => ({
         ...o,
         total_mad: Number(o.total_mad),
-        buyer_name: map.get(o.distributor_id)?.full_name || "عميل",
-        buyer_phone: map.get(o.distributor_id)?.phone ?? null,
+        buyer_name: map.get(o.buyer_id)?.full_name || "عميل",
+        buyer_phone: map.get(o.buyer_id)?.phone ?? null,
       })),
     );
     setLoading(false);
