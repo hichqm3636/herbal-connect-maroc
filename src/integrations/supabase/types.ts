@@ -144,58 +144,6 @@ export type Database = {
         }
         Relationships: []
       }
-      company_distributor_pricing: {
-        Row: {
-          company_id: string
-          created_at: string
-          custom_discount_percent: number | null
-          distributor_id: string
-          id: string
-          pricing_tier_id: string
-          updated_at: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          custom_discount_percent?: number | null
-          distributor_id: string
-          id?: string
-          pricing_tier_id: string
-          updated_at?: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          custom_discount_percent?: number | null
-          distributor_id?: string
-          id?: string
-          pricing_tier_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cdp_pricing_tier_fk"
-            columns: ["pricing_tier_id"]
-            isOneToOne: false
-            referencedRelation: "pricing_tiers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "company_distributor_pricing_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "company_distributor_pricing_distributor_id_fkey"
-            columns: ["distributor_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       company_subscriptions: {
         Row: {
           company_id: string
@@ -243,52 +191,6 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "subscription_plans"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      distributor_territories: {
-        Row: {
-          company_id: string
-          created_at: string
-          distributor_id: string
-          id: string
-          territory_id: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          distributor_id: string
-          id?: string
-          territory_id: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          distributor_id?: string
-          id?: string
-          territory_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "distributor_territories_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "distributor_territories_distributor_id_fkey"
-            columns: ["distributor_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "distributor_territories_territory_id_fkey"
-            columns: ["territory_id"]
-            isOneToOne: false
-            referencedRelation: "territories"
             referencedColumns: ["id"]
           },
         ]
@@ -645,44 +547,6 @@ export type Database = {
           },
         ]
       }
-      loyalty_transactions: {
-        Row: {
-          admin_id: string | null
-          company_id: string
-          created_at: string
-          distributor_id: string
-          id: string
-          points: number
-          reason: string
-        }
-        Insert: {
-          admin_id?: string | null
-          company_id: string
-          created_at?: string
-          distributor_id: string
-          id?: string
-          points: number
-          reason?: string
-        }
-        Update: {
-          admin_id?: string | null
-          company_id?: string
-          created_at?: string
-          distributor_id?: string
-          id?: string
-          points?: number
-          reason?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "loyalty_transactions_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       media_health_scans: {
         Row: {
           broken_count: number
@@ -819,63 +683,6 @@ export type Database = {
           },
         ]
       }
-      order_rules: {
-        Row: {
-          active: boolean
-          company_id: string | null
-          created_at: string
-          id: string
-          min_order_amount: number | null
-          min_points: number | null
-          min_products: number | null
-          name: string
-          rule_type: string
-          tier_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          company_id?: string | null
-          created_at?: string
-          id?: string
-          min_order_amount?: number | null
-          min_points?: number | null
-          min_products?: number | null
-          name: string
-          rule_type: string
-          tier_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          company_id?: string | null
-          created_at?: string
-          id?: string
-          min_order_amount?: number | null
-          min_points?: number | null
-          min_products?: number | null
-          name?: string
-          rule_type?: string
-          tier_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "order_rules_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "order_rules_tier_id_fkey"
-            columns: ["tier_id"]
-            isOneToOne: false
-            referencedRelation: "pricing_tiers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       orders: {
         Row: {
           admin_notes: string | null
@@ -887,12 +694,9 @@ export type Database = {
           id: string
           notes: string | null
           order_number: string
-          partner_id: string | null
           payment_method: string | null
-          points_earned: number
           request_id: string | null
           status: Database["public"]["Enums"]["order_status"]
-          supplier_partner_id: string | null
           sync_error: string | null
           total_mad: number
           updated_at: string
@@ -907,12 +711,9 @@ export type Database = {
           id?: string
           notes?: string | null
           order_number: string
-          partner_id?: string | null
           payment_method?: string | null
-          points_earned?: number
           request_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
-          supplier_partner_id?: string | null
           sync_error?: string | null
           total_mad?: number
           updated_at?: string
@@ -927,12 +728,9 @@ export type Database = {
           id?: string
           notes?: string | null
           order_number?: string
-          partner_id?: string | null
           payment_method?: string | null
-          points_earned?: number
           request_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
-          supplier_partner_id?: string | null
           sync_error?: string | null
           total_mad?: number
           updated_at?: string
@@ -950,173 +748,6 @@ export type Database = {
             columns: ["distributor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "orders_supplier_partner_id_fkey"
-            columns: ["supplier_partner_id"]
-            isOneToOne: false
-            referencedRelation: "partners"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      partner_commissions: {
-        Row: {
-          amount_mad: number
-          approved_at: string | null
-          approved_by: string | null
-          base_amount_mad: number
-          company_id: string
-          created_at: string
-          id: string
-          notes: string | null
-          order_id: string
-          paid_at: string | null
-          partner_id: string
-          rate_percent: number
-          status: Database["public"]["Enums"]["commission_status"]
-          updated_at: string
-        }
-        Insert: {
-          amount_mad?: number
-          approved_at?: string | null
-          approved_by?: string | null
-          base_amount_mad?: number
-          company_id: string
-          created_at?: string
-          id?: string
-          notes?: string | null
-          order_id: string
-          paid_at?: string | null
-          partner_id: string
-          rate_percent?: number
-          status?: Database["public"]["Enums"]["commission_status"]
-          updated_at?: string
-        }
-        Update: {
-          amount_mad?: number
-          approved_at?: string | null
-          approved_by?: string | null
-          base_amount_mad?: number
-          company_id?: string
-          created_at?: string
-          id?: string
-          notes?: string | null
-          order_id?: string
-          paid_at?: string | null
-          partner_id?: string
-          rate_percent?: number
-          status?: Database["public"]["Enums"]["commission_status"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      partner_invites: {
-        Row: {
-          accepted_at: string | null
-          accepted_by: string | null
-          city: string | null
-          company_id: string
-          created_at: string
-          created_by: string | null
-          email: string
-          expires_at: string
-          id: string
-          invite_token: string
-          partner_name: string | null
-          partner_type: Database["public"]["Enums"]["partner_type"]
-          phone: string | null
-          status: Database["public"]["Enums"]["partner_invite_status"]
-        }
-        Insert: {
-          accepted_at?: string | null
-          accepted_by?: string | null
-          city?: string | null
-          company_id: string
-          created_at?: string
-          created_by?: string | null
-          email: string
-          expires_at?: string
-          id?: string
-          invite_token: string
-          partner_name?: string | null
-          partner_type: Database["public"]["Enums"]["partner_type"]
-          phone?: string | null
-          status?: Database["public"]["Enums"]["partner_invite_status"]
-        }
-        Update: {
-          accepted_at?: string | null
-          accepted_by?: string | null
-          city?: string | null
-          company_id?: string
-          created_at?: string
-          created_by?: string | null
-          email?: string
-          expires_at?: string
-          id?: string
-          invite_token?: string
-          partner_name?: string | null
-          partner_type?: Database["public"]["Enums"]["partner_type"]
-          phone?: string | null
-          status?: Database["public"]["Enums"]["partner_invite_status"]
-        }
-        Relationships: [
-          {
-            foreignKeyName: "partner_invites_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      partners: {
-        Row: {
-          city: string | null
-          company_id: string
-          created_at: string
-          email: string
-          id: string
-          name: string
-          phone: string | null
-          status: Database["public"]["Enums"]["partner_status"]
-          type: Database["public"]["Enums"]["partner_type"]
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          city?: string | null
-          company_id: string
-          created_at?: string
-          email: string
-          id?: string
-          name: string
-          phone?: string | null
-          status?: Database["public"]["Enums"]["partner_status"]
-          type: Database["public"]["Enums"]["partner_type"]
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          city?: string | null
-          company_id?: string
-          created_at?: string
-          email?: string
-          id?: string
-          name?: string
-          phone?: string | null
-          status?: Database["public"]["Enums"]["partner_status"]
-          type?: Database["public"]["Enums"]["partner_type"]
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "partners_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -1175,41 +806,6 @@ export type Database = {
           },
         ]
       }
-      pricing_tiers: {
-        Row: {
-          base_discount_percent: number
-          company_id: string | null
-          created_at: string
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          base_discount_percent?: number
-          company_id?: string | null
-          created_at?: string
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          base_discount_percent?: number
-          company_id?: string | null
-          created_at?: string
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pricing_tiers_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       product_images: {
         Row: {
           created_at: string
@@ -1241,52 +837,6 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      product_zones: {
-        Row: {
-          company_id: string
-          created_at: string
-          id: string
-          product_id: string
-          zone_id: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          id?: string
-          product_id: string
-          zone_id: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          id?: string
-          product_id?: string
-          zone_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_zones_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_zones_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_zones_zone_id_fkey"
-            columns: ["zone_id"]
-            isOneToOne: false
-            referencedRelation: "territories"
             referencedColumns: ["id"]
           },
         ]
@@ -1389,7 +939,6 @@ export type Database = {
       }
       profiles: {
         Row: {
-          account_type: Database["public"]["Enums"]["partner_type"]
           avatar_url: string | null
           city: string | null
           company_id: string | null
@@ -1397,16 +946,10 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
-          level: Database["public"]["Enums"]["distributor_level"]
-          loyalty_points: number
-          monthly_sales: number
-          parent_distributor_id: string | null
           phone: string | null
-          territory_id: string
           updated_at: string
         }
         Insert: {
-          account_type?: Database["public"]["Enums"]["partner_type"]
           avatar_url?: string | null
           city?: string | null
           company_id?: string | null
@@ -1414,16 +957,10 @@ export type Database = {
           full_name?: string
           id: string
           is_active?: boolean
-          level?: Database["public"]["Enums"]["distributor_level"]
-          loyalty_points?: number
-          monthly_sales?: number
-          parent_distributor_id?: string | null
           phone?: string | null
-          territory_id: string
           updated_at?: string
         }
         Update: {
-          account_type?: Database["public"]["Enums"]["partner_type"]
           avatar_url?: string | null
           city?: string | null
           company_id?: string | null
@@ -1431,12 +968,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
-          level?: Database["public"]["Enums"]["distributor_level"]
-          loyalty_points?: number
-          monthly_sales?: number
-          parent_distributor_id?: string | null
           phone?: string | null
-          territory_id?: string
           updated_at?: string
         }
         Relationships: [
@@ -1445,110 +977,6 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_parent_distributor_id_fkey"
-            columns: ["parent_distributor_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_territory_id_fkey"
-            columns: ["territory_id"]
-            isOneToOne: false
-            referencedRelation: "territories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      quick_order_templates: {
-        Row: {
-          company_id: string
-          created_at: string
-          id: string
-          items: Json
-          name: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          id?: string
-          items?: Json
-          name: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          id?: string
-          items?: Json
-          name?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quick_order_templates_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sales_agents: {
-        Row: {
-          active: boolean
-          company_id: string
-          created_at: string
-          id: string
-          profile_id: string
-          updated_at: string
-          zone_id: string
-        }
-        Insert: {
-          active?: boolean
-          company_id: string
-          created_at?: string
-          id?: string
-          profile_id: string
-          updated_at?: string
-          zone_id: string
-        }
-        Update: {
-          active?: boolean
-          company_id?: string
-          created_at?: string
-          id?: string
-          profile_id?: string
-          updated_at?: string
-          zone_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sales_agents_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sales_agents_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sales_agents_zone_id_fkey"
-            columns: ["zone_id"]
-            isOneToOne: false
-            referencedRelation: "territories"
             referencedColumns: ["id"]
           },
         ]
@@ -1638,44 +1066,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "suppliers_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      territories: {
-        Row: {
-          city: string | null
-          company_id: string
-          created_at: string
-          id: string
-          name: string
-          slug: string
-          updated_at: string
-        }
-        Insert: {
-          city?: string | null
-          company_id: string
-          created_at?: string
-          id?: string
-          name: string
-          slug: string
-          updated_at?: string
-        }
-        Update: {
-          city?: string | null
-          company_id?: string
-          created_at?: string
-          id?: string
-          name?: string
-          slug?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "territories_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -1817,10 +1207,6 @@ export type Database = {
           raw_user_meta_data: Json
         }[]
       }
-      accept_partner_invite: {
-        Args: { _full_name: string; _token: string }
-        Returns: Json
-      }
       activity_counts: {
         Args: { p_company_id: string; p_snapshot: string }
         Returns: {
@@ -1835,14 +1221,9 @@ export type Database = {
       admin_exists: { Args: never; Returns: boolean }
       claim_first_admin: { Args: never; Returns: boolean }
       current_company_id: { Args: never; Returns: string }
-      default_commission_rate: { Args: never; Returns: number }
       default_warehouse_for_company: {
         Args: { _company_id: string }
         Returns: string
-      }
-      has_enabled_distributor_role: {
-        Args: { _user_id: string }
-        Returns: boolean
       }
       has_role: {
         Args: {
@@ -1851,26 +1232,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_partner: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
-      level_for_points: {
-        Args: { pts: number }
-        Returns: Database["public"]["Enums"]["distributor_level"]
-      }
-      partner_invite_info: {
-        Args: { _token: string }
-        Returns: {
-          company_brand_color: string
-          company_display_name: string
-          company_id: string
-          company_name: string
-          email: string
-          expires_at: string
-          partner_name: string
-          partner_type: Database["public"]["Enums"]["partner_type"]
-          status: Database["public"]["Enums"]["partner_invite_status"]
-        }[]
-      }
       provision_company: {
         Args: {
           _admin_user_id: string
@@ -1903,7 +1265,6 @@ export type Database = {
         }
         Returns: Json
       }
-      reset_monthly_sales: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role:
@@ -1916,13 +1277,6 @@ export type Database = {
         | "partner"
         | "vendor"
         | "client"
-      commission_status: "pending" | "approved" | "paid" | "rejected"
-      distributor_level:
-        | "distributor"
-        | "senior_consultant"
-        | "success_builder"
-        | "supervisor"
-        | "world_team"
       inventory_movement_type:
         | "purchase"
         | "sale"
@@ -1940,14 +1294,6 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "processing"
-      partner_invite_status: "pending" | "accepted" | "expired"
-      partner_status: "invited" | "active" | "suspended"
-      partner_type:
-        | "pharmacy"
-        | "parapharmacy"
-        | "distributor"
-        | "master_distributor"
-        | "gym"
       payment_method: "cash" | "bank_transfer" | "card" | "stripe" | "manual"
       subscription_status:
         | "trial"
@@ -2093,14 +1439,6 @@ export const Constants = {
         "vendor",
         "client",
       ],
-      commission_status: ["pending", "approved", "paid", "rejected"],
-      distributor_level: [
-        "distributor",
-        "senior_consultant",
-        "success_builder",
-        "supervisor",
-        "world_team",
-      ],
       inventory_movement_type: [
         "purchase",
         "sale",
@@ -2119,15 +1457,6 @@ export const Constants = {
         "delivered",
         "cancelled",
         "processing",
-      ],
-      partner_invite_status: ["pending", "accepted", "expired"],
-      partner_status: ["invited", "active", "suspended"],
-      partner_type: [
-        "pharmacy",
-        "parapharmacy",
-        "distributor",
-        "master_distributor",
-        "gym",
       ],
       payment_method: ["cash", "bank_transfer", "card", "stripe", "manual"],
       subscription_status: [
