@@ -70,6 +70,7 @@ interface OrderRow {
   created_at: string;
   notes: string | null;
   payment_method: string | null;
+  payment_status: PaymentStatus;
   company_id: string;
   companies: {
     id: string;
@@ -82,9 +83,12 @@ interface OrderRow {
 
 function OrdersPage() {
   const { user, loading: authLoading } = useAuth();
+  const search = Route.useSearch();
+  const focusId = search.focus;
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const focusRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (authLoading || !user) return;
