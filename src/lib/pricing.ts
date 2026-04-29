@@ -1,8 +1,5 @@
-// Minimal stub kept for back-compat imports during marketplace migration.
-// Legacy distributor pricing logic was removed. New marketplace flow uses
-// products.price_mad directly.
-
-export type PartnerType = "client" | "vendor";
+// Marketplace pricing helpers.
+// Vendors can optionally publish wholesale tiers (qty -> unit price).
 
 export interface PriceTier {
   min_quantity: number;
@@ -11,7 +8,7 @@ export interface PriceTier {
 
 /**
  * Safely parse a `price_tiers` JSON value coming from the database.
- * Legacy column may be null, an array, or an arbitrary JSON shape — return [].
+ * Column may be null, an array, or an arbitrary JSON shape — return [].
  */
 export function parseTiers(value: unknown): PriceTier[] {
   if (!Array.isArray(value)) return [];
