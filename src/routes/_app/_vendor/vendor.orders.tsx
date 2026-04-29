@@ -275,7 +275,7 @@ function VendorOrdersPage() {
       products: { name_ar: string } | { name_ar: string }[] | null;
     };
     setItems(
-      ((data ?? []) as Row[]).map((it) => {
+      ((data ?? []) as unknown as Row[]).map((it) => {
         const prod = Array.isArray(it.products) ? it.products[0] : it.products;
         return {
           id: it.id,
