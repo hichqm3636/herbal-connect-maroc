@@ -104,42 +104,60 @@ export type Database = {
       }
       companies: {
         Row: {
+          address: string | null
           brand_color: string
+          contact_email: string | null
           contact_phone: string | null
           created_at: string
           display_name: string
+          ice: string | null
           id: string
+          if_number: string | null
           is_listed: boolean
           logo_url: string | null
           name: string
           payment_instructions: string
+          rc: string | null
           slug: string
+          tva: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
           brand_color?: string
+          contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
           display_name?: string
+          ice?: string | null
           id?: string
+          if_number?: string | null
           is_listed?: boolean
           logo_url?: string | null
           name: string
           payment_instructions?: string
+          rc?: string | null
           slug: string
+          tva?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
           brand_color?: string
+          contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
           display_name?: string
+          ice?: string | null
           id?: string
+          if_number?: string | null
           is_listed?: boolean
           logo_url?: string | null
           name?: string
           payment_instructions?: string
+          rc?: string | null
           slug?: string
+          tva?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -280,6 +298,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_inv_levels_product"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_inv_levels_warehouse"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "inventory_levels_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
@@ -343,6 +375,20 @@ export type Database = {
           warehouse_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_inv_movements_product"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_inv_movements_warehouse"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "inventory_movements_company_id_fkey"
             columns: ["company_id"]
@@ -469,6 +515,7 @@ export type Database = {
           order_id: string
           paid_at: string | null
           payment_method: string | null
+          payment_proof_url: string | null
           pdf_path: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal_mad: number
@@ -492,6 +539,7 @@ export type Database = {
           order_id: string
           paid_at?: string | null
           payment_method?: string | null
+          payment_proof_url?: string | null
           pdf_path?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal_mad?: number
@@ -515,6 +563,7 @@ export type Database = {
           order_id?: string
           paid_at?: string | null
           payment_method?: string | null
+          payment_proof_url?: string | null
           pdf_path?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal_mad?: number
@@ -524,6 +573,27 @@ export type Database = {
           vat_rate?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_invoices_buyer"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_invoices_company"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_invoices_order"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoices_buyer_id_fkey"
             columns: ["buyer_id"]
@@ -668,6 +738,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_order_items_order"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_order_items_product"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "order_items_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
@@ -749,6 +833,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_orders_buyer"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_orders_company"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_buyer_fk"
             columns: ["buyer_id"]
             isOneToOne: false
@@ -802,6 +900,13 @@ export type Database = {
           payment_reference?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_payments_invoice"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payments_company_id_fkey"
             columns: ["company_id"]
