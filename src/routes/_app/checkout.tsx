@@ -71,6 +71,8 @@ function CheckoutPage() {
   const [contactPhone, setContactPhone] = useState("");
   const [shippingAddress, setShippingAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "bank_transfer" | "manual">("cod");
+  const [paymentReference, setPaymentReference] = useState("");
 
   // Load vendor
   useEffect(() => {
