@@ -24,6 +24,7 @@ async function resolveUserTenant(userId: string) {
   const roles = (roleRows ?? []).map((r) => r.role as string);
   const isSuper = roles.includes("super_admin");
   const isAdmin = roles.includes("admin");
+  const isVendor = roles.includes("vendor");
   const cid = (profile?.company_id as string | undefined | null) ?? null;
   let slug: string | null = null;
   if (cid) {
@@ -34,7 +35,7 @@ async function resolveUserTenant(userId: string) {
       .maybeSingle();
     slug = (company?.slug as string | undefined) ?? null;
   }
-  return { slug, isSuper, isAdmin };
+  return { slug, isSuper, isAdmin, isVendor };
 }
 
 function AuthCallbackPage() {
