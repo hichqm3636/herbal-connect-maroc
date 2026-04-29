@@ -177,7 +177,7 @@ function CheckoutPage() {
     toast.success("تم نسخ تعليمات الدفع");
   }
 
-  if (authLoading || vendorLoading) {
+  if (vendorLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-soft" dir="rtl">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
