@@ -50,7 +50,7 @@ function AuthCallbackPage() {
     const handleSession = async (userId: string) => {
       handled.current = true;
       try {
-        const { slug: userSlug, isSuper, isAdmin } = await resolveUserTenant(userId);
+        const { slug: userSlug, isSuper, isAdmin, isVendor } = await resolveUserTenant(userId);
 
         // Tenant-portal guard: a non-super user signing into a tenant portal
         // that doesn't match their company must be rejected.
@@ -79,10 +79,11 @@ function AuthCallbackPage() {
 
         toast.success("مرحباً بعودتك");
 
-        // Marketplace routing rules:
+        // Marketplace routing rules (priority: super > admin > vendor > client):
         //  - super_admin → /super-admin (force apex host in production)
-        //  - admin / vendor → /admin
-        //  - client → /vendors
+        //  - admin       → /admin
+        //  - vendor      → /vendor
+        //  - client      → /vendors
         const host =
           typeof window !== "undefined" ? window.location.hostname.toLowerCase() : "";
 
@@ -95,8 +96,9 @@ function AuthCallbackPage() {
           return;
         }
 
+        const dest = isAdmin ? "/admin" : isVendor ? "/vendor" : "/vendors";
+
         // Cross-host bounce when user lands on the apex/wrong tenant.
-        const dest = isAdmin ? "/admin" : "/vendors";
         if (userSlug && tenant.slug !== userSlug) {
           if (host.endsWith(".nexora.app") || host === "nexora.app") {
             window.location.assign(`https://${userSlug}.nexora.app${dest}`);
