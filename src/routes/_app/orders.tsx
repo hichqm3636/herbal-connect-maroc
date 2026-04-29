@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Package, ShoppingBag, Store } from "lucide-react";
+import { z } from "zod";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,12 +15,44 @@ import {
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
+const ordersSearchSchema = z.object({
+  focus: z.string().optional(),
+});
+
 export const Route = createFileRoute("/_app/orders")({
   component: OrdersPage,
+  validateSearch: ordersSearchSchema,
   head: () => ({
     meta: [{ title: "طلباتي — Nexora" }],
   }),
 });
+
+type PaymentStatus = "pending" | "awaiting_confirmation" | "paid" | "failed" | "refunded";
+
+const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  pending: "بانتظار الدفع",
+  awaiting_confirmation: "بانتظار التأكيد",
+  paid: "مدفوع",
+  failed: "فشل الدفع",
+  refunded: "مُسترد",
+};
+
+const PAYMENT_STATUS_CLASSES: Record<PaymentStatus, string> = {
+  pending: "bg-muted text-muted-foreground border-border",
+  awaiting_confirmation: "bg-warning/15 text-warning-foreground border-warning/30",
+  paid: "bg-success/15 text-success border-success/30",
+  failed: "bg-destructive/15 text-destructive border-destructive/30",
+  refunded: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
+};
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cod: "الدفع عند الاستلام",
+  bank_transfer: "تحويل بنكي",
+  manual: "تواصل مع البائع",
+  card: "بطاقة",
+  stripe: "Stripe",
+  cash: "نقداً",
+};
 
 interface OrderItemRow {
   id: string;
