@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Building2,
@@ -14,6 +14,11 @@ import {
   ChevronLeft,
   Truck,
   Receipt,
+  AlertCircle,
+  Clock,
+  PackageCheck,
+  Send,
+  Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -67,9 +72,48 @@ const STEPS = [
   { id: 3, label: "المراجعة والتأكيد", icon: Receipt },
 ] as const;
 
+/** Form field wrapper with label, optional hint, and inline error message. */
+function FieldWrap({
+  id,
+  label,
+  required,
+  hint,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+  hint?: string;
+  error?: string | null;
+  children: React.ReactNode;
+}) {
+  const errorId = `${id}-error`;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={id} className="text-xs">
+          {label} {required && <span className="text-destructive">*</span>}
+        </Label>
+        {hint && <span className="text-[10px] text-muted-foreground">{hint}</span>}
+      </div>
+      {children}
+      {error && (
+        <p
+          id={errorId}
+          role="alert"
+          className="flex items-center gap-1 text-[11px] font-medium text-destructive"
+        >
+          <AlertCircle className="h-3 w-3" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function CheckoutPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const cart = useCart();
 
   const vendorId = useMemo(() => {
@@ -92,6 +136,37 @@ function CheckoutPage() {
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [paymentReference, setPaymentReference] = useState("");
+
+  // Touched state — drives inline errors only after the user interacts or
+  // tries to advance.
+  const [touched, setTouched] = useState<{
+    name: boolean;
+    phone: boolean;
+    address: boolean;
+  }>({ name: false, phone: false, address: false });
+
+  // Per-field validation. Phone: allow digits, spaces, +, -, parentheses;
+  // require at least 8 digits.
+  const errors = useMemo(() => {
+    const phoneDigits = contactPhone.replace(/\D/g, "");
+    return {
+      name: !contactName.trim()
+        ? "الاسم الكامل مطلوب"
+        : contactName.trim().length < 2
+          ? "الاسم قصير جداً"
+          : null,
+      phone: !contactPhone.trim()
+        ? "رقم الهاتف مطلوب"
+        : phoneDigits.length < 8
+          ? "رقم الهاتف غير صالح"
+          : null,
+      address: !shippingAddress.trim()
+        ? "عنوان التوصيل مطلوب"
+        : shippingAddress.trim().length < 5
+          ? "العنوان قصير جداً"
+          : null,
+    };
+  }, [contactName, contactPhone, shippingAddress]);
 
   // Prefill from profile
   useEffect(() => {
@@ -142,12 +217,12 @@ function CheckoutPage() {
     [cart.items],
   );
 
-  const step1Valid = contactName.trim() && contactPhone.trim() && shippingAddress.trim();
+  const step1Valid = !errors.name && !errors.phone && !errors.address;
 
   function goNext() {
     if (step === 1) {
       if (!step1Valid) {
-        toast.error("يرجى ملء بيانات التواصل والعنوان");
+        setTouched({ name: true, phone: true, address: true });
         return;
       }
       setStep(2);
@@ -159,8 +234,8 @@ function CheckoutPage() {
   async function handlePlaceOrder() {
     if (!user || !vendor || cart.items.length === 0) return;
     if (!step1Valid) {
+      setTouched({ name: true, phone: true, address: true });
       setStep(1);
-      toast.error("يرجى ملء بيانات التواصل والعنوان");
       return;
     }
     setSubmitting(true);
@@ -239,82 +314,181 @@ function CheckoutPage() {
     );
   }
 
-  // Success state
+  // Success state — celebration + next-steps timeline
   if (placedOrder) {
+    // Build payment-method-aware timeline.
+    const timeline: { icon: typeof Send; title: string; desc: string; state: "done" | "current" | "pending" }[] = [
+      {
+        icon: Send,
+        title: "تم استلام طلبك",
+        desc: `رقم الطلب: ${placedOrder.orderNumber}`,
+        state: "done",
+      },
+      paymentMethod === "bank_transfer"
+        ? {
+            icon: CreditCard,
+            title: paymentReference.trim() ? "في انتظار تأكيد الدفع" : "بانتظار التحويل البنكي",
+            desc: paymentReference.trim()
+              ? "سيتحقق البائع من التحويل ويؤكد الطلب"
+              : "أكمل التحويل وأضف رقم العملية لتسريع التأكيد",
+            state: "current",
+          }
+        : paymentMethod === "cod"
+          ? {
+              icon: Banknote,
+              title: "بانتظار تأكيد البائع",
+              desc: "سيراجع البائع طلبك ويؤكده قريباً",
+              state: "current",
+            }
+          : {
+              icon: MessageCircle,
+              title: "بانتظار تواصل البائع",
+              desc: "سيتواصل معك البائع لتحديد طريقة الدفع",
+              state: "current",
+            },
+      {
+        icon: PackageCheck,
+        title: "التحضير والشحن",
+        desc: "سيبدأ البائع بتحضير طلبك بعد التأكيد",
+        state: "pending",
+      },
+      {
+        icon: Truck,
+        title: "التوصيل",
+        desc: paymentMethod === "cod" ? "ادفع نقداً للمندوب عند الاستلام" : "سيتم توصيل طلبك للعنوان المحدد",
+        state: "pending",
+      },
+    ];
+
     return (
-      <div className="mx-auto max-w-2xl" dir="rtl">
-        <Card className="p-6 sm:p-8">
-          <div className="flex flex-col items-center text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-success/10">
-              <CheckCircle2 className="h-9 w-9 text-success" />
+      <div className="mx-auto max-w-2xl space-y-4" dir="rtl">
+        {/* Hero */}
+        <Card className="overflow-hidden rounded-2xl p-0">
+          <div className="relative bg-gradient-to-b from-success/10 to-transparent px-6 pt-8 pb-6 text-center">
+            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-success text-success-foreground shadow-glow">
+              <CheckCircle2 className="h-9 w-9" />
             </div>
-            <h1 className="text-xl font-bold sm:text-2xl">تم إرسال طلبك</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              رقم الطلب: <span className="font-mono">{placedOrder.orderNumber}</span>
+            <h1 className="text-xl font-bold sm:text-2xl">تم إرسال طلبك بنجاح</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              رقم الطلب{" "}
+              <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs font-semibold text-foreground">
+                {placedOrder.orderNumber}
+              </span>
             </p>
           </div>
 
+          {/* Vendor strip */}
           {vendor && (
-            <>
-              <Separator className="my-6" />
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl text-white"
-                    style={{ backgroundColor: vendor.brand_color }}
-                  >
-                    {vendor.logo_url ? (
-                      <img src={vendor.logo_url} alt={vendor.display_name} className="h-full w-full object-cover" />
-                    ) : (
-                      <Building2 className="h-6 w-6" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">البائع</p>
-                    <p className="font-bold">{vendor.display_name || vendor.name}</p>
-                  </div>
-                </div>
-
-                {vendor.contact_phone && (
-                  <a
-                    href={`tel:${vendor.contact_phone}`}
-                    className="flex items-center gap-2 rounded-lg border bg-card p-3 text-sm hover:bg-accent"
-                  >
-                    <Phone className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{vendor.contact_phone}</span>
-                    <span className="mr-auto text-xs text-muted-foreground">اتصل بالبائع</span>
-                  </a>
-                )}
-
-                {paymentMethod === "bank_transfer" && vendor.payment_instructions && (
-                  <div className="rounded-lg border bg-muted/40 p-4">
-                    <div className="mb-2 flex items-center justify-between">
-                      <p className="text-sm font-bold">تعليمات الدفع</p>
-                      <Button size="sm" variant="ghost" className="h-7 gap-1.5 text-xs" onClick={copyPaymentInstructions}>
-                        <Copy className="h-3.5 w-3.5" />
-                        نسخ
-                      </Button>
-                    </div>
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                      {vendor.payment_instructions}
-                    </p>
-                  </div>
+            <div className="flex items-center gap-3 border-t bg-muted/30 px-5 py-3">
+              <div
+                className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg text-white"
+                style={{ backgroundColor: vendor.brand_color }}
+              >
+                {vendor.logo_url ? (
+                  <img src={vendor.logo_url} alt={vendor.display_name} className="h-full w-full object-cover" />
+                ) : (
+                  <Building2 className="h-5 w-5" />
                 )}
               </div>
-            </>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] text-muted-foreground">البائع</p>
+                <p className="truncate text-sm font-bold">{vendor.display_name || vendor.name}</p>
+              </div>
+              {vendor.contact_phone && (
+                <Button asChild size="sm" variant="outline" className="gap-1.5">
+                  <a href={`tel:${vendor.contact_phone}`}>
+                    <Phone className="h-3.5 w-3.5" />
+                    اتصال
+                  </a>
+                </Button>
+              )}
+            </div>
           )}
-
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-            <Button asChild className="flex-1">
-              <Link to="/orders" search={{ focus: placedOrder.id } as never}>
-                عرض الطلب
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="flex-1">
-              <Link to="/vendors">متابعة التسوق</Link>
-            </Button>
-          </div>
         </Card>
+
+        {/* Timeline */}
+        <Card className="rounded-2xl p-5 sm:p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Clock className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-bold">الخطوات القادمة</h2>
+          </div>
+          <ol className="relative space-y-5">
+            {timeline.map((item, idx) => {
+              const isDone = item.state === "done";
+              const isCurrent = item.state === "current";
+              const Icon = item.icon;
+              const isLast = idx === timeline.length - 1;
+              return (
+                <li key={idx} className="relative flex gap-3">
+                  {/* Connector */}
+                  {!isLast && (
+                    <span
+                      aria-hidden="true"
+                      className={`absolute right-4 top-9 h-[calc(100%-0.5rem)] w-px ${
+                        isDone ? "bg-success" : "bg-border"
+                      }`}
+                    />
+                  )}
+                  <div
+                    className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors ${
+                      isDone
+                        ? "bg-success text-success-foreground"
+                        : isCurrent
+                          ? "bg-primary text-primary-foreground ring-4 ring-primary/15"
+                          : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1 pt-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className={`text-sm font-bold ${isCurrent ? "text-foreground" : isDone ? "text-foreground/80" : "text-muted-foreground"}`}>
+                        {item.title}
+                      </p>
+                      {isCurrent && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                          الآن
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{item.desc}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </Card>
+
+        {/* Bank-transfer reminder card */}
+        {paymentMethod === "bank_transfer" && vendor?.payment_instructions && (
+          <Card className="rounded-2xl border-primary/30 bg-primary/[0.03] p-5 sm:p-6">
+            <div className="mb-3 flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-bold">تفاصيل التحويل</h2>
+            </div>
+            <div className="rounded-xl border bg-card p-3.5">
+              <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
+                {vendor.payment_instructions}
+              </p>
+            </div>
+            <Button onClick={copyPaymentInstructions} className="mt-3 w-full gap-1.5">
+              <Copy className="h-3.5 w-3.5" />
+              نسخ تعليمات التحويل
+            </Button>
+          </Card>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button asChild size="lg" className="flex-1">
+            <Link to="/orders" search={{ focus: placedOrder.id } as never}>
+              عرض الطلب
+            </Link>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="flex-1">
+            <Link to="/vendors">متابعة التسوق</Link>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -356,34 +530,36 @@ function CheckoutPage() {
       </div>
 
       {/* Sticky Stepper */}
-      <div className="sticky top-16 z-20 -mx-4 border-b bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:px-4">
-        <ol className="flex items-center justify-between gap-2">
+      <div className="sticky top-16 z-20 -mx-4 border-b bg-background/95 px-4 py-3.5 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-5 sm:shadow-sm">
+        <ol className="flex items-center gap-1.5 sm:gap-2">
           {STEPS.map((s, idx) => {
             const isDone = step > s.id;
             const isCurrent = step === s.id;
             return (
-              <li key={s.id} className="flex flex-1 items-center gap-2">
-                <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                    isDone
-                      ? "bg-success text-success-foreground"
-                      : isCurrent
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground"
-                  }`}
-                  aria-current={isCurrent ? "step" : undefined}
-                >
-                  {isDone ? <CheckCircle2 className="h-4 w-4" /> : s.id}
+              <li key={s.id} className="flex flex-1 items-center gap-2 last:flex-none">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                      isDone
+                        ? "bg-success text-success-foreground"
+                        : isCurrent
+                          ? "bg-primary text-primary-foreground ring-4 ring-primary/15"
+                          : "bg-muted text-muted-foreground"
+                    }`}
+                    aria-current={isCurrent ? "step" : undefined}
+                  >
+                    {isDone ? <CheckCircle2 className="h-4 w-4" /> : s.id}
+                  </div>
+                  <span
+                    className={`hidden truncate text-xs font-semibold sm:inline ${
+                      isCurrent ? "text-foreground" : isDone ? "text-foreground/70" : "text-muted-foreground"
+                    }`}
+                  >
+                    {s.label}
+                  </span>
                 </div>
-                <span
-                  className={`hidden truncate text-xs font-medium sm:inline ${
-                    isCurrent ? "text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  {s.label}
-                </span>
                 {idx < STEPS.length - 1 && (
-                  <div className={`mx-1 h-px flex-1 ${isDone ? "bg-success" : "bg-border"}`} />
+                  <div className={`h-0.5 flex-1 rounded-full transition-colors ${isDone ? "bg-success" : "bg-border"}`} />
                 )}
               </li>
             );
@@ -393,44 +569,76 @@ function CheckoutPage() {
 
       {/* Step 1 — Contact + delivery */}
       {step === 1 && (
-        <Card className="space-y-4 p-4 sm:p-5">
-          <div className="flex items-center gap-2">
-            <Truck className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-bold">بيانات التواصل والتوصيل</h2>
+        <Card className="space-y-5 rounded-2xl p-5 sm:p-6">
+          <div className="flex items-center gap-2 border-b pb-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Truck className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold leading-tight">بيانات التواصل والتوصيل</h2>
+              <p className="text-[11px] text-muted-foreground">
+                نحتاج هذه المعلومات للتوصيل والتنسيق مع البائع
+              </p>
+            </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="name">الاسم الكامل *</Label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FieldWrap
+              id="name"
+              label="الاسم الكامل"
+              required
+              error={touched.name ? errors.name : null}
+            >
               <Input
                 id="name"
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
+                onBlur={() => setTouched((t) => ({ ...t, name: true }))}
                 placeholder="اسم المسؤول عن الطلب"
+                aria-invalid={touched.name && !!errors.name}
+                className={touched.name && errors.name ? "border-destructive focus-visible:ring-destructive/30" : ""}
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="phone">رقم الهاتف *</Label>
+            </FieldWrap>
+
+            <FieldWrap
+              id="phone"
+              label="رقم الهاتف"
+              required
+              error={touched.phone ? errors.phone : null}
+            >
               <Input
                 id="phone"
                 type="tel"
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
+                onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
                 placeholder="+212 6XX XXX XXX"
+                dir="ltr"
+                aria-invalid={touched.phone && !!errors.phone}
+                className={touched.phone && errors.phone ? "border-destructive focus-visible:ring-destructive/30" : ""}
               />
-            </div>
+            </FieldWrap>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="address">عنوان التوصيل *</Label>
+
+          <FieldWrap
+            id="address"
+            label="عنوان التوصيل"
+            required
+            error={touched.address ? errors.address : null}
+          >
             <Textarea
               id="address"
               value={shippingAddress}
               onChange={(e) => setShippingAddress(e.target.value)}
+              onBlur={() => setTouched((t) => ({ ...t, address: true }))}
               placeholder="العنوان الكامل، المدينة، المنطقة"
               rows={2}
+              aria-invalid={touched.address && !!errors.address}
+              className={touched.address && errors.address ? "border-destructive focus-visible:ring-destructive/30" : ""}
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="notes">ملاحظات إضافية (اختياري)</Label>
+          </FieldWrap>
+
+          <FieldWrap id="notes" label="ملاحظات إضافية" hint="اختياري">
             <Textarea
               id="notes"
               value={notes}
@@ -439,21 +647,31 @@ function CheckoutPage() {
               rows={2}
               maxLength={500}
             />
+          </FieldWrap>
+
+          <div className="flex items-start gap-2 rounded-xl bg-muted/50 p-3 text-[11px] text-muted-foreground">
+            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+            <p>ستُحفظ هذه البيانات في حسابك تلقائياً للطلبات القادمة.</p>
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            ستُحفظ هذه البيانات في حسابك تلقائياً للطلبات القادمة.
-          </p>
         </Card>
       )}
 
       {/* Step 2 — Payment */}
       {step === 2 && (
-        <Card className="space-y-4 p-4 sm:p-5">
-          <div className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-bold">طريقة الدفع</h2>
+        <Card className="space-y-5 rounded-2xl p-5 sm:p-6">
+          <div className="flex items-center gap-2 border-b pb-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <CreditCard className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold leading-tight">طريقة الدفع</h2>
+              <p className="text-[11px] text-muted-foreground">
+                اختر الطريقة الأنسب لك — الدفع يتم مباشرة مع البائع
+              </p>
+            </div>
           </div>
-          <div className="grid gap-2">
+
+          <div className="grid gap-2.5">
             {PAYMENT_OPTIONS.map((opt) => {
               const active = paymentMethod === opt.value;
               const Icon = opt.icon;
@@ -462,24 +680,27 @@ function CheckoutPage() {
                   key={opt.value}
                   type="button"
                   onClick={() => setPaymentMethod(opt.value)}
-                  className={`flex items-start gap-3 rounded-lg border p-3 text-right transition ${
-                    active ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+                  aria-pressed={active}
+                  className={`group flex items-start gap-3 rounded-xl border p-3.5 text-right transition-all ${
+                    active
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-border hover:border-primary/40 hover:bg-muted/40"
                   }`}
                 >
                   <div
-                    className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                    className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors ${
                       active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold">{opt.title}</p>
-                    <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{opt.desc}</p>
                   </div>
                   <div
-                    className={`mt-1.5 h-4 w-4 shrink-0 rounded-full border-2 ${
-                      active ? "border-primary bg-primary" : "border-muted-foreground"
+                    className={`mt-1.5 h-4 w-4 shrink-0 rounded-full border-2 transition-colors ${
+                      active ? "border-primary bg-primary" : "border-muted-foreground/40 group-hover:border-primary/40"
                     }`}
                   />
                 </button>
@@ -487,34 +708,63 @@ function CheckoutPage() {
             })}
           </div>
 
+          {/* Bank-transfer block: prominent CTA + steps */}
           {paymentMethod === "bank_transfer" && (
-            <div className="space-y-3 pt-1">
-              {vendor.payment_instructions && (
-                <div className="rounded-lg border bg-muted/40 p-3">
-                  <div className="mb-1 flex items-center justify-between">
-                    <p className="text-xs font-bold">تعليمات التحويل</p>
-                    <Button size="sm" variant="ghost" className="h-6 gap-1 text-xs" onClick={copyPaymentInstructions}>
-                      <Copy className="h-3 w-3" />
-                      نسخ
-                    </Button>
-                  </div>
-                  <p className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
+            <div className="space-y-4 rounded-2xl border-2 border-primary/30 bg-primary/[0.03] p-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                  <CreditCard className="h-3.5 w-3.5" />
+                </div>
+                <h3 className="text-sm font-bold">تعليمات التحويل البنكي</h3>
+              </div>
+
+              {vendor.payment_instructions ? (
+                <div className="rounded-xl border bg-card p-3.5">
+                  <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
                     {vendor.payment_instructions}
                   </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="default"
+                    className="mt-3 w-full gap-1.5"
+                    onClick={copyPaymentInstructions}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    نسخ تعليمات التحويل
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-xl border bg-card p-3.5 text-xs text-muted-foreground">
+                  لم يضف البائع تعليمات تحويل بعد. سيتواصل معك مباشرة لإرسال التفاصيل.
                 </div>
               )}
-              <div className="space-y-1.5">
-                <Label htmlFor="ref">رقم/مرجع التحويل (اختياري)</Label>
+
+              {/* Step list — what to do */}
+              <ol className="space-y-2 text-xs">
+                {[
+                  "انسخ تعليمات التحويل أعلاه",
+                  "نفّذ التحويل من تطبيق بنكك",
+                  "أضف رقم العملية أدناه (اختياري لكن يُسرّع التأكيد)",
+                  "اضغط «تأكيد الطلب» — سيتم إخطار البائع فوراً",
+                ].map((line, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
+                      {i + 1}
+                    </span>
+                    <span className="text-muted-foreground leading-relaxed">{line}</span>
+                  </li>
+                ))}
+              </ol>
+
+              <FieldWrap id="ref" label="رقم / مرجع التحويل" hint="اختياري">
                 <Input
                   id="ref"
                   value={paymentReference}
                   onChange={(e) => setPaymentReference(e.target.value)}
                   placeholder="رقم العملية أو اسم المرسل"
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  أضف المرجع بعد إتمام التحويل لتسريع التأكيد.
-                </p>
-              </div>
+              </FieldWrap>
             </div>
           )}
 
