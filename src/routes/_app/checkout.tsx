@@ -114,7 +114,6 @@ function FieldWrap({
 
 function CheckoutPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const cart = useCart();
 
   const vendorId = useMemo(() => {
