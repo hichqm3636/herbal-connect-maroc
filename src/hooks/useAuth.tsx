@@ -198,7 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("user_roles").select("role, is_enabled").eq("user_id", uid),
       supabase
         .from("profiles")
-        .select("account_type, company_id, territory_id, is_active")
+        .select("company_id, is_active")
         .eq("id", uid)
         .maybeSingle(),
     ]);
@@ -208,42 +208,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userRoles = enabledRoleRows.map((r) => r.role);
     const hasPrivilegedRole =
       userRoles.includes("super_admin") || userRoles.includes("admin");
-    const hasAnyDistributorRole = typedRoleRows.some((r) => DISTRIBUTOR_ROLES.includes(r.role));
-    const hasEnabledDistributorRole = enabledRoleRows.some((r) => DISTRIBUTOR_ROLES.includes(r.role));
-    const distributorProfileActive = profile?.is_active !== false;
-    const distributorAccessEnabled = distributorProfileActive && hasEnabledDistributorRole;
 
     setRoles(userRoles);
-    setCanAccessDistributorFeatures(distributorAccessEnabled);
-    setHasDistributorRole(hasAnyDistributorRole);
-    // Preserve account_type exactly as stored (business type: pharmacy/gym/etc.).
-    // NEVER silently fall back to "distributor" — expose null when missing so
-    // the UI can distinguish "unknown" from "actually a distributor".
-    setAccountType((profile?.account_type as PartnerType | undefined) ?? null);
-    const cid = (profile?.company_id as string | null | undefined) ?? null;
+    setCanAccessDistributorFeatures(false);
+    setHasDistributorRole(false);
+    setAccountType(null);
+    const profileRow = (profile ?? null) as { company_id?: string | null; is_active?: boolean } | null;
+    const cid = profileRow?.company_id ?? null;
     setProfileCompanyId(cid);
-    setTerritoryId((profile?.territory_id as string | null | undefined) ?? null);
-
-    // Fetch this distributor's pricing assignment from the new table.
-    let tierId: string | null = null;
-    let discount = 0;
-    if (cid) {
-      const { data: cdp } = await supabase
-        .from("company_distributor_pricing")
-        .select("pricing_tier_id, custom_discount_percent, pricing_tiers(base_discount_percent)")
-        .eq("company_id", cid)
-        .eq("distributor_id", uid)
-        .maybeSingle();
-      if (cdp) {
-        tierId = (cdp as { pricing_tier_id: string }).pricing_tier_id;
-        const custom = (cdp as { custom_discount_percent: number | null }).custom_discount_percent;
-        const base = (cdp as unknown as { pricing_tiers?: { base_discount_percent: number } | null })
-          .pricing_tiers?.base_discount_percent;
-        discount = custom != null ? Number(custom) : base != null ? Number(base) : 0;
-      }
-    }
-    setPricingTierId(tierId);
-    setPricingTierDiscount(discount);
+    setTerritoryId(null);
+    setPricingTierId(null);
+    setPricingTierDiscount(0);
     // Tenant context rules:
     //  - Super admins: ALWAYS start with no active tenant. They must explicitly
     //    pick a company from the selector. This prevents the previously
