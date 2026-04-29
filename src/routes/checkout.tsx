@@ -44,7 +44,7 @@ interface VendorInfo {
 }
 
 function CheckoutPage() {
-  const { session, user, loading: authLoading } = useAuth();
+  const { session, user, loading: authLoading, isClient, marketplaceRole } = useAuth();
   const navigate = useNavigate();
   const cart = useCart();
 
@@ -69,12 +69,17 @@ function CheckoutPage() {
   const [shippingAddress, setShippingAddress] = useState("");
   const [notes, setNotes] = useState("");
 
-  // Redirect to login if not authed
+  // Auth + role gating: must be signed in AND marketplace role === client.
   useEffect(() => {
-    if (!authLoading && !session) {
+    if (authLoading) return;
+    if (!session) {
       navigate({ to: "/login" });
+      return;
     }
-  }, [authLoading, session, navigate]);
+    if (!isClient) {
+      navigate({ to: homeForRole(marketplaceRole) });
+    }
+  }, [authLoading, session, isClient, marketplaceRole, navigate]);
 
   // Load vendor
   useEffect(() => {
