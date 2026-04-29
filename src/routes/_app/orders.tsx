@@ -200,8 +200,21 @@ function OrdersPage() {
               (s, i) => s + Number(i.quantity ?? 0),
               0,
             );
+            const isFocused = focusId === order.id;
+            const payLabel = PAYMENT_STATUS_LABELS[order.payment_status] ?? order.payment_status;
+            const payClass = PAYMENT_STATUS_CLASSES[order.payment_status] ?? "";
+            const methodLabel = order.payment_method
+              ? (PAYMENT_METHOD_LABELS[order.payment_method] ?? order.payment_method)
+              : null;
             return (
-              <Card key={order.id} className="overflow-hidden">
+              <Card
+                key={order.id}
+                ref={isFocused ? focusRef : undefined}
+                className={cn(
+                  "overflow-hidden transition-all",
+                  isFocused && "ring-2 ring-primary ring-offset-2",
+                )}
+              >
                 <div className="flex flex-col gap-3 border-b bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     {order.companies?.logo_url ? (
