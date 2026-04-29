@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
+import { MarketplaceTopBar } from "@/components/MarketplaceTopBar";
 import { CartSheet } from "@/components/CartSheet";
 import { ReplaceCartDialog } from "@/components/ReplaceCartDialog";
 import { useAuth } from "@/hooks/useAuth";
@@ -118,6 +119,21 @@ function AppLayout() {
     );
   }
 
+  // CLIENT surface = Marketplace shape: top-bar only, no sidebar.
+  // VENDOR / ADMIN / SUPER_ADMIN surfaces keep the operational sidebar shell.
+  if (isClient) {
+    return (
+      <div className="flex min-h-screen w-full flex-col overflow-x-hidden bg-background" dir="rtl">
+        <MarketplaceTopBar />
+        <main className="flex-1 min-w-0 overflow-x-hidden">
+          <Outlet />
+        </main>
+        <CartSheet />
+        <ReplaceCartDialog />
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full overflow-x-hidden bg-background" dir="rtl">
@@ -127,9 +143,7 @@ function AppLayout() {
           <main className="flex-1 p-4 md:p-6 lg:p-8 min-w-0 overflow-x-hidden">
             <Outlet />
           </main>
-          {/* Cart drawer is itself gated to client role inside the component. */}
           <CartSheet />
-          {/* Single global replace-cart prompt for vendor conflicts. */}
           <ReplaceCartDialog />
         </SidebarInset>
       </div>
