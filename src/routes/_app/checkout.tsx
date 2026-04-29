@@ -469,12 +469,12 @@ function CheckoutPage() {
         </Card>
 
         {/* Timeline */}
-        <Card className="rounded-2xl p-5 sm:p-6">
-          <div className="mb-4 flex items-center gap-2">
+        <Card className="rounded-2xl p-4 sm:p-6">
+          <div className="mb-3.5 flex items-center gap-2 sm:mb-4">
             <Clock className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-bold">الخطوات القادمة</h2>
           </div>
-          <ol className="relative space-y-5">
+          <ol className="relative space-y-4 sm:space-y-5">
             {timeline.map((item, idx) => {
               const isDone = item.state === "done";
               const isCurrent = item.state === "current";
@@ -503,13 +503,24 @@ function CheckoutPage() {
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1 pt-1">
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <p className={`text-sm font-bold ${isCurrent ? "text-foreground" : isDone ? "text-foreground/80" : "text-muted-foreground"}`}>
                         {item.title}
                       </p>
-                      {isCurrent && (
+                      {isCurrent ? (
                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
                           الآن
+                        </span>
+                      ) : (
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                            isDone
+                              ? "bg-success/10 text-success"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          <Clock className="h-2.5 w-2.5" />
+                          {item.eta}
                         </span>
                       )}
                     </div>
