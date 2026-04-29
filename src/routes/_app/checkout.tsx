@@ -532,63 +532,84 @@ function CheckoutPage() {
           </ol>
         </Card>
 
-        {/* Bank-transfer reminder card */}
+        {/* Bank-transfer reminder card — switches to "awaiting confirmation" once user marks the transfer as done. */}
         {paymentMethod === "bank_transfer" && (
-          <Card className="rounded-2xl border-primary/30 bg-primary/[0.03] p-4 sm:p-6">
-            <div className="mb-3 flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold">تفاصيل التحويل</h2>
-            </div>
-            {vendor?.payment_instructions ? (
-              <div className="rounded-xl border bg-card p-3.5">
-                <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
-                  {vendor.payment_instructions}
-                </p>
+          transferMarked ? (
+            <Card className="rounded-2xl border-success/40 bg-success/[0.06] p-4 sm:p-6">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success text-success-foreground">
+                  <Check className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-sm font-bold">بانتظار التأكيد</h2>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold text-warning-foreground">
+                      <Clock className="h-2.5 w-2.5" />
+                      خلال ساعات
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    أبلغتنا بإتمام التحويل وأُخطر البائع. سيتحقق من العملية ويؤكد طلبك قريباً.
+                  </p>
+                </div>
               </div>
-            ) : (
-              <div className="rounded-xl border bg-card p-3.5 text-xs text-muted-foreground">
-                لم يضف البائع تعليمات تحويل بعد. سيتواصل معك مباشرة لإرسال التفاصيل.
-              </div>
-            )}
-
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {vendor?.payment_instructions && (
-                <Button
-                  variant="outline"
-                  onClick={copyPaymentInstructions}
-                  className="gap-1.5"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  نسخ التعليمات
-                </Button>
-              )}
-              <Button
-                onClick={markTransferDone}
-                disabled={transferMarked || markingTransfer}
-                className={`gap-1.5 ${vendor?.payment_instructions ? "" : "sm:col-span-2"}`}
-              >
-                {transferMarked ? (
-                  <>
-                    <Check className="h-4 w-4" />
-                    تم الإعلام بالتحويل
-                  </>
-                ) : markingTransfer ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    جارٍ الإرسال...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" />
-                    لقد قمت بالتحويل
-                  </>
-                )}
+              <Button disabled className="mt-3 w-full gap-1.5" variant="outline">
+                <Check className="h-4 w-4" />
+                تم الإعلام بالتحويل
               </Button>
-            </div>
-            <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
-              اضغط بعد إتمام التحويل من بنكك — سيُخطَر البائع للتحقق وتأكيد الطلب.
-            </p>
-          </Card>
+            </Card>
+          ) : (
+            <Card className="rounded-2xl border-primary/30 bg-primary/[0.03] p-4 sm:p-6">
+              <div className="mb-3 flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-bold">تفاصيل التحويل</h2>
+              </div>
+              {vendor?.payment_instructions ? (
+                <div className="rounded-xl border bg-card p-3.5">
+                  <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
+                    {vendor.payment_instructions}
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-xl border bg-card p-3.5 text-xs text-muted-foreground">
+                  لم يضف البائع تعليمات تحويل بعد. سيتواصل معك مباشرة لإرسال التفاصيل.
+                </div>
+              )}
+
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {vendor?.payment_instructions && (
+                  <Button
+                    variant="outline"
+                    onClick={copyPaymentInstructions}
+                    className="gap-1.5"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    نسخ التعليمات
+                  </Button>
+                )}
+                <Button
+                  onClick={markTransferDone}
+                  disabled={markingTransfer}
+                  className={`gap-1.5 ${vendor?.payment_instructions ? "" : "sm:col-span-2"}`}
+                >
+                  {markingTransfer ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      جارٍ الإرسال...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4" />
+                      لقد قمت بالتحويل
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+                اضغط بعد إتمام التحويل من بنكك — سيُخطَر البائع للتحقق وتأكيد الطلب.
+              </p>
+            </Card>
+          )
         )}
 
         {/* Action buttons */}
