@@ -1398,7 +1398,13 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "processing"
-      payment_method: "cash" | "bank_transfer" | "card" | "stripe" | "manual"
+      payment_method:
+        | "cash"
+        | "bank_transfer"
+        | "card"
+        | "stripe"
+        | "manual"
+        | "cod"
       payment_status:
         | "pending"
         | "awaiting_confirmation"
@@ -1575,7 +1581,14 @@ export const Constants = {
         "cancelled",
         "processing",
       ],
-      payment_method: ["cash", "bank_transfer", "card", "stripe", "manual"],
+      payment_method: [
+        "cash",
+        "bank_transfer",
+        "card",
+        "stripe",
+        "manual",
+        "cod",
+      ],
       payment_status: [
         "pending",
         "awaiting_confirmation",
