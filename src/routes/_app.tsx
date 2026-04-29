@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { CartSheet } from "@/components/CartSheet";
+import { ReplaceCartDialog } from "@/components/ReplaceCartDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { Leaf, ShieldAlert } from "lucide-react";
@@ -128,6 +129,8 @@ function AppLayout() {
           </main>
           {/* Cart drawer is itself gated to client role inside the component. */}
           <CartSheet />
+          {/* Single global replace-cart prompt for vendor conflicts. */}
+          <ReplaceCartDialog />
         </SidebarInset>
       </div>
     </SidebarProvider>

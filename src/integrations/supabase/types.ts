@@ -951,6 +951,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
+          address_notes: string | null
           avatar_url: string | null
           city: string | null
           company_id: string | null
@@ -962,6 +964,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          address?: string | null
+          address_notes?: string | null
           avatar_url?: string | null
           city?: string | null
           company_id?: string | null
@@ -973,6 +977,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          address?: string | null
+          address_notes?: string | null
           avatar_url?: string | null
           city?: string | null
           company_id?: string | null
@@ -1398,7 +1404,13 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "processing"
-      payment_method: "cash" | "bank_transfer" | "card" | "stripe" | "manual"
+      payment_method:
+        | "cash"
+        | "bank_transfer"
+        | "card"
+        | "stripe"
+        | "manual"
+        | "cod"
       payment_status:
         | "pending"
         | "awaiting_confirmation"
@@ -1575,7 +1587,14 @@ export const Constants = {
         "cancelled",
         "processing",
       ],
-      payment_method: ["cash", "bank_transfer", "card", "stripe", "manual"],
+      payment_method: [
+        "cash",
+        "bank_transfer",
+        "card",
+        "stripe",
+        "manual",
+        "cod",
+      ],
       payment_status: [
         "pending",
         "awaiting_confirmation",
