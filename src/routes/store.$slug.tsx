@@ -8,16 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { EmptyState } from "@/components/EmptyState";
 import { formatMAD } from "@/lib/format";
 import { parseTiers } from "@/lib/pricing";
 import { toast } from "sonner";
@@ -71,13 +62,6 @@ function VendorStorePage() {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [q, setQ] = useState("");
-  const [pendingProduct, setPendingProduct] = useState<CartProduct | null>(null);
-
-  // Determine the vendor currently held in the cart (by company_id of the first item)
-  const cartVendorId = useMemo(() => {
-    if (cart.items.length === 0) return null;
-    return (cart.items[0] as CartProduct & { vendor_id?: string }).vendor_id ?? null;
-  }, [cart.items]);
 
   // Load vendor (public — anon can read listed companies)
   useEffect(() => {
@@ -134,7 +118,7 @@ function VendorStorePage() {
     );
   }, [products, q]);
 
-  function buildCartProduct(p: StoreProduct): CartProduct & { vendor_id: string } {
+  function buildCartProduct(p: StoreProduct): CartProduct {
     const display = p.rrp_price ?? p.pharmacy_price ?? p.price_mad;
     return {
       id: p.id,
@@ -149,6 +133,8 @@ function VendorStorePage() {
       pack_size: p.pack_size,
       price_tiers: parseTiers(p.price_tiers),
       vendor_id: vendor!.id,
+      vendor_slug: vendor!.slug,
+      vendor_name: vendor!.display_name || vendor!.name,
     };
   }
 
@@ -162,21 +148,11 @@ function VendorStorePage() {
       return;
     }
     const cp = buildCartProduct(p);
-    // Single-vendor cart enforcement
-    if (cartVendorId && cartVendorId !== vendor!.id) {
-      setPendingProduct(cp);
-      return;
+    const result = cart.tryAdd(cp, p.minimum_order || 1);
+    if (result.kind === "added") {
+      toast.success("تمت الإضافة إلى السلة");
     }
-    cart.addItem(cp, p.minimum_order || 1);
-    toast.success("تمت الإضافة إلى السلة");
-  }
-
-  function confirmReplaceCart() {
-    if (!pendingProduct) return;
-    cart.clear();
-    cart.addItem(pendingProduct, (pendingProduct as CartProduct).minimum_order || 1);
-    toast.success("تم استبدال السلة");
-    setPendingProduct(null);
+    // "conflict" → handled globally by <ReplaceCartDialog />
   }
 
   if (vendorLoading || authLoading) {
