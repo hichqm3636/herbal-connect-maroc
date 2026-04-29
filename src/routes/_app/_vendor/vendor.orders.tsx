@@ -316,6 +316,29 @@ function VendorOrdersPage() {
     setOrders((prev) => prev.map((o) => (o.id === selected.id ? { ...o, status: next } : o)));
   };
 
+  const [savingPayment, setSavingPayment] = useState(false);
+  const updatePaymentStatus = async (next: PaymentStatus) => {
+    if (!selected) return;
+    setSavingPayment(true);
+    const patch: Record<string, unknown> = { payment_status: next };
+    if (next === "paid") patch.payment_paid_at = new Date().toISOString();
+    const { error } = await supabase.from("orders").update(patch).eq("id", selected.id);
+    setSavingPayment(false);
+    if (error) {
+      toast.error("تعذر تحديث حالة الدفع");
+      return;
+    }
+    toast.success(`حالة الدفع: ${PAYMENT_STATUS_LABELS[next]}`);
+    const updated = {
+      ...selected,
+      payment_status: next,
+      payment_paid_at:
+        next === "paid" ? (selected.payment_paid_at ?? new Date().toISOString()) : selected.payment_paid_at,
+    };
+    setSelected(updated);
+    setOrders((prev) => prev.map((o) => (o.id === selected.id ? { ...o, ...updated } : o)));
+  };
+
   const saveAdminNotes = async () => {
     if (!selected) return;
     const value = adminNotes.trim() || null;
