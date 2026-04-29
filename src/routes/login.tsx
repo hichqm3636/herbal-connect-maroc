@@ -29,10 +29,8 @@ function LoginPage() {
   const { session, loading } = useAuth();
   const tenant = useTenant();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
-  const [usePassword, setUsePassword] = useState(false);
 
   // If we already have a session, bounce to /auth/callback so it routes by role.
   useEffect(() => {
@@ -49,66 +47,6 @@ function LoginPage() {
     const parsed = emailSchema.safeParse(email);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
-      return;
-    }
-
-    if (usePassword) {
-      if (!password || password.length < 6) {
-        toast.error("كلمة المرور قصيرة جداً");
-        return;
-      }
-      setSubmitting(true);
-      const { data: authData, error } = await supabase.auth.signInWithPassword({
-        email: parsed.data,
-        password,
-      });
-      if (error) {
-        setSubmitting(false);
-        toast.error(error.message || "تعذر تسجيل الدخول");
-        return;
-      }
-
-      // Block password sign-in for non-admin accounts (distributors must use Magic Link).
-      // Use the authoritative session as source of truth, with dual-source role validation
-      // (DB roles + JWT app_metadata) for resilience against RLS issues, latency, or empty DB.
-      const { data: sessionData } = await supabase.auth.getSession();
-      const user = sessionData.session?.user;
-
-      if (!user) {
-        await supabase.auth.signOut();
-        setSubmitting(false);
-        toast.error("تعذر التحقق من الجلسة");
-        return;
-      }
-
-      const { data: roleRows } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id);
-      const roles = (roleRows ?? []).map((r) => r.role as string);
-      const metaRole =
-        (user.app_metadata as { role?: string } | undefined)?.role;
-
-      const isAdmin =
-        roles.includes("admin") ||
-        roles.includes("super_admin") ||
-        metaRole === "admin" ||
-        metaRole === "super_admin";
-
-      // Fallback safety: only block when DB roles actually loaded AND no admin metadata.
-      // If roles query failed (not an array) OR metadata says admin → do NOT block.
-      const rolesLoaded = Array.isArray(roleRows);
-      const hasMeta = metaRole === "admin" || metaRole === "super_admin";
-      if (!isAdmin && rolesLoaded && !hasMeta) {
-        await supabase.auth.signOut();
-        setSubmitting(false);
-        toast.error("الدخول بكلمة المرور غير متاح لهذا الحساب");
-        return;
-      }
-
-      setSubmitting(false);
-      toast.success("مرحباً بعودتك");
-      navigate({ to: "/auth/callback" });
       return;
     }
 
