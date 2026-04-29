@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorsRouteImport } from './routes/vendors'
 import { Route as VendorLoginRouteImport } from './routes/vendor-login'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ControlRouteImport } from './routes/control'
 import { Route as AppRouteImport } from './routes/_app'
@@ -52,6 +53,11 @@ const VendorLoginRoute = VendorLoginRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/control': typeof ControlRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/vendor-login': typeof VendorLoginRoute
   '/vendors': typeof VendorsRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/control': typeof ControlRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/vendor-login': typeof VendorLoginRoute
   '/vendors': typeof VendorsRoute
@@ -245,6 +253,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/control': typeof ControlRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/vendor-login': typeof VendorLoginRoute
   '/vendors': typeof VendorsRoute
@@ -277,6 +286,7 @@ export interface FileRouteTypes {
     | '/'
     | '/control'
     | '/login'
+    | '/reset-password'
     | '/signup'
     | '/vendor-login'
     | '/vendors'
@@ -305,6 +315,7 @@ export interface FileRouteTypes {
     | '/'
     | '/control'
     | '/login'
+    | '/reset-password'
     | '/signup'
     | '/vendor-login'
     | '/vendors'
@@ -333,6 +344,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/control'
     | '/login'
+    | '/reset-password'
     | '/signup'
     | '/vendor-login'
     | '/vendors'
@@ -365,6 +377,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   ControlRoute: typeof ControlRoute
   LoginRoute: typeof LoginRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   VendorLoginRoute: typeof VendorLoginRoute
   VendorsRoute: typeof VendorsRoute
@@ -394,6 +407,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -662,6 +682,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   ControlRoute: ControlRoute,
   LoginRoute: LoginRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   VendorLoginRoute: VendorLoginRoute,
   VendorsRoute: VendorsRoute,
