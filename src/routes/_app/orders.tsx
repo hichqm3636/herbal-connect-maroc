@@ -300,7 +300,7 @@ function OrdersPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/20 px-4 py-2.5 text-xs text-muted-foreground">
                   <span>
                     {itemCount} قطعة
-                    {order.payment_method ? ` · ${order.payment_method}` : ""}
+                    {methodLabel ? ` · ${methodLabel}` : ""}
                   </span>
                   {order.notes && (
                     <span className="max-w-md truncate" title={order.notes}>
