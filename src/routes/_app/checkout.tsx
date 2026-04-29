@@ -614,6 +614,7 @@ function CheckoutPage() {
               error={touched.name ? errors.name : null}
             >
               <Input
+                ref={nameRef}
                 id="name"
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
@@ -631,6 +632,7 @@ function CheckoutPage() {
               error={touched.phone ? errors.phone : null}
             >
               <Input
+                ref={phoneRef}
                 id="phone"
                 type="tel"
                 value={contactPhone}
@@ -651,6 +653,7 @@ function CheckoutPage() {
             error={touched.address ? errors.address : null}
           >
             <Textarea
+              ref={addressRef}
               id="address"
               value={shippingAddress}
               onChange={(e) => setShippingAddress(e.target.value)}
