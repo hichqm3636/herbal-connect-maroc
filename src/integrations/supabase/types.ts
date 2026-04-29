@@ -1914,6 +1914,8 @@ export type Database = {
         | "seller"
         | "sales_agent"
         | "partner"
+        | "vendor"
+        | "client"
       commission_status: "pending" | "approved" | "paid" | "rejected"
       distributor_level:
         | "distributor"
@@ -2088,6 +2090,8 @@ export const Constants = {
         "seller",
         "sales_agent",
         "partner",
+        "vendor",
+        "client",
       ],
       commission_status: ["pending", "approved", "paid", "rejected"],
       distributor_level: [
