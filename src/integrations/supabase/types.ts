@@ -1219,6 +1219,7 @@ export type Database = {
         Returns: boolean
       }
       admin_exists: { Args: never; Returns: boolean }
+      claim_client_role: { Args: never; Returns: boolean }
       claim_first_admin: { Args: never; Returns: boolean }
       current_company_id: { Args: never; Returns: string }
       default_warehouse_for_company: {
