@@ -225,13 +225,13 @@ function VendorDashboard() {
       <Card className="p-5">
         <h2 className="text-base font-bold mb-4">الطلبات حسب الحالة</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-          <StatusTile icon={<Clock className="h-4 w-4" />} label="قيد الانتظار" count={stats.ordersByStatus.pending} />
-          <StatusTile icon={<CheckCircle2 className="h-4 w-4" />} label="مؤكد" count={stats.ordersByStatus.confirmed} />
-          <StatusTile icon={<Package className="h-4 w-4" />} label="قيد المعالجة" count={stats.ordersByStatus.processing} />
-          <StatusTile icon={<Package className="h-4 w-4" />} label="قيد التحضير" count={stats.ordersByStatus.preparing} />
-          <StatusTile icon={<Truck className="h-4 w-4" />} label="تم الشحن" count={stats.ordersByStatus.shipped} />
-          <StatusTile icon={<CheckCircle2 className="h-4 w-4" />} label="تم التسليم" count={stats.ordersByStatus.delivered} />
-          <StatusTile icon={<XCircle className="h-4 w-4" />} label="ملغي" count={stats.ordersByStatus.cancelled} />
+          <StatusTile status="pending" icon={<Clock className="h-4 w-4" />} label="قيد الانتظار" count={stats.ordersByStatus.pending} />
+          <StatusTile status="confirmed" icon={<CheckCircle2 className="h-4 w-4" />} label="مؤكد" count={stats.ordersByStatus.confirmed} />
+          <StatusTile status="processing" icon={<Package className="h-4 w-4" />} label="قيد المعالجة" count={stats.ordersByStatus.processing} />
+          <StatusTile status="preparing" icon={<Package className="h-4 w-4" />} label="قيد التحضير" count={stats.ordersByStatus.preparing} />
+          <StatusTile status="shipped" icon={<Truck className="h-4 w-4" />} label="تم الشحن" count={stats.ordersByStatus.shipped} />
+          <StatusTile status="delivered" icon={<CheckCircle2 className="h-4 w-4" />} label="تم التسليم" count={stats.ordersByStatus.delivered} />
+          <StatusTile status="cancelled" icon={<XCircle className="h-4 w-4" />} label="ملغي" count={stats.ordersByStatus.cancelled} />
         </div>
       </Card>
 
@@ -252,19 +252,25 @@ function VendorDashboard() {
           ) : (
             <ul className="divide-y">
               {stats.recentOrders.map((o) => (
-                <li key={o.id} className="py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-semibold">{o.order_number}</span>
-                      <Badge variant="secondary" className={STATUS_TONE[o.status]}>
-                        {STATUS_LABELS[o.status]}
-                      </Badge>
+                <li key={o.id}>
+                  <Link
+                    to="/vendor/orders"
+                    search={{ focus: o.id }}
+                    className="py-3 flex items-center justify-between gap-3 hover:bg-muted/40 -mx-2 px-2 rounded-md transition-colors"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-semibold">{o.order_number}</span>
+                        <Badge variant="secondary" className={STATUS_TONE[o.status]}>
+                          {STATUS_LABELS[o.status]}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 truncate">
+                        {o.buyer_name} · {new Date(o.created_at).toLocaleDateString("ar")}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1 truncate">
-                      {o.buyer_name} · {new Date(o.created_at).toLocaleDateString("ar")}
-                    </p>
-                  </div>
-                  <div className="text-sm font-bold whitespace-nowrap">{formatMAD(Number(o.total_mad))}</div>
+                    <div className="text-sm font-bold whitespace-nowrap">{formatMAD(Number(o.total_mad))}</div>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -321,15 +327,19 @@ function KpiCard({
 }
 
 function StatusTile({
-  icon, label, count,
-}: { icon: React.ReactNode; label: string; count: number }) {
+  status, icon, label, count,
+}: { status: OrderStatus; icon: React.ReactNode; label: string; count: number }) {
   return (
-    <div className="rounded-lg border bg-card p-3 text-center">
+    <Link
+      to="/vendor/orders"
+      search={{ status }}
+      className="rounded-lg border bg-card p-3 text-center hover:bg-muted/50 hover:border-primary/40 transition-colors"
+    >
       <div className="flex items-center justify-center gap-1.5 text-muted-foreground mb-1">
         {icon}
         <span className="text-[11px]">{label}</span>
       </div>
       <div className="text-xl font-bold">{count}</div>
-    </div>
+    </Link>
   );
 }
