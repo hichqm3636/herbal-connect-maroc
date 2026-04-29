@@ -17,10 +17,19 @@ export const Route = createFileRoute("/auth/callback")({
  * them to the correct portal/area after a magic-link login.
  */
 async function resolveUserTenant(userId: string) {
-  const [{ data: roleRows }, { data: profile }] = await Promise.all([
+  let [{ data: roleRows }, { data: profile }] = await Promise.all([
     supabase.from("user_roles").select("role").eq("user_id", userId),
     supabase.from("profiles").select("company_id").eq("id", userId).maybeSingle(),
   ]);
+  // First-login bootstrap: if the user has no role row yet, claim the
+  // default `client` role through the secured backend RPC. The function
+  // refuses to grant `client` to anyone already holding a privileged role,
+  // so this is safe to call unconditionally for role-less users.
+  if (!roleRows || roleRows.length === 0) {
+    await supabase.rpc("claim_client_role");
+    const refresh = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    roleRows = refresh.data;
+  }
   const roles = (roleRows ?? []).map((r) => r.role as string);
   const isSuper = roles.includes("super_admin");
   const isAdmin = roles.includes("admin");
