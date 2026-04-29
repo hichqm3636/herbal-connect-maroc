@@ -63,36 +63,22 @@ type NavSection = {
   items: NavItem[];
 };
 
-// ----- Distributor (workspace user) menu -----
-const distributorTopItems: NavItem[] = [
-  { title: "المتجر", url: "/shop", icon: ShoppingBag },
-  { title: "لوحة التحكم", url: "/dashboard", icon: LayoutDashboard },
-  { title: "طلب سريع", url: "/quick-order", icon: Zap },
+// ----- Client (buyer) menu — marketplace shopper -----
+const clientTopItems: NavItem[] = [
+  { title: "البائعون", url: "/vendors", icon: ShoppingBag },
   { title: "طلباتي", url: "/orders", icon: ClipboardList },
-  { title: "فواتيري", url: "/invoices", icon: Receipt },
-  { title: "نقاط الولاء", url: "/loyalty", icon: Award },
 ];
 
-const distributorAccountItems: NavItem[] = [
+const clientAccountItems: NavItem[] = [
   { title: "الإعدادات", url: "/settings", icon: Settings },
 ];
 
-// ----- Company Admin (Workspace Mode) -----
-const companyAdminTop: NavItem[] = [
+// ----- Vendor / Company Admin (Workspace Mode) -----
+const vendorTop: NavItem[] = [
   { title: "لوحة التحكم", url: "/admin", icon: LayoutDashboard },
 ];
 
-const companyAdminSections: NavSection[] = [
-  {
-    id: "network",
-    label: "الشبكة",
-    icon: Network,
-    items: [
-      { title: "الشركاء", url: "/admin/partners", icon: Network },
-      { title: "الموزعون والعملاء", url: "/admin/distributors", icon: Users },
-      { title: "المناطق", url: "/admin/territories", icon: MapPin },
-    ],
-  },
+const vendorSections: NavSection[] = [
   {
     id: "sales",
     label: "المبيعات",
@@ -100,7 +86,6 @@ const companyAdminSections: NavSection[] = [
     items: [
       { title: "الطلبات", url: "/admin/orders", icon: ClipboardList },
       { title: "الفواتير", url: "/admin/invoices", icon: Receipt },
-      { title: "قواعد الطلب", url: "/admin/order-rules", icon: ListChecks },
     ],
   },
   {
@@ -125,13 +110,16 @@ const companyAdminSections: NavSection[] = [
     label: "الإعدادات",
     icon: Cog,
     items: [
-      { title: "إعدادات الشركة", url: "/admin/branding", icon: Settings },
+      { title: "إعدادات المتجر", url: "/admin/branding", icon: Settings },
       { title: "الفريق والصلاحيات", url: "/admin/team", icon: UsersRound },
-      { title: "الموردون (WooCommerce)", url: "/admin/suppliers", icon: Server },
       { title: "فحص صحة الوسائط", url: "/admin/storage-health", icon: Activity },
     ],
   },
 ];
+
+// Legacy alias kept for the renderer logic below
+const companyAdminTop = vendorTop;
+const companyAdminSections = vendorSections;
 
 // ----- Super Admin (Platform Mode) -----
 const superAdminTop: NavItem[] = [
@@ -145,16 +133,6 @@ const superAdminSections: NavSection[] = [
     icon: Globe2,
     items: [
       { title: "الشركات", url: "/super-admin/companies", icon: Building2 },
-      { title: "فئات التسعير", url: "/super-admin/pricing-tiers", icon: Tag },
-      { title: "القواعد العالمية", url: "/super-admin/order-rules", icon: ListChecks },
-    ],
-  },
-  {
-    id: "network",
-    label: "الشبكة",
-    icon: Network,
-    items: [
-      { title: "العملاء والموزعون", url: "/super-admin/distributors", icon: Users },
     ],
   },
 ];
