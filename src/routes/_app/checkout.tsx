@@ -643,7 +643,7 @@ function CheckoutPage() {
       </div>
 
       {/* Sticky Stepper */}
-      <div className="sticky top-16 z-20 -mx-4 border-b bg-background/95 px-4 py-3.5 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-5 sm:shadow-sm">
+      <div className="sticky top-14 z-20 -mx-4 border-b bg-background/95 px-3 py-2.5 backdrop-blur sm:top-16 sm:mx-0 sm:rounded-2xl sm:border sm:px-5 sm:py-3.5 sm:shadow-sm">
         <ol className="flex items-center gap-1.5 sm:gap-2">
           {STEPS.map((s, idx) => {
             const isDone = step > s.id;
