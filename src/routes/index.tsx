@@ -2,15 +2,22 @@ import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { Leaf, Building2, ArrowLeft, Rocket } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, type MarketplaceRole } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
+function homeForRole(role: MarketplaceRole | null): "/super-admin" | "/admin" | "/vendors" | "/login" {
+  if (role === "super_admin") return "/super-admin";
+  if (role === "admin" || role === "vendor") return "/admin";
+  if (role === "client") return "/vendors";
+  return "/login";
+}
+
 function Index() {
-  const { session, loading } = useAuth();
+  const { session, loading, marketplaceRole } = useAuth();
   const tenant = useTenant();
 
   if (loading || tenant.loading) {
@@ -52,13 +59,13 @@ function Index() {
     return <NexoraLanding isAuthenticated={!!session} />;
   }
 
-  // Platform host (app.nexora.app) → Super Admin
+  // Platform host (app.nexora.app) → Super Admin if signed in, else login.
   if (tenant.kind === "platform") {
-    return <Navigate to={session ? "/super-admin" : "/login"} />;
+    return <Navigate to={session ? homeForRole(marketplaceRole) : "/login"} />;
   }
 
-  // Tenant host → distributor portal
-  return <Navigate to={session ? "/vendors" : "/login"} />;
+  // Tenant host → role-aware landing.
+  return <Navigate to={session ? homeForRole(marketplaceRole) : "/login"} />;
 }
 
 function NexoraLanding({ isAuthenticated }: { isAuthenticated: boolean }) {

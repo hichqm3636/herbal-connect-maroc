@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   ShoppingBag,
   ClipboardList,
-  Users,
   Activity,
   LogOut,
   Leaf,
@@ -54,17 +53,16 @@ type NavSection = {
   items: NavItem[];
 };
 
-// ----- Client (buyer) menu — marketplace shopper -----
+// ---------------- Client (marketplace shopper) ----------------
 const clientTopItems: NavItem[] = [
   { title: "البائعون", url: "/vendors", icon: ShoppingBag },
   { title: "طلباتي", url: "/orders", icon: ClipboardList },
 ];
-
 const clientAccountItems: NavItem[] = [
   { title: "الإعدادات", url: "/settings", icon: Settings },
 ];
 
-// ----- Vendor / Company Admin (Workspace Mode) -----
+// ---------------- Vendor (workspace owner) ----------------
 const vendorTop: NavItem[] = [
   { title: "لوحة التحكم", url: "/admin", icon: LayoutDashboard },
 ];
@@ -83,9 +81,7 @@ const vendorSections: NavSection[] = [
     id: "catalog",
     label: "الكتالوج",
     icon: Package,
-    items: [
-      { title: "المنتجات", url: "/admin/products", icon: Package },
-    ],
+    items: [{ title: "المنتجات", url: "/admin/products", icon: Package }],
   },
   {
     id: "analytics",
@@ -108,11 +104,7 @@ const vendorSections: NavSection[] = [
   },
 ];
 
-// Legacy alias kept for the renderer logic below
-const companyAdminTop = vendorTop;
-const companyAdminSections = vendorSections;
-
-// ----- Super Admin (Platform Mode) -----
+// ---------------- Super Admin (platform owner) ----------------
 const superAdminTop: NavItem[] = [
   { title: "لوحة المنصة", url: "/super-admin", icon: LayoutDashboard },
 ];
@@ -122,20 +114,20 @@ const superAdminSections: NavSection[] = [
     id: "platform",
     label: "المنصة",
     icon: Globe2,
-    items: [
-      { title: "الشركات", url: "/super-admin/companies", icon: Building2 },
-    ],
+    items: [{ title: "الشركات", url: "/super-admin/companies", icon: Building2 }],
   },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin, isSuperAdmin, roles, signOut, user, company, mode, canAccessDistributorFeatures } = useAuth();
+  const { marketplaceRole, signOut, user, company, mode } = useAuth();
   const isPlatform = mode === "platform";
-  const isPlatformOwner = isPlatform || (isSuperAdmin && !roles.includes("admin"));
-  const isCompanyAdmin = isAdmin && !isPlatformOwner;
-  const isDistributor = !isAdmin && !isPlatformOwner;
+
+  const isClient = marketplaceRole === "client";
+  const isVendor = marketplaceRole === "vendor" || marketplaceRole === "admin";
+  const isSuperAdmin = marketplaceRole === "super_admin";
+
   const { isMobile, setOpenMobile, state } = useSidebar();
   const collapsed = state === "collapsed";
 
@@ -145,15 +137,12 @@ export function AppSidebar() {
     return location.pathname === path || location.pathname.startsWith(path + "/");
   };
 
-  // Pick the active sections list for the current role
-  const activeSections: NavSection[] = isPlatformOwner
+  const activeSections: NavSection[] = isSuperAdmin
     ? superAdminSections
-    : isCompanyAdmin
-      ? companyAdminSections
+    : isVendor
+      ? vendorSections
       : [];
 
-  // Track which collapsible groups are open. A group auto-opens when one of
-  // its children is the active route.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     for (const s of activeSections) {
@@ -162,7 +151,6 @@ export function AppSidebar() {
     return initial;
   });
 
-  // Re-open the group containing the active route on navigation.
   useEffect(() => {
     setOpenGroups((prev) => {
       const next = { ...prev };
@@ -207,8 +195,6 @@ export function AppSidebar() {
     const sectionActive = section.items.some((i) => isActive(i.url));
     const open = openGroups[section.id] ?? sectionActive;
 
-    // When the sidebar is collapsed (icon-only), render flat items so tooltips
-    // still work and the chevron UI doesn't get cut off.
     if (collapsed) {
       return (
         <SidebarGroup key={section.id}>
@@ -272,6 +258,15 @@ export function AppSidebar() {
     );
   };
 
+  // Header subtitle reflects the single canonical role.
+  const headerSubtitle = isSuperAdmin
+    ? PLATFORM_SUBTITLE
+    : isVendor
+      ? "مساحة عمل البائع"
+      : isClient
+        ? "حساب عميل"
+        : "";
+
   return (
     <Sidebar id="app-sidebar" collapsible="icon" side="right">
       <SidebarHeader className="border-b">
@@ -280,7 +275,7 @@ export function AppSidebar() {
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-glow overflow-hidden text-primary-foreground"
             style={!isPlatform && company?.brand_color ? { backgroundColor: company.brand_color } : undefined}
           >
-            {isPlatform ? (
+            {isPlatform || isSuperAdmin ? (
               <div className="flex h-full w-full items-center justify-center bg-gradient-primary">
                 <Globe2 className="h-5 w-5" />
               </div>
@@ -298,21 +293,21 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
             <span className="text-sm font-bold leading-tight truncate">
-              {isPlatform
+              {isPlatform || isSuperAdmin
                 ? PLATFORM_NAME
                 : (company?.display_name || company?.name || TENANT_FALLBACK_NAME)}
             </span>
             <span className="text-xs text-muted-foreground truncate flex items-center gap-1">
-              {isPlatform ? (
+              {isSuperAdmin ? (
                 <>
-                  <Globe2 className="h-3 w-3" /> {PLATFORM_SUBTITLE}
+                  <Globe2 className="h-3 w-3" /> {headerSubtitle}
                 </>
-              ) : isCompanyAdmin ? (
+              ) : isVendor ? (
                 <>
-                  <Briefcase className="h-3 w-3" /> مساحة عمل الشركة
+                  <Briefcase className="h-3 w-3" /> {headerSubtitle}
                 </>
               ) : (
-                "منصة إدارة الموزعين"
+                headerSubtitle
               )}
             </span>
           </div>
@@ -320,20 +315,22 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {/* Client (marketplace shopper) — flat menu */}
-        {isDistributor && renderTopItems(clientTopItems)}
-        {isDistributor && renderTopItems(clientAccountItems)}
-
-        {/* Company Admin — Dashboard + grouped sections */}
-        {isCompanyAdmin && (
+        {/* Render exactly ONE menu based on the single canonical role. */}
+        {isClient && (
           <>
-            {renderTopItems(companyAdminTop)}
-            {companyAdminSections.map(renderSection)}
+            {renderTopItems(clientTopItems)}
+            {renderTopItems(clientAccountItems)}
           </>
         )}
 
-        {/* Super Admin — Dashboard + grouped sections (Platform group only here) */}
-        {isPlatformOwner && (
+        {isVendor && !isSuperAdmin && (
+          <>
+            {renderTopItems(vendorTop)}
+            {vendorSections.map(renderSection)}
+          </>
+        )}
+
+        {isSuperAdmin && (
           <>
             {renderTopItems(superAdminTop)}
             {superAdminSections.map(renderSection)}

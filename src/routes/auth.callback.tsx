@@ -78,10 +78,10 @@ function AuthCallbackPage() {
 
         toast.success("مرحباً بعودتك");
 
-        // Routing rules:
+        // Marketplace routing rules:
         //  - super_admin → /super-admin (force apex host in production)
-        //  - admin       → /admin
-        //  - everyone else (distributor / buyer / seller / sales_agent) → /shop
+        //  - admin / vendor → /admin
+        //  - client → /vendors
         const host =
           typeof window !== "undefined" ? window.location.hostname.toLowerCase() : "";
 
@@ -95,22 +95,19 @@ function AuthCallbackPage() {
         }
 
         // Cross-host bounce when user lands on the apex/wrong tenant.
+        const dest = isAdmin ? "/admin" : "/vendors";
         if (userSlug && tenant.slug !== userSlug) {
           if (host.endsWith(".nexora.app") || host === "nexora.app") {
-            window.location.assign(
-              `https://${userSlug}.nexora.app${isAdmin ? "/admin" : "/shop"}`,
-            );
+            window.location.assign(`https://${userSlug}.nexora.app${dest}`);
             return;
           }
-          const url = new URL(
-            window.location.origin + (isAdmin ? "/admin" : "/shop"),
-          );
+          const url = new URL(window.location.origin + dest);
           url.searchParams.set("company", userSlug);
           window.location.assign(url.toString());
           return;
         }
 
-        navigate({ to: isAdmin ? "/admin" : "/vendors" });
+        navigate({ to: dest });
       } catch (e) {
         setError(e instanceof Error ? e.message : "تعذر إكمال تسجيل الدخول");
       }
