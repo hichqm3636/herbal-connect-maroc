@@ -48,6 +48,25 @@ function VendorLoginPage() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
+  const handleForgotPassword = async () => {
+    const parsed = emailSchema.safeParse(email);
+    if (!parsed.success) {
+      toast.error("أدخل بريدك الإلكتروني أولاً لإرسال رابط الاستعادة");
+      return;
+    }
+    setResetting(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetting(false);
+    if (error) {
+      toast.error(error.message || "تعذر إرسال رابط الاستعادة");
+      return;
+    }
+    toast.success("تم إرسال رابط استعادة كلمة المرور إلى بريدك");
+  };
 
   useEffect(() => {
     if (!loading && session) navigate({ to: "/auth/callback" });
