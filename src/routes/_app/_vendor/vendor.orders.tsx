@@ -180,7 +180,7 @@ function VendorOrdersPage() {
     else setLoading(true);
     const { data, error } = await supabase
       .from("orders")
-      .select("id, order_number, status, total_mad, created_at, buyer_id, notes, admin_notes, payment_method")
+      .select("id, order_number, status, total_mad, created_at, buyer_id, notes, admin_notes, payment_method, payment_status, payment_reference, payment_paid_at")
       .eq("company_id", companyId)
       .order("created_at", { ascending: false });
 
