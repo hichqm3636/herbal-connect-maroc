@@ -533,21 +533,61 @@ function CheckoutPage() {
         </Card>
 
         {/* Bank-transfer reminder card */}
-        {paymentMethod === "bank_transfer" && vendor?.payment_instructions && (
-          <Card className="rounded-2xl border-primary/30 bg-primary/[0.03] p-5 sm:p-6">
+        {paymentMethod === "bank_transfer" && (
+          <Card className="rounded-2xl border-primary/30 bg-primary/[0.03] p-4 sm:p-6">
             <div className="mb-3 flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-bold">تفاصيل التحويل</h2>
             </div>
-            <div className="rounded-xl border bg-card p-3.5">
-              <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
-                {vendor.payment_instructions}
-              </p>
+            {vendor?.payment_instructions ? (
+              <div className="rounded-xl border bg-card p-3.5">
+                <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
+                  {vendor.payment_instructions}
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border bg-card p-3.5 text-xs text-muted-foreground">
+                لم يضف البائع تعليمات تحويل بعد. سيتواصل معك مباشرة لإرسال التفاصيل.
+              </div>
+            )}
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {vendor?.payment_instructions && (
+                <Button
+                  variant="outline"
+                  onClick={copyPaymentInstructions}
+                  className="gap-1.5"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  نسخ التعليمات
+                </Button>
+              )}
+              <Button
+                onClick={markTransferDone}
+                disabled={transferMarked || markingTransfer}
+                className={`gap-1.5 ${vendor?.payment_instructions ? "" : "sm:col-span-2"}`}
+              >
+                {transferMarked ? (
+                  <>
+                    <Check className="h-4 w-4" />
+                    تم الإعلام بالتحويل
+                  </>
+                ) : markingTransfer ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    جارٍ الإرسال...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" />
+                    لقد قمت بالتحويل
+                  </>
+                )}
+              </Button>
             </div>
-            <Button onClick={copyPaymentInstructions} className="mt-3 w-full gap-1.5">
-              <Copy className="h-3.5 w-3.5" />
-              نسخ تعليمات التحويل
-            </Button>
+            <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+              اضغط بعد إتمام التحويل من بنكك — سيُخطَر البائع للتحقق وتأكيد الطلب.
+            </p>
           </Card>
         )}
 
