@@ -2,20 +2,13 @@ import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { Leaf, Building2, ArrowLeft, Rocket } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAuth, type MarketplaceRole } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
+import { homeForRole } from "@/lib/roleRouting";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
-
-function homeForRole(role: MarketplaceRole | null): "/super-admin" | "/admin" | "/vendor" | "/vendors" | "/login" {
-  if (role === "super_admin") return "/super-admin";
-  if (role === "admin") return "/admin";
-  if (role === "vendor") return "/vendor";
-  if (role === "client") return "/vendors";
-  return "/login";
-}
 
 function Index() {
   const { session, loading, marketplaceRole } = useAuth();
