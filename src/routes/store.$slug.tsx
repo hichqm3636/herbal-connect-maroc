@@ -327,3 +327,6 @@ function VendorStorePage() {
       </main>
 
       {/* Vendor-conflict prompt is mounted globally in _app.tsx as <ReplaceCartDialog /> */}
+    </div>
+  );
+}
