@@ -110,7 +110,7 @@ function AuthCallbackPage() {
           return;
         }
 
-        navigate({ to: isAdmin ? "/admin" : "/shop" });
+        navigate({ to: isAdmin ? "/admin" : "/vendors" });
       } catch (e) {
         setError(e instanceof Error ? e.message : "تعذر إكمال تسجيل الدخول");
       }
