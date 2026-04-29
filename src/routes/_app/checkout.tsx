@@ -315,82 +315,181 @@ function CheckoutPage() {
     );
   }
 
-  // Success state
+  // Success state — celebration + next-steps timeline
   if (placedOrder) {
+    // Build payment-method-aware timeline.
+    const timeline: { icon: typeof Send; title: string; desc: string; state: "done" | "current" | "pending" }[] = [
+      {
+        icon: Send,
+        title: "تم استلام طلبك",
+        desc: `رقم الطلب: ${placedOrder.orderNumber}`,
+        state: "done",
+      },
+      paymentMethod === "bank_transfer"
+        ? {
+            icon: CreditCard,
+            title: paymentReference.trim() ? "في انتظار تأكيد الدفع" : "بانتظار التحويل البنكي",
+            desc: paymentReference.trim()
+              ? "سيتحقق البائع من التحويل ويؤكد الطلب"
+              : "أكمل التحويل وأضف رقم العملية لتسريع التأكيد",
+            state: "current",
+          }
+        : paymentMethod === "cod"
+          ? {
+              icon: Banknote,
+              title: "بانتظار تأكيد البائع",
+              desc: "سيراجع البائع طلبك ويؤكده قريباً",
+              state: "current",
+            }
+          : {
+              icon: MessageCircle,
+              title: "بانتظار تواصل البائع",
+              desc: "سيتواصل معك البائع لتحديد طريقة الدفع",
+              state: "current",
+            },
+      {
+        icon: PackageCheck,
+        title: "التحضير والشحن",
+        desc: "سيبدأ البائع بتحضير طلبك بعد التأكيد",
+        state: "pending",
+      },
+      {
+        icon: Truck,
+        title: "التوصيل",
+        desc: paymentMethod === "cod" ? "ادفع نقداً للمندوب عند الاستلام" : "سيتم توصيل طلبك للعنوان المحدد",
+        state: "pending",
+      },
+    ];
+
     return (
-      <div className="mx-auto max-w-2xl" dir="rtl">
-        <Card className="p-6 sm:p-8">
-          <div className="flex flex-col items-center text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-success/10">
-              <CheckCircle2 className="h-9 w-9 text-success" />
+      <div className="mx-auto max-w-2xl space-y-4" dir="rtl">
+        {/* Hero */}
+        <Card className="overflow-hidden rounded-2xl p-0">
+          <div className="relative bg-gradient-to-b from-success/10 to-transparent px-6 pt-8 pb-6 text-center">
+            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-success text-success-foreground shadow-glow">
+              <CheckCircle2 className="h-9 w-9" />
             </div>
-            <h1 className="text-xl font-bold sm:text-2xl">تم إرسال طلبك</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              رقم الطلب: <span className="font-mono">{placedOrder.orderNumber}</span>
+            <h1 className="text-xl font-bold sm:text-2xl">تم إرسال طلبك بنجاح</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              رقم الطلب{" "}
+              <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs font-semibold text-foreground">
+                {placedOrder.orderNumber}
+              </span>
             </p>
           </div>
 
+          {/* Vendor strip */}
           {vendor && (
-            <>
-              <Separator className="my-6" />
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl text-white"
-                    style={{ backgroundColor: vendor.brand_color }}
-                  >
-                    {vendor.logo_url ? (
-                      <img src={vendor.logo_url} alt={vendor.display_name} className="h-full w-full object-cover" />
-                    ) : (
-                      <Building2 className="h-6 w-6" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">البائع</p>
-                    <p className="font-bold">{vendor.display_name || vendor.name}</p>
-                  </div>
-                </div>
-
-                {vendor.contact_phone && (
-                  <a
-                    href={`tel:${vendor.contact_phone}`}
-                    className="flex items-center gap-2 rounded-lg border bg-card p-3 text-sm hover:bg-accent"
-                  >
-                    <Phone className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{vendor.contact_phone}</span>
-                    <span className="mr-auto text-xs text-muted-foreground">اتصل بالبائع</span>
-                  </a>
-                )}
-
-                {paymentMethod === "bank_transfer" && vendor.payment_instructions && (
-                  <div className="rounded-lg border bg-muted/40 p-4">
-                    <div className="mb-2 flex items-center justify-between">
-                      <p className="text-sm font-bold">تعليمات الدفع</p>
-                      <Button size="sm" variant="ghost" className="h-7 gap-1.5 text-xs" onClick={copyPaymentInstructions}>
-                        <Copy className="h-3.5 w-3.5" />
-                        نسخ
-                      </Button>
-                    </div>
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                      {vendor.payment_instructions}
-                    </p>
-                  </div>
+            <div className="flex items-center gap-3 border-t bg-muted/30 px-5 py-3">
+              <div
+                className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg text-white"
+                style={{ backgroundColor: vendor.brand_color }}
+              >
+                {vendor.logo_url ? (
+                  <img src={vendor.logo_url} alt={vendor.display_name} className="h-full w-full object-cover" />
+                ) : (
+                  <Building2 className="h-5 w-5" />
                 )}
               </div>
-            </>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] text-muted-foreground">البائع</p>
+                <p className="truncate text-sm font-bold">{vendor.display_name || vendor.name}</p>
+              </div>
+              {vendor.contact_phone && (
+                <Button asChild size="sm" variant="outline" className="gap-1.5">
+                  <a href={`tel:${vendor.contact_phone}`}>
+                    <Phone className="h-3.5 w-3.5" />
+                    اتصال
+                  </a>
+                </Button>
+              )}
+            </div>
           )}
-
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-            <Button asChild className="flex-1">
-              <Link to="/orders" search={{ focus: placedOrder.id } as never}>
-                عرض الطلب
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="flex-1">
-              <Link to="/vendors">متابعة التسوق</Link>
-            </Button>
-          </div>
         </Card>
+
+        {/* Timeline */}
+        <Card className="rounded-2xl p-5 sm:p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Clock className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-bold">الخطوات القادمة</h2>
+          </div>
+          <ol className="relative space-y-5">
+            {timeline.map((item, idx) => {
+              const isDone = item.state === "done";
+              const isCurrent = item.state === "current";
+              const Icon = item.icon;
+              const isLast = idx === timeline.length - 1;
+              return (
+                <li key={idx} className="relative flex gap-3">
+                  {/* Connector */}
+                  {!isLast && (
+                    <span
+                      aria-hidden="true"
+                      className={`absolute right-4 top-9 h-[calc(100%-0.5rem)] w-px ${
+                        isDone ? "bg-success" : "bg-border"
+                      }`}
+                    />
+                  )}
+                  <div
+                    className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors ${
+                      isDone
+                        ? "bg-success text-success-foreground"
+                        : isCurrent
+                          ? "bg-primary text-primary-foreground ring-4 ring-primary/15"
+                          : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1 pt-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className={`text-sm font-bold ${isCurrent ? "text-foreground" : isDone ? "text-foreground/80" : "text-muted-foreground"}`}>
+                        {item.title}
+                      </p>
+                      {isCurrent && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                          الآن
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{item.desc}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </Card>
+
+        {/* Bank-transfer reminder card */}
+        {paymentMethod === "bank_transfer" && vendor?.payment_instructions && (
+          <Card className="rounded-2xl border-primary/30 bg-primary/[0.03] p-5 sm:p-6">
+            <div className="mb-3 flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-bold">تفاصيل التحويل</h2>
+            </div>
+            <div className="rounded-xl border bg-card p-3.5">
+              <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
+                {vendor.payment_instructions}
+              </p>
+            </div>
+            <Button onClick={copyPaymentInstructions} className="mt-3 w-full gap-1.5">
+              <Copy className="h-3.5 w-3.5" />
+              نسخ تعليمات التحويل
+            </Button>
+          </Card>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button asChild size="lg" className="flex-1">
+            <Link to="/orders" search={{ focus: placedOrder.id } as never}>
+              عرض الطلب
+            </Link>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="flex-1">
+            <Link to="/vendors">متابعة التسوق</Link>
+          </Button>
+        </div>
       </div>
     );
   }
