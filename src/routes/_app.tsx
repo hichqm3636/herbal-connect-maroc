@@ -4,15 +4,17 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { CartSheet } from "@/components/CartSheet";
-import { useAuth, type MarketplaceRole } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { Leaf, ShieldAlert } from "lucide-react";
+import { homeForRole } from "@/lib/roleRouting";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
 });
 
-// Hard prefix isolation per role.
+// Hard prefix isolation per role. /orders lives under _app; /checkout is
+// top-level and gates itself via useAuth() in the page component.
 const CLIENT_ONLY_PREFIXES = ["/orders"];
 const VENDOR_ONLY_PREFIXES = ["/vendor"];
 const ADMIN_ONLY_PREFIXES = ["/admin"];
@@ -22,14 +24,7 @@ function startsWithAny(path: string, prefixes: string[]): boolean {
   return prefixes.some((p) => path === p || path.startsWith(p + "/"));
 }
 
-/** Default landing route per marketplace role. */
-export function homeForRole(role: MarketplaceRole | null): string {
-  if (role === "super_admin") return "/super-admin";
-  if (role === "admin") return "/admin";
-  if (role === "vendor") return "/vendor";
-  if (role === "client") return "/vendors";
-  return "/login";
-}
+export { homeForRole };
 
 function AppLayout() {
   const { session, loading, marketplaceRole, isClient, isVendor, isSuperAdmin, roles, companyId } = useAuth();
