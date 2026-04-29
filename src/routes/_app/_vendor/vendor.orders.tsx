@@ -515,8 +515,24 @@ function VendorOrdersPage() {
                   </div>
                   {selected.payment_method && (
                     <div>
-                      <span className="text-muted-foreground">الدفع:</span>
-                      <p className="font-medium">{selected.payment_method}</p>
+                      <span className="text-muted-foreground">طريقة الدفع:</span>
+                      <p className="font-medium">
+                        {PAYMENT_METHOD_LABELS[selected.payment_method] ?? selected.payment_method}
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-muted-foreground">حالة الدفع:</span>
+                    <p>
+                      <Badge variant="secondary" className={PAYMENT_STATUS_TONE[selected.payment_status]}>
+                        {PAYMENT_STATUS_LABELS[selected.payment_status]}
+                      </Badge>
+                    </p>
+                  </div>
+                  {selected.payment_reference && (
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">مرجع التحويل:</span>
+                      <p className="font-mono text-xs break-all">{selected.payment_reference}</p>
                     </div>
                   )}
                 </div>
