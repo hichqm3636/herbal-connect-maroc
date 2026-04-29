@@ -39,6 +39,8 @@ export const Route = createFileRoute("/_app/_vendor/vendor/orders")({
   head: () => ({ meta: [{ title: "الطلبات — Nexora" }] }),
 });
 
+type PaymentStatus = "pending" | "awaiting_confirmation" | "paid" | "failed" | "refunded";
+
 interface OrderRow {
   id: string;
   order_number: string;
@@ -49,6 +51,9 @@ interface OrderRow {
   notes: string | null;
   admin_notes: string | null;
   payment_method: string | null;
+  payment_status: PaymentStatus;
+  payment_reference: string | null;
+  payment_paid_at: string | null;
   buyer_name: string;
   buyer_phone: string | null;
 }
@@ -90,6 +95,31 @@ const NEXT_STATUS: Record<OrderStatus, OrderStatus[]> = {
   shipped: ["delivered"],
   delivered: [],
   cancelled: [],
+};
+
+const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  pending: "بانتظار الدفع",
+  awaiting_confirmation: "بانتظار التأكيد",
+  paid: "مدفوع",
+  failed: "فشل الدفع",
+  refunded: "مُسترد",
+};
+
+const PAYMENT_STATUS_TONE: Record<PaymentStatus, string> = {
+  pending: "bg-muted text-muted-foreground",
+  awaiting_confirmation: "bg-warning/15 text-warning-foreground",
+  paid: "bg-success/15 text-success",
+  failed: "bg-destructive/15 text-destructive",
+  refunded: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+};
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cod: "الدفع عند الاستلام",
+  bank_transfer: "تحويل بنكي",
+  manual: "تواصل مع البائع",
+  card: "بطاقة",
+  stripe: "Stripe",
+  cash: "نقداً",
 };
 
 // Quick-filter chips shown above the table. Order matters (workflow order).
@@ -150,7 +180,7 @@ function VendorOrdersPage() {
     else setLoading(true);
     const { data, error } = await supabase
       .from("orders")
-      .select("id, order_number, status, total_mad, created_at, buyer_id, notes, admin_notes, payment_method")
+      .select("id, order_number, status, total_mad, created_at, buyer_id, notes, admin_notes, payment_method, payment_status, payment_reference, payment_paid_at")
       .eq("company_id", companyId)
       .order("created_at", { ascending: false });
 
@@ -284,6 +314,29 @@ function VendorOrdersPage() {
     toast.success(`تم تحديث الحالة إلى: ${STATUS_LABELS[next]}`);
     setSelected({ ...selected, status: next });
     setOrders((prev) => prev.map((o) => (o.id === selected.id ? { ...o, status: next } : o)));
+  };
+
+  const [savingPayment, setSavingPayment] = useState(false);
+  const updatePaymentStatus = async (next: PaymentStatus) => {
+    if (!selected) return;
+    setSavingPayment(true);
+    const patch: { payment_status: PaymentStatus; payment_paid_at?: string } = { payment_status: next };
+    if (next === "paid") patch.payment_paid_at = new Date().toISOString();
+    const { error } = await supabase.from("orders").update(patch).eq("id", selected.id);
+    setSavingPayment(false);
+    if (error) {
+      toast.error("تعذر تحديث حالة الدفع");
+      return;
+    }
+    toast.success(`حالة الدفع: ${PAYMENT_STATUS_LABELS[next]}`);
+    const updated = {
+      ...selected,
+      payment_status: next,
+      payment_paid_at:
+        next === "paid" ? (selected.payment_paid_at ?? new Date().toISOString()) : selected.payment_paid_at,
+    };
+    setSelected(updated);
+    setOrders((prev) => prev.map((o) => (o.id === selected.id ? { ...o, ...updated } : o)));
   };
 
   const saveAdminNotes = async () => {
@@ -422,9 +475,14 @@ function VendorOrdersPage() {
                     </td>
                     <td className="px-4 py-3 font-bold whitespace-nowrap">{formatMAD(o.total_mad)}</td>
                     <td className="px-4 py-3">
-                      <Badge variant="secondary" className={STATUS_TONE[o.status]}>
-                        {STATUS_LABELS[o.status]}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="secondary" className={STATUS_TONE[o.status]}>
+                          {STATUS_LABELS[o.status]}
+                        </Badge>
+                        <Badge variant="secondary" className={cn("w-fit text-[10px]", PAYMENT_STATUS_TONE[o.payment_status])}>
+                          {PAYMENT_STATUS_LABELS[o.payment_status]}
+                        </Badge>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <Button
@@ -485,8 +543,24 @@ function VendorOrdersPage() {
                   </div>
                   {selected.payment_method && (
                     <div>
-                      <span className="text-muted-foreground">الدفع:</span>
-                      <p className="font-medium">{selected.payment_method}</p>
+                      <span className="text-muted-foreground">طريقة الدفع:</span>
+                      <p className="font-medium">
+                        {PAYMENT_METHOD_LABELS[selected.payment_method] ?? selected.payment_method}
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-muted-foreground">حالة الدفع:</span>
+                    <p>
+                      <Badge variant="secondary" className={PAYMENT_STATUS_TONE[selected.payment_status]}>
+                        {PAYMENT_STATUS_LABELS[selected.payment_status]}
+                      </Badge>
+                    </p>
+                  </div>
+                  {selected.payment_reference && (
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">مرجع التحويل:</span>
+                      <p className="font-mono text-xs break-all">{selected.payment_reference}</p>
                     </div>
                   )}
                 </div>
@@ -547,6 +621,34 @@ function VendorOrdersPage() {
                     placeholder="ملاحظات لفريقك (لن تُعرض على العميل)"
                     rows={3}
                   />
+                </div>
+
+                <Separator />
+
+                {/* Payment status management */}
+                <div>
+                  <h3 className="text-sm font-bold mb-3">إدارة الدفع</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {(["paid", "awaiting_confirmation", "failed", "refunded", "pending"] as PaymentStatus[])
+                      .filter((s) => s !== selected.payment_status)
+                      .map((s) => (
+                        <Button
+                          key={s}
+                          size="sm"
+                          variant={s === "paid" ? "default" : s === "failed" ? "destructive" : "outline"}
+                          disabled={savingPayment}
+                          onClick={() => updatePaymentStatus(s)}
+                        >
+                          {savingPayment && <Loader2 className="h-3 w-3 animate-spin" />}
+                          ضع كـ: {PAYMENT_STATUS_LABELS[s]}
+                        </Button>
+                      ))}
+                  </div>
+                  {selected.payment_method === "cod" && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      ملاحظة: طلبات الدفع عند الاستلام تُسجَّل تلقائياً كمدفوعة عند تأكيد التسليم.
+                    </p>
+                  )}
                 </div>
 
                 <Separator />

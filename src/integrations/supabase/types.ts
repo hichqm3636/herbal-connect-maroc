@@ -695,6 +695,10 @@ export type Database = {
           notes: string | null
           order_number: string
           payment_method: string | null
+          payment_paid_at: string | null
+          payment_provider: string | null
+          payment_reference: string | null
+          payment_status: Database["public"]["Enums"]["payment_status"]
           request_id: string | null
           status: Database["public"]["Enums"]["order_status"]
           sync_error: string | null
@@ -712,6 +716,10 @@ export type Database = {
           notes?: string | null
           order_number: string
           payment_method?: string | null
+          payment_paid_at?: string | null
+          payment_provider?: string | null
+          payment_reference?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
           request_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           sync_error?: string | null
@@ -729,6 +737,10 @@ export type Database = {
           notes?: string | null
           order_number?: string
           payment_method?: string | null
+          payment_paid_at?: string | null
+          payment_provider?: string | null
+          payment_reference?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
           request_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           sync_error?: string | null
@@ -1287,6 +1299,12 @@ export type Database = {
         | "transfer"
         | "return"
       invoice_status: "draft" | "issued" | "paid" | "cancelled" | "overdue"
+      order_payment_method:
+        | "manual"
+        | "cod"
+        | "bank_transfer"
+        | "card"
+        | "stripe"
       order_status:
         | "pending"
         | "confirmed"
@@ -1296,6 +1314,12 @@ export type Database = {
         | "cancelled"
         | "processing"
       payment_method: "cash" | "bank_transfer" | "card" | "stripe" | "manual"
+      payment_status:
+        | "pending"
+        | "awaiting_confirmation"
+        | "paid"
+        | "failed"
+        | "refunded"
       subscription_status:
         | "trial"
         | "active"
@@ -1450,6 +1474,13 @@ export const Constants = {
         "return",
       ],
       invoice_status: ["draft", "issued", "paid", "cancelled", "overdue"],
+      order_payment_method: [
+        "manual",
+        "cod",
+        "bank_transfer",
+        "card",
+        "stripe",
+      ],
       order_status: [
         "pending",
         "confirmed",
@@ -1460,6 +1491,13 @@ export const Constants = {
         "processing",
       ],
       payment_method: ["cash", "bank_transfer", "card", "stripe", "manual"],
+      payment_status: [
+        "pending",
+        "awaiting_confirmation",
+        "paid",
+        "failed",
+        "refunded",
+      ],
       subscription_status: [
         "trial",
         "active",

@@ -71,6 +71,8 @@ function CheckoutPage() {
   const [contactPhone, setContactPhone] = useState("");
   const [shippingAddress, setShippingAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "bank_transfer" | "manual">("cod");
+  const [paymentReference, setPaymentReference] = useState("");
 
   // Load vendor
   useEffect(() => {
@@ -128,6 +130,11 @@ function CheckoutPage() {
         .filter(Boolean)
         .join("\n");
 
+      const initialPaymentStatus =
+        paymentMethod === "bank_transfer" && paymentReference.trim()
+          ? "awaiting_confirmation"
+          : "pending";
+
       const { data: orderRow, error: orderErr } = await supabase
         .from("orders")
         .insert({
@@ -136,7 +143,9 @@ function CheckoutPage() {
           order_number: orderNumber,
           total_mad: total,
           status: "pending",
-          payment_method: "manual",
+          payment_method: paymentMethod,
+          payment_status: initialPaymentStatus,
+          payment_reference: paymentMethod === "bank_transfer" ? paymentReference.trim() || null : null,
           notes: compactNotes,
         })
         .select("id, order_number")
@@ -414,13 +423,76 @@ function CheckoutPage() {
           </div>
         </Card>
 
-        {/* Payment notice */}
-        <Card className="border-primary/30 bg-primary/5 p-4">
-          <p className="text-sm font-bold">طريقة الدفع: تواصل مباشر مع البائع</p>
-          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-            بعد إرسال الطلب، سيتواصل معك البائع لتأكيد التفاصيل وترتيب الدفع
-            (تحويل بنكي، الدفع عند الاستلام، أو حسب اتفاقكما). المنصة لا تتدخل
-            في عملية الدفع.
+        {/* Payment method */}
+        <Card className="p-4 space-y-3">
+          <h2 className="text-sm font-bold">طريقة الدفع</h2>
+          <div className="grid gap-2">
+            {([
+              { v: "cod", t: "الدفع عند الاستلام", d: "ادفع نقداً للمندوب عند التسليم" },
+              { v: "bank_transfer", t: "تحويل بنكي", d: "حوّل المبلغ ثم أضف رقم العملية" },
+              { v: "manual", t: "تواصل مع البائع", d: "سيتواصل معك البائع لتحديد طريقة الدفع" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.v}
+                type="button"
+                onClick={() => setPaymentMethod(opt.v)}
+                className={`flex items-start gap-3 rounded-lg border p-3 text-right transition ${
+                  paymentMethod === opt.v
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:bg-muted/50"
+                }`}
+              >
+                <div
+                  className={`mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 ${
+                    paymentMethod === opt.v ? "border-primary bg-primary" : "border-muted-foreground"
+                  }`}
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-bold">{opt.t}</p>
+                  <p className="text-xs text-muted-foreground">{opt.d}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {paymentMethod === "bank_transfer" && (
+            <div className="space-y-3 pt-2">
+              {vendor.payment_instructions && (
+                <div className="rounded-lg border bg-muted/40 p-3">
+                  <div className="mb-1 flex items-center justify-between">
+                    <p className="text-xs font-bold">تعليمات التحويل</p>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 gap-1 text-xs"
+                      onClick={copyPaymentInstructions}
+                    >
+                      <Copy className="h-3 w-3" />
+                      نسخ
+                    </Button>
+                  </div>
+                  <p className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
+                    {vendor.payment_instructions}
+                  </p>
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <Label htmlFor="ref">رقم/مرجع التحويل (اختياري)</Label>
+                <Input
+                  id="ref"
+                  value={paymentReference}
+                  onChange={(e) => setPaymentReference(e.target.value)}
+                  placeholder="رقم العملية أو اسم المرسل"
+                />
+                <p className="text-xs text-muted-foreground">
+                  أضف المرجع بعد إتمام التحويل لتسريع التأكيد.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            الدفع يتم مباشرة بينك وبين البائع. المنصة لا تتدخل في عملية الدفع.
           </p>
         </Card>
 
