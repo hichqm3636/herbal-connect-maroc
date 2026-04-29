@@ -326,21 +326,4 @@ function VendorStorePage() {
         )}
       </main>
 
-      <AlertDialog open={!!pendingProduct} onOpenChange={(o) => !o && setPendingProduct(null)}>
-        <AlertDialogContent dir="rtl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>سلة من بائع آخر</AlertDialogTitle>
-            <AlertDialogDescription>
-              تحتوي سلتك حالياً على منتجات من بائع آخر. لا يمكن خلط بائعَين في طلب واحد.
-              هل تريد إفراغ السلة وبدء طلب جديد من هذا البائع؟
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmReplaceCart}>إفراغ وبدء طلب جديد</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
-}
+      {/* Vendor-conflict prompt is mounted globally in _app.tsx as <ReplaceCartDialog /> */}
