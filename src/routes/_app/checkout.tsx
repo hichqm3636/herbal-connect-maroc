@@ -125,6 +125,8 @@ function CheckoutPage() {
   const [vendorLoading, setVendorLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [placedOrder, setPlacedOrder] = useState<{ id: string; orderNumber: string } | null>(null);
+  const [transferMarked, setTransferMarked] = useState(false);
+  const [markingTransfer, setMarkingTransfer] = useState(false);
 
   // Stepper
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -136,6 +138,11 @@ function CheckoutPage() {
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [paymentReference, setPaymentReference] = useState("");
+
+  // Field refs for scroll-to-first-error
+  const nameRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const addressRef = useRef<HTMLTextAreaElement>(null);
 
   // Touched state — drives inline errors only after the user interacts or
   // tries to advance.
