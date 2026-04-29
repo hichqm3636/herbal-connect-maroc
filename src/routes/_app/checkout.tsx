@@ -21,7 +21,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { formatMAD } from "@/lib/format";
 import { toast } from "sonner";
-import { homeForRole } from "@/lib/roleRouting";
 
 export const Route = createFileRoute("/_app/checkout")({
   component: CheckoutPage,
