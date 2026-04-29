@@ -633,5 +633,3 @@ function NumField({
   );
 }
 
-// Component name typo guard — keeps the build green if rename happens.
-function AlertGetDialogTitleSafe() { return null; }
