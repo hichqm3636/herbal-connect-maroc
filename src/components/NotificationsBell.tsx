@@ -28,11 +28,13 @@ interface NotificationRow {
  * Streams new rows via Supabase Realtime so admins see new orders instantly.
  */
 export function NotificationsBell() {
-  const { user, isAdmin, isSuperAdmin, mode } = useAuth();
+  const { user, mode } = useAuth();
   const [items, setItems] = useState<NotificationRow[]>([]);
   const [open, setOpen] = useState(false);
 
-  const enabled = !!user && (isAdmin || isSuperAdmin) && mode !== "platform";
+  // Anyone signed in (vendor admin, super admin, or client) can receive notifications.
+  // The recipient_id filter on the query already scopes results to the current user.
+  const enabled = !!user && mode !== "platform";
 
   const load = useCallback(async () => {
     if (!user) return;
