@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Building2,
+  Check,
   CheckCircle2,
   Copy,
   Loader2,
@@ -125,6 +126,8 @@ function CheckoutPage() {
   const [vendorLoading, setVendorLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [placedOrder, setPlacedOrder] = useState<{ id: string; orderNumber: string } | null>(null);
+  const [transferMarked, setTransferMarked] = useState(false);
+  const [markingTransfer, setMarkingTransfer] = useState(false);
 
   // Stepper
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -136,6 +139,11 @@ function CheckoutPage() {
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [paymentReference, setPaymentReference] = useState("");
+
+  // Field refs for scroll-to-first-error
+  const nameRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const addressRef = useRef<HTMLTextAreaElement>(null);
 
   // Touched state — drives inline errors only after the user interacts or
   // tries to advance.
@@ -219,10 +227,26 @@ function CheckoutPage() {
 
   const step1Valid = !errors.name && !errors.phone && !errors.address;
 
+  function focusFirstError() {
+    const target =
+      (errors.name && nameRef.current) ||
+      (errors.phone && phoneRef.current) ||
+      (errors.address && addressRef.current) ||
+      null;
+    if (!target) return;
+    // Defer to allow Step 1 to render if we just switched back.
+    requestAnimationFrame(() => {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Slight delay so the scroll finishes before focus jumps back
+      setTimeout(() => target.focus({ preventScroll: true }), 250);
+    });
+  }
+
   function goNext() {
     if (step === 1) {
       if (!step1Valid) {
         setTouched({ name: true, phone: true, address: true });
+        focusFirstError();
         return;
       }
       setStep(2);
@@ -236,6 +260,7 @@ function CheckoutPage() {
     if (!step1Valid) {
       setTouched({ name: true, phone: true, address: true });
       setStep(1);
+      focusFirstError();
       return;
     }
     setSubmitting(true);
@@ -306,6 +331,25 @@ function CheckoutPage() {
     toast.success("تم نسخ تعليمات الدفع");
   }
 
+  async function markTransferDone() {
+    if (!placedOrder || markingTransfer || transferMarked) return;
+    setMarkingTransfer(true);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ payment_status: "awaiting_confirmation" })
+        .eq("id", placedOrder.id);
+      if (error) throw error;
+      setTransferMarked(true);
+      toast.success("تم إعلام البائع بأنك أتممت التحويل");
+    } catch (err) {
+      console.error("[checkout] mark transfer failed", err);
+      toast.error("تعذر تحديث حالة الدفع");
+    } finally {
+      setMarkingTransfer(false);
+    }
+  }
+
   if (vendorLoading) {
     return (
       <div className="flex items-center justify-center py-20" dir="rtl">
@@ -316,21 +360,35 @@ function CheckoutPage() {
 
   // Success state — celebration + next-steps timeline
   if (placedOrder) {
-    // Build payment-method-aware timeline.
-    const timeline: { icon: typeof Send; title: string; desc: string; state: "done" | "current" | "pending" }[] = [
+    // Build payment-method-aware timeline (each step shows an ETA hint).
+    const timeline: {
+      icon: typeof Send;
+      title: string;
+      desc: string;
+      eta: string;
+      state: "done" | "current" | "pending";
+    }[] = [
       {
         icon: Send,
         title: "تم استلام طلبك",
         desc: `رقم الطلب: ${placedOrder.orderNumber}`,
+        eta: "الآن",
         state: "done",
       },
       paymentMethod === "bank_transfer"
         ? {
             icon: CreditCard,
-            title: paymentReference.trim() ? "في انتظار تأكيد الدفع" : "بانتظار التحويل البنكي",
-            desc: paymentReference.trim()
-              ? "سيتحقق البائع من التحويل ويؤكد الطلب"
-              : "أكمل التحويل وأضف رقم العملية لتسريع التأكيد",
+            title: transferMarked
+              ? "بانتظار تأكيد البائع للتحويل"
+              : paymentReference.trim()
+                ? "في انتظار تأكيد الدفع"
+                : "بانتظار التحويل البنكي",
+            desc: transferMarked
+              ? "تم إعلام البائع — سيتحقق من التحويل ويؤكد الطلب"
+              : paymentReference.trim()
+                ? "سيتحقق البائع من التحويل ويؤكد الطلب"
+                : "أكمل التحويل وأضف رقم العملية لتسريع التأكيد",
+            eta: "خلال ساعات",
             state: "current",
           }
         : paymentMethod === "cod"
@@ -338,24 +396,28 @@ function CheckoutPage() {
               icon: Banknote,
               title: "بانتظار تأكيد البائع",
               desc: "سيراجع البائع طلبك ويؤكده قريباً",
+              eta: "خلال ساعات",
               state: "current",
             }
           : {
               icon: MessageCircle,
               title: "بانتظار تواصل البائع",
               desc: "سيتواصل معك البائع لتحديد طريقة الدفع",
+              eta: "خلال 24 ساعة",
               state: "current",
             },
       {
         icon: PackageCheck,
         title: "التحضير والشحن",
         desc: "سيبدأ البائع بتحضير طلبك بعد التأكيد",
+        eta: "1–2 يوم",
         state: "pending",
       },
       {
         icon: Truck,
         title: "التوصيل",
         desc: paymentMethod === "cod" ? "ادفع نقداً للمندوب عند الاستلام" : "سيتم توصيل طلبك للعنوان المحدد",
+        eta: "2–5 أيام",
         state: "pending",
       },
     ];
@@ -407,12 +469,12 @@ function CheckoutPage() {
         </Card>
 
         {/* Timeline */}
-        <Card className="rounded-2xl p-5 sm:p-6">
-          <div className="mb-4 flex items-center gap-2">
+        <Card className="rounded-2xl p-4 sm:p-6">
+          <div className="mb-3.5 flex items-center gap-2 sm:mb-4">
             <Clock className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-bold">الخطوات القادمة</h2>
           </div>
-          <ol className="relative space-y-5">
+          <ol className="relative space-y-4 sm:space-y-5">
             {timeline.map((item, idx) => {
               const isDone = item.state === "done";
               const isCurrent = item.state === "current";
@@ -441,13 +503,24 @@ function CheckoutPage() {
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1 pt-1">
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <p className={`text-sm font-bold ${isCurrent ? "text-foreground" : isDone ? "text-foreground/80" : "text-muted-foreground"}`}>
                         {item.title}
                       </p>
-                      {isCurrent && (
+                      {isCurrent ? (
                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
                           الآن
+                        </span>
+                      ) : (
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                            isDone
+                              ? "bg-success/10 text-success"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          <Clock className="h-2.5 w-2.5" />
+                          {item.eta}
                         </span>
                       )}
                     </div>
@@ -460,21 +533,61 @@ function CheckoutPage() {
         </Card>
 
         {/* Bank-transfer reminder card */}
-        {paymentMethod === "bank_transfer" && vendor?.payment_instructions && (
-          <Card className="rounded-2xl border-primary/30 bg-primary/[0.03] p-5 sm:p-6">
+        {paymentMethod === "bank_transfer" && (
+          <Card className="rounded-2xl border-primary/30 bg-primary/[0.03] p-4 sm:p-6">
             <div className="mb-3 flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-bold">تفاصيل التحويل</h2>
             </div>
-            <div className="rounded-xl border bg-card p-3.5">
-              <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
-                {vendor.payment_instructions}
-              </p>
+            {vendor?.payment_instructions ? (
+              <div className="rounded-xl border bg-card p-3.5">
+                <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
+                  {vendor.payment_instructions}
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border bg-card p-3.5 text-xs text-muted-foreground">
+                لم يضف البائع تعليمات تحويل بعد. سيتواصل معك مباشرة لإرسال التفاصيل.
+              </div>
+            )}
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {vendor?.payment_instructions && (
+                <Button
+                  variant="outline"
+                  onClick={copyPaymentInstructions}
+                  className="gap-1.5"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  نسخ التعليمات
+                </Button>
+              )}
+              <Button
+                onClick={markTransferDone}
+                disabled={transferMarked || markingTransfer}
+                className={`gap-1.5 ${vendor?.payment_instructions ? "" : "sm:col-span-2"}`}
+              >
+                {transferMarked ? (
+                  <>
+                    <Check className="h-4 w-4" />
+                    تم الإعلام بالتحويل
+                  </>
+                ) : markingTransfer ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    جارٍ الإرسال...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" />
+                    لقد قمت بالتحويل
+                  </>
+                )}
+              </Button>
             </div>
-            <Button onClick={copyPaymentInstructions} className="mt-3 w-full gap-1.5">
-              <Copy className="h-3.5 w-3.5" />
-              نسخ تعليمات التحويل
-            </Button>
+            <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+              اضغط بعد إتمام التحويل من بنكك — سيُخطَر البائع للتحقق وتأكيد الطلب.
+            </p>
           </Card>
         )}
 
@@ -512,7 +625,7 @@ function CheckoutPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5" dir="rtl">
+    <div className="mx-auto max-w-3xl space-y-4 sm:space-y-5" dir="rtl">
       {/* Page header */}
       <div className="flex items-center justify-between gap-3">
         <div>
@@ -530,7 +643,7 @@ function CheckoutPage() {
       </div>
 
       {/* Sticky Stepper */}
-      <div className="sticky top-16 z-20 -mx-4 border-b bg-background/95 px-4 py-3.5 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-5 sm:shadow-sm">
+      <div className="sticky top-14 z-20 -mx-4 border-b bg-background/95 px-3 py-2.5 backdrop-blur sm:top-16 sm:mx-0 sm:rounded-2xl sm:border sm:px-5 sm:py-3.5 sm:shadow-sm">
         <ol className="flex items-center gap-1.5 sm:gap-2">
           {STEPS.map((s, idx) => {
             const isDone = step > s.id;
@@ -569,7 +682,7 @@ function CheckoutPage() {
 
       {/* Step 1 — Contact + delivery */}
       {step === 1 && (
-        <Card className="space-y-5 rounded-2xl p-5 sm:p-6">
+        <Card className="space-y-4 rounded-2xl p-4 sm:space-y-5 sm:p-6">
           <div className="flex items-center gap-2 border-b pb-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Truck className="h-4 w-4" />
@@ -590,6 +703,7 @@ function CheckoutPage() {
               error={touched.name ? errors.name : null}
             >
               <Input
+                ref={nameRef}
                 id="name"
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
@@ -607,6 +721,7 @@ function CheckoutPage() {
               error={touched.phone ? errors.phone : null}
             >
               <Input
+                ref={phoneRef}
                 id="phone"
                 type="tel"
                 value={contactPhone}
@@ -627,6 +742,7 @@ function CheckoutPage() {
             error={touched.address ? errors.address : null}
           >
             <Textarea
+              ref={addressRef}
               id="address"
               value={shippingAddress}
               onChange={(e) => setShippingAddress(e.target.value)}
@@ -658,7 +774,7 @@ function CheckoutPage() {
 
       {/* Step 2 — Payment */}
       {step === 2 && (
-        <Card className="space-y-5 rounded-2xl p-5 sm:p-6">
+        <Card className="space-y-4 rounded-2xl p-4 sm:space-y-5 sm:p-6">
           <div className="flex items-center gap-2 border-b pb-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <CreditCard className="h-4 w-4" />
