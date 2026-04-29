@@ -270,6 +270,16 @@ function VendorStorePage() {
           </Card>
         ) : (
           <>
+            {session && !isClient && (
+              <Card className="mb-4 border-warning/50 bg-warning/10 p-3 text-sm">
+                <p className="font-semibold">
+                  حسابك {marketplaceRole === "vendor" || marketplaceRole === "admin" ? "حساب بائع" : "حساب إداري"}.
+                </p>
+                <p className="mt-1 text-muted-foreground">
+                  السلة وإنشاء الطلبات متاحة لحسابات العملاء فقط. يمكنك تصفّح المنتجات ولكن لا يمكنك الشراء.
+                </p>
+              </Card>
+            )}
             <div className="relative mb-4">
               <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
