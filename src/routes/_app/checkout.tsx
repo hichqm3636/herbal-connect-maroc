@@ -98,6 +98,37 @@ function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [paymentReference, setPaymentReference] = useState("");
 
+  // Touched state — drives inline errors only after the user interacts or
+  // tries to advance.
+  const [touched, setTouched] = useState<{
+    name: boolean;
+    phone: boolean;
+    address: boolean;
+  }>({ name: false, phone: false, address: false });
+
+  // Per-field validation. Phone: allow digits, spaces, +, -, parentheses;
+  // require at least 8 digits.
+  const errors = useMemo(() => {
+    const phoneDigits = contactPhone.replace(/\D/g, "");
+    return {
+      name: !contactName.trim()
+        ? "الاسم الكامل مطلوب"
+        : contactName.trim().length < 2
+          ? "الاسم قصير جداً"
+          : null,
+      phone: !contactPhone.trim()
+        ? "رقم الهاتف مطلوب"
+        : phoneDigits.length < 8
+          ? "رقم الهاتف غير صالح"
+          : null,
+      address: !shippingAddress.trim()
+        ? "عنوان التوصيل مطلوب"
+        : shippingAddress.trim().length < 5
+          ? "العنوان قصير جداً"
+          : null,
+    };
+  }, [contactName, contactPhone, shippingAddress]);
+
   // Prefill from profile
   useEffect(() => {
     if (!user) return;
@@ -147,12 +178,12 @@ function CheckoutPage() {
     [cart.items],
   );
 
-  const step1Valid = contactName.trim() && contactPhone.trim() && shippingAddress.trim();
+  const step1Valid = !errors.name && !errors.phone && !errors.address;
 
   function goNext() {
     if (step === 1) {
       if (!step1Valid) {
-        toast.error("يرجى ملء بيانات التواصل والعنوان");
+        setTouched({ name: true, phone: true, address: true });
         return;
       }
       setStep(2);
