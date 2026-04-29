@@ -319,11 +319,16 @@ function VendorStorePage() {
                         <Button
                           size="sm"
                           className="mt-2 w-full gap-1"
-                          disabled={p.stock === 0}
+                          disabled={p.stock === 0 || (!!session && !isClient)}
                           onClick={() => tryAdd(p)}
+                          title={!!session && !isClient ? "حسابك ليس حساب عميل" : undefined}
                         >
                           <ShoppingCart className="h-3.5 w-3.5" />
-                          {p.stock === 0 ? "غير متوفر" : "أضف إلى السلة"}
+                          {p.stock === 0
+                            ? "غير متوفر"
+                            : !!session && !isClient
+                              ? "للعملاء فقط"
+                              : "أضف إلى السلة"}
                         </Button>
                       </div>
                     </Card>
