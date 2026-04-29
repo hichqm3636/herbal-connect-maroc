@@ -72,6 +72,46 @@ const STEPS = [
   { id: 3, label: "المراجعة والتأكيد", icon: Receipt },
 ] as const;
 
+/** Form field wrapper with label, optional hint, and inline error message. */
+function FieldWrap({
+  id,
+  label,
+  required,
+  hint,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+  hint?: string;
+  error?: string | null;
+  children: React.ReactNode;
+}) {
+  const errorId = `${id}-error`;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={id} className="text-xs">
+          {label} {required && <span className="text-destructive">*</span>}
+        </Label>
+        {hint && <span className="text-[10px] text-muted-foreground">{hint}</span>}
+      </div>
+      {children}
+      {error && (
+        <p
+          id={errorId}
+          role="alert"
+          className="flex items-center gap-1 text-[11px] font-medium text-destructive"
+        >
+          <AlertCircle className="h-3 w-3" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function CheckoutPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
