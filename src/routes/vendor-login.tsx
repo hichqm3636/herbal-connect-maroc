@@ -48,6 +48,25 @@ function VendorLoginPage() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
+  const handleForgotPassword = async () => {
+    const parsed = emailSchema.safeParse(email);
+    if (!parsed.success) {
+      toast.error("أدخل بريدك الإلكتروني أولاً لإرسال رابط الاستعادة");
+      return;
+    }
+    setResetting(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetting(false);
+    if (error) {
+      toast.error(error.message || "تعذر إرسال رابط الاستعادة");
+      return;
+    }
+    toast.success("تم إرسال رابط استعادة كلمة المرور إلى بريدك");
+  };
 
   useEffect(() => {
     if (!loading && session) navigate({ to: "/auth/callback" });
@@ -257,12 +276,23 @@ function VendorLoginPage() {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="vendor-email"
-                      className="text-xs font-semibold uppercase tracking-wide text-slate-600"
-                    >
-                      البريد الإلكتروني المهني
-                    </Label>
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor="vendor-email"
+                        className="text-xs font-semibold uppercase tracking-wide text-slate-600"
+                      >
+                        البريد الإلكتروني المهني
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={handleForgotPassword}
+                        disabled={resetting || submitting}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 transition hover:text-emerald-800 hover:underline disabled:opacity-60"
+                      >
+                        {resetting && <Loader2 className="h-3 w-3 animate-spin" />}
+                        نسيت كلمة المرور؟
+                      </button>
+                    </div>
                     <div className="relative">
                       <Mail className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       <Input
