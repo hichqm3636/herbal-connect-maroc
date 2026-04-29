@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorsRouteImport } from './routes/vendors'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StoreSlugRouteImport } from './routes/store.$slug'
@@ -20,6 +19,7 @@ import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AppSuperAdminRouteImport } from './routes/_app/super-admin'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppOrdersRouteImport } from './routes/_app/orders'
+import { Route as AppCheckoutRouteImport } from './routes/_app/checkout'
 import { Route as AppVendorRouteImport } from './routes/_app/_vendor'
 import { Route as AppAdminRouteImport } from './routes/_app/_admin'
 import { Route as AppSuperAdminIndexRouteImport } from './routes/_app/super-admin/index'
@@ -50,11 +50,6 @@ const SignupRoute = SignupRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckoutRoute = CheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -89,6 +84,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppOrdersRoute = AppOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCheckoutRoute = AppCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => AppRoute,
 } as any)
 const AppVendorRoute = AppVendorRouteImport.update({
@@ -174,10 +174,10 @@ const AppAdminAdminCompaniesRoute = AppAdminAdminCompaniesRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/vendors': typeof VendorsRoute
+  '/checkout': typeof AppCheckoutRoute
   '/orders': typeof AppOrdersRoute
   '/settings': typeof AppSettingsRoute
   '/super-admin': typeof AppSuperAdminRouteWithChildren
@@ -200,10 +200,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/vendors': typeof VendorsRoute
+  '/checkout': typeof AppCheckoutRoute
   '/orders': typeof AppOrdersRoute
   '/settings': typeof AppSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -227,12 +227,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
-  '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/vendors': typeof VendorsRoute
   '/_app/_admin': typeof AppAdminRouteWithChildren
   '/_app/_vendor': typeof AppVendorRouteWithChildren
+  '/_app/checkout': typeof AppCheckoutRoute
   '/_app/orders': typeof AppOrdersRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/super-admin': typeof AppSuperAdminRouteWithChildren
@@ -257,10 +257,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/checkout'
     | '/login'
     | '/signup'
     | '/vendors'
+    | '/checkout'
     | '/orders'
     | '/settings'
     | '/super-admin'
@@ -283,10 +283,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/checkout'
     | '/login'
     | '/signup'
     | '/vendors'
+    | '/checkout'
     | '/orders'
     | '/settings'
     | '/auth/callback'
@@ -309,12 +309,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_app'
-    | '/checkout'
     | '/login'
     | '/signup'
     | '/vendors'
     | '/_app/_admin'
     | '/_app/_vendor'
+    | '/_app/checkout'
     | '/_app/orders'
     | '/_app/settings'
     | '/_app/super-admin'
@@ -339,7 +339,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
-  CheckoutRoute: typeof CheckoutRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   VendorsRoute: typeof VendorsRoute
@@ -369,13 +368,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checkout': {
-      id: '/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -425,6 +417,13 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/orders'
       preLoaderRoute: typeof AppOrdersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/checkout': {
+      id: '/_app/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof AppCheckoutRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/_vendor': {
@@ -601,6 +600,7 @@ const AppSuperAdminRouteWithChildren = AppSuperAdminRoute._addFileChildren(
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppVendorRoute: typeof AppVendorRouteWithChildren
+  AppCheckoutRoute: typeof AppCheckoutRoute
   AppOrdersRoute: typeof AppOrdersRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSuperAdminRoute: typeof AppSuperAdminRouteWithChildren
@@ -609,6 +609,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
   AppVendorRoute: AppVendorRouteWithChildren,
+  AppCheckoutRoute: AppCheckoutRoute,
   AppOrdersRoute: AppOrdersRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSuperAdminRoute: AppSuperAdminRouteWithChildren,
@@ -619,7 +620,6 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
-  CheckoutRoute: CheckoutRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   VendorsRoute: VendorsRoute,

@@ -13,9 +13,8 @@ export const Route = createFileRoute("/_app")({
   component: AppLayout,
 });
 
-// Hard prefix isolation per role. /orders lives under _app; /checkout is
-// top-level and gates itself via useAuth() in the page component.
-const CLIENT_ONLY_PREFIXES = ["/orders"];
+// Hard prefix isolation per role.
+const CLIENT_ONLY_PREFIXES = ["/orders", "/checkout"];
 const VENDOR_ONLY_PREFIXES = ["/vendor"];
 const ADMIN_ONLY_PREFIXES = ["/admin"];
 const SUPER_ADMIN_ONLY_PREFIXES = ["/super-admin"];

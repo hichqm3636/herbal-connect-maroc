@@ -21,9 +21,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { formatMAD } from "@/lib/format";
 import { toast } from "sonner";
-import { homeForRole } from "@/lib/roleRouting";
 
-export const Route = createFileRoute("/checkout")({
+export const Route = createFileRoute("/_app/checkout")({
   component: CheckoutPage,
   head: () => ({
     meta: [
@@ -45,7 +44,10 @@ interface VendorInfo {
 }
 
 function CheckoutPage() {
-  const { session, user, loading: authLoading, isClient, marketplaceRole } = useAuth();
+  // Auth + client-only gating happens upstream in `_app.tsx` via the
+  // CLIENT_ONLY_PREFIXES list. By the time this component renders, we are
+  // guaranteed to have a signed-in client session.
+  const { user } = useAuth();
   const navigate = useNavigate();
   const cart = useCart();
 
@@ -69,18 +71,6 @@ function CheckoutPage() {
   const [contactPhone, setContactPhone] = useState("");
   const [shippingAddress, setShippingAddress] = useState("");
   const [notes, setNotes] = useState("");
-
-  // Auth + role gating: must be signed in AND marketplace role === client.
-  useEffect(() => {
-    if (authLoading) return;
-    if (!session) {
-      navigate({ to: "/login" });
-      return;
-    }
-    if (!isClient) {
-      navigate({ to: homeForRole(marketplaceRole) });
-    }
-  }, [authLoading, session, isClient, marketplaceRole, navigate]);
 
   // Load vendor
   useEffect(() => {
@@ -186,7 +176,7 @@ function CheckoutPage() {
     toast.success("تم نسخ تعليمات الدفع");
   }
 
-  if (authLoading || vendorLoading) {
+  if (vendorLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-soft" dir="rtl">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
