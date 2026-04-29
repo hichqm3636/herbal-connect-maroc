@@ -1,12 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { z } from "zod";
 import {
   Loader2, Search, Eye, Package, Clock, CheckCircle2, Truck, XCircle,
+  Calendar, RefreshCw, Save,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -17,13 +20,22 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
 type OrderStatus = Database["public"]["Enums"]["order_status"];
+type DateRange = "all" | "today" | "7d" | "30d";
+
+const searchSchema = z.object({
+  status: z.string().optional(),
+  range: z.enum(["all", "today", "7d", "30d"]).optional(),
+  focus: z.string().optional(),
+});
 
 export const Route = createFileRoute("/_app/_vendor/vendor/orders")({
   component: VendorOrdersPage,
+  validateSearch: (s) => searchSchema.parse(s),
   head: () => ({ meta: [{ title: "الطلبات — Nexora" }] }),
 });
 
@@ -80,20 +92,62 @@ const NEXT_STATUS: Record<OrderStatus, OrderStatus[]> = {
   cancelled: [],
 };
 
+// Quick-filter chips shown above the table. Order matters (workflow order).
+const CHIP_STATUSES: OrderStatus[] = [
+  "pending", "confirmed", "preparing", "shipped", "delivered", "cancelled",
+];
+
+const RANGE_LABELS: Record<DateRange, string> = {
+  all: "كل الفترات",
+  today: "اليوم",
+  "7d": "آخر 7 أيام",
+  "30d": "آخر 30 يوم",
+};
+
+function rangeStart(range: DateRange): Date | null {
+  if (range === "all") return null;
+  const now = new Date();
+  if (range === "today") return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = range === "7d" ? 7 : 30;
+  return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+}
+
 function VendorOrdersPage() {
   const { companyId } = useAuth();
+  const search = useSearch({ from: "/_app/_vendor/vendor/orders" });
+  const navigate = Route.useNavigate();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const statusFilter: OrderStatus | "all" =
+    (search.status as OrderStatus | "all" | undefined) ?? "all";
+  const dateRange: DateRange = search.range ?? "all";
   const [selected, setSelected] = useState<OrderRow | null>(null);
   const [items, setItems] = useState<OrderItemRow[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [savingStatus, setSavingStatus] = useState(false);
+  const [adminNotes, setAdminNotes] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
+  const focusedRef = useRef<string | null>(null);
 
-  const loadOrders = async () => {
+  const setStatusFilter = (s: OrderStatus | "all") => {
+    navigate({
+      search: (prev) => ({ ...prev, status: s === "all" ? undefined : s }),
+      replace: true,
+    });
+  };
+  const setDateRange = (r: DateRange) => {
+    navigate({
+      search: (prev) => ({ ...prev, range: r === "all" ? undefined : r }),
+      replace: true,
+    });
+  };
+
+  const loadOrders = async (silent = false) => {
     if (!companyId) return;
-    setLoading(true);
+    if (silent) setRefreshing(true);
+    else setLoading(true);
     const { data, error } = await supabase
       .from("orders")
       .select("id, order_number, status, total_mad, created_at, buyer_id, notes, admin_notes, payment_method")
@@ -103,6 +157,7 @@ function VendorOrdersPage() {
     if (error) {
       toast.error("تعذر تحميل الطلبات");
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
@@ -121,6 +176,7 @@ function VendorOrdersPage() {
       })),
     );
     setLoading(false);
+    setRefreshing(false);
   };
 
   useEffect(() => {
@@ -128,20 +184,57 @@ function VendorOrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);
 
+  // Realtime: live-refresh on any change to the company's orders.
+  useEffect(() => {
+    if (!companyId) return;
+    const channel = supabase
+      .channel(`vendor-orders:${companyId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders", filter: `company_id=eq.${companyId}` },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            const o = payload.new as { order_number?: string };
+            toast.success(`طلب جديد: ${o.order_number ?? ""}`);
+          }
+          loadOrders(true);
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId]);
+
+  const counts = useMemo(() => {
+    const c: Record<OrderStatus | "all", number> = {
+      all: orders.length,
+      pending: 0, confirmed: 0, processing: 0, preparing: 0,
+      shipped: 0, delivered: 0, cancelled: 0,
+    };
+    for (const o of orders) c[o.status] += 1;
+    return c;
+  }, [orders]);
+
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = searchText.trim().toLowerCase();
+    const since = rangeStart(dateRange);
     return orders.filter((o) => {
       if (statusFilter !== "all" && o.status !== statusFilter) return false;
+      if (since && new Date(o.created_at) < since) return false;
       if (!q) return true;
       return (
         o.order_number.toLowerCase().includes(q) ||
-        o.buyer_name.toLowerCase().includes(q)
+        o.buyer_name.toLowerCase().includes(q) ||
+        (o.buyer_phone ?? "").toLowerCase().includes(q)
       );
     });
-  }, [orders, search, statusFilter]);
+  }, [orders, searchText, statusFilter, dateRange]);
 
   const openDetail = async (order: OrderRow) => {
     setSelected(order);
+    setAdminNotes(order.admin_notes ?? "");
     setItemsLoading(true);
     const { data } = await supabase
       .from("order_items")
@@ -166,6 +259,16 @@ function VendorOrdersPage() {
     setItemsLoading(false);
   };
 
+  // Auto-open dialog from ?focus=<id> deep link (used by notifications).
+  useEffect(() => {
+    if (!search.focus || focusedRef.current === search.focus || orders.length === 0) return;
+    const target = orders.find((o) => o.id === search.focus);
+    if (!target) return;
+    focusedRef.current = search.focus;
+    openDetail(target);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders, search.focus]);
+
   const updateStatus = async (next: OrderStatus) => {
     if (!selected) return;
     setSavingStatus(true);
@@ -183,34 +286,94 @@ function VendorOrdersPage() {
     setOrders((prev) => prev.map((o) => (o.id === selected.id ? { ...o, status: next } : o)));
   };
 
+  const saveAdminNotes = async () => {
+    if (!selected) return;
+    const value = adminNotes.trim() || null;
+    if ((selected.admin_notes ?? null) === value) return;
+    setSavingNotes(true);
+    const { error } = await supabase
+      .from("orders")
+      .update({ admin_notes: value })
+      .eq("id", selected.id);
+    setSavingNotes(false);
+    if (error) {
+      toast.error("تعذر حفظ الملاحظات");
+      return;
+    }
+    toast.success("تم حفظ الملاحظات");
+    setSelected({ ...selected, admin_notes: value });
+    setOrders((prev) =>
+      prev.map((o) => (o.id === selected.id ? { ...o, admin_notes: value } : o)),
+    );
+  };
+
+  const closeDialog = () => {
+    setSelected(null);
+    if (search.focus) {
+      navigate({ search: (prev) => ({ ...prev, focus: undefined }), replace: true });
+      focusedRef.current = null;
+    }
+  };
+
   return (
     <div className="space-y-6" dir="rtl">
-      <header>
-        <h1 className="text-2xl font-bold">الطلبات الواردة</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {orders.length} طلب · {filtered.length} معروض
-        </p>
+      <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">الطلبات الواردة</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {counts.all} طلب · {filtered.length} معروض
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => loadOrders(true)}
+          disabled={refreshing || loading}
+        >
+          <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+          تحديث
+        </Button>
       </header>
 
-      {/* Filters */}
+      {/* Status quick-filter chips */}
+      <div className="flex flex-wrap gap-2">
+        <StatusChip
+          active={statusFilter === "all"}
+          label="الكل"
+          count={counts.all}
+          onClick={() => setStatusFilter("all")}
+        />
+        {CHIP_STATUSES.map((s) => (
+          <StatusChip
+            key={s}
+            active={statusFilter === s}
+            label={STATUS_LABELS[s]}
+            count={counts[s]}
+            tone={STATUS_TONE[s]}
+            onClick={() => setStatusFilter(s)}
+          />
+        ))}
+      </div>
+
+      {/* Search + date range */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="بحث برقم الطلب أو اسم العميل..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            placeholder="بحث برقم الطلب، اسم العميل، أو الهاتف..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
             className="pr-9"
           />
         </div>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as OrderStatus | "all")}>
-          <SelectTrigger className="sm:w-56">
+        <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRange)}>
+          <SelectTrigger className="sm:w-48">
+            <Calendar className="h-4 w-4 ms-2 text-muted-foreground" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">كل الحالات</SelectItem>
-            {(Object.keys(STATUS_LABELS) as OrderStatus[]).map((s) => (
-              <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
+            {(Object.keys(RANGE_LABELS) as DateRange[]).map((r) => (
+              <SelectItem key={r} value={r}>{RANGE_LABELS[r]}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -242,20 +405,36 @@ function VendorOrdersPage() {
               </thead>
               <tbody className="divide-y">
                 {filtered.map((o) => (
-                  <tr key={o.id} className="hover:bg-muted/30">
+                  <tr
+                    key={o.id}
+                    className="hover:bg-muted/30 cursor-pointer"
+                    onClick={() => openDetail(o)}
+                  >
                     <td className="px-4 py-3 font-mono font-semibold">{o.order_number}</td>
-                    <td className="px-4 py-3">{o.buyer_name}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{o.buyer_name}</div>
+                      {o.buyer_phone && (
+                        <div className="text-xs text-muted-foreground" dir="ltr">{o.buyer_phone}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                       {new Date(o.created_at).toLocaleDateString("ar")}
                     </td>
-                    <td className="px-4 py-3 font-bold">{formatMAD(o.total_mad)}</td>
+                    <td className="px-4 py-3 font-bold whitespace-nowrap">{formatMAD(o.total_mad)}</td>
                     <td className="px-4 py-3">
                       <Badge variant="secondary" className={STATUS_TONE[o.status]}>
                         {STATUS_LABELS[o.status]}
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
-                      <Button size="sm" variant="ghost" onClick={() => openDetail(o)}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDetail(o);
+                        }}
+                      >
                         <Eye className="h-4 w-4" />
                         عرض
                       </Button>
@@ -269,7 +448,7 @@ function VendorOrdersPage() {
       </Card>
 
       {/* Detail dialog */}
-      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+      <Dialog open={!!selected} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
           {selected && (
             <>
@@ -304,6 +483,12 @@ function VendorOrdersPage() {
                     <span className="text-muted-foreground">المجموع:</span>
                     <p className="font-bold text-base">{formatMAD(selected.total_mad)}</p>
                   </div>
+                  {selected.payment_method && (
+                    <div>
+                      <span className="text-muted-foreground">الدفع:</span>
+                      <p className="font-medium">{selected.payment_method}</p>
+                    </div>
+                  )}
                 </div>
 
                 {selected.notes && (
@@ -338,6 +523,30 @@ function VendorOrdersPage() {
                       ))}
                     </ul>
                   )}
+                </div>
+
+                <Separator />
+
+                {/* Admin notes */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-bold">ملاحظات داخلية</h3>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={savingNotes || (selected.admin_notes ?? "") === adminNotes.trim()}
+                      onClick={saveAdminNotes}
+                    >
+                      {savingNotes ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                      حفظ
+                    </Button>
+                  </div>
+                  <Textarea
+                    value={adminNotes}
+                    onChange={(e) => setAdminNotes(e.target.value)}
+                    placeholder="ملاحظات لفريقك (لن تُعرض على العميل)"
+                    rows={3}
+                  />
                 </div>
 
                 <Separator />
@@ -378,5 +587,38 @@ function VendorOrdersPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function StatusChip({
+  active, label, count, tone, onClick,
+}: {
+  active: boolean;
+  label: string;
+  count: number;
+  tone?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+        active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-card hover:bg-muted",
+      )}
+    >
+      <span>{label}</span>
+      <span
+        className={cn(
+          "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+          active ? "bg-primary-foreground/20" : tone ?? "bg-muted",
+        )}
+      >
+        {count}
+      </span>
+    </button>
   );
 }
