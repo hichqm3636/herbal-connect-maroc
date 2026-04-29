@@ -12,24 +12,36 @@ export const Route = createFileRoute("/_app")({
   component: AppLayout,
 });
 
-// Routes a Platform Owner (super_admin without admin role) should never see.
-const DISTRIBUTOR_ONLY_PREFIXES = ["/dashboard", "/shop", "/products", "/quick-order", "/orders", "/invoices", "/loyalty"];
-// Routes that require the user to belong to the resolved tenant company.
-const TENANT_SCOPED_PREFIXES = ["/dashboard", "/shop", "/products", "/quick-order", "/orders", "/invoices", "/loyalty"];
+// Routes that only the `client` marketplace role may access.
+const CLIENT_ONLY_PREFIXES = ["/orders"];
+// Routes that only `vendor` / `admin` may access.
+const VENDOR_ONLY_PREFIXES = ["/admin"];
+// Routes that only `super_admin` may access.
+const SUPER_ADMIN_ONLY_PREFIXES = ["/super-admin"];
+
+function startsWithAny(path: string, prefixes: string[]): boolean {
+  return prefixes.some((p) => path === p || path.startsWith(p + "/"));
+}
+
+/** Default landing route per marketplace role. */
+function homeForRole(role: "client" | "vendor" | "admin" | "super_admin" | null): string {
+  if (role === "super_admin") return "/super-admin";
+  if (role === "admin" || role === "vendor") return "/admin";
+  if (role === "client") return "/vendors";
+  return "/login";
+}
 
 function AppLayout() {
-  const { session, loading, isSuperAdmin, roles, companyId, canAccessDistributorFeatures, isDistributorDisabled } = useAuth();
+  const { session, loading, marketplaceRole, isClient, isVendor, isSuperAdmin, companyId } = useAuth();
   const tenant = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
-  const isPlatformOwner = isSuperAdmin && !roles.includes("admin");
-
   const path = location.pathname;
-  const onTenantScopedRoute = TENANT_SCOPED_PREFIXES.some(
-    (p) => path === p || path.startsWith(p + "/"),
-  );
-  // Tenant mismatch: tenant resolved from host doesn't match the user's company.
-  // Super admins bypass this check (they can operate cross-tenant).
+
+  // Tenant mismatch only matters for client orders / vendor admin pages.
+  const onTenantScopedRoute =
+    startsWithAny(path, CLIENT_ONLY_PREFIXES) || startsWithAny(path, VENDOR_ONLY_PREFIXES);
+
   const tenantMismatch =
     !loading &&
     !tenant.loading &&
@@ -40,29 +52,31 @@ function AppLayout() {
     !!companyId &&
     tenant.company.id !== companyId;
 
+  // Role-based redirects: keep each role inside its own area.
   useEffect(() => {
     if (loading) return;
     if (!session) {
       navigate({ to: "/login" });
       return;
     }
-    if (isPlatformOwner) {
-      const onDistributorRoute = DISTRIBUTOR_ONLY_PREFIXES.some(
-        (p) => path === p || path.startsWith(p + "/"),
-      );
-      const onAdminRoute = path === "/admin" || path.startsWith("/admin/");
-      const onSettings = path === "/settings";
-      if (onDistributorRoute || onAdminRoute || onSettings) {
-        navigate({ to: "/super-admin" });
-      }
+
+    const onClientRoute = startsWithAny(path, CLIENT_ONLY_PREFIXES);
+    const onVendorRoute = startsWithAny(path, VENDOR_ONLY_PREFIXES);
+    const onSuperAdminRoute = startsWithAny(path, SUPER_ADMIN_ONLY_PREFIXES);
+
+    if (onClientRoute && !isClient) {
+      navigate({ to: homeForRole(marketplaceRole) });
+      return;
     }
-    const onDistributorRoute = DISTRIBUTOR_ONLY_PREFIXES.some(
-      (p) => path === p || path.startsWith(p + "/"),
-    );
-    if (!canAccessDistributorFeatures && onDistributorRoute) {
-      navigate({ to: "/settings" });
+    if (onVendorRoute && !isVendor && !isSuperAdmin) {
+      navigate({ to: homeForRole(marketplaceRole) });
+      return;
     }
-  }, [session, loading, isPlatformOwner, path, navigate]);
+    if (onSuperAdminRoute && !isSuperAdmin) {
+      navigate({ to: homeForRole(marketplaceRole) });
+      return;
+    }
+  }, [session, loading, marketplaceRole, isClient, isVendor, isSuperAdmin, path, navigate]);
 
   if (loading || !session || (onTenantScopedRoute && tenant.loading)) {
     return (
@@ -104,37 +118,6 @@ function AppLayout() {
     );
   }
 
-  const onDistributorRoute = DISTRIBUTOR_ONLY_PREFIXES.some(
-    (p) => path === p || path.startsWith(p + "/"),
-  );
-
-  if (isDistributorDisabled && onDistributorRoute) {
-    return (
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full overflow-x-hidden bg-background" dir="rtl">
-          <AppSidebar />
-          <SidebarInset className="flex flex-col min-w-0">
-            <AppHeader />
-            <main className="flex-1 p-4 md:p-6 lg:p-8 min-w-0 overflow-x-hidden">
-              <div className="flex items-center justify-center py-16">
-                <div className="max-w-md rounded-2xl border bg-card p-8 text-center shadow-elegant">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-warning/10">
-                    <ShieldAlert className="h-7 w-7 text-warning-foreground" />
-                  </div>
-                  <h1 className="mb-2 text-xl font-bold">حساب الموزع معطل</h1>
-                  <p className="text-sm text-muted-foreground">
-                    تم تعطيل وصول الموزع إلى المتجر والطلبات. ما يزال بإمكانك تسجيل الدخول واستخدام الأدوار الإدارية المتاحة لحسابك.
-                  </p>
-                </div>
-              </div>
-            </main>
-            <CartSheet />
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
-    );
-  }
-
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full overflow-x-hidden bg-background" dir="rtl">
@@ -144,6 +127,7 @@ function AppLayout() {
           <main className="flex-1 p-4 md:p-6 lg:p-8 min-w-0 overflow-x-hidden">
             <Outlet />
           </main>
+          {/* Cart drawer is itself gated to client role inside the component. */}
           <CartSheet />
         </SidebarInset>
       </div>
