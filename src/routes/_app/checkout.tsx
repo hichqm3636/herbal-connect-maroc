@@ -360,21 +360,35 @@ function CheckoutPage() {
 
   // Success state — celebration + next-steps timeline
   if (placedOrder) {
-    // Build payment-method-aware timeline.
-    const timeline: { icon: typeof Send; title: string; desc: string; state: "done" | "current" | "pending" }[] = [
+    // Build payment-method-aware timeline (each step shows an ETA hint).
+    const timeline: {
+      icon: typeof Send;
+      title: string;
+      desc: string;
+      eta: string;
+      state: "done" | "current" | "pending";
+    }[] = [
       {
         icon: Send,
         title: "تم استلام طلبك",
         desc: `رقم الطلب: ${placedOrder.orderNumber}`,
+        eta: "الآن",
         state: "done",
       },
       paymentMethod === "bank_transfer"
         ? {
             icon: CreditCard,
-            title: paymentReference.trim() ? "في انتظار تأكيد الدفع" : "بانتظار التحويل البنكي",
-            desc: paymentReference.trim()
-              ? "سيتحقق البائع من التحويل ويؤكد الطلب"
-              : "أكمل التحويل وأضف رقم العملية لتسريع التأكيد",
+            title: transferMarked
+              ? "بانتظار تأكيد البائع للتحويل"
+              : paymentReference.trim()
+                ? "في انتظار تأكيد الدفع"
+                : "بانتظار التحويل البنكي",
+            desc: transferMarked
+              ? "تم إعلام البائع — سيتحقق من التحويل ويؤكد الطلب"
+              : paymentReference.trim()
+                ? "سيتحقق البائع من التحويل ويؤكد الطلب"
+                : "أكمل التحويل وأضف رقم العملية لتسريع التأكيد",
+            eta: "خلال ساعات",
             state: "current",
           }
         : paymentMethod === "cod"
@@ -382,24 +396,28 @@ function CheckoutPage() {
               icon: Banknote,
               title: "بانتظار تأكيد البائع",
               desc: "سيراجع البائع طلبك ويؤكده قريباً",
+              eta: "خلال ساعات",
               state: "current",
             }
           : {
               icon: MessageCircle,
               title: "بانتظار تواصل البائع",
               desc: "سيتواصل معك البائع لتحديد طريقة الدفع",
+              eta: "خلال 24 ساعة",
               state: "current",
             },
       {
         icon: PackageCheck,
         title: "التحضير والشحن",
         desc: "سيبدأ البائع بتحضير طلبك بعد التأكيد",
+        eta: "1–2 يوم",
         state: "pending",
       },
       {
         icon: Truck,
         title: "التوصيل",
         desc: paymentMethod === "cod" ? "ادفع نقداً للمندوب عند الاستلام" : "سيتم توصيل طلبك للعنوان المحدد",
+        eta: "2–5 أيام",
         state: "pending",
       },
     ];
