@@ -155,6 +155,13 @@ function VendorStorePage() {
     // "conflict" → handled globally by <ReplaceCartDialog />
   }
 
+  function handleCartOpen(e: React.MouseEvent<HTMLButtonElement> | React.PointerEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("[store] cart button clicked, totalQty=", cart.totalQty);
+    cart.openCart();
+  }
+
   if (vendorLoading || authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-soft" dir="rtl">
@@ -220,12 +227,9 @@ function VendorStorePage() {
             type="button"
             size="sm"
             variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log("[store] cart button clicked, totalQty=", cart.totalQty);
-              cart.openCart();
-            }}
-            className="pointer-events-auto relative z-[9999] shrink-0 gap-1.5 isolate transition-transform active:scale-95"
+            onPointerUp={handleCartOpen}
+            onClick={handleCartOpen}
+            className="pointer-events-auto fixed left-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[2147483647] shrink-0 touch-manipulation isolate gap-1.5 shadow-elegant transition-transform active:scale-95 sm:static sm:z-auto"
             aria-label="فتح السلة"
           >
             <ShoppingCart className="h-4 w-4" />
