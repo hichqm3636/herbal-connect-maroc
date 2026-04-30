@@ -83,6 +83,7 @@ const vendorSections: NavSection[] = [
     items: [
       { title: "الطلبات", url: "/vendor/orders", icon: ClipboardList },
       { title: "الفواتير", url: "/vendor/invoices", icon: Receipt },
+      { title: "المراجعات", url: "/vendor/reviews", icon: MessageSquare },
     ],
   },
   {

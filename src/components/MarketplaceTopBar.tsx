@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { ShoppingBag, ClipboardList, User, LogOut, Menu, Leaf } from "lucide-react";
+import { ShoppingBag, ClipboardList, User, LogOut, Menu, Leaf, Heart, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CartButton } from "@/components/CartSheet";
 import { NotificationsBell } from "@/components/NotificationsBell";
@@ -25,6 +25,8 @@ import {
 const NAV = [
   { to: "/vendors", label: "البائعون", icon: ShoppingBag },
   { to: "/orders", label: "طلباتي", icon: ClipboardList },
+  { to: "/wishlist", label: "المفضلة", icon: Heart },
+  { to: "/my-reviews", label: "مراجعاتي", icon: MessageSquare },
 ] as const;
 
 /**
@@ -105,9 +107,15 @@ export function MarketplaceTopBar() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                  <Link to="/profile" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    ملفي الشخصي
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/settings" className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    حسابي
+                    الإعدادات
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
