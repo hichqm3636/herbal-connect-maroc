@@ -958,6 +958,54 @@ export type Database = {
           },
         ]
       }
+      product_reviews: {
+        Row: {
+          body: string
+          company_id: string
+          created_at: string
+          id: string
+          order_id: string | null
+          product_id: string
+          rating: number
+          status: Database["public"]["Enums"]["review_status"]
+          title: string
+          updated_at: string
+          user_id: string
+          vendor_responded_at: string | null
+          vendor_response: string | null
+        }
+        Insert: {
+          body?: string
+          company_id: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          product_id: string
+          rating: number
+          status?: Database["public"]["Enums"]["review_status"]
+          title?: string
+          updated_at?: string
+          user_id: string
+          vendor_responded_at?: string | null
+          vendor_response?: string | null
+        }
+        Update: {
+          body?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          product_id?: string
+          rating?: number
+          status?: Database["public"]["Enums"]["review_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+          vendor_responded_at?: string | null
+          vendor_response?: string | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           active: boolean
@@ -1255,6 +1303,48 @@ export type Database = {
           },
         ]
       }
+      vendor_reviews: {
+        Row: {
+          body: string
+          company_id: string
+          created_at: string
+          id: string
+          order_id: string | null
+          rating: number
+          status: Database["public"]["Enums"]["review_status"]
+          updated_at: string
+          user_id: string
+          vendor_responded_at: string | null
+          vendor_response: string | null
+        }
+        Insert: {
+          body?: string
+          company_id: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          rating: number
+          status?: Database["public"]["Enums"]["review_status"]
+          updated_at?: string
+          user_id: string
+          vendor_responded_at?: string | null
+          vendor_response?: string | null
+        }
+        Update: {
+          body?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          rating?: number
+          status?: Database["public"]["Enums"]["review_status"]
+          updated_at?: string
+          user_id?: string
+          vendor_responded_at?: string | null
+          vendor_response?: string | null
+        }
+        Relationships: []
+      }
       warehouses: {
         Row: {
           city: string | null
@@ -1347,6 +1437,30 @@ export type Database = {
           sent_at?: string | null
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      wishlists: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1546,6 +1660,7 @@ export type Database = {
         | "paid"
         | "failed"
         | "refunded"
+      review_status: "pending" | "approved" | "rejected"
       subscription_status:
         | "trial"
         | "active"
@@ -1731,6 +1846,7 @@ export const Constants = {
         "failed",
         "refunded",
       ],
+      review_status: ["pending", "approved", "rejected"],
       subscription_status: [
         "trial",
         "active",
