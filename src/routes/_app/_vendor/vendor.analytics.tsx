@@ -16,6 +16,7 @@ import {
   TrendingDown,
   XCircle,
 } from "lucide-react";
+import { AnalyticsRecommendations } from "@/components/AnalyticsRecommendations";
 
 export const Route = createFileRoute("/_app/_vendor/vendor/analytics")({
   component: VendorAnalyticsPage,
@@ -211,6 +212,9 @@ function VendorAnalyticsPage() {
           </div>
         )}
       </Card>
+
+      {/* Recommendations — interpret funnel into actionable advice */}
+      <AnalyticsRecommendations funnel={f} />
 
       {/* Products */}
       <Card className="p-4">
