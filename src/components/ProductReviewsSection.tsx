@@ -1,4 +1,9 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { Loader2, MessageSquare, PencilLine, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,6 +48,7 @@ interface SummaryShape {
 }
 
 const PAGE_SIZE = 10;
+const STALE_TIME = 60_000; // 60s — reviews don't change frequently
 
 const EMPTY_SUMMARY: SummaryShape = {
   count: 0,
@@ -58,7 +64,6 @@ function normalizeSummary(raw: unknown): SummaryShape {
     count: Number(d.count),
     pct: Number(d.pct),
   }));
-  // Ensure all 5 stars present, sorted desc
   const byStar = new Map(dist.map((d) => [d.star, d]));
   const full = [5, 4, 3, 2, 1].map(
     (s) => byStar.get(s) ?? { star: s, count: 0, pct: 0 },
@@ -70,6 +75,44 @@ function normalizeSummary(raw: unknown): SummaryShape {
   };
 }
 
+// Query key factory for cache management
+const reviewsKeys = {
+  all: ["product-reviews"] as const,
+  summary: (productId: string) =>
+    [...reviewsKeys.all, "summary", productId] as const,
+  list: (productId: string, sort: "newest" | "highest") =>
+    [...reviewsKeys.all, "list", productId, sort] as const,
+};
+
+async function fetchSummary(productId: string): Promise<SummaryShape> {
+  const { data, error } = await supabase.rpc("product_reviews_summary", {
+    _product_id: productId,
+  });
+  if (error) throw error;
+  return normalizeSummary(data);
+}
+
+async function fetchReviewsPage(
+  productId: string,
+  sort: "newest" | "highest",
+  cursor: ReviewRow | null,
+): Promise<ReviewRow[]> {
+  const { data, error } = await supabase.rpc("product_reviews_page", {
+    _product_id: productId,
+    _sort: sort,
+    _limit: PAGE_SIZE,
+    ...(cursor
+      ? {
+          _cursor_created_at: cursor.created_at,
+          _cursor_id: cursor.id,
+          _cursor_rating: cursor.rating,
+        }
+      : {}),
+  });
+  if (error) throw error;
+  return (data ?? []) as ReviewRow[];
+}
+
 export const ProductReviewsSection = memo(function ProductReviewsSection({
   productId,
   productName,
@@ -77,92 +120,54 @@ export const ProductReviewsSection = memo(function ProductReviewsSection({
   companyName,
 }: Props) {
   const { user } = useAuth();
-
-  const [summary, setSummary] = useState<SummaryShape>(EMPTY_SUMMARY);
-  const [reviews, setReviews] = useState<ReviewRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
+  const queryClient = useQueryClient();
   const [sort, setSort] = useState<"newest" | "highest">("newest");
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Track latest request to avoid race conditions on rapid sort changes
-  const reqIdRef = useRef(0);
+  // Summary query — cached separately, fetched once per productId
+  const summaryQuery = useQuery({
+    queryKey: reviewsKeys.summary(productId),
+    queryFn: () => fetchSummary(productId),
+    staleTime: STALE_TIME,
+  });
 
-  const fetchPage = useCallback(
-    async (cursor: ReviewRow | null) => {
-      const { data, error } = await supabase.rpc("product_reviews_page", {
-        _product_id: productId,
-        _sort: sort,
-        _limit: PAGE_SIZE,
-        ...(cursor
-          ? {
-              _cursor_created_at: cursor.created_at,
-              _cursor_id: cursor.id,
-              _cursor_rating: cursor.rating,
-            }
-          : {}),
-      });
-      if (error) throw error;
-      return (data ?? []) as ReviewRow[];
-    },
-    [productId, sort],
+  // Reviews list — infinite query with cursor pagination, keyed on sort
+  const listQuery = useInfiniteQuery({
+    queryKey: reviewsKeys.list(productId, sort),
+    queryFn: ({ pageParam }) => fetchReviewsPage(productId, sort, pageParam),
+    initialPageParam: null as ReviewRow | null,
+    getNextPageParam: (lastPage) =>
+      lastPage.length === PAGE_SIZE ? lastPage[lastPage.length - 1] : undefined,
+    staleTime: STALE_TIME,
+  });
+
+  const summary = summaryQuery.data ?? EMPTY_SUMMARY;
+  const reviews = useMemo(
+    () => listQuery.data?.pages.flat() ?? [],
+    [listQuery.data],
   );
+  const loading = summaryQuery.isLoading || listQuery.isLoading;
 
-  // Initial load + reload on sort/product change
+  // Bonus: Prefetch the next page in the background once the first page settles
   useEffect(() => {
-    const myReq = ++reqIdRef.current;
-    setLoading(true);
-    setReviews([]);
-
-    (async () => {
-      try {
-        const [{ data: sumData }, page] = await Promise.all([
-          supabase.rpc("product_reviews_summary", { _product_id: productId }),
-          fetchPage(null),
-        ]);
-        if (reqIdRef.current !== myReq) return;
-        setSummary(normalizeSummary(sumData));
-        setReviews(page);
-        setHasMore(page.length === PAGE_SIZE);
-      } catch {
-        if (reqIdRef.current !== myReq) return;
-        setSummary(EMPTY_SUMMARY);
-        setReviews([]);
-        setHasMore(false);
-      } finally {
-        if (reqIdRef.current === myReq) setLoading(false);
-      }
-    })();
-  }, [productId, sort, fetchPage]);
-
-  const loadMore = useCallback(async () => {
-    if (loadingMore || reviews.length === 0) return;
-    setLoadingMore(true);
-    try {
-      const cursor = reviews[reviews.length - 1];
-      const page = await fetchPage(cursor);
-      setReviews((prev) => [...prev, ...page]);
-      setHasMore(page.length === PAGE_SIZE);
-    } finally {
-      setLoadingMore(false);
+    if (
+      listQuery.hasNextPage &&
+      !listQuery.isFetchingNextPage &&
+      listQuery.data?.pages.length === 1
+    ) {
+      void listQuery.fetchNextPage();
     }
-  }, [fetchPage, loadingMore, reviews]);
+  }, [listQuery]);
 
-  // Refetch only first page after a new review is submitted (no full reload)
-  const refreshFirstPage = useCallback(async () => {
-    try {
-      const [{ data: sumData }, page] = await Promise.all([
-        supabase.rpc("product_reviews_summary", { _product_id: productId }),
-        fetchPage(null),
-      ]);
-      setSummary(normalizeSummary(sumData));
-      setReviews(page);
-      setHasMore(page.length === PAGE_SIZE);
-    } catch {
-      /* noop */
-    }
-  }, [productId, fetchPage]);
+  const refreshAfterSubmit = useCallback(() => {
+    // Invalidate both summary and list so they refetch fresh data
+    void queryClient.invalidateQueries({
+      queryKey: [...reviewsKeys.all, "summary", productId],
+    });
+    void queryClient.invalidateQueries({
+      queryKey: [...reviewsKeys.all, "list", productId],
+    });
+  }, [queryClient, productId]);
 
   const alreadyReviewed = useMemo(
     () => !!user && reviews.some((r) => r.user_id === user.id),
@@ -336,16 +341,18 @@ export const ProductReviewsSection = memo(function ProductReviewsSection({
         </ul>
       )}
 
-      {hasMore && !loading && (
+      {listQuery.hasNextPage && !loading && (
         <div className="flex justify-center">
           <Button
             variant="outline"
             size="sm"
-            onClick={loadMore}
-            disabled={loadingMore}
+            onClick={() => void listQuery.fetchNextPage()}
+            disabled={listQuery.isFetchingNextPage}
             className="gap-2"
           >
-            {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
+            {listQuery.isFetchingNextPage && (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )}
             عرض المزيد
           </Button>
         </div>
@@ -359,7 +366,7 @@ export const ProductReviewsSection = memo(function ProductReviewsSection({
         productName={productName}
         companyId={companyId}
         companyName={companyName}
-        onSubmitted={refreshFirstPage}
+        onSubmitted={refreshAfterSubmit}
       />
     </section>
   );
