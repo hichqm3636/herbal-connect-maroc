@@ -22,6 +22,7 @@ import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AppSuperAdminRouteImport } from './routes/_app/super-admin'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppOrdersRouteImport } from './routes/_app/orders'
+import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
 import { Route as AppClientRouteImport } from './routes/_app/client'
 import { Route as AppCheckoutRouteImport } from './routes/_app/checkout'
 import { Route as AppVendorRouteImport } from './routes/_app/_vendor'
@@ -104,6 +105,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppOrdersRoute = AppOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => AppRoute,
 } as any)
 const AppClientRoute = AppClientRouteImport.update({
@@ -212,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/vendors': typeof VendorsRoute
   '/checkout': typeof AppCheckoutRoute
   '/client': typeof AppClientRoute
+  '/notifications': typeof AppNotificationsRoute
   '/orders': typeof AppOrdersRoute
   '/settings': typeof AppSettingsRoute
   '/super-admin': typeof AppSuperAdminRouteWithChildren
@@ -243,6 +250,7 @@ export interface FileRoutesByTo {
   '/vendors': typeof VendorsRoute
   '/checkout': typeof AppCheckoutRoute
   '/client': typeof AppClientRoute
+  '/notifications': typeof AppNotificationsRoute
   '/orders': typeof AppOrdersRoute
   '/settings': typeof AppSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/_app/_vendor': typeof AppVendorRouteWithChildren
   '/_app/checkout': typeof AppCheckoutRoute
   '/_app/client': typeof AppClientRoute
+  '/_app/notifications': typeof AppNotificationsRoute
   '/_app/orders': typeof AppOrdersRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/super-admin': typeof AppSuperAdminRouteWithChildren
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/checkout'
     | '/client'
+    | '/notifications'
     | '/orders'
     | '/settings'
     | '/super-admin'
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/checkout'
     | '/client'
+    | '/notifications'
     | '/orders'
     | '/settings'
     | '/auth/callback'
@@ -374,6 +385,7 @@ export interface FileRouteTypes {
     | '/_app/_vendor'
     | '/_app/checkout'
     | '/_app/client'
+    | '/_app/notifications'
     | '/_app/orders'
     | '/_app/settings'
     | '/_app/super-admin'
@@ -501,6 +513,13 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/orders'
       preLoaderRoute: typeof AppOrdersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notifications': {
+      id: '/_app/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/client': {
@@ -702,6 +721,7 @@ interface AppRouteChildren {
   AppVendorRoute: typeof AppVendorRouteWithChildren
   AppCheckoutRoute: typeof AppCheckoutRoute
   AppClientRoute: typeof AppClientRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
   AppOrdersRoute: typeof AppOrdersRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSuperAdminRoute: typeof AppSuperAdminRouteWithChildren
@@ -712,6 +732,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppVendorRoute: AppVendorRouteWithChildren,
   AppCheckoutRoute: AppCheckoutRoute,
   AppClientRoute: AppClientRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
   AppOrdersRoute: AppOrdersRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSuperAdminRoute: AppSuperAdminRouteWithChildren,
