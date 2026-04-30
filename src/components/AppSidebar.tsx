@@ -18,6 +18,9 @@ import {
   Cog,
   Briefcase,
   ShieldCheck,
+  Heart,
+  MessageSquare,
+  User as UserIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -59,8 +62,11 @@ const clientTopItems: NavItem[] = [
   { title: "حسابي", url: "/client", icon: LayoutDashboard },
   { title: "البائعون", url: "/vendors", icon: ShoppingBag },
   { title: "طلباتي", url: "/orders", icon: ClipboardList },
+  { title: "المفضلة", url: "/wishlist", icon: Heart },
+  { title: "مراجعاتي", url: "/my-reviews", icon: MessageSquare },
 ];
 const clientAccountItems: NavItem[] = [
+  { title: "ملفي الشخصي", url: "/profile", icon: UserIcon },
   { title: "الإعدادات", url: "/settings", icon: Settings },
 ];
 
@@ -77,6 +83,7 @@ const vendorSections: NavSection[] = [
     items: [
       { title: "الطلبات", url: "/vendor/orders", icon: ClipboardList },
       { title: "الفواتير", url: "/vendor/invoices", icon: Receipt },
+      { title: "المراجعات", url: "/vendor/reviews", icon: MessageSquare },
     ],
   },
   {

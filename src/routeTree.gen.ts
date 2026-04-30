@@ -19,10 +19,13 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StoreSlugRouteImport } from './routes/store.$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AppWishlistRouteImport } from './routes/_app/wishlist'
 import { Route as AppSuperAdminRouteImport } from './routes/_app/super-admin'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppOrdersRouteImport } from './routes/_app/orders'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
+import { Route as AppMyReviewsRouteImport } from './routes/_app/my-reviews'
 import { Route as AppClientRouteImport } from './routes/_app/client'
 import { Route as AppCheckoutRouteImport } from './routes/_app/checkout'
 import { Route as AppVendorRouteImport } from './routes/_app/_vendor'
@@ -35,6 +38,7 @@ import { Route as AppVendorVendorIndexRouteImport } from './routes/_app/_vendor/
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
 import { Route as AppVendorVendorTeamRouteImport } from './routes/_app/_vendor/vendor.team'
 import { Route as AppVendorVendorStorageHealthRouteImport } from './routes/_app/_vendor/vendor.storage-health'
+import { Route as AppVendorVendorReviewsRouteImport } from './routes/_app/_vendor/vendor.reviews'
 import { Route as AppVendorVendorProductsRouteImport } from './routes/_app/_vendor/vendor.products'
 import { Route as AppVendorVendorOrdersRouteImport } from './routes/_app/_vendor/vendor.orders'
 import { Route as AppVendorVendorInvoicesRouteImport } from './routes/_app/_vendor/vendor.invoices'
@@ -92,6 +96,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppWishlistRoute = AppWishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSuperAdminRoute = AppSuperAdminRouteImport.update({
   id: '/super-admin',
   path: '/super-admin',
@@ -102,6 +111,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOrdersRoute = AppOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -110,6 +124,11 @@ const AppOrdersRoute = AppOrdersRouteImport.update({
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyReviewsRoute = AppMyReviewsRouteImport.update({
+  id: '/my-reviews',
+  path: '/my-reviews',
   getParentRoute: () => AppRoute,
 } as any)
 const AppClientRoute = AppClientRouteImport.update({
@@ -171,6 +190,11 @@ const AppVendorVendorStorageHealthRoute =
     path: '/vendor/storage-health',
     getParentRoute: () => AppVendorRoute,
   } as any)
+const AppVendorVendorReviewsRoute = AppVendorVendorReviewsRouteImport.update({
+  id: '/vendor/reviews',
+  path: '/vendor/reviews',
+  getParentRoute: () => AppVendorRoute,
+} as any)
 const AppVendorVendorProductsRoute = AppVendorVendorProductsRouteImport.update({
   id: '/vendor/products',
   path: '/vendor/products',
@@ -218,10 +242,13 @@ export interface FileRoutesByFullPath {
   '/vendors': typeof VendorsRoute
   '/checkout': typeof AppCheckoutRoute
   '/client': typeof AppClientRoute
+  '/my-reviews': typeof AppMyReviewsRoute
   '/notifications': typeof AppNotificationsRoute
   '/orders': typeof AppOrdersRoute
+  '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
   '/super-admin': typeof AppSuperAdminRouteWithChildren
+  '/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -235,6 +262,7 @@ export interface FileRoutesByFullPath {
   '/vendor/invoices': typeof AppVendorVendorInvoicesRoute
   '/vendor/orders': typeof AppVendorVendorOrdersRoute
   '/vendor/products': typeof AppVendorVendorProductsRoute
+  '/vendor/reviews': typeof AppVendorVendorReviewsRoute
   '/vendor/storage-health': typeof AppVendorVendorStorageHealthRoute
   '/vendor/team': typeof AppVendorVendorTeamRoute
   '/admin/': typeof AppAdminAdminIndexRoute
@@ -250,9 +278,12 @@ export interface FileRoutesByTo {
   '/vendors': typeof VendorsRoute
   '/checkout': typeof AppCheckoutRoute
   '/client': typeof AppClientRoute
+  '/my-reviews': typeof AppMyReviewsRoute
   '/notifications': typeof AppNotificationsRoute
   '/orders': typeof AppOrdersRoute
+  '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
+  '/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -266,6 +297,7 @@ export interface FileRoutesByTo {
   '/vendor/invoices': typeof AppVendorVendorInvoicesRoute
   '/vendor/orders': typeof AppVendorVendorOrdersRoute
   '/vendor/products': typeof AppVendorVendorProductsRoute
+  '/vendor/reviews': typeof AppVendorVendorReviewsRoute
   '/vendor/storage-health': typeof AppVendorVendorStorageHealthRoute
   '/vendor/team': typeof AppVendorVendorTeamRoute
   '/admin': typeof AppAdminAdminIndexRoute
@@ -285,10 +317,13 @@ export interface FileRoutesById {
   '/_app/_vendor': typeof AppVendorRouteWithChildren
   '/_app/checkout': typeof AppCheckoutRoute
   '/_app/client': typeof AppClientRoute
+  '/_app/my-reviews': typeof AppMyReviewsRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/orders': typeof AppOrdersRoute
+  '/_app/profile': typeof AppProfileRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/super-admin': typeof AppSuperAdminRouteWithChildren
+  '/_app/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -302,6 +337,7 @@ export interface FileRoutesById {
   '/_app/_vendor/vendor/invoices': typeof AppVendorVendorInvoicesRoute
   '/_app/_vendor/vendor/orders': typeof AppVendorVendorOrdersRoute
   '/_app/_vendor/vendor/products': typeof AppVendorVendorProductsRoute
+  '/_app/_vendor/vendor/reviews': typeof AppVendorVendorReviewsRoute
   '/_app/_vendor/vendor/storage-health': typeof AppVendorVendorStorageHealthRoute
   '/_app/_vendor/vendor/team': typeof AppVendorVendorTeamRoute
   '/_app/_admin/admin/': typeof AppAdminAdminIndexRoute
@@ -319,10 +355,13 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/checkout'
     | '/client'
+    | '/my-reviews'
     | '/notifications'
     | '/orders'
+    | '/profile'
     | '/settings'
     | '/super-admin'
+    | '/wishlist'
     | '/auth/callback'
     | '/store/$slug'
     | '/super-admin/companies'
@@ -336,6 +375,7 @@ export interface FileRouteTypes {
     | '/vendor/invoices'
     | '/vendor/orders'
     | '/vendor/products'
+    | '/vendor/reviews'
     | '/vendor/storage-health'
     | '/vendor/team'
     | '/admin/'
@@ -351,9 +391,12 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/checkout'
     | '/client'
+    | '/my-reviews'
     | '/notifications'
     | '/orders'
+    | '/profile'
     | '/settings'
+    | '/wishlist'
     | '/auth/callback'
     | '/store/$slug'
     | '/super-admin/companies'
@@ -367,6 +410,7 @@ export interface FileRouteTypes {
     | '/vendor/invoices'
     | '/vendor/orders'
     | '/vendor/products'
+    | '/vendor/reviews'
     | '/vendor/storage-health'
     | '/vendor/team'
     | '/admin'
@@ -385,10 +429,13 @@ export interface FileRouteTypes {
     | '/_app/_vendor'
     | '/_app/checkout'
     | '/_app/client'
+    | '/_app/my-reviews'
     | '/_app/notifications'
     | '/_app/orders'
+    | '/_app/profile'
     | '/_app/settings'
     | '/_app/super-admin'
+    | '/_app/wishlist'
     | '/auth/callback'
     | '/store/$slug'
     | '/_app/super-admin/companies'
@@ -402,6 +449,7 @@ export interface FileRouteTypes {
     | '/_app/_vendor/vendor/invoices'
     | '/_app/_vendor/vendor/orders'
     | '/_app/_vendor/vendor/products'
+    | '/_app/_vendor/vendor/reviews'
     | '/_app/_vendor/vendor/storage-health'
     | '/_app/_vendor/vendor/team'
     | '/_app/_admin/admin/'
@@ -494,6 +542,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/wishlist': {
+      id: '/_app/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof AppWishlistRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/super-admin': {
       id: '/_app/super-admin'
       path: '/super-admin'
@@ -508,6 +563,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/orders': {
       id: '/_app/orders'
       path: '/orders'
@@ -520,6 +582,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-reviews': {
+      id: '/_app/my-reviews'
+      path: '/my-reviews'
+      fullPath: '/my-reviews'
+      preLoaderRoute: typeof AppMyReviewsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/client': {
@@ -606,6 +675,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVendorVendorStorageHealthRouteImport
       parentRoute: typeof AppVendorRoute
     }
+    '/_app/_vendor/vendor/reviews': {
+      id: '/_app/_vendor/vendor/reviews'
+      path: '/vendor/reviews'
+      fullPath: '/vendor/reviews'
+      preLoaderRoute: typeof AppVendorVendorReviewsRouteImport
+      parentRoute: typeof AppVendorRoute
+    }
     '/_app/_vendor/vendor/products': {
       id: '/_app/_vendor/vendor/products'
       path: '/vendor/products'
@@ -679,6 +755,7 @@ interface AppVendorRouteChildren {
   AppVendorVendorInvoicesRoute: typeof AppVendorVendorInvoicesRoute
   AppVendorVendorOrdersRoute: typeof AppVendorVendorOrdersRoute
   AppVendorVendorProductsRoute: typeof AppVendorVendorProductsRoute
+  AppVendorVendorReviewsRoute: typeof AppVendorVendorReviewsRoute
   AppVendorVendorStorageHealthRoute: typeof AppVendorVendorStorageHealthRoute
   AppVendorVendorTeamRoute: typeof AppVendorVendorTeamRoute
   AppVendorVendorIndexRoute: typeof AppVendorVendorIndexRoute
@@ -691,6 +768,7 @@ const AppVendorRouteChildren: AppVendorRouteChildren = {
   AppVendorVendorInvoicesRoute: AppVendorVendorInvoicesRoute,
   AppVendorVendorOrdersRoute: AppVendorVendorOrdersRoute,
   AppVendorVendorProductsRoute: AppVendorVendorProductsRoute,
+  AppVendorVendorReviewsRoute: AppVendorVendorReviewsRoute,
   AppVendorVendorStorageHealthRoute: AppVendorVendorStorageHealthRoute,
   AppVendorVendorTeamRoute: AppVendorVendorTeamRoute,
   AppVendorVendorIndexRoute: AppVendorVendorIndexRoute,
@@ -721,10 +799,13 @@ interface AppRouteChildren {
   AppVendorRoute: typeof AppVendorRouteWithChildren
   AppCheckoutRoute: typeof AppCheckoutRoute
   AppClientRoute: typeof AppClientRoute
+  AppMyReviewsRoute: typeof AppMyReviewsRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOrdersRoute: typeof AppOrdersRoute
+  AppProfileRoute: typeof AppProfileRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSuperAdminRoute: typeof AppSuperAdminRouteWithChildren
+  AppWishlistRoute: typeof AppWishlistRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -732,10 +813,13 @@ const AppRouteChildren: AppRouteChildren = {
   AppVendorRoute: AppVendorRouteWithChildren,
   AppCheckoutRoute: AppCheckoutRoute,
   AppClientRoute: AppClientRoute,
+  AppMyReviewsRoute: AppMyReviewsRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOrdersRoute: AppOrdersRoute,
+  AppProfileRoute: AppProfileRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSuperAdminRoute: AppSuperAdminRouteWithChildren,
+  AppWishlistRoute: AppWishlistRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Package, ShoppingBag, Store, Search, Filter, X } from "lucide-react";
+import { Loader2, Package, ShoppingBag, Store, Search, Filter, X, Star } from "lucide-react";
 import { z } from "zod";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import {
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { PaymentProofUploader } from "@/components/PaymentProofUploader";
+import { ReviewDialog } from "@/components/ReviewDialog";
 
 const ordersSearchSchema = z.object({
   focus: z.string().optional(),
@@ -98,6 +99,13 @@ function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const focusRef = useRef<HTMLDivElement | null>(null);
+
+  // Review dialog state
+  const [reviewTarget, setReviewTarget] = useState<
+    | null
+    | { kind: "product"; productId: string; productName: string; companyId: string; companyName: string; orderId: string }
+    | { kind: "vendor"; companyId: string; companyName: string; orderId: string }
+  >(null);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -547,10 +555,78 @@ function OrdersPage() {
                     )}
                   </div>
                 </div>
+
+                {order.status === "delivered" && (
+                  <div className="flex flex-wrap items-center gap-2 border-t bg-primary/5 px-4 py-2.5">
+                    <span className="text-xs font-medium text-primary">قيّم تجربتك:</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 gap-1 text-xs"
+                      onClick={() =>
+                        setReviewTarget({
+                          kind: "vendor",
+                          companyId: order.company_id,
+                          companyName: vendorName,
+                          orderId: order.id,
+                        })
+                      }
+                    >
+                      <Star className="h-3 w-3" />
+                      المتجر
+                    </Button>
+                    {order.order_items.slice(0, 3).map((it) =>
+                      it.products ? (
+                        <Button
+                          key={it.id}
+                          size="sm"
+                          variant="outline"
+                          className="h-7 gap-1 text-xs"
+                          onClick={() =>
+                            setReviewTarget({
+                              kind: "product",
+                              productId: it.product_id,
+                              productName: it.products?.name_ar ?? "منتج",
+                              companyId: order.company_id,
+                              companyName: vendorName,
+                              orderId: order.id,
+                            })
+                          }
+                        >
+                          <Star className="h-3 w-3" />
+                          {(it.products.name_ar ?? "منتج").slice(0, 20)}
+                        </Button>
+                      ) : null,
+                    )}
+                  </div>
+                )}
               </Card>
             );
           })}
         </div>
+      )}
+
+      {reviewTarget && reviewTarget.kind === "product" && (
+        <ReviewDialog
+          open
+          onOpenChange={(o) => !o && setReviewTarget(null)}
+          kind="product"
+          productId={reviewTarget.productId}
+          productName={reviewTarget.productName}
+          companyId={reviewTarget.companyId}
+          companyName={reviewTarget.companyName}
+          orderId={reviewTarget.orderId}
+        />
+      )}
+      {reviewTarget && reviewTarget.kind === "vendor" && (
+        <ReviewDialog
+          open
+          onOpenChange={(o) => !o && setReviewTarget(null)}
+          kind="vendor"
+          companyId={reviewTarget.companyId}
+          companyName={reviewTarget.companyName}
+          orderId={reviewTarget.orderId}
+        />
       )}
     </div>
   );
