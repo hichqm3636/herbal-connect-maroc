@@ -99,6 +99,12 @@ function OrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const focusRef = useRef<HTMLDivElement | null>(null);
 
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [vendorFilter, setVendorFilter] = useState<string>("all");
+  const [query, setQuery] = useState("");
+
   useEffect(() => {
     if (authLoading || !user) return;
     let cancelled = false;
