@@ -34,6 +34,7 @@ import { Route as AppSuperAdminIndexRouteImport } from './routes/_app/super-admi
 import { Route as ApiPublicWooWebhookRouteImport } from './routes/api/public/woo-webhook'
 import { Route as AppSuperAdminUsersRouteImport } from './routes/_app/super-admin/users'
 import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-admin/companies'
+import { Route as AppSuperAdminAnalyticsValidationRouteImport } from './routes/_app/super-admin/analytics-validation'
 import { Route as AppSuperAdminAnalyticsRouteImport } from './routes/_app/super-admin/analytics'
 import { Route as AppVendorVendorIndexRouteImport } from './routes/_app/_vendor/vendor.index'
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
@@ -171,6 +172,12 @@ const AppSuperAdminCompaniesRoute = AppSuperAdminCompaniesRouteImport.update({
   path: '/companies',
   getParentRoute: () => AppSuperAdminRoute,
 } as any)
+const AppSuperAdminAnalyticsValidationRoute =
+  AppSuperAdminAnalyticsValidationRouteImport.update({
+    id: '/analytics-validation',
+    path: '/analytics-validation',
+    getParentRoute: () => AppSuperAdminRoute,
+  } as any)
 const AppSuperAdminAnalyticsRoute = AppSuperAdminAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -264,6 +271,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
   '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
+  '/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
@@ -301,6 +309,7 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
   '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
+  '/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
@@ -343,6 +352,7 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
   '/_app/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
+  '/_app/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/_app/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
@@ -383,6 +393,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/store/$slug'
     | '/super-admin/analytics'
+    | '/super-admin/analytics-validation'
     | '/super-admin/companies'
     | '/super-admin/users'
     | '/api/public/woo-webhook'
@@ -420,6 +431,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/store/$slug'
     | '/super-admin/analytics'
+    | '/super-admin/analytics-validation'
     | '/super-admin/companies'
     | '/super-admin/users'
     | '/api/public/woo-webhook'
@@ -461,6 +473,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/store/$slug'
     | '/_app/super-admin/analytics'
+    | '/_app/super-admin/analytics-validation'
     | '/_app/super-admin/companies'
     | '/_app/super-admin/users'
     | '/api/public/woo-webhook'
@@ -671,6 +684,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSuperAdminCompaniesRouteImport
       parentRoute: typeof AppSuperAdminRoute
     }
+    '/_app/super-admin/analytics-validation': {
+      id: '/_app/super-admin/analytics-validation'
+      path: '/analytics-validation'
+      fullPath: '/super-admin/analytics-validation'
+      preLoaderRoute: typeof AppSuperAdminAnalyticsValidationRouteImport
+      parentRoute: typeof AppSuperAdminRoute
+    }
     '/_app/super-admin/analytics': {
       id: '/_app/super-admin/analytics'
       path: '/analytics'
@@ -818,6 +838,7 @@ const AppVendorRouteWithChildren = AppVendorRoute._addFileChildren(
 
 interface AppSuperAdminRouteChildren {
   AppSuperAdminAnalyticsRoute: typeof AppSuperAdminAnalyticsRoute
+  AppSuperAdminAnalyticsValidationRoute: typeof AppSuperAdminAnalyticsValidationRoute
   AppSuperAdminCompaniesRoute: typeof AppSuperAdminCompaniesRoute
   AppSuperAdminUsersRoute: typeof AppSuperAdminUsersRoute
   AppSuperAdminIndexRoute: typeof AppSuperAdminIndexRoute
@@ -825,6 +846,7 @@ interface AppSuperAdminRouteChildren {
 
 const AppSuperAdminRouteChildren: AppSuperAdminRouteChildren = {
   AppSuperAdminAnalyticsRoute: AppSuperAdminAnalyticsRoute,
+  AppSuperAdminAnalyticsValidationRoute: AppSuperAdminAnalyticsValidationRoute,
   AppSuperAdminCompaniesRoute: AppSuperAdminCompaniesRoute,
   AppSuperAdminUsersRoute: AppSuperAdminUsersRoute,
   AppSuperAdminIndexRoute: AppSuperAdminIndexRoute,
