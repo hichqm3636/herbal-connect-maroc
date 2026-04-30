@@ -28,6 +28,8 @@ import { formatMAD } from "@/lib/format";
 import { parseTiers } from "@/lib/pricing";
 import { buildWhatsappLink } from "@/utils/whatsapp";
 import { track } from "@/lib/analytics";
+import { getVariant } from "@/lib/ab";
+import { useProductEngagementTracking } from "@/hooks/useProductEngagementTracking";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
