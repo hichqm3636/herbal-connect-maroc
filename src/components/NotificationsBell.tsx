@@ -167,6 +167,15 @@ export function NotificationsBell() {
             </ul>
           )}
         </ScrollArea>
+        <div className="border-t p-2">
+          <Link
+            to="/notifications"
+            onClick={() => setOpen(false)}
+            className="block text-center text-xs text-primary hover:underline py-1"
+          >
+            عرض كل الإشعارات
+          </Link>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
