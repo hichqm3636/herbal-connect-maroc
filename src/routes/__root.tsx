@@ -77,16 +77,31 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 30_000,
+            refetchOnWindowFocus: false,
+            retry: 1,
+          },
+        },
+      }),
+  );
+
   return (
-    <TenantProvider>
-      <AuthProvider>
-        <CartProvider>
-          <Outlet />
-          <CartSheet />
-          <ReplaceCartDialog />
-          <Toaster position="top-center" richColors />
-        </CartProvider>
-      </AuthProvider>
-    </TenantProvider>
+    <QueryClientProvider client={queryClient}>
+      <TenantProvider>
+        <AuthProvider>
+          <CartProvider>
+            <Outlet />
+            <CartSheet />
+            <ReplaceCartDialog />
+            <Toaster position="top-center" richColors />
+          </CartProvider>
+        </AuthProvider>
+      </TenantProvider>
+    </QueryClientProvider>
   );
 }
