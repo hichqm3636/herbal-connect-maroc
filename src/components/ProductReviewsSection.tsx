@@ -108,12 +108,16 @@ async function fetchSummary(productId: string): Promise<SummaryShape> {
 async function fetchReviewsPage(
   productId: string,
   sort: "newest" | "highest",
+  filter: RatingFilter,
   cursor: ReviewRow | null,
 ): Promise<ReviewRow[]> {
+  const { min, max } = filterToRange(filter);
   const { data, error } = await supabase.rpc("product_reviews_page", {
     _product_id: productId,
     _sort: sort,
     _limit: PAGE_SIZE,
+    _min_rating: min,
+    _max_rating: max,
     ...(cursor
       ? {
           _cursor_created_at: cursor.created_at,
