@@ -102,6 +102,39 @@ export type Database = {
           },
         ]
       }
+      analytics_events: {
+        Row: {
+          created_at: string
+          event_name: string
+          id: string
+          metadata: Json
+          price: number | null
+          product_id: string | null
+          user_id: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_name: string
+          id?: string
+          metadata?: Json
+          price?: number | null
+          product_id?: string | null
+          user_id?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_name?: string
+          id?: string
+          metadata?: Json
+          price?: number | null
+          product_id?: string | null
+          user_id?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           address: string | null
@@ -1461,6 +1494,28 @@ export type Database = {
         Returns: boolean
       }
       admin_exists: { Args: never; Returns: boolean }
+      analytics_checkout_funnel: {
+        Args: { _days?: number; _vendor_id?: string }
+        Returns: Json
+      }
+      analytics_product_conversion: {
+        Args: { _days?: number; _vendor_id?: string }
+        Returns: {
+          add_to_cart: number
+          completed: number
+          conversion_rate: number
+          product_id: string
+          views: number
+        }[]
+      }
+      analytics_vendor_orders: {
+        Args: { _days?: number }
+        Returns: {
+          orders_count: number
+          revenue_mad: number
+          vendor_id: string
+        }[]
+      }
       claim_client_role: { Args: never; Returns: boolean }
       claim_first_admin: { Args: never; Returns: boolean }
       claim_whatsapp_outbox: {
