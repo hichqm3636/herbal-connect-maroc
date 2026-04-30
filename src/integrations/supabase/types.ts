@@ -1004,7 +1004,15 @@ export type Database = {
           vendor_responded_at?: string | null
           vendor_response?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
