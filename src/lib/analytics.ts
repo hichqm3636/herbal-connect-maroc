@@ -44,7 +44,7 @@ function persistToDb(event: AnalyticsEvent, payload: ProductEventPayload): void 
           vendor_id: vendor_id ?? null,
           user_id: user_id ?? null,
           price: typeof price === "number" && Number.isFinite(price) ? price : null,
-          metadata: rest as Record<string, unknown>,
+          metadata: (rest ?? {}) as never,
         },
       ])
       .then(() => {
