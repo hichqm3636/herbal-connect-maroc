@@ -298,20 +298,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_inv_levels_product"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_inv_levels_warehouse"
-            columns: ["warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "warehouses"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "inventory_levels_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
@@ -375,20 +361,6 @@ export type Database = {
           warehouse_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_inv_movements_product"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_inv_movements_warehouse"
-            columns: ["warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "warehouses"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "inventory_movements_company_id_fkey"
             columns: ["company_id"]
@@ -574,27 +546,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_invoices_buyer"
-            columns: ["buyer_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_invoices_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_invoices_order"
-            columns: ["order_id"]
-            isOneToOne: true
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "invoices_buyer_id_fkey"
             columns: ["buyer_id"]
             isOneToOne: false
@@ -738,20 +689,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_order_items_order"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_order_items_product"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "order_items_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
@@ -886,13 +823,6 @@ export type Database = {
           payment_reference?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_payments_invoice"
-            columns: ["invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "payments_company_id_fkey"
             columns: ["company_id"]
