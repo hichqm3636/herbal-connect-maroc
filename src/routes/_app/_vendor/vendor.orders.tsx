@@ -367,6 +367,24 @@ function VendorOrdersPage() {
     if (selected?.id === order.id) setSelected(updated);
   };
 
+  // Inline row action: advance to a specific allowed next status without opening the dialog.
+  const quickAdvance = async (order: OrderRow, next: OrderStatus) => {
+    if (!NEXT_STATUS[order.status].includes(next)) {
+      toast.error("تحوّل غير مسموح به");
+      return;
+    }
+    setSavingStatus(true);
+    const { error } = await supabase.from("orders").update({ status: next }).eq("id", order.id);
+    setSavingStatus(false);
+    if (error) {
+      toast.error("تعذر تحديث الحالة");
+      return;
+    }
+    toast.success(`تم تحديث الحالة إلى: ${STATUS_LABELS[next]}`);
+    setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: next } : o)));
+    if (selected?.id === order.id) setSelected({ ...order, status: next });
+  };
+
   const saveAdminNotes = async () => {
     if (!selected) return;
     const value = adminNotes.trim() || null;
