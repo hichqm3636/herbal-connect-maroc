@@ -3,6 +3,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
 import { CartProvider } from "@/hooks/useCart";
+import { CartSheet } from "@/components/CartSheet";
+import { ReplaceCartDialog } from "@/components/ReplaceCartDialog";
 
 import appCss from "../styles.css?url";
 
@@ -78,6 +80,8 @@ function RootComponent() {
       <AuthProvider>
         <CartProvider>
           <Outlet />
+          <CartSheet />
+          <ReplaceCartDialog />
           <Toaster position="top-center" richColors />
         </CartProvider>
       </AuthProvider>
