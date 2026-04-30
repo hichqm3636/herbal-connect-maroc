@@ -246,15 +246,108 @@ function OrdersPage() {
         )}
       </header>
 
-      {loading && (
-        <Card className="flex items-center justify-center p-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </Card>
-      )}
+      {/* Filters */}
+      {!loading && !error && orders && orders.length > 0 && (
+        <Card className="p-3 sm:p-4 space-y-3">
+          {/* Status quick tabs */}
+          <div className="flex flex-wrap gap-1.5">
+            {statusTabs.map((tab) => {
+              const count = statusCounts[tab.key] ?? 0;
+              if (tab.key !== "all" && count === 0) return null;
+              const active = statusFilter === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setStatusFilter(tab.key)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background hover:bg-muted",
+                  )}
+                >
+                  <span>{tab.label}</span>
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 text-[10px]",
+                      active ? "bg-primary-foreground/20" : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-      {!loading && error && (
-        <Card className="border-destructive/40 bg-destructive/5 p-6 text-sm text-destructive">
-          تعذّر تحميل الطلبات: {error}
+          {/* Search + dropdowns */}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="ابحث برقم الطلب، البائع أو المنتج..."
+                className="pr-9"
+              />
+            </div>
+            <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+              <SelectTrigger className="w-full sm:w-[170px]">
+                <SelectValue placeholder="حالة الدفع" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كل حالات الدفع</SelectItem>
+                {(Object.keys(PAYMENT_STATUS_LABELS) as PaymentStatus[]).map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {PAYMENT_STATUS_LABELS[k]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={vendorFilter} onValueChange={setVendorFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="البائع" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كل البائعين</SelectItem>
+                {vendors.map((v) => (
+                  <SelectItem key={v.id} value={v.id}>
+                    {v.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="gap-1.5"
+              >
+                <X className="h-4 w-4" />
+                مسح الفلاتر
+              </Button>
+            )}
+          </div>
+
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 border-t pt-2 text-xs text-muted-foreground">
+              <Filter className="h-3.5 w-3.5" />
+              <span>
+                <span className="font-semibold text-foreground">{filteredOrders.length}</span>{" "}
+                من {orders.length} طلب
+                {filteredOrders.length > 0 && (
+                  <>
+                    {" · "}إجمالي:{" "}
+                    <span className="font-semibold text-foreground">
+                      {formatMAD(filteredSpent)}
+                    </span>
+                  </>
+                )}
+              </span>
+            </div>
+          )}
         </Card>
       )}
 
@@ -278,9 +371,21 @@ function OrdersPage() {
         </Card>
       )}
 
-      {!loading && !error && orders && orders.length > 0 && (
+      {!loading && !error && orders && orders.length > 0 && filteredOrders.length === 0 && (
+        <Card className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
+            <Filter className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-medium">لا توجد طلبات مطابقة للفلاتر</p>
+          <Button variant="outline" size="sm" onClick={clearFilters}>
+            مسح الفلاتر
+          </Button>
+        </Card>
+      )}
+
+      {!loading && !error && filteredOrders.length > 0 && (
         <div className="space-y-4">
-          {orders.map((order) => {
+          {filteredOrders.map((order) => {
             const statusLabel = STATUS_LABELS[order.status] ?? order.status;
             const statusClass = STATUS_CLASSES[order.status] ?? "";
             const vendorName =
