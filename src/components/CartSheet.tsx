@@ -15,8 +15,6 @@ import { formatMAD } from "@/lib/format";
 
 export function CartButton() {
   const { totalQty, openCart } = useCart();
-  const { isClient } = useAuth();
-  if (!isClient) return null;
   const label =
     totalQty > 0 ? `فتح السلة، ${totalQty} عنصر` : "فتح السلة، فارغة";
   return (
