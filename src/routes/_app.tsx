@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_app")({
 });
 
 // Hard prefix isolation per role.
-const CLIENT_ONLY_PREFIXES = ["/orders", "/checkout"];
+const CLIENT_ONLY_PREFIXES = ["/client", "/orders", "/checkout"];
 const VENDOR_ONLY_PREFIXES = ["/vendor"];
 const ADMIN_ONLY_PREFIXES = ["/admin"];
 const SUPER_ADMIN_ONLY_PREFIXES = ["/super-admin"];

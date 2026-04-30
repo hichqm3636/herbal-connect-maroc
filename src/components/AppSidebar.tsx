@@ -56,6 +56,7 @@ type NavSection = {
 
 // ---------------- Client (marketplace shopper) ----------------
 const clientTopItems: NavItem[] = [
+  { title: "حسابي", url: "/client", icon: LayoutDashboard },
   { title: "البائعون", url: "/vendors", icon: ShoppingBag },
   { title: "طلباتي", url: "/orders", icon: ClipboardList },
 ];

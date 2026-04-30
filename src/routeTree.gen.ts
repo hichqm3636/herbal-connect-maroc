@@ -22,6 +22,7 @@ import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AppSuperAdminRouteImport } from './routes/_app/super-admin'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppOrdersRouteImport } from './routes/_app/orders'
+import { Route as AppClientRouteImport } from './routes/_app/client'
 import { Route as AppCheckoutRouteImport } from './routes/_app/checkout'
 import { Route as AppVendorRouteImport } from './routes/_app/_vendor'
 import { Route as AppAdminRouteImport } from './routes/_app/_admin'
@@ -103,6 +104,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppOrdersRoute = AppOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppClientRoute = AppClientRouteImport.update({
+  id: '/client',
+  path: '/client',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCheckoutRoute = AppCheckoutRouteImport.update({
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/vendor-login': typeof VendorLoginRoute
   '/vendors': typeof VendorsRoute
   '/checkout': typeof AppCheckoutRoute
+  '/client': typeof AppClientRoute
   '/orders': typeof AppOrdersRoute
   '/settings': typeof AppSettingsRoute
   '/super-admin': typeof AppSuperAdminRouteWithChildren
@@ -235,6 +242,7 @@ export interface FileRoutesByTo {
   '/vendor-login': typeof VendorLoginRoute
   '/vendors': typeof VendorsRoute
   '/checkout': typeof AppCheckoutRoute
+  '/client': typeof AppClientRoute
   '/orders': typeof AppOrdersRoute
   '/settings': typeof AppSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -268,6 +276,7 @@ export interface FileRoutesById {
   '/_app/_admin': typeof AppAdminRouteWithChildren
   '/_app/_vendor': typeof AppVendorRouteWithChildren
   '/_app/checkout': typeof AppCheckoutRoute
+  '/_app/client': typeof AppClientRoute
   '/_app/orders': typeof AppOrdersRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/super-admin': typeof AppSuperAdminRouteWithChildren
@@ -300,6 +309,7 @@ export interface FileRouteTypes {
     | '/vendor-login'
     | '/vendors'
     | '/checkout'
+    | '/client'
     | '/orders'
     | '/settings'
     | '/super-admin'
@@ -330,6 +340,7 @@ export interface FileRouteTypes {
     | '/vendor-login'
     | '/vendors'
     | '/checkout'
+    | '/client'
     | '/orders'
     | '/settings'
     | '/auth/callback'
@@ -362,6 +373,7 @@ export interface FileRouteTypes {
     | '/_app/_admin'
     | '/_app/_vendor'
     | '/_app/checkout'
+    | '/_app/client'
     | '/_app/orders'
     | '/_app/settings'
     | '/_app/super-admin'
@@ -489,6 +501,13 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/orders'
       preLoaderRoute: typeof AppOrdersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/client': {
+      id: '/_app/client'
+      path: '/client'
+      fullPath: '/client'
+      preLoaderRoute: typeof AppClientRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/checkout': {
@@ -682,6 +701,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppVendorRoute: typeof AppVendorRouteWithChildren
   AppCheckoutRoute: typeof AppCheckoutRoute
+  AppClientRoute: typeof AppClientRoute
   AppOrdersRoute: typeof AppOrdersRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSuperAdminRoute: typeof AppSuperAdminRouteWithChildren
@@ -691,6 +711,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
   AppVendorRoute: AppVendorRouteWithChildren,
   AppCheckoutRoute: AppCheckoutRoute,
+  AppClientRoute: AppClientRoute,
   AppOrdersRoute: AppOrdersRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSuperAdminRoute: AppSuperAdminRouteWithChildren,
