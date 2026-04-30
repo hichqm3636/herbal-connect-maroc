@@ -30,8 +30,12 @@ interface NotificationRow {
  */
 export function NotificationsBell() {
   const { user, mode } = useAuth();
+  const navigate = useNavigate();
   const [items, setItems] = useState<NotificationRow[]>([]);
   const [open, setOpen] = useState(false);
+  // Tracks whether the initial load is complete — prevents firing toasts
+  // for the existing notifications when the component first mounts.
+  const hydratedRef = useRef(false);
 
   // Anyone signed in (vendor admin, super admin, or client) can receive notifications.
   // The recipient_id filter on the query already scopes results to the current user.
@@ -46,6 +50,7 @@ export function NotificationsBell() {
       .order("created_at", { ascending: false })
       .limit(20);
     setItems((data as NotificationRow[]) ?? []);
+    hydratedRef.current = true;
   }, [user]);
 
   useEffect(() => {
@@ -61,13 +66,29 @@ export function NotificationsBell() {
           table: "notifications",
           filter: `recipient_id=eq.${user!.id}`,
         },
-        () => void load(),
+        (payload) => {
+          // Show an instant in-app toast for the new notification
+          if (hydratedRef.current) {
+            const n = payload.new as NotificationRow;
+            toast(n.title, {
+              description: n.body ?? undefined,
+              duration: 6000,
+              action: n.link
+                ? {
+                    label: "عرض",
+                    onClick: () => navigate({ to: n.link! }),
+                  }
+                : undefined,
+            });
+          }
+          void load();
+        },
       )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [enabled, user, load]);
+  }, [enabled, user, load, navigate]);
 
   const unread = items.filter((n) => !n.read_at).length;
 
