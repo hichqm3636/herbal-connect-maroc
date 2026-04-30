@@ -20,6 +20,10 @@ import {
   PackageCheck,
   Send,
   Sparkles,
+  Lock,
+  ShieldCheck,
+  Zap,
+  Headphones,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,6 +35,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { formatMAD } from "@/lib/format";
+import { buildWhatsappLink } from "@/utils/whatsapp";
+import { track } from "@/lib/analytics";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/checkout")({
@@ -38,7 +44,7 @@ export const Route = createFileRoute("/_app/checkout")({
   head: () => ({
     meta: [
       { title: "إتمام الطلب — Nexora" },
-      { name: "description", content: "أكمل طلبك من البائع المختار." },
+      { name: "description", content: "أكمل طلبك من البائع المختار في خطوة واحدة." },
     ],
   }),
 });
@@ -66,12 +72,6 @@ const PAYMENT_OPTIONS: {
   { value: "bank_transfer", title: "تحويل بنكي", desc: "حوّل المبلغ ثم أضف رقم العملية", icon: CreditCard },
   { value: "manual", title: "تواصل مع البائع", desc: "سيتواصل معك البائع لتحديد طريقة الدفع", icon: MessageCircle },
 ];
-
-const STEPS = [
-  { id: 1, label: "التواصل والتوصيل", icon: Truck },
-  { id: 2, label: "طريقة الدفع", icon: CreditCard },
-  { id: 3, label: "المراجعة والتأكيد", icon: Receipt },
-] as const;
 
 /** Form field wrapper with label, optional hint, and inline error message. */
 function FieldWrap({
@@ -129,9 +129,6 @@ function CheckoutPage() {
   const [transferMarked, setTransferMarked] = useState(false);
   const [markingTransfer, setMarkingTransfer] = useState(false);
 
-  // Stepper
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-
   // Form
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -145,16 +142,12 @@ function CheckoutPage() {
   const phoneRef = useRef<HTMLInputElement>(null);
   const addressRef = useRef<HTMLTextAreaElement>(null);
 
-  // Touched state — drives inline errors only after the user interacts or
-  // tries to advance.
   const [touched, setTouched] = useState<{
     name: boolean;
     phone: boolean;
     address: boolean;
   }>({ name: false, phone: false, address: false });
 
-  // Per-field validation. Phone: allow digits, spaces, +, -, parentheses;
-  // require at least 8 digits.
   const errors = useMemo(() => {
     const phoneDigits = contactPhone.replace(/\D/g, "");
     return {
@@ -175,6 +168,8 @@ function CheckoutPage() {
           : null,
     };
   }, [contactName, contactPhone, shippingAddress]);
+
+  const formValid = !errors.name && !errors.phone && !errors.address;
 
   // Prefill from profile
   useEffect(() => {
@@ -225,7 +220,20 @@ function CheckoutPage() {
     [cart.items],
   );
 
-  const step1Valid = !errors.name && !errors.phone && !errors.address;
+  // -------- Analytics --------
+  const viewedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!vendor || cart.items.length === 0) return;
+    const key = `${vendor.id}:${user?.id ?? "anon"}:${cart.items.length}`;
+    if (viewedRef.current === key) return;
+    viewedRef.current = key;
+    track("checkout_view", {
+      product_id: cart.items.map((i) => i.id).join(","),
+      vendor_id: vendor.id,
+      price: total,
+      user_id: user?.id ?? null,
+    });
+  }, [vendor, cart.items, user?.id, total]);
 
   function focusFirstError() {
     const target =
@@ -234,32 +242,16 @@ function CheckoutPage() {
       (errors.address && addressRef.current) ||
       null;
     if (!target) return;
-    // Defer to allow Step 1 to render if we just switched back.
     requestAnimationFrame(() => {
       target.scrollIntoView({ behavior: "smooth", block: "center" });
-      // Slight delay so the scroll finishes before focus jumps back
       setTimeout(() => target.focus({ preventScroll: true }), 250);
     });
   }
 
-  function goNext() {
-    if (step === 1) {
-      if (!step1Valid) {
-        setTouched({ name: true, phone: true, address: true });
-        focusFirstError();
-        return;
-      }
-      setStep(2);
-    } else if (step === 2) {
-      setStep(3);
-    }
-  }
-
   async function handlePlaceOrder() {
     if (!user || !vendor || cart.items.length === 0) return;
-    if (!step1Valid) {
+    if (!formValid) {
       setTouched({ name: true, phone: true, address: true });
-      setStep(1);
       focusFirstError();
       return;
     }
@@ -317,6 +309,17 @@ function CheckoutPage() {
       setPlacedOrder({ id: orderRow.id, orderNumber: orderRow.order_number });
       cart.clear();
       toast.success("تم إرسال الطلب بنجاح");
+
+      try {
+        track("checkout_completed", {
+          product_id: orderRow.id,
+          vendor_id: vendor.id,
+          price: total,
+          user_id: user.id,
+        });
+      } catch {
+        /* never break checkout on analytics */
+      }
     } catch (err) {
       console.error("[checkout] place order failed", err);
       toast.error(err instanceof Error ? err.message : "تعذر إرسال الطلب");
@@ -350,6 +353,45 @@ function CheckoutPage() {
     }
   }
 
+  // -------- Abandonment WhatsApp fallback --------
+  // Build a prefilled WhatsApp message that summarises the cart so the buyer
+  // can complete the order via chat if they hit a blocker.
+  const whatsappFallbackHref = useMemo(() => {
+    if (!vendor?.contact_phone || cart.items.length === 0) return "";
+    const itemsLines = cart.items
+      .map((i) => `- ${i.name_ar} ×${i.qty}`)
+      .join("\n");
+    const message = `السلام عليكم،
+أرغب في إتمام طلب ولكنني أحتاج مساعدة:
+
+🏬 المتجر: ${vendor.display_name || vendor.name}
+🛒 المنتجات:
+${itemsLines}
+
+💰 الإجمالي: ${formatMAD(total)}
+${contactName.trim() ? `👤 الاسم: ${contactName.trim()}` : ""}
+${contactPhone.trim() ? `📞 الهاتف: ${contactPhone.trim()}` : ""}
+${shippingAddress.trim() ? `📍 العنوان: ${shippingAddress.trim()}` : ""}
+
+شكراً لكم.`;
+    return buildWhatsappLink(vendor.contact_phone, message);
+  }, [vendor, cart.items, total, contactName, contactPhone, shippingAddress]);
+
+  function handleWhatsappFallback() {
+    if (!vendor) return;
+    try {
+      track("checkout_whatsapp_fallback", {
+        product_id: cart.items.map((i) => i.id).join(","),
+        vendor_id: vendor.id,
+        price: total,
+        user_id: user?.id ?? null,
+      });
+    } catch {
+      /* noop */
+    }
+  }
+
+  // -------- Early returns --------
   if (vendorLoading) {
     return (
       <div className="flex items-center justify-center py-20" dir="rtl">
@@ -360,7 +402,6 @@ function CheckoutPage() {
 
   // Success state — celebration + next-steps timeline
   if (placedOrder) {
-    // Build payment-method-aware timeline (each step shows an ETA hint).
     const timeline: {
       icon: typeof Send;
       title: string;
@@ -424,7 +465,6 @@ function CheckoutPage() {
 
     return (
       <div className="mx-auto max-w-2xl space-y-4" dir="rtl">
-        {/* Hero */}
         <Card className="overflow-hidden rounded-2xl p-0">
           <div className="relative bg-gradient-to-b from-success/10 to-transparent px-6 pt-8 pb-6 text-center">
             <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-success text-success-foreground shadow-glow">
@@ -438,8 +478,6 @@ function CheckoutPage() {
               </span>
             </p>
           </div>
-
-          {/* Vendor strip */}
           {vendor && (
             <div className="flex items-center gap-3 border-t bg-muted/30 px-5 py-3">
               <div
@@ -468,7 +506,6 @@ function CheckoutPage() {
           )}
         </Card>
 
-        {/* Timeline */}
         <Card className="rounded-2xl p-4 sm:p-6">
           <div className="mb-3.5 flex items-center gap-2 sm:mb-4">
             <Clock className="h-4 w-4 text-primary" />
@@ -482,7 +519,6 @@ function CheckoutPage() {
               const isLast = idx === timeline.length - 1;
               return (
                 <li key={idx} className="relative flex gap-3">
-                  {/* Connector */}
                   {!isLast && (
                     <span
                       aria-hidden="true"
@@ -514,9 +550,7 @@ function CheckoutPage() {
                       ) : (
                         <span
                           className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                            isDone
-                              ? "bg-success/10 text-success"
-                              : "bg-muted text-muted-foreground"
+                            isDone ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
                           }`}
                         >
                           <Clock className="h-2.5 w-2.5" />
@@ -532,7 +566,6 @@ function CheckoutPage() {
           </ol>
         </Card>
 
-        {/* Bank-transfer reminder card — switches to "awaiting confirmation" once user marks the transfer as done. */}
         {paymentMethod === "bank_transfer" && (
           transferMarked ? (
             <Card className="rounded-2xl border-success/40 bg-success/[0.06] p-4 sm:p-6">
@@ -575,14 +608,9 @@ function CheckoutPage() {
                   لم يضف البائع تعليمات تحويل بعد. سيتواصل معك مباشرة لإرسال التفاصيل.
                 </div>
               )}
-
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {vendor?.payment_instructions && (
-                  <Button
-                    variant="outline"
-                    onClick={copyPaymentInstructions}
-                    className="gap-1.5"
-                  >
+                  <Button variant="outline" onClick={copyPaymentInstructions} className="gap-1.5">
                     <Copy className="h-3.5 w-3.5" />
                     نسخ التعليمات
                   </Button>
@@ -612,7 +640,6 @@ function CheckoutPage() {
           )
         )}
 
-        {/* Action buttons */}
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button asChild size="lg" className="flex-1">
             <Link to="/orders" search={{ focus: placedOrder.id } as never}>
@@ -645,10 +672,11 @@ function CheckoutPage() {
     );
   }
 
+  // -------- Single-page checkout --------
   return (
-    <div className="mx-auto max-w-3xl space-y-4 sm:space-y-5" dir="rtl">
-      {/* Page header */}
-      <div className="flex items-center justify-between gap-3">
+    <div className="mx-auto max-w-5xl pb-28 sm:pb-0" dir="rtl">
+      {/* Header */}
+      <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold sm:text-2xl">إتمام الطلب</h1>
           <p className="text-xs text-muted-foreground sm:text-sm">
@@ -663,358 +691,325 @@ function CheckoutPage() {
         </Button>
       </div>
 
-      {/* Sticky Stepper */}
-      <div className="sticky top-14 z-20 -mx-4 border-b bg-background/95 px-3 py-2.5 backdrop-blur sm:top-16 sm:mx-0 sm:rounded-2xl sm:border sm:px-5 sm:py-3.5 sm:shadow-sm">
-        <ol className="flex items-center gap-1.5 sm:gap-2">
-          {STEPS.map((s, idx) => {
-            const isDone = step > s.id;
-            const isCurrent = step === s.id;
-            return (
-              <li key={s.id} className="flex flex-1 items-center gap-2 last:flex-none">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                      isDone
-                        ? "bg-success text-success-foreground"
-                        : isCurrent
-                          ? "bg-primary text-primary-foreground ring-4 ring-primary/15"
-                          : "bg-muted text-muted-foreground"
-                    }`}
-                    aria-current={isCurrent ? "step" : undefined}
-                  >
-                    {isDone ? <CheckCircle2 className="h-4 w-4" /> : s.id}
-                  </div>
-                  <span
-                    className={`hidden truncate text-xs font-semibold sm:inline ${
-                      isCurrent ? "text-foreground" : isDone ? "text-foreground/70" : "text-muted-foreground"
-                    }`}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-                {idx < STEPS.length - 1 && (
-                  <div className={`h-0.5 flex-1 rounded-full transition-colors ${isDone ? "bg-success" : "bg-border"}`} />
-                )}
-              </li>
-            );
-          })}
-        </ol>
+      {/* Trust badges row */}
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <TrustBadge icon={<Lock className="h-4 w-4 text-success" />} label="بياناتك محمية" />
+        <TrustBadge icon={<ShieldCheck className="h-4 w-4 text-success" />} label="بائع موثوق" />
+        <TrustBadge icon={<Truck className="h-4 w-4 text-primary" />} label="توصيل سريع" />
+        <TrustBadge icon={<Headphones className="h-4 w-4 text-primary" />} label="دعم مباشر" />
       </div>
 
-      {/* Step 1 — Contact + delivery */}
-      {step === 1 && (
-        <Card className="space-y-4 rounded-2xl p-4 sm:space-y-5 sm:p-6">
-          <div className="flex items-center gap-2 border-b pb-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Truck className="h-4 w-4" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold leading-tight">بيانات التواصل والتوصيل</h2>
-              <p className="text-[11px] text-muted-foreground">
-                نحتاج هذه المعلومات للتوصيل والتنسيق مع البائع
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FieldWrap
-              id="name"
-              label="الاسم الكامل"
-              required
-              error={touched.name ? errors.name : null}
-            >
-              <Input
-                ref={nameRef}
-                id="name"
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-                onBlur={() => setTouched((t) => ({ ...t, name: true }))}
-                placeholder="اسم المسؤول عن الطلب"
-                aria-invalid={touched.name && !!errors.name}
-                className={touched.name && errors.name ? "border-destructive focus-visible:ring-destructive/30" : ""}
-              />
-            </FieldWrap>
-
-            <FieldWrap
-              id="phone"
-              label="رقم الهاتف"
-              required
-              error={touched.phone ? errors.phone : null}
-            >
-              <Input
-                ref={phoneRef}
-                id="phone"
-                type="tel"
-                value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
-                onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
-                placeholder="+212 6XX XXX XXX"
-                dir="ltr"
-                aria-invalid={touched.phone && !!errors.phone}
-                className={touched.phone && errors.phone ? "border-destructive focus-visible:ring-destructive/30" : ""}
-              />
-            </FieldWrap>
-          </div>
-
-          <FieldWrap
-            id="address"
-            label="عنوان التوصيل"
-            required
-            error={touched.address ? errors.address : null}
-          >
-            <Textarea
-              ref={addressRef}
-              id="address"
-              value={shippingAddress}
-              onChange={(e) => setShippingAddress(e.target.value)}
-              onBlur={() => setTouched((t) => ({ ...t, address: true }))}
-              placeholder="العنوان الكامل، المدينة، المنطقة"
-              rows={2}
-              aria-invalid={touched.address && !!errors.address}
-              className={touched.address && errors.address ? "border-destructive focus-visible:ring-destructive/30" : ""}
-            />
-          </FieldWrap>
-
-          <FieldWrap id="notes" label="ملاحظات إضافية" hint="اختياري">
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="وقت التوصيل المفضل، تعليمات خاصة..."
-              rows={2}
-              maxLength={500}
-            />
-          </FieldWrap>
-
-          <div className="flex items-start gap-2 rounded-xl bg-muted/50 p-3 text-[11px] text-muted-foreground">
-            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-            <p>ستُحفظ هذه البيانات في حسابك تلقائياً للطلبات القادمة.</p>
-          </div>
-        </Card>
-      )}
-
-      {/* Step 2 — Payment */}
-      {step === 2 && (
-        <Card className="space-y-4 rounded-2xl p-4 sm:space-y-5 sm:p-6">
-          <div className="flex items-center gap-2 border-b pb-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <CreditCard className="h-4 w-4" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold leading-tight">طريقة الدفع</h2>
-              <p className="text-[11px] text-muted-foreground">
-                اختر الطريقة الأنسب لك — الدفع يتم مباشرة مع البائع
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-2.5">
-            {PAYMENT_OPTIONS.map((opt) => {
-              const active = paymentMethod === opt.value;
-              const Icon = opt.icon;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setPaymentMethod(opt.value)}
-                  aria-pressed={active}
-                  className={`group flex items-start gap-3 rounded-xl border p-3.5 text-right transition-all ${
-                    active
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border hover:border-primary/40 hover:bg-muted/40"
-                  }`}
-                >
-                  <div
-                    className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors ${
-                      active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold">{opt.title}</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{opt.desc}</p>
-                  </div>
-                  <div
-                    className={`mt-1.5 h-4 w-4 shrink-0 rounded-full border-2 transition-colors ${
-                      active ? "border-primary bg-primary" : "border-muted-foreground/40 group-hover:border-primary/40"
-                    }`}
-                  />
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Bank-transfer block: prominent CTA + steps */}
-          {paymentMethod === "bank_transfer" && (
-            <div className="space-y-4 rounded-2xl border-2 border-primary/30 bg-primary/[0.03] p-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                  <CreditCard className="h-3.5 w-3.5" />
-                </div>
-                <h3 className="text-sm font-bold">تعليمات التحويل البنكي</h3>
+      <div className="grid gap-4 lg:grid-cols-[1fr,360px]">
+        {/* LEFT: Form (single page) */}
+        <div className="space-y-4">
+          {/* Contact + delivery */}
+          <Card className="space-y-4 rounded-2xl p-4 sm:space-y-5 sm:p-6">
+            <div className="flex items-center gap-2 border-b pb-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Truck className="h-4 w-4" />
               </div>
+              <div>
+                <h2 className="text-sm font-bold leading-tight">بيانات التواصل والتوصيل</h2>
+                <p className="text-[11px] text-muted-foreground">
+                  معبأة من ملفك الشخصي — عدّلها إذا لزم الأمر
+                </p>
+              </div>
+            </div>
 
-              {vendor.payment_instructions ? (
-                <div className="rounded-xl border bg-card p-3.5">
-                  <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
-                    {vendor.payment_instructions}
-                  </p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="default"
-                    className="mt-3 w-full gap-1.5"
-                    onClick={copyPaymentInstructions}
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    نسخ تعليمات التحويل
-                  </Button>
-                </div>
-              ) : (
-                <div className="rounded-xl border bg-card p-3.5 text-xs text-muted-foreground">
-                  لم يضف البائع تعليمات تحويل بعد. سيتواصل معك مباشرة لإرسال التفاصيل.
-                </div>
-              )}
-
-              {/* Step list — what to do */}
-              <ol className="space-y-2 text-xs">
-                {[
-                  "انسخ تعليمات التحويل أعلاه",
-                  "نفّذ التحويل من تطبيق بنكك",
-                  "أضف رقم العملية أدناه (اختياري لكن يُسرّع التأكيد)",
-                  "اضغط «تأكيد الطلب» — سيتم إخطار البائع فوراً",
-                ].map((line, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
-                      {i + 1}
-                    </span>
-                    <span className="text-muted-foreground leading-relaxed">{line}</span>
-                  </li>
-                ))}
-              </ol>
-
-              <FieldWrap id="ref" label="رقم / مرجع التحويل" hint="اختياري">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FieldWrap id="name" label="الاسم الكامل" required error={touched.name ? errors.name : null}>
                 <Input
-                  id="ref"
-                  value={paymentReference}
-                  onChange={(e) => setPaymentReference(e.target.value)}
-                  placeholder="رقم العملية أو اسم المرسل"
+                  ref={nameRef}
+                  id="name"
+                  autoComplete="name"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  onBlur={() => setTouched((t) => ({ ...t, name: true }))}
+                  placeholder="اسم المسؤول عن الطلب"
+                  aria-invalid={touched.name && !!errors.name}
+                  className={touched.name && errors.name ? "border-destructive focus-visible:ring-destructive/30" : ""}
+                />
+              </FieldWrap>
+
+              <FieldWrap id="phone" label="رقم الهاتف" required error={touched.phone ? errors.phone : null}>
+                <Input
+                  ref={phoneRef}
+                  id="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                  onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
+                  placeholder="+212 6XX XXX XXX"
+                  dir="ltr"
+                  aria-invalid={touched.phone && !!errors.phone}
+                  className={touched.phone && errors.phone ? "border-destructive focus-visible:ring-destructive/30" : ""}
                 />
               </FieldWrap>
             </div>
-          )}
 
-          <p className="text-[11px] text-muted-foreground leading-relaxed">
-            الدفع يتم مباشرة بينك وبين البائع. المنصة لا تتدخل في عملية الدفع.
-          </p>
-        </Card>
-      )}
+            <FieldWrap id="address" label="عنوان التوصيل" required error={touched.address ? errors.address : null}>
+              <Textarea
+                ref={addressRef}
+                id="address"
+                autoComplete="street-address"
+                value={shippingAddress}
+                onChange={(e) => setShippingAddress(e.target.value)}
+                onBlur={() => setTouched((t) => ({ ...t, address: true }))}
+                placeholder="العنوان الكامل، المدينة، المنطقة"
+                rows={2}
+                aria-invalid={touched.address && !!errors.address}
+                className={touched.address && errors.address ? "border-destructive focus-visible:ring-destructive/30" : ""}
+              />
+            </FieldWrap>
 
-      {/* Step 3 — Review */}
-      {step === 3 && (
-        <div className="space-y-4">
-          <Card className="p-4 sm:p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Receipt className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-bold">المراجعة النهائية</h2>
+            <FieldWrap id="notes" label="ملاحظات إضافية" hint="اختياري">
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="وقت التوصيل المفضل، تعليمات خاصة..."
+                rows={2}
+                maxLength={500}
+              />
+            </FieldWrap>
+
+            <div className="flex items-start gap-2 rounded-xl bg-muted/50 p-3 text-[11px] text-muted-foreground">
+              <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+              <p>ستُحفظ هذه البيانات في حسابك تلقائياً للطلبات القادمة.</p>
+            </div>
+          </Card>
+
+          {/* Payment */}
+          <Card className="space-y-4 rounded-2xl p-4 sm:space-y-5 sm:p-6">
+            <div className="flex items-center gap-2 border-b pb-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <CreditCard className="h-4 w-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold leading-tight">طريقة الدفع</h2>
+                <p className="text-[11px] text-muted-foreground">
+                  الدفع يتم مباشرة مع البائع
+                </p>
+              </div>
             </div>
 
-            {/* Items */}
-            <div className="space-y-2.5">
-              {cart.items.map((i) => (
-                <div key={i.id} className="flex items-center gap-3">
-                  <div className="h-11 w-11 shrink-0 overflow-hidden rounded-md bg-muted">
-                    {i.image_url ? (
-                      <img src={i.image_url} alt={i.name_ar} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <Package className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    )}
+            <div className="grid gap-2.5">
+              {PAYMENT_OPTIONS.map((opt) => {
+                const active = paymentMethod === opt.value;
+                const Icon = opt.icon;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setPaymentMethod(opt.value)}
+                    aria-pressed={active}
+                    className={`group flex items-start gap-3 rounded-xl border p-3.5 text-right transition-all ${
+                      active
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-border hover:border-primary/40 hover:bg-muted/40"
+                    }`}
+                  >
+                    <div
+                      className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                        active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold">{opt.title}</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{opt.desc}</p>
+                    </div>
+                    <div
+                      className={`mt-1.5 h-4 w-4 shrink-0 rounded-full border-2 transition-colors ${
+                        active ? "border-primary bg-primary" : "border-muted-foreground/40 group-hover:border-primary/40"
+                      }`}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+
+            {paymentMethod === "bank_transfer" && (
+              <div className="space-y-3 rounded-2xl border-2 border-primary/30 bg-primary/[0.03] p-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                    <CreditCard className="h-3.5 w-3.5" />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{i.name_ar}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatMAD(Number(i.price_mad))} × {i.qty}
-                    </p>
-                  </div>
-                  <p className="text-sm font-bold tabular-nums">
-                    {formatMAD(Number(i.price_mad) * i.qty)}
-                  </p>
+                  <h3 className="text-sm font-bold">تعليمات التحويل البنكي</h3>
                 </div>
-              ))}
-            </div>
 
-            <Separator className="my-4" />
+                {vendor.payment_instructions ? (
+                  <div className="rounded-xl border bg-card p-3.5">
+                    <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
+                      {vendor.payment_instructions}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="default"
+                      className="mt-3 w-full gap-1.5"
+                      onClick={copyPaymentInstructions}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      نسخ تعليمات التحويل
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border bg-card p-3.5 text-xs text-muted-foreground">
+                    لم يضف البائع تعليمات تحويل بعد. سيتواصل معك مباشرة لإرسال التفاصيل.
+                  </div>
+                )}
 
-            {/* Summary */}
-            <dl className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">عدد القطع</dt>
-                <dd className="font-medium">{cart.totalQty}</dd>
+                <FieldWrap id="ref" label="رقم / مرجع التحويل" hint="اختياري">
+                  <Input
+                    id="ref"
+                    value={paymentReference}
+                    onChange={(e) => setPaymentReference(e.target.value)}
+                    placeholder="رقم العملية أو اسم المرسل"
+                  />
+                </FieldWrap>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">طريقة الدفع</dt>
-                <dd className="font-medium">
-                  {PAYMENT_OPTIONS.find((p) => p.value === paymentMethod)?.title}
-                </dd>
-              </div>
-              <Separator />
-              <div className="flex justify-between text-base">
-                <dt className="font-bold">الإجمالي</dt>
-                <dd className="font-bold tabular-nums">{formatMAD(total)}</dd>
-              </div>
-            </dl>
+            )}
           </Card>
 
-          {/* Recap of contact for confidence */}
-          <Card className="p-4 sm:p-5 text-sm">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="font-bold">التوصيل إلى</p>
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setStep(1)}>
-                تعديل
-              </Button>
-            </div>
-            <p className="text-muted-foreground">{contactName} · {contactPhone}</p>
-            <p className="text-muted-foreground whitespace-pre-line">{shippingAddress}</p>
-            {notes && <p className="mt-1 text-xs text-muted-foreground">ملاحظات: {notes}</p>}
-          </Card>
-        </div>
-      )}
-
-      {/* Sticky action bar */}
-      <div className="sticky bottom-0 -mx-4 border-t bg-card/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
-        <div className="flex items-center gap-2">
-          {step > 1 && (
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
-              disabled={submitting}
+          {/* WhatsApp abandonment fallback */}
+          {whatsappFallbackHref && (
+            <a
+              href={whatsappFallbackHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleWhatsappFallback}
+              className="flex items-center justify-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-800 transition-colors hover:bg-green-100 dark:border-green-900/40 dark:bg-green-950/30 dark:text-green-200 dark:hover:bg-green-950/50"
             >
-              السابق
-            </Button>
+              <MessageCircle className="h-4 w-4" />
+              تحتاج مساعدة؟ أتمم الطلب عبر واتساب
+            </a>
           )}
-          {step < 3 && (
-            <Button size="lg" className="flex-[2]" onClick={goNext}>
-              التالي
-            </Button>
-          )}
-          {step === 3 && (
-            <Button size="lg" className="flex-[2]" disabled={submitting} onClick={handlePlaceOrder}>
-              {submitting ? (
-                <>
-                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                  جارٍ الإرسال...
-                </>
-              ) : (
-                `تأكيد الطلب • ${formatMAD(total)}`
-              )}
-            </Button>
-          )}
+        </div>
+
+        {/* RIGHT: Sticky order summary (always visible on desktop) */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-20 space-y-3">
+            <Card className="rounded-2xl p-5">
+              <div className="mb-3 flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-bold">ملخص الطلب</h2>
+              </div>
+
+              <ul className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                {cart.items.map((i) => (
+                  <li key={i.id} className="flex items-center gap-3">
+                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-md bg-muted">
+                      {i.image_url ? (
+                        <img src={i.image_url} alt={i.name_ar} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <Package className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{i.name_ar}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatMAD(Number(i.price_mad))} × {i.qty}
+                      </p>
+                    </div>
+                    <p className="text-sm font-bold tabular-nums">
+                      {formatMAD(Number(i.price_mad) * i.qty)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+
+              <Separator className="my-4" />
+
+              <dl className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">عدد القطع</dt>
+                  <dd className="font-medium tabular-nums">{cart.totalQty}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">طريقة الدفع</dt>
+                  <dd className="font-medium">
+                    {PAYMENT_OPTIONS.find((p) => p.value === paymentMethod)?.title}
+                  </dd>
+                </div>
+                <Separator />
+                <div className="flex justify-between text-base">
+                  <dt className="font-bold">الإجمالي</dt>
+                  <dd className="font-bold tabular-nums">{formatMAD(total)}</dd>
+                </div>
+              </dl>
+
+              <Button
+                size="lg"
+                className="mt-4 w-full"
+                disabled={submitting || !formValid}
+                onClick={handlePlaceOrder}
+                title={!formValid ? "أكمل البيانات المطلوبة أولاً" : undefined}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                    جارٍ الإرسال...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="ml-2 h-4 w-4" />
+                    تأكيد الطلب • {formatMAD(total)}
+                  </>
+                )}
+              </Button>
+              <p className="mt-2 text-center text-[10px] text-muted-foreground">
+                <Lock className="inline h-3 w-3 align-text-bottom" /> اتصال آمن — لا يتم
+                مشاركة بياناتك
+              </p>
+            </Card>
+          </div>
+        </aside>
+      </div>
+
+      {/* Mobile: collapsed summary + sticky CTA */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 px-4 py-3 backdrop-blur lg:hidden"
+        style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+      >
+        <div className="mx-auto flex max-w-3xl items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[11px] text-muted-foreground">
+              {cart.totalQty} قطعة • {PAYMENT_OPTIONS.find((p) => p.value === paymentMethod)?.title}
+            </p>
+            <p className="text-base font-extrabold leading-tight tabular-nums">{formatMAD(total)}</p>
+          </div>
+          <Button
+            size="lg"
+            disabled={submitting || !formValid}
+            onClick={handlePlaceOrder}
+            title={!formValid ? "أكمل البيانات المطلوبة أولاً" : undefined}
+            className="gap-1.5"
+          >
+            {submitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Zap className="h-4 w-4" />
+            )}
+            تأكيد الطلب
+          </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function TrustBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-2 rounded-xl border bg-card px-3 py-2.5">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
+        {icon}
+      </div>
+      <span className="truncate text-[11px] font-semibold sm:text-xs">{label}</span>
     </div>
   );
 }
