@@ -37,14 +37,16 @@ function persistToDb(event: AnalyticsEvent, payload: ProductEventPayload): void 
     const { product_id, vendor_id, price, user_id, ...rest } = payload;
     void supabase
       .from("analytics_events")
-      .insert({
-        event_name: event,
-        product_id: product_id ?? null,
-        vendor_id: vendor_id ?? null,
-        user_id: user_id ?? null,
-        price: typeof price === "number" && Number.isFinite(price) ? price : null,
-        metadata: rest as Record<string, unknown>,
-      })
+      .insert([
+        {
+          event_name: event,
+          product_id: product_id ?? null,
+          vendor_id: vendor_id ?? null,
+          user_id: user_id ?? null,
+          price: typeof price === "number" && Number.isFinite(price) ? price : null,
+          metadata: rest as Record<string, unknown>,
+        },
+      ])
       .then(() => {
         /* swallow */
       });
