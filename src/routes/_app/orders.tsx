@@ -120,7 +120,7 @@ function OrdersPage() {
       .from("orders")
       .select(
          `id, order_number, status, total_mad, created_at, notes, payment_method, payment_status, company_id,
-         companies:companies!orders_company_id_fkey ( id, name, display_name, logo_url ),
+         companies:company_id ( id, name, display_name, logo_url ),
          order_items ( id, quantity, unit_price_mad, product_id,
            products:product_id ( name_ar, image_url ) )`,
       )
