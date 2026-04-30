@@ -81,7 +81,7 @@ function ClientDashboard() {
           .from("orders")
           .select(
             `id, order_number, status, total_mad, created_at, payment_status,
-             companies:company_id ( id, name, display_name, logo_url )`,
+             companies:companies!orders_company_id_fkey ( id, name, display_name, logo_url )`,
           )
           .eq("buyer_id", user.id)
           .order("created_at", { ascending: false }),
