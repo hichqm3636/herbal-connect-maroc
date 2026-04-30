@@ -11,7 +11,10 @@ export type AnalyticsEvent =
   | "product_view"
   | "add_to_cart"
   | "buy_now"
-  | "whatsapp_click";
+  | "whatsapp_click"
+  | "checkout_view"
+  | "checkout_completed"
+  | "checkout_whatsapp_fallback";
 
 export interface ProductEventPayload {
   product_id: string;
