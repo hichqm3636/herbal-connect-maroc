@@ -513,17 +513,53 @@ function VendorOrdersPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openDetail(o);
-                        }}
-                      >
-                        <Eye className="h-4 w-4" />
-                        عرض
-                      </Button>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {o.payment_status === "awaiting_confirmation" && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            disabled={savingPayment}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              confirmTransfer(o);
+                            }}
+                          >
+                            <BadgeCheck className="h-4 w-4" />
+                            تأكيد التحويل
+                          </Button>
+                        )}
+                        {NEXT_STATUS[o.status]
+                          .filter((s) => s !== "cancelled")
+                          .slice(0, 1)
+                          .map((next) => (
+                            <Button
+                              key={next}
+                              size="sm"
+                              variant="outline"
+                              disabled={savingStatus}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                quickAdvance(o, next);
+                              }}
+                            >
+                              {next === "confirmed" && <CheckCircle2 className="h-4 w-4" />}
+                              {next === "preparing" && <Package className="h-4 w-4" />}
+                              {next === "shipped" && <Truck className="h-4 w-4" />}
+                              {next === "delivered" && <CheckCircle2 className="h-4 w-4" />}
+                              {STATUS_LABELS[next]}
+                            </Button>
+                          ))}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDetail(o);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
