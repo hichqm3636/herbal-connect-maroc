@@ -4,8 +4,8 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { MarketplaceTopBar } from "@/components/MarketplaceTopBar";
-import { CartSheet } from "@/components/CartSheet";
-import { ReplaceCartDialog } from "@/components/ReplaceCartDialog";
+// CartSheet & ReplaceCartDialog are mounted globally in __root.tsx
+// so they work on every route (including /store/$slug, /checkout, etc.).
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { Leaf, ShieldAlert } from "lucide-react";
@@ -132,8 +132,6 @@ function AppLayout() {
             <Outlet />
           </div>
         </main>
-        <CartSheet />
-        <ReplaceCartDialog />
       </div>
     );
   }
