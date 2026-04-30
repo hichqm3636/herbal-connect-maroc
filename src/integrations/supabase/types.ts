@@ -1634,6 +1634,7 @@ export type Database = {
             }[]
           }
       product_reviews_summary: { Args: { _product_id: string }; Returns: Json }
+      product_trust_signals: { Args: { _product_id: string }; Returns: Json }
       provision_company: {
         Args: {
           _admin_user_id: string
