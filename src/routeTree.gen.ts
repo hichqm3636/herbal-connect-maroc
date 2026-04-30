@@ -36,6 +36,7 @@ import { Route as AppSuperAdminUsersRouteImport } from './routes/_app/super-admi
 import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-admin/companies'
 import { Route as AppVendorVendorIndexRouteImport } from './routes/_app/_vendor/vendor.index'
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
+import { Route as StoreSlugProductIdRouteImport } from './routes/store.$slug.product.$id'
 import { Route as AppVendorVendorTeamRouteImport } from './routes/_app/_vendor/vendor.team'
 import { Route as AppVendorVendorStorageHealthRouteImport } from './routes/_app/_vendor/vendor.storage-health'
 import { Route as AppVendorVendorReviewsRouteImport } from './routes/_app/_vendor/vendor.reviews'
@@ -179,6 +180,11 @@ const AppAdminAdminIndexRoute = AppAdminAdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const StoreSlugProductIdRoute = StoreSlugProductIdRouteImport.update({
+  id: '/product/$id',
+  path: '/product/$id',
+  getParentRoute: () => StoreSlugRoute,
+} as any)
 const AppVendorVendorTeamRoute = AppVendorVendorTeamRouteImport.update({
   id: '/vendor/team',
   path: '/vendor/team',
@@ -250,7 +256,7 @@ export interface FileRoutesByFullPath {
   '/super-admin': typeof AppSuperAdminRouteWithChildren
   '/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/store/$slug': typeof StoreSlugRoute
+  '/store/$slug': typeof StoreSlugRouteWithChildren
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
@@ -265,6 +271,7 @@ export interface FileRoutesByFullPath {
   '/vendor/reviews': typeof AppVendorVendorReviewsRoute
   '/vendor/storage-health': typeof AppVendorVendorStorageHealthRoute
   '/vendor/team': typeof AppVendorVendorTeamRoute
+  '/store/$slug/product/$id': typeof StoreSlugProductIdRoute
   '/admin/': typeof AppAdminAdminIndexRoute
   '/vendor/': typeof AppVendorVendorIndexRoute
 }
@@ -285,7 +292,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/store/$slug': typeof StoreSlugRoute
+  '/store/$slug': typeof StoreSlugRouteWithChildren
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
@@ -300,6 +307,7 @@ export interface FileRoutesByTo {
   '/vendor/reviews': typeof AppVendorVendorReviewsRoute
   '/vendor/storage-health': typeof AppVendorVendorStorageHealthRoute
   '/vendor/team': typeof AppVendorVendorTeamRoute
+  '/store/$slug/product/$id': typeof StoreSlugProductIdRoute
   '/admin': typeof AppAdminAdminIndexRoute
   '/vendor': typeof AppVendorVendorIndexRoute
 }
@@ -325,7 +333,7 @@ export interface FileRoutesById {
   '/_app/super-admin': typeof AppSuperAdminRouteWithChildren
   '/_app/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/store/$slug': typeof StoreSlugRoute
+  '/store/$slug': typeof StoreSlugRouteWithChildren
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/_app/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
@@ -340,6 +348,7 @@ export interface FileRoutesById {
   '/_app/_vendor/vendor/reviews': typeof AppVendorVendorReviewsRoute
   '/_app/_vendor/vendor/storage-health': typeof AppVendorVendorStorageHealthRoute
   '/_app/_vendor/vendor/team': typeof AppVendorVendorTeamRoute
+  '/store/$slug/product/$id': typeof StoreSlugProductIdRoute
   '/_app/_admin/admin/': typeof AppAdminAdminIndexRoute
   '/_app/_vendor/vendor/': typeof AppVendorVendorIndexRoute
 }
@@ -378,6 +387,7 @@ export interface FileRouteTypes {
     | '/vendor/reviews'
     | '/vendor/storage-health'
     | '/vendor/team'
+    | '/store/$slug/product/$id'
     | '/admin/'
     | '/vendor/'
   fileRoutesByTo: FileRoutesByTo
@@ -413,6 +423,7 @@ export interface FileRouteTypes {
     | '/vendor/reviews'
     | '/vendor/storage-health'
     | '/vendor/team'
+    | '/store/$slug/product/$id'
     | '/admin'
     | '/vendor'
   id:
@@ -452,6 +463,7 @@ export interface FileRouteTypes {
     | '/_app/_vendor/vendor/reviews'
     | '/_app/_vendor/vendor/storage-health'
     | '/_app/_vendor/vendor/team'
+    | '/store/$slug/product/$id'
     | '/_app/_admin/admin/'
     | '/_app/_vendor/vendor/'
   fileRoutesById: FileRoutesById
@@ -466,7 +478,7 @@ export interface RootRouteChildren {
   VendorLoginRoute: typeof VendorLoginRoute
   VendorsRoute: typeof VendorsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
-  StoreSlugRoute: typeof StoreSlugRoute
+  StoreSlugRoute: typeof StoreSlugRouteWithChildren
   ApiPublicWooWebhookRoute: typeof ApiPublicWooWebhookRoute
 }
 
@@ -661,6 +673,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAdminIndexRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/store/$slug/product/$id': {
+      id: '/store/$slug/product/$id'
+      path: '/product/$id'
+      fullPath: '/store/$slug/product/$id'
+      preLoaderRoute: typeof StoreSlugProductIdRouteImport
+      parentRoute: typeof StoreSlugRoute
+    }
     '/_app/_vendor/vendor/team': {
       id: '/_app/_vendor/vendor/team'
       path: '/vendor/team'
@@ -824,6 +843,18 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface StoreSlugRouteChildren {
+  StoreSlugProductIdRoute: typeof StoreSlugProductIdRoute
+}
+
+const StoreSlugRouteChildren: StoreSlugRouteChildren = {
+  StoreSlugProductIdRoute: StoreSlugProductIdRoute,
+}
+
+const StoreSlugRouteWithChildren = StoreSlugRoute._addFileChildren(
+  StoreSlugRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
@@ -834,7 +865,7 @@ const rootRouteChildren: RootRouteChildren = {
   VendorLoginRoute: VendorLoginRoute,
   VendorsRoute: VendorsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
-  StoreSlugRoute: StoreSlugRoute,
+  StoreSlugRoute: StoreSlugRouteWithChildren,
   ApiPublicWooWebhookRoute: ApiPublicWooWebhookRoute,
 }
 export const routeTree = rootRouteImport

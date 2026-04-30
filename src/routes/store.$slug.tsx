@@ -303,17 +303,29 @@ function VendorStorePage() {
                   const display = p.rrp_price ?? p.pharmacy_price ?? p.price_mad;
                   return (
                     <Card key={p.id} className="overflow-hidden">
-                      <div className="aspect-square bg-muted">
-                        {p.image_url ? (
-                          <img src={p.image_url} alt={p.name_ar} className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center">
-                            <Package className="h-8 w-8 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
+                      <Link
+                        to="/store/$slug/product/$id"
+                        params={{ slug, id: p.id }}
+                        className="block"
+                      >
+                        <div className="aspect-square bg-muted">
+                          {p.image_url ? (
+                            <img src={p.image_url} alt={p.name_ar} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center">
+                              <Package className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                      </Link>
                       <div className="p-3">
-                        <p className="line-clamp-2 text-sm font-semibold">{p.name_ar}</p>
+                        <Link
+                          to="/store/$slug/product/$id"
+                          params={{ slug, id: p.id }}
+                          className="line-clamp-2 text-sm font-semibold hover:text-primary"
+                        >
+                          {p.name_ar}
+                        </Link>
                         {p.category && (
                           <Badge variant="secondary" className="mt-1 text-[10px]">
                             {p.category}
