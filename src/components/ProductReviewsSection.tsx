@@ -3,7 +3,6 @@ import { Loader2, MessageSquare, PencilLine, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StarRating } from "@/components/StarRating";
 import { ReviewDialog } from "@/components/ReviewDialog";
@@ -27,15 +26,15 @@ interface ReviewRow {
   created_at: string;
   order_id: string | null;
   user_id: string;
-}
-
-interface AuthorRow {
-  id: string;
-  full_name: string | null;
-  avatar_url: string | null;
+  profiles: {
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
 }
 
 const PAGE_SIZE = 10;
+const SELECT_COLS =
+  "id, rating, title, body, created_at, order_id, user_id, profiles:user_id ( full_name, avatar_url )";
 
 export function ProductReviewsSection({
   productId,
@@ -45,9 +44,8 @@ export function ProductReviewsSection({
 }: Props) {
   const { user } = useAuth();
 
-  const [allRatings, setAllRatings] = useState<number[] | null>(null); // for summary
+  const [allRatings, setAllRatings] = useState<number[] | null>(null);
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
-  const [authors, setAuthors] = useState<Record<string, AuthorRow>>({});
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
@@ -55,15 +53,12 @@ export function ProductReviewsSection({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Load summary + first page
   useEffect(() => {
     let alive = true;
     setLoading(true);
     setReviews([]);
-    setAuthors({});
 
     (async () => {
-      // Summary
       const { data: ratings } = await supabase
         .from("product_reviews")
         .select("rating")
@@ -73,10 +68,9 @@ export function ProductReviewsSection({
       if (!alive) return;
       setAllRatings((ratings ?? []).map((r) => r.rating as number));
 
-      // First page
       let q = supabase
         .from("product_reviews")
-        .select("id, rating, title, body, created_at, order_id, user_id")
+        .select(SELECT_COLS)
         .eq("product_id", productId)
         .eq("status", "approved");
       q =
@@ -86,12 +80,10 @@ export function ProductReviewsSection({
       const { data } = await q.range(0, PAGE_SIZE - 1);
 
       if (!alive) return;
-      const list = (data ?? []) as ReviewRow[];
+      const list = (data ?? []) as unknown as ReviewRow[];
       setReviews(list);
       setHasMore(list.length === PAGE_SIZE);
-
-      await loadAuthors(list, alive);
-      if (alive) setLoading(false);
+      setLoading(false);
     })();
 
     return () => {
@@ -100,29 +92,12 @@ export function ProductReviewsSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId, sort, refreshKey]);
 
-  const loadAuthors = async (list: ReviewRow[], alive = true) => {
-    const ids = Array.from(new Set(list.map((r) => r.user_id)));
-    if (!ids.length) return;
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name, avatar_url")
-      .in("id", ids);
-    if (!alive) return;
-    setAuthors((prev) => {
-      const next = { ...prev };
-      (profiles ?? []).forEach((p) => {
-        next[p.id] = p as AuthorRow;
-      });
-      return next;
-    });
-  };
-
   const loadMore = async () => {
     setLoadingMore(true);
     const from = reviews.length;
     let q = supabase
       .from("product_reviews")
-      .select("id, rating, title, body, created_at, order_id, user_id")
+      .select(SELECT_COLS)
       .eq("product_id", productId)
       .eq("status", "approved");
     q =
@@ -130,10 +105,9 @@ export function ProductReviewsSection({
         ? q.order("created_at", { ascending: false })
         : q.order("rating", { ascending: false }).order("created_at", { ascending: false });
     const { data } = await q.range(from, from + PAGE_SIZE - 1);
-    const list = (data ?? []) as ReviewRow[];
+    const list = (data ?? []) as unknown as ReviewRow[];
     setReviews((prev) => [...prev, ...list]);
     setHasMore(list.length === PAGE_SIZE);
-    await loadAuthors(list);
     setLoadingMore(false);
   };
 
@@ -149,6 +123,17 @@ export function ProductReviewsSection({
     return { count, avg, dist };
   }, [allRatings]);
 
+  const alreadyReviewed = useMemo(
+    () => !!user && reviews.some((r) => r.user_id === user.id),
+    [reviews, user],
+  );
+
+  const writeBtnTitle = !user
+    ? "سجّل الدخول لكتابة مراجعة"
+    : alreadyReviewed
+      ? "لقد قمت بمراجعة هذا المنتج بالفعل"
+      : undefined;
+
   return (
     <section className="mt-6 space-y-4" dir="rtl">
       <div className="flex items-center justify-between">
@@ -156,12 +141,12 @@ export function ProductReviewsSection({
         <Button
           size="sm"
           onClick={() => setDialogOpen(true)}
-          disabled={!user}
-          title={!user ? "سجّل الدخول لكتابة مراجعة" : undefined}
+          disabled={!user || alreadyReviewed}
+          title={writeBtnTitle}
           className="gap-1.5"
         >
           <PencilLine className="h-4 w-4" />
-          اكتب مراجعة
+          {alreadyReviewed ? "تمت مراجعتك" : "اكتب مراجعة"}
         </Button>
       </div>
 
@@ -247,19 +232,35 @@ export function ProductReviewsSection({
         </div>
       )}
 
+      {/* List skeleton */}
+      {loading && (
+        <ul className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="rounded-lg border bg-card p-3">
+              <div className="flex items-start gap-3">
+                <Skeleton className="h-9 w-9 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-3 w-1/3" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-4/5" />
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
       {/* List */}
       {!loading && summary.count > 0 && (
         <ul className="space-y-3">
           {reviews.map((r) => {
-            const author = authors[r.user_id];
-            const name = author?.full_name?.trim() || "عميل";
+            const name = r.profiles?.full_name?.trim() || "عميل";
+            const avatarUrl = r.profiles?.avatar_url ?? undefined;
             return (
               <li key={r.id} className="rounded-lg border bg-card p-3">
                 <div className="flex items-start gap-3">
                   <Avatar className="h-9 w-9">
-                    {author?.avatar_url && (
-                      <AvatarImage src={author.avatar_url} alt={name} />
-                    )}
+                    {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
                     <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">
                       {name[0]?.toUpperCase()}
                     </AvatarFallback>
@@ -272,13 +273,10 @@ export function ProductReviewsSection({
                         {formatDateAr(r.created_at)}
                       </span>
                       {r.order_id && (
-                        <Badge
-                          variant="secondary"
-                          className="gap-1 bg-success/10 text-success"
-                        >
+                        <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-medium text-success">
                           <ShieldCheck className="h-3 w-3" />
                           تم الشراء
-                        </Badge>
+                        </span>
                       )}
                     </div>
                     {r.title && (
