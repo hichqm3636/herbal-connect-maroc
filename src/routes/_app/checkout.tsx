@@ -227,13 +227,12 @@ function CheckoutPage() {
     const key = `${vendor.id}:${user?.id ?? "anon"}:${cart.items.length}`;
     if (viewedRef.current === key) return;
     viewedRef.current = key;
-    track("product_view" as never, {
+    track("checkout_view", {
       product_id: cart.items.map((i) => i.id).join(","),
       vendor_id: vendor.id,
       price: total,
       user_id: user?.id ?? null,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    });
   }, [vendor, cart.items, user?.id, total]);
 
   function focusFirstError() {
