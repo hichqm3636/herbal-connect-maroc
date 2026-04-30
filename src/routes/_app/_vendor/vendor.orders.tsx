@@ -339,6 +339,34 @@ function VendorOrdersPage() {
     setOrders((prev) => prev.map((o) => (o.id === selected.id ? { ...o, ...updated } : o)));
   };
 
+  // Combined: confirm bank-transfer receipt -> mark paid AND confirm the order.
+  const confirmTransfer = async (order: OrderRow) => {
+    setSavingPayment(true);
+    const nowIso = new Date().toISOString();
+    const patch: {
+      payment_status: PaymentStatus;
+      payment_paid_at: string;
+      status?: OrderStatus;
+    } = { payment_status: "paid", payment_paid_at: nowIso };
+    // Only auto-advance status if the order is still pending.
+    if (order.status === "pending") patch.status = "confirmed";
+    const { error } = await supabase.from("orders").update(patch).eq("id", order.id);
+    setSavingPayment(false);
+    if (error) {
+      toast.error("تعذر تأكيد التحويل");
+      return;
+    }
+    toast.success("تم تأكيد التحويل وتأكيد الطلب");
+    const updated: OrderRow = {
+      ...order,
+      payment_status: "paid",
+      payment_paid_at: nowIso,
+      status: patch.status ?? order.status,
+    };
+    setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
+    if (selected?.id === order.id) setSelected(updated);
+  };
+
   const saveAdminNotes = async () => {
     if (!selected) return;
     const value = adminNotes.trim() || null;
