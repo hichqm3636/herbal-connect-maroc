@@ -287,6 +287,7 @@ function ProductDetailPage() {
       const res = cart.tryAdd(cartProduct, minOrder);
       if (res.kind === "added") {
         ok = true;
+        addedToCartRef.current = true;
         toast.success("تمت الإضافة إلى السلة");
         track(origin, {
           product_id: product.id,
