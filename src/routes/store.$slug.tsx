@@ -196,9 +196,9 @@ function VendorStorePage() {
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">الدليل</span>
           </Link>
-          <div className="flex flex-1 items-center justify-center gap-3">
+          <div className="pointer-events-none flex min-w-0 flex-1 items-center justify-center gap-3">
             <div
-              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl text-white"
+              className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl text-white"
               style={{ backgroundColor: vendor.brand_color }}
             >
               {vendor.logo_url ? (
@@ -220,15 +220,20 @@ function VendorStorePage() {
             type="button"
             size="sm"
             variant="outline"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               console.log("[store] cart button clicked, totalQty=", cart.totalQty);
               cart.openCart();
             }}
-            className="relative z-10 gap-1.5 transition-transform active:scale-95"
+            className="pointer-events-auto relative z-[9999] shrink-0 gap-1.5 isolate transition-transform active:scale-95"
             aria-label="فتح السلة"
           >
             <ShoppingCart className="h-4 w-4" />
-            {cart.totalQty > 0 && <span className="tabular-nums">{cart.totalQty}</span>}
+            {cart.totalQty > 0 && (
+              <span className="absolute -top-1 -right-1 rounded-full bg-warning px-1 text-[10px] font-bold text-warning-foreground tabular-nums">
+                {cart.totalQty}
+              </span>
+            )}
           </Button>
         </div>
       </header>
