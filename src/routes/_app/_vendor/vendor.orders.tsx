@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import {
   Loader2, Search, Eye, Package, Clock, CheckCircle2, Truck, XCircle,
-  Calendar, RefreshCw, Save,
+  Calendar, RefreshCw, Save, BadgeCheck,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -339,6 +339,52 @@ function VendorOrdersPage() {
     setOrders((prev) => prev.map((o) => (o.id === selected.id ? { ...o, ...updated } : o)));
   };
 
+  // Combined: confirm bank-transfer receipt -> mark paid AND confirm the order.
+  const confirmTransfer = async (order: OrderRow) => {
+    setSavingPayment(true);
+    const nowIso = new Date().toISOString();
+    const patch: {
+      payment_status: PaymentStatus;
+      payment_paid_at: string;
+      status?: OrderStatus;
+    } = { payment_status: "paid", payment_paid_at: nowIso };
+    // Only auto-advance status if the order is still pending.
+    if (order.status === "pending") patch.status = "confirmed";
+    const { error } = await supabase.from("orders").update(patch).eq("id", order.id);
+    setSavingPayment(false);
+    if (error) {
+      toast.error("تعذر تأكيد التحويل");
+      return;
+    }
+    toast.success("تم تأكيد التحويل وتأكيد الطلب");
+    const updated: OrderRow = {
+      ...order,
+      payment_status: "paid",
+      payment_paid_at: nowIso,
+      status: patch.status ?? order.status,
+    };
+    setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
+    if (selected?.id === order.id) setSelected(updated);
+  };
+
+  // Inline row action: advance to a specific allowed next status without opening the dialog.
+  const quickAdvance = async (order: OrderRow, next: OrderStatus) => {
+    if (!NEXT_STATUS[order.status].includes(next)) {
+      toast.error("تحوّل غير مسموح به");
+      return;
+    }
+    setSavingStatus(true);
+    const { error } = await supabase.from("orders").update({ status: next }).eq("id", order.id);
+    setSavingStatus(false);
+    if (error) {
+      toast.error("تعذر تحديث الحالة");
+      return;
+    }
+    toast.success(`تم تحديث الحالة إلى: ${STATUS_LABELS[next]}`);
+    setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: next } : o)));
+    if (selected?.id === order.id) setSelected({ ...order, status: next });
+  };
+
   const saveAdminNotes = async () => {
     if (!selected) return;
     const value = adminNotes.trim() || null;
@@ -485,17 +531,53 @@ function VendorOrdersPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openDetail(o);
-                        }}
-                      >
-                        <Eye className="h-4 w-4" />
-                        عرض
-                      </Button>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {o.payment_status === "awaiting_confirmation" && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            disabled={savingPayment}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              confirmTransfer(o);
+                            }}
+                          >
+                            <BadgeCheck className="h-4 w-4" />
+                            تأكيد التحويل
+                          </Button>
+                        )}
+                        {NEXT_STATUS[o.status]
+                          .filter((s) => s !== "cancelled")
+                          .slice(0, 1)
+                          .map((next) => (
+                            <Button
+                              key={next}
+                              size="sm"
+                              variant="outline"
+                              disabled={savingStatus}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                quickAdvance(o, next);
+                              }}
+                            >
+                              {next === "confirmed" && <CheckCircle2 className="h-4 w-4" />}
+                              {next === "preparing" && <Package className="h-4 w-4" />}
+                              {next === "shipped" && <Truck className="h-4 w-4" />}
+                              {next === "delivered" && <CheckCircle2 className="h-4 w-4" />}
+                              {STATUS_LABELS[next]}
+                            </Button>
+                          ))}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDetail(o);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

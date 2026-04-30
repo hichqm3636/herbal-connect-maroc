@@ -105,36 +105,56 @@ function OrdersPage() {
   const [vendorFilter, setVendorFilter] = useState<string>("all");
   const [query, setQuery] = useState("");
 
+  const fetchOrders = async (uid: string, opts: { silent?: boolean } = {}) => {
+    if (!opts.silent) setLoading(true);
+    setError(null);
+    const { data, error } = await supabase
+      .from("orders")
+      .select(
+        `id, order_number, status, total_mad, created_at, notes, payment_method, payment_status, company_id,
+         companies:company_id ( id, name, display_name, logo_url ),
+         order_items ( id, quantity, unit_price_mad, product_id,
+           products:product_id ( name_ar, image_url ) )`,
+      )
+      .eq("buyer_id", uid)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      setError(error.message);
+      setOrders([]);
+    } else {
+      setOrders((data ?? []) as unknown as OrderRow[]);
+    }
+    if (!opts.silent) setLoading(false);
+  };
+
   useEffect(() => {
     if (authLoading || !user) return;
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setError(null);
-      const { data, error } = await supabase
-        .from("orders")
-        .select(
-          `id, order_number, status, total_mad, created_at, notes, payment_method, payment_status, company_id,
-           companies:company_id ( id, name, display_name, logo_url ),
-           order_items ( id, quantity, unit_price_mad, product_id,
-             products:product_id ( name_ar, image_url ) )`,
-        )
-        .eq("buyer_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (cancelled) return;
-      if (error) {
-        setError(error.message);
-        setOrders([]);
-      } else {
-        setOrders((data ?? []) as unknown as OrderRow[]);
-      }
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
+    fetchOrders(user.id);
   }, [user, authLoading]);
+
+  // Realtime: refresh whenever any of this buyer's orders change.
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`buyer-orders:${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `buyer_id=eq.${user.id}`,
+        },
+        () => {
+          fetchOrders(user.id, { silent: true });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const totalSpent = useMemo(
     () => (orders ?? []).reduce((s, o) => s + Number(o.total_mad ?? 0), 0),
@@ -505,6 +525,8 @@ function OrdersPage() {
                   ))}
                 </div>
 
+                <OrderTimeline status={order.status} />
+
                 <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/20 px-4 py-2.5 text-xs text-muted-foreground">
                   <span>
                     {itemCount} قطعة
@@ -530,6 +552,88 @@ function OrdersPage() {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------------- Order Timeline ----------------
+// Visualizes the canonical lifecycle stages and highlights where the order is.
+// Cancelled orders show a single muted notice instead of the timeline.
+
+const TIMELINE_STEPS: { key: string; label: string; matches: string[] }[] = [
+  { key: "placed", label: "تم الطلب", matches: ["pending", "confirmed", "preparing", "processing", "shipped", "delivered"] },
+  { key: "confirmed", label: "تم التأكيد", matches: ["confirmed", "preparing", "processing", "shipped", "delivered"] },
+  { key: "preparing", label: "قيد التحضير", matches: ["preparing", "processing", "shipped", "delivered"] },
+  { key: "shipped", label: "تم الشحن", matches: ["shipped", "delivered"] },
+  { key: "delivered", label: "تم التوصيل", matches: ["delivered"] },
+];
+
+function currentStepIndex(status: string): number {
+  let idx = -1;
+  TIMELINE_STEPS.forEach((s, i) => {
+    if (s.matches.includes(status)) idx = i;
+  });
+  return idx;
+}
+
+function OrderTimeline({ status }: { status: string }) {
+  if (status === "cancelled") {
+    return (
+      <div className="border-t bg-destructive/5 px-4 py-3 text-xs text-destructive">
+        تم إلغاء هذا الطلب.
+      </div>
+    );
+  }
+  const activeIdx = currentStepIndex(status);
+  return (
+    <div className="border-t bg-muted/10 px-3 py-3 sm:px-4">
+      <ol className="flex items-start justify-between gap-1">
+        {TIMELINE_STEPS.map((step, i) => {
+          const done = i <= activeIdx;
+          const isCurrent = i === activeIdx;
+          return (
+            <li key={step.key} className="flex flex-1 flex-col items-center text-center">
+              <div className="flex w-full items-center">
+                <span
+                  className={cn(
+                    "h-0.5 flex-1",
+                    i === 0 ? "opacity-0" : done ? "bg-primary" : "bg-border",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold transition-colors",
+                    done
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background text-muted-foreground",
+                    isCurrent && "ring-2 ring-primary/30",
+                  )}
+                >
+                  {done ? "✓" : i + 1}
+                </span>
+                <span
+                  className={cn(
+                    "h-0.5 flex-1",
+                    i === TIMELINE_STEPS.length - 1
+                      ? "opacity-0"
+                      : i < activeIdx
+                        ? "bg-primary"
+                        : "bg-border",
+                  )}
+                />
+              </div>
+              <span
+                className={cn(
+                  "mt-1.5 text-[10px] leading-tight sm:text-xs",
+                  done ? "font-semibold text-foreground" : "text-muted-foreground",
+                )}
+              >
+                {step.label}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }
