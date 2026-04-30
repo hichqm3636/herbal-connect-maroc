@@ -1514,6 +1514,27 @@ export type Database = {
         Args: { _days?: number; _vendor_id?: string }
         Returns: Json
       }
+      analytics_integrity_report: {
+        Args: never
+        Returns: {
+          duplicate_events: number
+          duplicate_groups: number
+          event_name: string
+          missing_product: number
+          missing_vendor: number
+          total: number
+        }[]
+      }
+      analytics_orders_vs_events: {
+        Args: { p_days?: number }
+        Returns: {
+          checkout_completed_events: number
+          diff: number
+          orders_count: number
+          product_views: number
+          real_conversion_pct: number
+        }[]
+      }
       analytics_product_conversion: {
         Args: { _days?: number; _vendor_id?: string }
         Returns: {
@@ -1522,6 +1543,19 @@ export type Database = {
           conversion_rate: number
           product_id: string
           views: number
+        }[]
+      }
+      analytics_recent_events: {
+        Args: { p_limit?: number }
+        Returns: {
+          created_at: string
+          event_name: string
+          id: string
+          metadata: Json
+          price: number
+          product_id: string
+          user_id: string
+          vendor_id: string
         }[]
       }
       analytics_vendor_orders: {
