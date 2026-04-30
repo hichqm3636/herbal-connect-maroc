@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, MessageSquare, PencilLine, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,17 +26,51 @@ interface ReviewRow {
   created_at: string;
   order_id: string | null;
   user_id: string;
-  profiles: {
-    full_name: string | null;
-    avatar_url: string | null;
-  } | null;
+  author_name: string | null;
+  author_avatar_url: string | null;
+}
+
+interface DistEntry {
+  star: number;
+  count: number;
+  pct: number;
+}
+
+interface SummaryShape {
+  count: number;
+  avg: number;
+  distribution: DistEntry[];
 }
 
 const PAGE_SIZE = 10;
-const SELECT_COLS =
-  "id, rating, title, body, created_at, order_id, user_id, profiles:user_id ( full_name, avatar_url )";
 
-export function ProductReviewsSection({
+const EMPTY_SUMMARY: SummaryShape = {
+  count: 0,
+  avg: 0,
+  distribution: [5, 4, 3, 2, 1].map((s) => ({ star: s, count: 0, pct: 0 })),
+};
+
+function normalizeSummary(raw: unknown): SummaryShape {
+  if (!raw || typeof raw !== "object") return EMPTY_SUMMARY;
+  const r = raw as { count?: number; avg?: number | string; distribution?: DistEntry[] };
+  const dist = (r.distribution ?? []).map((d) => ({
+    star: Number(d.star),
+    count: Number(d.count),
+    pct: Number(d.pct),
+  }));
+  // Ensure all 5 stars present, sorted desc
+  const byStar = new Map(dist.map((d) => [d.star, d]));
+  const full = [5, 4, 3, 2, 1].map(
+    (s) => byStar.get(s) ?? { star: s, count: 0, pct: 0 },
+  );
+  return {
+    count: Number(r.count ?? 0),
+    avg: Number(r.avg ?? 0),
+    distribution: full,
+  };
+}
+
+export const ProductReviewsSection = memo(function ProductReviewsSection({
   productId,
   productName,
   companyId,
@@ -44,84 +78,91 @@ export function ProductReviewsSection({
 }: Props) {
   const { user } = useAuth();
 
-  const [allRatings, setAllRatings] = useState<number[] | null>(null);
+  const [summary, setSummary] = useState<SummaryShape>(EMPTY_SUMMARY);
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [sort, setSort] = useState<"newest" | "highest">("newest");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
 
+  // Track latest request to avoid race conditions on rapid sort changes
+  const reqIdRef = useRef(0);
+
+  const fetchPage = useCallback(
+    async (cursor: ReviewRow | null) => {
+      const { data, error } = await supabase.rpc("product_reviews_page", {
+        _product_id: productId,
+        _sort: sort,
+        _limit: PAGE_SIZE,
+        ...(cursor
+          ? {
+              _cursor_created_at: cursor.created_at,
+              _cursor_id: cursor.id,
+              _cursor_rating: cursor.rating,
+            }
+          : {}),
+      });
+      if (error) throw error;
+      return (data ?? []) as ReviewRow[];
+    },
+    [productId, sort],
+  );
+
+  // Initial load + reload on sort/product change
   useEffect(() => {
-    let alive = true;
+    const myReq = ++reqIdRef.current;
     setLoading(true);
     setReviews([]);
 
     (async () => {
-      const { data: ratings } = await supabase
-        .from("product_reviews")
-        .select("rating")
-        .eq("product_id", productId)
-        .eq("status", "approved");
-
-      if (!alive) return;
-      setAllRatings((ratings ?? []).map((r) => r.rating as number));
-
-      let q = supabase
-        .from("product_reviews")
-        .select(SELECT_COLS)
-        .eq("product_id", productId)
-        .eq("status", "approved");
-      q =
-        sort === "newest"
-          ? q.order("created_at", { ascending: false })
-          : q.order("rating", { ascending: false }).order("created_at", { ascending: false });
-      const { data } = await q.range(0, PAGE_SIZE - 1);
-
-      if (!alive) return;
-      const list = (data ?? []) as unknown as ReviewRow[];
-      setReviews(list);
-      setHasMore(list.length === PAGE_SIZE);
-      setLoading(false);
+      try {
+        const [{ data: sumData }, page] = await Promise.all([
+          supabase.rpc("product_reviews_summary", { _product_id: productId }),
+          fetchPage(null),
+        ]);
+        if (reqIdRef.current !== myReq) return;
+        setSummary(normalizeSummary(sumData));
+        setReviews(page);
+        setHasMore(page.length === PAGE_SIZE);
+      } catch {
+        if (reqIdRef.current !== myReq) return;
+        setSummary(EMPTY_SUMMARY);
+        setReviews([]);
+        setHasMore(false);
+      } finally {
+        if (reqIdRef.current === myReq) setLoading(false);
+      }
     })();
+  }, [productId, sort, fetchPage]);
 
-    return () => {
-      alive = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId, sort, refreshKey]);
-
-  const loadMore = async () => {
+  const loadMore = useCallback(async () => {
+    if (loadingMore || reviews.length === 0) return;
     setLoadingMore(true);
-    const from = reviews.length;
-    let q = supabase
-      .from("product_reviews")
-      .select(SELECT_COLS)
-      .eq("product_id", productId)
-      .eq("status", "approved");
-    q =
-      sort === "newest"
-        ? q.order("created_at", { ascending: false })
-        : q.order("rating", { ascending: false }).order("created_at", { ascending: false });
-    const { data } = await q.range(from, from + PAGE_SIZE - 1);
-    const list = (data ?? []) as unknown as ReviewRow[];
-    setReviews((prev) => [...prev, ...list]);
-    setHasMore(list.length === PAGE_SIZE);
-    setLoadingMore(false);
-  };
+    try {
+      const cursor = reviews[reviews.length - 1];
+      const page = await fetchPage(cursor);
+      setReviews((prev) => [...prev, ...page]);
+      setHasMore(page.length === PAGE_SIZE);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [fetchPage, loadingMore, reviews]);
 
-  const summary = useMemo(() => {
-    const ratings = allRatings ?? [];
-    const count = ratings.length;
-    const avg = count === 0 ? 0 : ratings.reduce((s, r) => s + r, 0) / count;
-    const dist = [5, 4, 3, 2, 1].map((star) => {
-      const n = ratings.filter((r) => Math.round(r) === star).length;
-      const pct = count === 0 ? 0 : (n / count) * 100;
-      return { star, n, pct };
-    });
-    return { count, avg, dist };
-  }, [allRatings]);
+  // Refetch only first page after a new review is submitted (no full reload)
+  const refreshFirstPage = useCallback(async () => {
+    try {
+      const [{ data: sumData }, page] = await Promise.all([
+        supabase.rpc("product_reviews_summary", { _product_id: productId }),
+        fetchPage(null),
+      ]);
+      setSummary(normalizeSummary(sumData));
+      setReviews(page);
+      setHasMore(page.length === PAGE_SIZE);
+    } catch {
+      /* noop */
+    }
+  }, [productId, fetchPage]);
 
   const alreadyReviewed = useMemo(
     () => !!user && reviews.some((r) => r.user_id === user.id),
@@ -183,7 +224,7 @@ export function ProductReviewsSection({
               </p>
             </div>
             <div className="flex-1 space-y-1.5">
-              {summary.dist.map((d) => (
+              {summary.distribution.map((d) => (
                 <div key={d.star} className="flex items-center gap-2 text-xs">
                   <span className="w-3 tabular-nums">{d.star}</span>
                   <span className="text-yellow-400">★</span>
@@ -194,7 +235,7 @@ export function ProductReviewsSection({
                     />
                   </div>
                   <span className="w-8 text-left tabular-nums text-muted-foreground">
-                    {d.n}
+                    {d.count}
                   </span>
                 </div>
               ))}
@@ -254,8 +295,8 @@ export function ProductReviewsSection({
       {!loading && summary.count > 0 && (
         <ul className="space-y-3">
           {reviews.map((r) => {
-            const name = r.profiles?.full_name?.trim() || "عميل";
-            const avatarUrl = r.profiles?.avatar_url ?? undefined;
+            const name = r.author_name?.trim() || "عميل";
+            const avatarUrl = r.author_avatar_url ?? undefined;
             return (
               <li key={r.id} className="rounded-lg border bg-card p-3">
                 <div className="flex items-start gap-3">
@@ -318,8 +359,8 @@ export function ProductReviewsSection({
         productName={productName}
         companyId={companyId}
         companyName={companyName}
-        onSubmitted={() => setRefreshKey((k) => k + 1)}
+        onSubmitted={refreshFirstPage}
       />
     </section>
   );
-}
+});
