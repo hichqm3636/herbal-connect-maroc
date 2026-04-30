@@ -311,14 +311,12 @@ function CheckoutPage() {
       toast.success("تم إرسال الطلب بنجاح");
 
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        track("buy_now" as any, {
+        track("checkout_completed", {
           product_id: orderRow.id,
           vendor_id: vendor.id,
           price: total,
           user_id: user.id,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
+        });
       } catch {
         /* never break checkout on analytics */
       }
