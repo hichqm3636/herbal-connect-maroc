@@ -258,13 +258,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // In platform mode, expose no tenant company at all.
   const exposedCompany = mode === "platform" ? null : company;
 
-  // Compute the single canonical marketplace role. Priority:
-  // super_admin > admin (workspace owner = vendor) > vendor > client.
+  // Compute the single canonical UI role. A company-scoped `admin` is the
+  // vendor workspace owner; only an admin with no company is platform admin.
+  const hasCompanyAdminRole = roles.includes("admin") && !!companyId;
   const marketplaceRole: MarketplaceRole | null = roles.includes("super_admin")
     ? "super_admin"
-    : roles.includes("admin")
+    : roles.includes("admin") && !hasCompanyAdminRole
       ? "admin"
-      : roles.includes("vendor")
+      : roles.includes("vendor") || hasCompanyAdminRole
         ? "vendor"
         : roles.includes("client")
           ? "client"
@@ -277,7 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin: roles.includes("admin") || roles.includes("super_admin"),
     isSuperAdmin: roles.includes("super_admin"),
     isClient: marketplaceRole === "client",
-    isVendor: marketplaceRole === "vendor" || marketplaceRole === "admin",
+    isVendor: marketplaceRole === "vendor",
     marketplaceRole,
     mode,
     companyId,

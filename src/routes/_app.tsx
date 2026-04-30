@@ -28,12 +28,12 @@ function startsWithAny(path: string, prefixes: string[]): boolean {
 export { homeForRole };
 
 function AppLayout() {
-  const { session, loading, marketplaceRole, isClient, isVendor, isSuperAdmin, roles, companyId } = useAuth();
+  const { session, loading, marketplaceRole, isClient, isVendor, isSuperAdmin, companyId } = useAuth();
   const tenant = useTenant();
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname;
-  const isPlatformAdmin = roles.includes("admin") || isSuperAdmin;
+  const isPlatformAdmin = marketplaceRole === "admin" || isSuperAdmin;
 
   const onTenantScopedRoute =
     startsWithAny(path, CLIENT_ONLY_PREFIXES) || startsWithAny(path, VENDOR_ONLY_PREFIXES);

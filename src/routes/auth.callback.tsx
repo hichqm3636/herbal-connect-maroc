@@ -90,8 +90,8 @@ function AuthCallbackPage() {
 
         // Marketplace routing rules (priority: super > admin > vendor > client):
         //  - super_admin → /super-admin (force apex host in production)
-        //  - admin       → /admin
-        //  - vendor      → /vendor
+        //  - platform admin → /admin
+        //  - company admin/vendor → /vendor
         //  - client      → /vendors
         const host =
           typeof window !== "undefined" ? window.location.hostname.toLowerCase() : "";
@@ -105,7 +105,7 @@ function AuthCallbackPage() {
           return;
         }
 
-        const dest = isAdmin ? "/admin" : isVendor ? "/vendor" : "/vendors";
+        const dest = isAdmin && !userSlug ? "/admin" : isVendor || isAdmin ? "/vendor" : "/vendors";
 
         // Cross-host bounce when user lands on the apex/wrong tenant.
         if (userSlug && tenant.slug !== userSlug) {

@@ -293,7 +293,7 @@ export function AppSidebar() {
           ? "حساب عميل"
           : "";
 
-  // Treat super-admin/admin as platform-chrome for the header logo.
+  // Treat only platform admins as platform chrome; company admins use vendor chrome.
   const showPlatformChrome = isPlatform || isSuperAdmin || isAdmin;
 
   return (
