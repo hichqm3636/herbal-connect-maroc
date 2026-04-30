@@ -34,6 +34,7 @@ import { Route as AppSuperAdminIndexRouteImport } from './routes/_app/super-admi
 import { Route as ApiPublicWooWebhookRouteImport } from './routes/api/public/woo-webhook'
 import { Route as AppSuperAdminUsersRouteImport } from './routes/_app/super-admin/users'
 import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-admin/companies'
+import { Route as AppSuperAdminAnalyticsRouteImport } from './routes/_app/super-admin/analytics'
 import { Route as AppVendorVendorIndexRouteImport } from './routes/_app/_vendor/vendor.index'
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
 import { Route as StoreSlugProductIdRouteImport } from './routes/store.$slug.product.$id'
@@ -170,6 +171,11 @@ const AppSuperAdminCompaniesRoute = AppSuperAdminCompaniesRouteImport.update({
   path: '/companies',
   getParentRoute: () => AppSuperAdminRoute,
 } as any)
+const AppSuperAdminAnalyticsRoute = AppSuperAdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AppSuperAdminRoute,
+} as any)
 const AppVendorVendorIndexRoute = AppVendorVendorIndexRouteImport.update({
   id: '/vendor/',
   path: '/vendor/',
@@ -257,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
+  '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
@@ -293,6 +300,7 @@ export interface FileRoutesByTo {
   '/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
+  '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
@@ -334,6 +342,7 @@ export interface FileRoutesById {
   '/_app/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
+  '/_app/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/_app/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
@@ -373,6 +382,7 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/auth/callback'
     | '/store/$slug'
+    | '/super-admin/analytics'
     | '/super-admin/companies'
     | '/super-admin/users'
     | '/api/public/woo-webhook'
@@ -409,6 +419,7 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/auth/callback'
     | '/store/$slug'
+    | '/super-admin/analytics'
     | '/super-admin/companies'
     | '/super-admin/users'
     | '/api/public/woo-webhook'
@@ -449,6 +460,7 @@ export interface FileRouteTypes {
     | '/_app/wishlist'
     | '/auth/callback'
     | '/store/$slug'
+    | '/_app/super-admin/analytics'
     | '/_app/super-admin/companies'
     | '/_app/super-admin/users'
     | '/api/public/woo-webhook'
@@ -659,6 +671,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSuperAdminCompaniesRouteImport
       parentRoute: typeof AppSuperAdminRoute
     }
+    '/_app/super-admin/analytics': {
+      id: '/_app/super-admin/analytics'
+      path: '/analytics'
+      fullPath: '/super-admin/analytics'
+      preLoaderRoute: typeof AppSuperAdminAnalyticsRouteImport
+      parentRoute: typeof AppSuperAdminRoute
+    }
     '/_app/_vendor/vendor/': {
       id: '/_app/_vendor/vendor/'
       path: '/vendor'
@@ -798,12 +817,14 @@ const AppVendorRouteWithChildren = AppVendorRoute._addFileChildren(
 )
 
 interface AppSuperAdminRouteChildren {
+  AppSuperAdminAnalyticsRoute: typeof AppSuperAdminAnalyticsRoute
   AppSuperAdminCompaniesRoute: typeof AppSuperAdminCompaniesRoute
   AppSuperAdminUsersRoute: typeof AppSuperAdminUsersRoute
   AppSuperAdminIndexRoute: typeof AppSuperAdminIndexRoute
 }
 
 const AppSuperAdminRouteChildren: AppSuperAdminRouteChildren = {
+  AppSuperAdminAnalyticsRoute: AppSuperAdminAnalyticsRoute,
   AppSuperAdminCompaniesRoute: AppSuperAdminCompaniesRoute,
   AppSuperAdminUsersRoute: AppSuperAdminUsersRoute,
   AppSuperAdminIndexRoute: AppSuperAdminIndexRoute,
