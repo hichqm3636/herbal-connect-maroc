@@ -459,7 +459,23 @@ ${productUrl ? `🔗 ${productUrl}` : ""}
 
             <div className="mt-4 flex items-end justify-between gap-3">
               <div>
-                <p className="text-2xl font-extrabold">{formatMAD(display)}</p>
+                {priceVariant === "highlight" && product.rrp_price && product.rrp_price > product.price_mad ? (
+                  <>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-2xl font-extrabold text-destructive">
+                        {formatMAD(product.price_mad)}
+                      </p>
+                      <p className="text-sm text-muted-foreground line-through">
+                        {formatMAD(product.rrp_price)}
+                      </p>
+                    </div>
+                    <Badge variant="destructive" className="mt-1 text-[10px]">
+                      وفّر {Math.round(((product.rrp_price - product.price_mad) / product.rrp_price) * 100)}%
+                    </Badge>
+                  </>
+                ) : (
+                  <p className="text-2xl font-extrabold">{formatMAD(display)}</p>
+                )}
                 {minOrder > 1 && (
                   <p className="text-[11px] text-muted-foreground">
                     الحد الأدنى: {minOrder}
@@ -472,6 +488,16 @@ ${productUrl ? `🔗 ${productUrl}` : ""}
                     <Lock className="h-4 w-4" />
                     تسجيل الدخول
                   </Link>
+                </Button>
+              ) : ctaVariant === "buy_now" ? (
+                <Button
+                  onClick={handleBuyNow}
+                  disabled={!canPurchase || adding}
+                  className="gap-1.5"
+                  title={cannotPurchaseReason ?? undefined}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  اشترِ الآن
                 </Button>
               ) : (
                 <div className="flex flex-col gap-1.5 sm:flex-row">
