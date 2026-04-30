@@ -19,8 +19,10 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StoreSlugRouteImport } from './routes/store.$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AppWishlistRouteImport } from './routes/_app/wishlist'
 import { Route as AppSuperAdminRouteImport } from './routes/_app/super-admin'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppOrdersRouteImport } from './routes/_app/orders'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
 import { Route as AppClientRouteImport } from './routes/_app/client'
@@ -92,6 +94,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppWishlistRoute = AppWishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSuperAdminRoute = AppSuperAdminRouteImport.update({
   id: '/super-admin',
   path: '/super-admin',
@@ -100,6 +107,11 @@ const AppSuperAdminRoute = AppSuperAdminRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOrdersRoute = AppOrdersRouteImport.update({
@@ -220,8 +232,10 @@ export interface FileRoutesByFullPath {
   '/client': typeof AppClientRoute
   '/notifications': typeof AppNotificationsRoute
   '/orders': typeof AppOrdersRoute
+  '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
   '/super-admin': typeof AppSuperAdminRouteWithChildren
+  '/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -252,7 +266,9 @@ export interface FileRoutesByTo {
   '/client': typeof AppClientRoute
   '/notifications': typeof AppNotificationsRoute
   '/orders': typeof AppOrdersRoute
+  '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
+  '/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -287,8 +303,10 @@ export interface FileRoutesById {
   '/_app/client': typeof AppClientRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/orders': typeof AppOrdersRoute
+  '/_app/profile': typeof AppProfileRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/super-admin': typeof AppSuperAdminRouteWithChildren
+  '/_app/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -321,8 +339,10 @@ export interface FileRouteTypes {
     | '/client'
     | '/notifications'
     | '/orders'
+    | '/profile'
     | '/settings'
     | '/super-admin'
+    | '/wishlist'
     | '/auth/callback'
     | '/store/$slug'
     | '/super-admin/companies'
@@ -353,7 +373,9 @@ export interface FileRouteTypes {
     | '/client'
     | '/notifications'
     | '/orders'
+    | '/profile'
     | '/settings'
+    | '/wishlist'
     | '/auth/callback'
     | '/store/$slug'
     | '/super-admin/companies'
@@ -387,8 +409,10 @@ export interface FileRouteTypes {
     | '/_app/client'
     | '/_app/notifications'
     | '/_app/orders'
+    | '/_app/profile'
     | '/_app/settings'
     | '/_app/super-admin'
+    | '/_app/wishlist'
     | '/auth/callback'
     | '/store/$slug'
     | '/_app/super-admin/companies'
@@ -494,6 +518,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/wishlist': {
+      id: '/_app/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof AppWishlistRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/super-admin': {
       id: '/_app/super-admin'
       path: '/super-admin'
@@ -506,6 +537,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/orders': {
@@ -723,8 +761,10 @@ interface AppRouteChildren {
   AppClientRoute: typeof AppClientRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOrdersRoute: typeof AppOrdersRoute
+  AppProfileRoute: typeof AppProfileRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSuperAdminRoute: typeof AppSuperAdminRouteWithChildren
+  AppWishlistRoute: typeof AppWishlistRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -734,8 +774,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppClientRoute: AppClientRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOrdersRoute: AppOrdersRoute,
+  AppProfileRoute: AppProfileRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSuperAdminRoute: AppSuperAdminRouteWithChildren,
+  AppWishlistRoute: AppWishlistRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
