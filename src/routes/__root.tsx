@@ -1,4 +1,6 @@
 import { Outlet, createRootRoute, HeadContent, Scripts, Link } from "@tanstack/react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
@@ -75,16 +77,31 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 30_000,
+            refetchOnWindowFocus: false,
+            retry: 1,
+          },
+        },
+      }),
+  );
+
   return (
-    <TenantProvider>
-      <AuthProvider>
-        <CartProvider>
-          <Outlet />
-          <CartSheet />
-          <ReplaceCartDialog />
-          <Toaster position="top-center" richColors />
-        </CartProvider>
-      </AuthProvider>
-    </TenantProvider>
+    <QueryClientProvider client={queryClient}>
+      <TenantProvider>
+        <AuthProvider>
+          <CartProvider>
+            <Outlet />
+            <CartSheet />
+            <ReplaceCartDialog />
+            <Toaster position="top-center" richColors />
+          </CartProvider>
+        </AuthProvider>
+      </TenantProvider>
+    </QueryClientProvider>
   );
 }
