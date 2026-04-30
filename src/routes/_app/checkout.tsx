@@ -311,12 +311,18 @@ function CheckoutPage() {
       toast.success("تم إرسال الطلب بنجاح");
 
       try {
-        track("checkout_completed", {
-          product_id: orderRow.id,
-          vendor_id: vendor.id,
-          price: total,
-          user_id: user.id,
-        });
+        // Emit one event per product so product_id is always a real product reference.
+        for (const i of cart.items) {
+          track("checkout_completed", {
+            vendor_id: vendor.id,
+            product_id: i.id,
+            price: Number(i.price_mad) * i.qty,
+            user_id: user.id,
+            order_id: orderRow.id,
+            order_number: orderRow.order_number,
+            quantity: i.qty,
+          });
+        }
       } catch {
         /* never break checkout on analytics */
       }
