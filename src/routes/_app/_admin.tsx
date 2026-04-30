@@ -17,11 +17,17 @@ function AdminGuard() {
   const { marketplaceRole, isSuperAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const isPlatformAdmin = marketplaceRole === "admin" || isSuperAdmin;
+  const isVendor = marketplaceRole === "vendor";
 
   useEffect(() => {
     if (loading) return;
-    if (!isPlatformAdmin) navigate({ to: "/" });
-  }, [loading, isPlatformAdmin, navigate]);
+    // Vendors are STRICTLY forbidden from /admin — send them to their workspace.
+    if (isVendor) {
+      navigate({ to: "/vendor", replace: true });
+      return;
+    }
+    if (!isPlatformAdmin) navigate({ to: "/", replace: true });
+  }, [loading, isPlatformAdmin, isVendor, navigate]);
 
   if (loading) return null;
 
