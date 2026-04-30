@@ -7,10 +7,10 @@ import type { MarketplaceRole } from "@/hooks/useAuth";
  */
 export function homeForRole(
   role: MarketplaceRole | null,
-): "/super-admin" | "/admin" | "/vendor" | "/vendors" | "/login" {
+): "/super-admin" | "/admin" | "/vendor" | "/client" | "/login" {
   if (role === "super_admin") return "/super-admin";
   if (role === "admin") return "/admin";
   if (role === "vendor") return "/vendor";
-  if (role === "client") return "/vendors";
+  if (role === "client") return "/client";
   return "/login";
 }
