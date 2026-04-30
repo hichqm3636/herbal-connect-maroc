@@ -106,7 +106,7 @@ function ProductDetailPage() {
       price_tiers: parseTiers(product.price_tiers),
     };
     const res = cart.tryAdd(cp, product.minimum_order || 1);
-    if (res === "added") toast.success("تمت الإضافة إلى السلة");
+    if (res.kind === "added") toast.success("تمت الإضافة إلى السلة");
   };
 
   if (loading) {
