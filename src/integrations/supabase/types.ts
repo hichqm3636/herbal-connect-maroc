@@ -135,6 +135,57 @@ export type Database = {
         }
         Relationships: []
       }
+      checkout_optimization_baselines: {
+        Row: {
+          abandonment_rate: number
+          add_to_cart: number
+          cart_rate: number
+          checkout_view: number
+          completed: number
+          conversion_rate: number
+          created_at: string
+          created_by: string | null
+          id: string
+          label: string
+          notes: string | null
+          recommendation_id: string
+          vendor_id: string | null
+          views: number
+        }
+        Insert: {
+          abandonment_rate?: number
+          add_to_cart?: number
+          cart_rate?: number
+          checkout_view?: number
+          completed?: number
+          conversion_rate?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label: string
+          notes?: string | null
+          recommendation_id: string
+          vendor_id?: string | null
+          views?: number
+        }
+        Update: {
+          abandonment_rate?: number
+          add_to_cart?: number
+          cart_rate?: number
+          checkout_view?: number
+          completed?: number
+          conversion_rate?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string
+          notes?: string | null
+          recommendation_id?: string
+          vendor_id?: string | null
+          views?: number
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           address: string | null

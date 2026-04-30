@@ -142,6 +142,23 @@ function CheckoutPage() {
   const phoneRef = useRef<HTMLInputElement>(null);
   const addressRef = useRef<HTMLTextAreaElement>(null);
 
+  // Friction tracking — first field interaction (fires once)
+  const firstFocusRef = useRef(false);
+  const trackFirstFocus = (field: string) => {
+    if (firstFocusRef.current || !vendor) return;
+    firstFocusRef.current = true;
+    try {
+      track("checkout_field_focus", {
+        vendor_id: vendor.id,
+        product_id: cart.items[0]?.id ?? null,
+        field,
+        user_id: user?.id ?? null,
+      });
+    } catch {
+      /* noop */
+    }
+  };
+
   const [touched, setTouched] = useState<{
     name: boolean;
     phone: boolean;
@@ -253,6 +270,21 @@ function CheckoutPage() {
     if (!formValid) {
       setTouched({ name: true, phone: true, address: true });
       focusFirstError();
+      try {
+        const failed = [
+          errors.name && "name",
+          errors.phone && "phone",
+          errors.address && "address",
+        ].filter(Boolean);
+        track("checkout_validation_failed", {
+          vendor_id: vendor.id,
+          product_id: cart.items[0]?.id ?? null,
+          fields: failed,
+          user_id: user?.id ?? null,
+        });
+      } catch {
+        /* noop */
+      }
       return;
     }
     setSubmitting(true);
@@ -730,6 +762,7 @@ ${shippingAddress.trim() ? `📍 العنوان: ${shippingAddress.trim()}` : ""
                   autoComplete="name"
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
+                  onFocus={() => trackFirstFocus("name")}
                   onBlur={() => setTouched((t) => ({ ...t, name: true }))}
                   placeholder="اسم المسؤول عن الطلب"
                   aria-invalid={touched.name && !!errors.name}
@@ -742,9 +775,11 @@ ${shippingAddress.trim() ? `📍 العنوان: ${shippingAddress.trim()}` : ""
                   ref={phoneRef}
                   id="phone"
                   type="tel"
+                  inputMode="tel"
                   autoComplete="tel"
                   value={contactPhone}
                   onChange={(e) => setContactPhone(e.target.value)}
+                  onFocus={() => trackFirstFocus("phone")}
                   onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
                   placeholder="+212 6XX XXX XXX"
                   dir="ltr"
@@ -808,7 +843,21 @@ ${shippingAddress.trim() ? `📍 العنوان: ${shippingAddress.trim()}` : ""
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => setPaymentMethod(opt.value)}
+                    onClick={() => {
+                      setPaymentMethod(opt.value);
+                      try {
+                        if (vendor) {
+                          track("checkout_payment_selected", {
+                            vendor_id: vendor.id,
+                            product_id: cart.items[0]?.id ?? null,
+                            method: opt.value,
+                            user_id: user?.id ?? null,
+                          });
+                        }
+                      } catch {
+                        /* noop */
+                      }
+                    }}
                     aria-pressed={active}
                     className={`group flex items-start gap-3 rounded-xl border p-3.5 text-right transition-all ${
                       active
