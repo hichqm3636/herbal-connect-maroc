@@ -1,10 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Package, ShoppingBag, Store } from "lucide-react";
+import { Loader2, Package, ShoppingBag, Store, Search, Filter, X } from "lucide-react";
 import { z } from "zod";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -91,6 +99,12 @@ function OrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const focusRef = useRef<HTMLDivElement | null>(null);
 
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [vendorFilter, setVendorFilter] = useState<string>("all");
+  const [query, setQuery] = useState("");
+
   useEffect(() => {
     if (authLoading || !user) return;
     let cancelled = false;
@@ -126,6 +140,82 @@ function OrdersPage() {
     () => (orders ?? []).reduce((s, o) => s + Number(o.total_mad ?? 0), 0),
     [orders],
   );
+
+  // Unique vendor list for filter
+  const vendors = useMemo(() => {
+    const map = new Map<string, string>();
+    (orders ?? []).forEach((o) => {
+      if (o.companies?.id) {
+        map.set(
+          o.companies.id,
+          o.companies.display_name || o.companies.name || "بائع",
+        );
+      }
+    });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [orders]);
+
+  // Counts per status (for tab pills)
+  const statusCounts = useMemo(() => {
+    const c: Record<string, number> = { all: 0 };
+    (orders ?? []).forEach((o) => {
+      c.all += 1;
+      c[o.status] = (c[o.status] ?? 0) + 1;
+    });
+    return c;
+  }, [orders]);
+
+  const filteredOrders = useMemo(() => {
+    if (!orders) return [];
+    const q = query.trim().toLowerCase();
+    return orders.filter((o) => {
+      if (statusFilter !== "all" && o.status !== statusFilter) return false;
+      if (paymentFilter !== "all" && o.payment_status !== paymentFilter) return false;
+      if (vendorFilter !== "all" && o.company_id !== vendorFilter) return false;
+      if (q) {
+        const vendorName = (
+          o.companies?.display_name ||
+          o.companies?.name ||
+          ""
+        ).toLowerCase();
+        const matchOrder = o.order_number.toLowerCase().includes(q);
+        const matchVendor = vendorName.includes(q);
+        const matchProduct = o.order_items.some((it) =>
+          (it.products?.name_ar ?? "").toLowerCase().includes(q),
+        );
+        if (!matchOrder && !matchVendor && !matchProduct) return false;
+      }
+      return true;
+    });
+  }, [orders, statusFilter, paymentFilter, vendorFilter, query]);
+
+  const filteredSpent = useMemo(
+    () => filteredOrders.reduce((s, o) => s + Number(o.total_mad ?? 0), 0),
+    [filteredOrders],
+  );
+
+  const hasActiveFilters =
+    statusFilter !== "all" ||
+    paymentFilter !== "all" ||
+    vendorFilter !== "all" ||
+    query.trim() !== "";
+
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setPaymentFilter("all");
+    setVendorFilter("all");
+    setQuery("");
+  };
+
+  // Quick status tabs (top-level chips)
+  const statusTabs: { key: string; label: string }[] = [
+    { key: "all", label: "الكل" },
+    { key: "pending", label: STATUS_LABELS.pending ?? "قيد الانتظار" },
+    { key: "confirmed", label: STATUS_LABELS.confirmed ?? "مؤكَّد" },
+    { key: "shipped", label: STATUS_LABELS.shipped ?? "تم الشحن" },
+    { key: "delivered", label: STATUS_LABELS.delivered ?? "تم التوصيل" },
+    { key: "cancelled", label: STATUS_LABELS.cancelled ?? "ملغى" },
+  ];
 
   // Scroll focused order into view (deep-link from notification).
   useEffect(() => {
@@ -168,6 +258,111 @@ function OrdersPage() {
         </Card>
       )}
 
+      {/* Filters */}
+      {!loading && !error && orders && orders.length > 0 && (
+        <Card className="p-3 sm:p-4 space-y-3">
+          {/* Status quick tabs */}
+          <div className="flex flex-wrap gap-1.5">
+            {statusTabs.map((tab) => {
+              const count = statusCounts[tab.key] ?? 0;
+              if (tab.key !== "all" && count === 0) return null;
+              const active = statusFilter === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setStatusFilter(tab.key)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background hover:bg-muted",
+                  )}
+                >
+                  <span>{tab.label}</span>
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 text-[10px]",
+                      active ? "bg-primary-foreground/20" : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search + dropdowns */}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="ابحث برقم الطلب، البائع أو المنتج..."
+                className="pr-9"
+              />
+            </div>
+            <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+              <SelectTrigger className="w-full sm:w-[170px]">
+                <SelectValue placeholder="حالة الدفع" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كل حالات الدفع</SelectItem>
+                {(Object.keys(PAYMENT_STATUS_LABELS) as PaymentStatus[]).map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {PAYMENT_STATUS_LABELS[k]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={vendorFilter} onValueChange={setVendorFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="البائع" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كل البائعين</SelectItem>
+                {vendors.map((v) => (
+                  <SelectItem key={v.id} value={v.id}>
+                    {v.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="gap-1.5"
+              >
+                <X className="h-4 w-4" />
+                مسح الفلاتر
+              </Button>
+            )}
+          </div>
+
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 border-t pt-2 text-xs text-muted-foreground">
+              <Filter className="h-3.5 w-3.5" />
+              <span>
+                <span className="font-semibold text-foreground">{filteredOrders.length}</span>{" "}
+                من {orders.length} طلب
+                {filteredOrders.length > 0 && (
+                  <>
+                    {" · "}إجمالي:{" "}
+                    <span className="font-semibold text-foreground">
+                      {formatMAD(filteredSpent)}
+                    </span>
+                  </>
+                )}
+              </span>
+            </div>
+          )}
+        </Card>
+      )}
+
       {!loading && !error && orders && orders.length === 0 && (
         <Card className="flex flex-col items-center justify-center gap-4 p-10 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
@@ -188,9 +383,21 @@ function OrdersPage() {
         </Card>
       )}
 
-      {!loading && !error && orders && orders.length > 0 && (
+      {!loading && !error && orders && orders.length > 0 && filteredOrders.length === 0 && (
+        <Card className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
+            <Filter className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-medium">لا توجد طلبات مطابقة للفلاتر</p>
+          <Button variant="outline" size="sm" onClick={clearFilters}>
+            مسح الفلاتر
+          </Button>
+        </Card>
+      )}
+
+      {!loading && !error && filteredOrders.length > 0 && (
         <div className="space-y-4">
-          {orders.map((order) => {
+          {filteredOrders.map((order) => {
             const statusLabel = STATUS_LABELS[order.status] ?? order.status;
             const statusClass = STATUS_CLASSES[order.status] ?? "";
             const vendorName =
