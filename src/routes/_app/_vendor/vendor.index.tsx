@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ShoppingBag,
   TrendingUp,
@@ -12,7 +12,21 @@ import {
   CheckCircle2,
   Truck,
   XCircle,
+  Sparkles,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,10 +42,21 @@ export const Route = createFileRoute("/_app/_vendor/vendor/")({
   head: () => ({ meta: [{ title: "لوحة التحكم — Nexora" }] }),
 });
 
+interface MonthlyPoint {
+  key: string; // YYYY-MM
+  label: string; // عرض عربي مختصر
+  revenue: number;
+  orders: number;
+}
+
 interface DashboardStats {
   revenueToday: number;
   revenueMonth: number;
+  ordersTotal: number;
+  ordersMonth: number;
+  loyaltyPoints: number;
   ordersByStatus: Record<OrderStatus, number>;
+  monthly: MonthlyPoint[];
   recentOrders: {
     id: string;
     order_number: string;
@@ -64,6 +89,22 @@ const STATUS_TONE: Record<OrderStatus, string> = {
   cancelled: "bg-destructive/15 text-destructive",
 };
 
+// لوحة ألوان مشتقة من نظام التصميم (HSL tokens)
+const PIE_COLORS = [
+  "hsl(var(--primary))",
+  "hsl(var(--success))",
+  "hsl(var(--warning))",
+  "hsl(var(--destructive))",
+  "hsl(var(--muted-foreground))",
+  "hsl(var(--accent-foreground))",
+  "hsl(var(--secondary-foreground))",
+];
+
+const AR_MONTHS_SHORT = [
+  "يناير", "فبراير", "مارس", "أبريل", "ماي", "يونيو",
+  "يوليو", "غشت", "شتنبر", "أكتوبر", "نونبر", "دجنبر",
+];
+
 function VendorDashboard() {
   const { companyId } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -78,8 +119,9 @@ function VendorDashboard() {
       const now = new Date();
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      // نافذة آخر 6 أشهر (شامل الشهر الحالي)
+      const startOfWindow = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
 
-      // Counted-revenue statuses: confirmed and beyond, excluding cancelled.
       const REVENUE_STATUSES: OrderStatus[] = [
         "confirmed",
         "processing",
@@ -92,6 +134,7 @@ function VendorDashboard() {
         { data: revToday },
         { data: revMonth },
         { data: allOrders },
+        { data: monthlyOrders },
         { data: recent },
         { data: products },
       ] = await Promise.all([
@@ -113,18 +156,22 @@ function VendorDashboard() {
           .eq("company_id", companyId),
         supabase
           .from("orders")
+          .select("total_mad, status, created_at")
+          .eq("company_id", companyId)
+          .gte("created_at", startOfWindow)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("orders")
           .select("id, order_number, total_mad, status, created_at, buyer_id")
           .eq("company_id", companyId)
           .order("created_at", { ascending: false })
           .limit(5),
         supabase
           .from("products")
-          .select("id, name_ar, stock, low_stock_threshold")
+          .select("id, name_ar, stock, low_stock_threshold, points_per_unit")
           .eq("company_id", companyId)
           .eq("active", true)
-          .not("stock", "is", null)
-          .order("stock", { ascending: true })
-          .limit(20),
+          .order("stock", { ascending: true }),
       ]);
 
       if (!alive) return;
@@ -139,6 +186,35 @@ function VendorDashboard() {
       (allOrders ?? []).forEach((o) => {
         ordersByStatus[o.status as OrderStatus] += 1;
       });
+      const ordersTotal = (allOrders ?? []).length;
+
+      // بناء سلسلة شهرية لآخر 6 أشهر
+      const buckets = new Map<string, MonthlyPoint>();
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        buckets.set(key, {
+          key,
+          label: AR_MONTHS_SHORT[d.getMonth()],
+          revenue: 0,
+          orders: 0,
+        });
+      }
+      let ordersMonth = 0;
+      (monthlyOrders ?? []).forEach((o) => {
+        const d = new Date(o.created_at as string);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        const b = buckets.get(key);
+        if (!b) return;
+        b.orders += 1;
+        if (REVENUE_STATUSES.includes(o.status as OrderStatus)) {
+          b.revenue += Number(o.total_mad ?? 0);
+        }
+        if (key === `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`) {
+          ordersMonth += 1;
+        }
+      });
+      const monthly = Array.from(buckets.values());
 
       // Resolve buyer names
       const buyerIds = Array.from(new Set((recent ?? []).map((o) => o.buyer_id)));
@@ -153,7 +229,7 @@ function VendorDashboard() {
       }));
 
       const lowStock = (products ?? [])
-        .filter((p) => Number(p.stock ?? 0) <= Number(p.low_stock_threshold ?? 0))
+        .filter((p) => p.stock != null && Number(p.stock) <= Number(p.low_stock_threshold ?? 0))
         .slice(0, 5)
         .map((p) => ({
           id: p.id,
@@ -162,7 +238,25 @@ function VendorDashboard() {
           low_stock_threshold: Number(p.low_stock_threshold ?? 0),
         }));
 
-      setStats({ revenueToday, revenueMonth, ordersByStatus, recentOrders, lowStock });
+      // مجموع نقاط الولاء = Σ (points_per_unit × stock_remaining_potential)
+      // كقياس تقريبي للنقاط القابلة للمنح من المخزون الحالي.
+      const loyaltyPoints = (products ?? []).reduce((s, p) => {
+        const pts = Number(p.points_per_unit ?? 0);
+        const stk = Number(p.stock ?? 0);
+        return s + pts * stk;
+      }, 0);
+
+      setStats({
+        revenueToday,
+        revenueMonth,
+        ordersTotal,
+        ordersMonth,
+        loyaltyPoints,
+        ordersByStatus,
+        monthly,
+        recentOrders,
+        lowStock,
+      });
       setLoading(false);
     })();
 
@@ -170,6 +264,13 @@ function VendorDashboard() {
       alive = false;
     };
   }, [companyId]);
+
+  const statusPie = useMemo(() => {
+    if (!stats) return [];
+    return (Object.keys(stats.ordersByStatus) as OrderStatus[])
+      .map((k) => ({ name: STATUS_LABELS[k], value: stats.ordersByStatus[k] }))
+      .filter((d) => d.value > 0);
+  }, [stats]);
 
   if (loading || !stats) {
     return (
@@ -190,38 +291,144 @@ function VendorDashboard() {
     <div className="space-y-6" dir="rtl">
       <header>
         <h1 className="text-2xl font-bold">لوحة التحكم</h1>
-        <p className="text-sm text-muted-foreground mt-1">نظرة عامة على نشاط متجرك</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          ملخّص أداء متجرك: المبيعات، الطلبات، ونقاط الولاء
+        </p>
       </header>
 
       {/* KPI cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
-          icon={<Calendar className="h-5 w-5" />}
-          label="إيرادات اليوم"
-          value={formatMAD(stats.revenueToday)}
-          tone="text-primary"
-        />
-        <KpiCard
           icon={<TrendingUp className="h-5 w-5" />}
           label="إيرادات الشهر"
           value={formatMAD(stats.revenueMonth)}
+          hint={`اليوم: ${formatMAD(stats.revenueToday)}`}
           tone="text-success"
         />
         <KpiCard
           icon={<ShoppingBag className="h-5 w-5" />}
+          label="إجمالي الطلبات"
+          value={stats.ordersTotal.toString()}
+          hint={`هذا الشهر: ${stats.ordersMonth}`}
+          tone="text-primary"
+        />
+        <KpiCard
+          icon={<Calendar className="h-5 w-5" />}
           label="طلبات نشطة"
           value={totalActiveOrders.toString()}
+          hint="قيد المعالجة والشحن"
           tone="text-foreground"
         />
         <KpiCard
-          icon={<AlertTriangle className="h-5 w-5" />}
-          label="مخزون منخفض"
-          value={stats.lowStock.length.toString()}
-          tone={stats.lowStock.length > 0 ? "text-destructive" : "text-foreground"}
+          icon={<Sparkles className="h-5 w-5" />}
+          label="نقاط الولاء"
+          value={stats.loyaltyPoints.toLocaleString("ar")}
+          hint="قابلة للمنح من المخزون الحالي"
+          tone="text-warning-foreground"
         />
       </div>
 
-      {/* Orders by status */}
+      {/* Charts */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Monthly revenue */}
+        <Card className="p-5 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-base font-bold">المبيعات الشهرية</h2>
+              <p className="text-xs text-muted-foreground mt-1">آخر 6 أشهر (بالدرهم)</p>
+            </div>
+          </div>
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={stats.monthly} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis
+                  dataKey="label"
+                  stroke="hsl(var(--muted-foreground))"
+                  tick={{ fontSize: 12 }}
+                  reversed
+                />
+                <YAxis
+                  stroke="hsl(var(--muted-foreground))"
+                  tick={{ fontSize: 12 }}
+                  width={60}
+                  tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v}`)}
+                  orientation="right"
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                  formatter={(v: number) => [formatMAD(Number(v)), "الإيرادات"]}
+                  labelStyle={{ color: "hsl(var(--foreground))" }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  fill="url(#revFill)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        {/* Orders by status pie */}
+        <Card className="p-5">
+          <h2 className="text-base font-bold mb-1">توزيع الطلبات</h2>
+          <p className="text-xs text-muted-foreground mb-4">حسب الحالة</p>
+          <div className="h-72 w-full">
+            {statusPie.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                لا توجد طلبات بعد
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={statusPie}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={80}
+                    paddingAngle={2}
+                  >
+                    {statusPie.map((_, i) => (
+                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: 11 }}
+                    iconType="circle"
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {/* Orders by status tiles (quick filters) */}
       <Card className="p-5">
         <h2 className="text-base font-bold mb-4">الطلبات حسب الحالة</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
@@ -313,8 +520,8 @@ function VendorDashboard() {
 }
 
 function KpiCard({
-  icon, label, value, tone,
-}: { icon: React.ReactNode; label: string; value: string; tone: string }) {
+  icon, label, value, tone, hint,
+}: { icon: React.ReactNode; label: string; value: string; tone: string; hint?: string }) {
   return (
     <Card className="p-5">
       <div className="flex items-center justify-between">
@@ -322,6 +529,7 @@ function KpiCard({
         <span className={tone}>{icon}</span>
       </div>
       <div className={`mt-2 text-2xl font-extrabold ${tone}`}>{value}</div>
+      {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
     </Card>
   );
 }
