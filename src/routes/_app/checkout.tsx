@@ -380,14 +380,12 @@ ${shippingAddress.trim() ? `📍 العنوان: ${shippingAddress.trim()}` : ""
   function handleWhatsappFallback() {
     if (!vendor) return;
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      track("whatsapp_click" as any, {
+      track("checkout_whatsapp_fallback", {
         product_id: cart.items.map((i) => i.id).join(","),
         vendor_id: vendor.id,
         price: total,
         user_id: user?.id ?? null,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      });
     } catch {
       /* noop */
     }
