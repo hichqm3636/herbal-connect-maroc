@@ -236,10 +236,20 @@ function VendorProductsPage() {
     const path = `${companyId}/${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage
       .from("product-images")
-      .upload(path, file, { cacheControl: "3600", upsert: false });
+      .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
     if (error) {
+      console.error("[product-image upload]", { path, error });
       setUploading(false);
-      toast.error("فشل رفع الصورة");
+      const msg = error.message || "";
+      if (/row-level security|not authorized|permission/i.test(msg)) {
+        toast.error("ليس لديك صلاحية رفع الصور — تواصل مع المسؤول");
+      } else if (/duplicate|exists/i.test(msg)) {
+        toast.error("ملف بنفس الاسم موجود مسبقاً، حاول مجدداً");
+      } else if (/exceeded|too large|size/i.test(msg)) {
+        toast.error("حجم الملف كبير جداً");
+      } else {
+        toast.error(`فشل رفع الصورة: ${msg || "خطأ غير معروف"}`);
+      }
       return;
     }
     const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
