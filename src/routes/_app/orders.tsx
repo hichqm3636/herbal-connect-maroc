@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Package, ShoppingBag, Store, Search, Filter, X } from "lucide-react";
+import { Loader2, Package, ShoppingBag, Store, Search, Filter, X, Star } from "lucide-react";
 import { z } from "zod";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import {
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { PaymentProofUploader } from "@/components/PaymentProofUploader";
+import { ReviewDialog } from "@/components/ReviewDialog";
 
 const ordersSearchSchema = z.object({
   focus: z.string().optional(),
