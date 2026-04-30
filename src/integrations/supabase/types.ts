@@ -833,20 +833,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_orders_buyer"
-            columns: ["buyer_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_orders_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "orders_buyer_fk"
             columns: ["buyer_id"]
             isOneToOne: false
