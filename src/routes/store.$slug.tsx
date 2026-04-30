@@ -216,12 +216,20 @@ function VendorStorePage() {
               <p className="text-[11px] text-muted-foreground">متجر البائع</p>
             </div>
           </div>
-          {isClient && cart.totalQty > 0 && (
-            <Button type="button" size="sm" variant="outline" onClick={cart.openCart} className="gap-1.5">
-              <ShoppingCart className="h-4 w-4" />
-              {cart.totalQty}
-            </Button>
-          )}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              console.log("[store] cart button clicked, totalQty=", cart.totalQty);
+              cart.openCart();
+            }}
+            className="relative z-10 gap-1.5 transition-transform active:scale-95"
+            aria-label="فتح السلة"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            {cart.totalQty > 0 && <span className="tabular-nums">{cart.totalQty}</span>}
+          </Button>
         </div>
       </header>
 
