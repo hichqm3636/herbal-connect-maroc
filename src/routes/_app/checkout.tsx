@@ -142,6 +142,23 @@ function CheckoutPage() {
   const phoneRef = useRef<HTMLInputElement>(null);
   const addressRef = useRef<HTMLTextAreaElement>(null);
 
+  // Friction tracking — first field interaction (fires once)
+  const firstFocusRef = useRef(false);
+  const trackFirstFocus = (field: string) => {
+    if (firstFocusRef.current || !vendor) return;
+    firstFocusRef.current = true;
+    try {
+      track("checkout_field_focus", {
+        vendor_id: vendor.id,
+        product_id: cart.items[0]?.id ?? null,
+        field,
+        user_id: user?.id ?? null,
+      });
+    } catch {
+      /* noop */
+    }
+  };
+
   const [touched, setTouched] = useState<{
     name: boolean;
     phone: boolean;
