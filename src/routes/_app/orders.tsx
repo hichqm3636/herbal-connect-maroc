@@ -141,6 +141,82 @@ function OrdersPage() {
     [orders],
   );
 
+  // Unique vendor list for filter
+  const vendors = useMemo(() => {
+    const map = new Map<string, string>();
+    (orders ?? []).forEach((o) => {
+      if (o.companies?.id) {
+        map.set(
+          o.companies.id,
+          o.companies.display_name || o.companies.name || "بائع",
+        );
+      }
+    });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [orders]);
+
+  // Counts per status (for tab pills)
+  const statusCounts = useMemo(() => {
+    const c: Record<string, number> = { all: 0 };
+    (orders ?? []).forEach((o) => {
+      c.all += 1;
+      c[o.status] = (c[o.status] ?? 0) + 1;
+    });
+    return c;
+  }, [orders]);
+
+  const filteredOrders = useMemo(() => {
+    if (!orders) return [];
+    const q = query.trim().toLowerCase();
+    return orders.filter((o) => {
+      if (statusFilter !== "all" && o.status !== statusFilter) return false;
+      if (paymentFilter !== "all" && o.payment_status !== paymentFilter) return false;
+      if (vendorFilter !== "all" && o.company_id !== vendorFilter) return false;
+      if (q) {
+        const vendorName = (
+          o.companies?.display_name ||
+          o.companies?.name ||
+          ""
+        ).toLowerCase();
+        const matchOrder = o.order_number.toLowerCase().includes(q);
+        const matchVendor = vendorName.includes(q);
+        const matchProduct = o.order_items.some((it) =>
+          (it.products?.name_ar ?? "").toLowerCase().includes(q),
+        );
+        if (!matchOrder && !matchVendor && !matchProduct) return false;
+      }
+      return true;
+    });
+  }, [orders, statusFilter, paymentFilter, vendorFilter, query]);
+
+  const filteredSpent = useMemo(
+    () => filteredOrders.reduce((s, o) => s + Number(o.total_mad ?? 0), 0),
+    [filteredOrders],
+  );
+
+  const hasActiveFilters =
+    statusFilter !== "all" ||
+    paymentFilter !== "all" ||
+    vendorFilter !== "all" ||
+    query.trim() !== "";
+
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setPaymentFilter("all");
+    setVendorFilter("all");
+    setQuery("");
+  };
+
+  // Quick status tabs (top-level chips)
+  const statusTabs: { key: string; label: string }[] = [
+    { key: "all", label: "الكل" },
+    { key: "pending", label: STATUS_LABELS.pending ?? "قيد الانتظار" },
+    { key: "confirmed", label: STATUS_LABELS.confirmed ?? "مؤكَّد" },
+    { key: "shipped", label: STATUS_LABELS.shipped ?? "تم الشحن" },
+    { key: "delivered", label: STATUS_LABELS.delivered ?? "تم التوصيل" },
+    { key: "cancelled", label: STATUS_LABELS.cancelled ?? "ملغى" },
+  ];
+
   // Scroll focused order into view (deep-link from notification).
   useEffect(() => {
     if (!focusId || !orders) return;
