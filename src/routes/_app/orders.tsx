@@ -555,3 +555,85 @@ function OrdersPage() {
     </div>
   );
 }
+
+// ---------------- Order Timeline ----------------
+// Visualizes the canonical lifecycle stages and highlights where the order is.
+// Cancelled orders show a single muted notice instead of the timeline.
+
+const TIMELINE_STEPS: { key: string; label: string; matches: string[] }[] = [
+  { key: "placed", label: "تم الطلب", matches: ["pending", "confirmed", "preparing", "processing", "shipped", "delivered"] },
+  { key: "confirmed", label: "تم التأكيد", matches: ["confirmed", "preparing", "processing", "shipped", "delivered"] },
+  { key: "preparing", label: "قيد التحضير", matches: ["preparing", "processing", "shipped", "delivered"] },
+  { key: "shipped", label: "تم الشحن", matches: ["shipped", "delivered"] },
+  { key: "delivered", label: "تم التوصيل", matches: ["delivered"] },
+];
+
+function currentStepIndex(status: string): number {
+  let idx = -1;
+  TIMELINE_STEPS.forEach((s, i) => {
+    if (s.matches.includes(status)) idx = i;
+  });
+  return idx;
+}
+
+function OrderTimeline({ status }: { status: string }) {
+  if (status === "cancelled") {
+    return (
+      <div className="border-t bg-destructive/5 px-4 py-3 text-xs text-destructive">
+        تم إلغاء هذا الطلب.
+      </div>
+    );
+  }
+  const activeIdx = currentStepIndex(status);
+  return (
+    <div className="border-t bg-muted/10 px-3 py-3 sm:px-4">
+      <ol className="flex items-start justify-between gap-1">
+        {TIMELINE_STEPS.map((step, i) => {
+          const done = i <= activeIdx;
+          const isCurrent = i === activeIdx;
+          return (
+            <li key={step.key} className="flex flex-1 flex-col items-center text-center">
+              <div className="flex w-full items-center">
+                <span
+                  className={cn(
+                    "h-0.5 flex-1",
+                    i === 0 ? "opacity-0" : done ? "bg-primary" : "bg-border",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold transition-colors",
+                    done
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background text-muted-foreground",
+                    isCurrent && "ring-2 ring-primary/30",
+                  )}
+                >
+                  {done ? "✓" : i + 1}
+                </span>
+                <span
+                  className={cn(
+                    "h-0.5 flex-1",
+                    i === TIMELINE_STEPS.length - 1
+                      ? "opacity-0"
+                      : i < activeIdx
+                        ? "bg-primary"
+                        : "bg-border",
+                  )}
+                />
+              </div>
+              <span
+                className={cn(
+                  "mt-1.5 text-[10px] leading-tight sm:text-xs",
+                  done ? "font-semibold text-foreground" : "text-muted-foreground",
+                )}
+              >
+                {step.label}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
