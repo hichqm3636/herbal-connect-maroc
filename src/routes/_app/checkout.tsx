@@ -270,6 +270,21 @@ function CheckoutPage() {
     if (!formValid) {
       setTouched({ name: true, phone: true, address: true });
       focusFirstError();
+      try {
+        const failed = [
+          errors.name && "name",
+          errors.phone && "phone",
+          errors.address && "address",
+        ].filter(Boolean);
+        track("checkout_validation_failed", {
+          vendor_id: vendor.id,
+          product_id: cart.items[0]?.id ?? null,
+          fields: failed,
+          user_id: user?.id ?? null,
+        });
+      } catch {
+        /* noop */
+      }
       return;
     }
     setSubmitting(true);
