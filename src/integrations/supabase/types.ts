@@ -1588,27 +1588,51 @@ export type Database = {
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       normalize_phone_ma: { Args: { _raw: string }; Returns: string }
-      product_reviews_page: {
-        Args: {
-          _cursor_created_at?: string
-          _cursor_id?: string
-          _cursor_rating?: number
-          _limit?: number
-          _product_id: string
-          _sort?: string
-        }
-        Returns: {
-          author_avatar_url: string
-          author_name: string
-          body: string
-          created_at: string
-          id: string
-          order_id: string
-          rating: number
-          title: string
-          user_id: string
-        }[]
-      }
+      product_reviews_page:
+        | {
+            Args: {
+              _cursor_created_at?: string
+              _cursor_id?: string
+              _cursor_rating?: number
+              _limit?: number
+              _product_id: string
+              _sort?: string
+            }
+            Returns: {
+              author_avatar_url: string
+              author_name: string
+              body: string
+              created_at: string
+              id: string
+              order_id: string
+              rating: number
+              title: string
+              user_id: string
+            }[]
+          }
+        | {
+            Args: {
+              _cursor_created_at?: string
+              _cursor_id?: string
+              _cursor_rating?: number
+              _limit?: number
+              _max_rating?: number
+              _min_rating?: number
+              _product_id: string
+              _sort?: string
+            }
+            Returns: {
+              author_avatar_url: string
+              author_name: string
+              body: string
+              created_at: string
+              id: string
+              order_id: string
+              rating: number
+              title: string
+              user_id: string
+            }[]
+          }
       product_reviews_summary: { Args: { _product_id: string }; Returns: Json }
       provision_company: {
         Args: {

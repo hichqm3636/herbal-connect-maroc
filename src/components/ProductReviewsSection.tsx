@@ -75,13 +75,26 @@ function normalizeSummary(raw: unknown): SummaryShape {
   };
 }
 
+// Filter values: 'all' | 'positive' (4-5) | 'negative' (1-2) | 1..5 (single star)
+type RatingFilter = "all" | "positive" | "negative" | 1 | 2 | 3 | 4 | 5;
+
+function filterToRange(f: RatingFilter): { min: number; max: number } {
+  if (f === "all") return { min: 1, max: 5 };
+  if (f === "positive") return { min: 4, max: 5 };
+  if (f === "negative") return { min: 1, max: 2 };
+  return { min: f, max: f };
+}
+
 // Query key factory for cache management
 const reviewsKeys = {
   all: ["product-reviews"] as const,
   summary: (productId: string) =>
     [...reviewsKeys.all, "summary", productId] as const,
-  list: (productId: string, sort: "newest" | "highest") =>
-    [...reviewsKeys.all, "list", productId, sort] as const,
+  list: (
+    productId: string,
+    sort: "newest" | "highest",
+    filter: RatingFilter,
+  ) => [...reviewsKeys.all, "list", productId, sort, filter] as const,
 };
 
 async function fetchSummary(productId: string): Promise<SummaryShape> {
@@ -95,12 +108,16 @@ async function fetchSummary(productId: string): Promise<SummaryShape> {
 async function fetchReviewsPage(
   productId: string,
   sort: "newest" | "highest",
+  filter: RatingFilter,
   cursor: ReviewRow | null,
 ): Promise<ReviewRow[]> {
+  const { min, max } = filterToRange(filter);
   const { data, error } = await supabase.rpc("product_reviews_page", {
     _product_id: productId,
     _sort: sort,
     _limit: PAGE_SIZE,
+    _min_rating: min,
+    _max_rating: max,
     ...(cursor
       ? {
           _cursor_created_at: cursor.created_at,
@@ -122,6 +139,7 @@ export const ProductReviewsSection = memo(function ProductReviewsSection({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [sort, setSort] = useState<"newest" | "highest">("newest");
+  const [filter, setFilter] = useState<RatingFilter>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Summary query — cached separately, fetched once per productId
@@ -131,10 +149,11 @@ export const ProductReviewsSection = memo(function ProductReviewsSection({
     staleTime: STALE_TIME,
   });
 
-  // Reviews list — infinite query with cursor pagination, keyed on sort
+  // Reviews list — infinite query with cursor pagination, keyed on sort + filter
   const listQuery = useInfiniteQuery({
-    queryKey: reviewsKeys.list(productId, sort),
-    queryFn: ({ pageParam }) => fetchReviewsPage(productId, sort, pageParam),
+    queryKey: reviewsKeys.list(productId, sort, filter),
+    queryFn: ({ pageParam }) =>
+      fetchReviewsPage(productId, sort, filter, pageParam),
     initialPageParam: null as ReviewRow | null,
     getNextPageParam: (lastPage) =>
       lastPage.length === PAGE_SIZE ? lastPage[lastPage.length - 1] : undefined,
@@ -276,6 +295,58 @@ export const ProductReviewsSection = memo(function ProductReviewsSection({
             الأعلى تقييماً
           </button>
         </div>
+      )}
+
+      {/* Filter by rating */}
+      {summary.count > 1 && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted-foreground">تصفية:</span>
+          {(
+            [
+              { v: "all", label: "الكل" },
+              { v: "positive", label: "إيجابية ★4-5" },
+              { v: "negative", label: "سلبية ★1-2" },
+              { v: 5, label: "5★" },
+              { v: 4, label: "4★" },
+              { v: 3, label: "3★" },
+              { v: 2, label: "2★" },
+              { v: 1, label: "1★" },
+            ] as { v: RatingFilter; label: string }[]
+          ).map((opt) => {
+            const active = filter === opt.v;
+            const isNeg = opt.v === "negative" || opt.v === 1 || opt.v === 2;
+            const isPos = opt.v === "positive" || opt.v === 4 || opt.v === 5;
+            return (
+              <button
+                key={String(opt.v)}
+                onClick={() => setFilter(opt.v)}
+                className={cn(
+                  "rounded-full px-3 py-1 transition-colors",
+                  active
+                    ? isNeg
+                      ? "bg-destructive text-destructive-foreground"
+                      : isPos
+                        ? "bg-success text-success-foreground"
+                        : "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80",
+                )}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Empty state when filter excludes all results */}
+      {!loading && summary.count > 0 && reviews.length === 0 && (
+        <Card className="flex flex-col items-center gap-2 p-6 text-center">
+          <MessageSquare className="h-6 w-6 text-muted-foreground" />
+          <p className="text-sm">لا توجد مراجعات تطابق هذه التصفية</p>
+          <Button variant="ghost" size="sm" onClick={() => setFilter("all")}>
+            إظهار الكل
+          </Button>
+        </Card>
       )}
 
       {/* List skeleton */}
