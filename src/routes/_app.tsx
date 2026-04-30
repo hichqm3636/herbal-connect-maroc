@@ -145,8 +145,6 @@ function AppLayout() {
           <main className="flex-1 p-4 md:p-6 lg:p-8 min-w-0 overflow-x-hidden">
             <Outlet />
           </main>
-          <CartSheet />
-          <ReplaceCartDialog />
         </SidebarInset>
       </div>
     </SidebarProvider>
