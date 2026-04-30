@@ -129,24 +129,50 @@ function AuthCallbackPage() {
     // SIGNED_IN. We listen first, then also check existing session in case the
     // event fired before this component mounted.
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session?.user && !handled.current) {
+      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session?.user && !handled.current) {
         handleSession(session.user.id);
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user && !handled.current) {
-        handleSession(session.user.id);
-      } else if (!session) {
-        // Give Supabase a brief moment to process the hash; if still no
-        // session after that, surface an error.
-        setTimeout(() => {
-          if (!handled.current) {
-            setError("الرابط غير صالح أو منتهي الصلاحية. يرجى طلب رابط جديد.");
+    // Try to explicitly process the magic-link tokens. Newer links use a
+    // ?code= search param (PKCE), older ones use #access_token in the hash.
+    const tryExchangeAndResolve = async () => {
+      try {
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get("code");
+        if (code) {
+          const { data, error: xchErr } = await supabase.auth.exchangeCodeForSession(code);
+          if (xchErr) {
+            setError(xchErr.message || "الرابط غير صالح أو منتهي الصلاحية.");
+            return;
           }
-        }, 2500);
+          if (data.session?.user && !handled.current) {
+            handleSession(data.session.user.id);
+            return;
+          }
+        }
+
+        // Hash-based magic link OR already-established session — poll briefly.
+        for (let i = 0; i < 10; i++) {
+          const { data } = await supabase.auth.getSession();
+          if (data.session?.user) {
+            if (!handled.current) handleSession(data.session.user.id);
+            return;
+          }
+          await new Promise((r) => setTimeout(r, 600));
+        }
+
+        if (!handled.current) {
+          setError("تعذر إكمال تسجيل الدخول. الرابط قد يكون منتهي الصلاحية أو تم استخدامه. يرجى طلب رابط جديد.");
+        }
+      } catch (e) {
+        if (!handled.current) {
+          setError(e instanceof Error ? e.message : "تعذر إكمال تسجيل الدخول");
+        }
       }
-    });
+    };
+
+    tryExchangeAndResolve();
 
     return () => sub.subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
