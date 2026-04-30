@@ -527,7 +527,7 @@ ${productUrl ? `🔗 ${productUrl}` : ""}
         </Card>
 
         {/* Trust signals — fixed layout, skeleton matches final exactly */}
-        {showTrustGrid && (
+        {showTrustGrid && trustVariant === "with" && (
           <Card className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
             <TrustItem
               icon={<ShieldCheck className="h-4 w-4 text-success" />}
