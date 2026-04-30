@@ -297,6 +297,58 @@ export const ProductReviewsSection = memo(function ProductReviewsSection({
         </div>
       )}
 
+      {/* Filter by rating */}
+      {summary.count > 1 && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted-foreground">تصفية:</span>
+          {(
+            [
+              { v: "all", label: "الكل" },
+              { v: "positive", label: "إيجابية ★4-5" },
+              { v: "negative", label: "سلبية ★1-2" },
+              { v: 5, label: "5★" },
+              { v: 4, label: "4★" },
+              { v: 3, label: "3★" },
+              { v: 2, label: "2★" },
+              { v: 1, label: "1★" },
+            ] as { v: RatingFilter; label: string }[]
+          ).map((opt) => {
+            const active = filter === opt.v;
+            const isNeg = opt.v === "negative" || opt.v === 1 || opt.v === 2;
+            const isPos = opt.v === "positive" || opt.v === 4 || opt.v === 5;
+            return (
+              <button
+                key={String(opt.v)}
+                onClick={() => setFilter(opt.v)}
+                className={cn(
+                  "rounded-full px-3 py-1 transition-colors",
+                  active
+                    ? isNeg
+                      ? "bg-destructive text-destructive-foreground"
+                      : isPos
+                        ? "bg-success text-success-foreground"
+                        : "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80",
+                )}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Empty state when filter excludes all results */}
+      {!loading && summary.count > 0 && reviews.length === 0 && (
+        <Card className="flex flex-col items-center gap-2 p-6 text-center">
+          <MessageSquare className="h-6 w-6 text-muted-foreground" />
+          <p className="text-sm">لا توجد مراجعات تطابق هذه التصفية</p>
+          <Button variant="ghost" size="sm" onClick={() => setFilter("all")}>
+            إظهار الكل
+          </Button>
+        </Card>
+      )}
+
       {/* List skeleton */}
       {loading && (
         <ul className="space-y-3">
