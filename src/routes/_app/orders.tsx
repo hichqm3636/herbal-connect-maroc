@@ -525,6 +525,8 @@ function OrdersPage() {
                   ))}
                 </div>
 
+                <OrderTimeline status={order.status} />
+
                 <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/20 px-4 py-2.5 text-xs text-muted-foreground">
                   <span>
                     {itemCount} قطعة
