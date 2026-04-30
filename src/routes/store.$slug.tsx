@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import type { MouseEvent, PointerEvent } from "react";
 import { ArrowLeft, Loader2, Lock, Package, ShoppingCart, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -155,7 +156,7 @@ function VendorStorePage() {
     // "conflict" → handled globally by <ReplaceCartDialog />
   }
 
-  function handleCartOpen(e: React.MouseEvent<HTMLButtonElement> | React.PointerEvent<HTMLButtonElement>) {
+  function handleCartOpen(e: MouseEvent<HTMLButtonElement> | PointerEvent<HTMLButtonElement>) {
     e.preventDefault();
     e.stopPropagation();
     console.log("[store] cart button clicked, totalQty=", cart.totalQty);
