@@ -762,6 +762,7 @@ ${shippingAddress.trim() ? `📍 العنوان: ${shippingAddress.trim()}` : ""
                   autoComplete="name"
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
+                  onFocus={() => trackFirstFocus("name")}
                   onBlur={() => setTouched((t) => ({ ...t, name: true }))}
                   placeholder="اسم المسؤول عن الطلب"
                   aria-invalid={touched.name && !!errors.name}
@@ -774,9 +775,11 @@ ${shippingAddress.trim() ? `📍 العنوان: ${shippingAddress.trim()}` : ""
                   ref={phoneRef}
                   id="phone"
                   type="tel"
+                  inputMode="tel"
                   autoComplete="tel"
                   value={contactPhone}
                   onChange={(e) => setContactPhone(e.target.value)}
+                  onFocus={() => trackFirstFocus("phone")}
                   onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
                   placeholder="+212 6XX XXX XXX"
                   dir="ltr"
