@@ -251,6 +251,27 @@ function ProductDetailPage() {
     });
   }, [product, vendor, user?.id]);
 
+  // ---------- Engagement tracking (scroll depth, time, exit) ----------
+  const addedToCartRef = useRef(false);
+  useProductEngagementTracking({
+    productId: product?.id ?? "",
+    vendorId: vendor?.id ?? "",
+    price: safeNum(product?.price_mad),
+    userId: user?.id ?? null,
+    addedToCartRef,
+  });
+
+  // ---------- A/B variants (assigned once per visitor) ----------
+  const ctaVariant = product && vendor
+    ? getVariant("cta_label", { product_id: product.id, vendor_id: vendor.id, user_id: user?.id ?? null })
+    : "add_to_cart";
+  const priceVariant = product && vendor
+    ? getVariant("price_display", { product_id: product.id, vendor_id: vendor.id, user_id: user?.id ?? null })
+    : "plain";
+  const trustVariant = product && vendor
+    ? getVariant("trust_badges", { product_id: product.id, vendor_id: vendor.id, user_id: user?.id ?? null })
+    : "with";
+
   // ---------- Shared add-to-cart logic ----------
   const performAdd = (origin: "add_to_cart" | "buy_now"): boolean => {
     if (!cartProduct || !product || !vendor) return false;
