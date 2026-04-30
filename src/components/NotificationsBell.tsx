@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
-import { Link } from "@tanstack/react-router";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Bell } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
