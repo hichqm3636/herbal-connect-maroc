@@ -173,6 +173,9 @@ function SuperAdminDashboard() {
           <Button asChild size="sm" variant="outline">
             <Link to="/super-admin/users">إدارة المستخدمين</Link>
           </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/super-admin/analytics">التحليلات</Link>
+          </Button>
         </div>
       </div>
 
