@@ -176,6 +176,9 @@ function SuperAdminDashboard() {
           <Button asChild size="sm" variant="outline">
             <Link to="/super-admin/analytics">التحليلات</Link>
           </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/super-admin/analytics-validation">تحقق البيانات</Link>
+          </Button>
         </div>
       </div>
 
