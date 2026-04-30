@@ -91,15 +91,18 @@ export const ProductReviewsSection = memo(function ProductReviewsSection({
 
   const fetchPage = useCallback(
     async (cursor: ReviewRow | null) => {
-      const args: Record<string, unknown> = {
+      const { data, error } = await supabase.rpc("product_reviews_page", {
         _product_id: productId,
         _sort: sort,
         _limit: PAGE_SIZE,
-        _cursor_created_at: cursor?.created_at ?? null,
-        _cursor_id: cursor?.id ?? null,
-        _cursor_rating: cursor?.rating ?? null,
-      };
-      const { data, error } = await supabase.rpc("product_reviews_page", args);
+        ...(cursor
+          ? {
+              _cursor_created_at: cursor.created_at,
+              _cursor_id: cursor.id,
+              _cursor_rating: cursor.rating,
+            }
+          : {}),
+      });
       if (error) throw error;
       return (data ?? []) as ReviewRow[];
     },
