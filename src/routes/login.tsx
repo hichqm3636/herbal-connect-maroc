@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { Leaf, Loader2, Mail } from "lucide-react";
+import { Leaf, Loader2, Mail, KeyRound } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
@@ -24,13 +25,33 @@ const emailSchema = z
   .email({ message: "بريد إلكتروني غير صالح" })
   .max(255);
 
+const passwordSchema = z
+  .string()
+  .min(8, { message: "كلمة المرور يجب أن تكون 8 أحرف على الأقل" })
+  .max(72, { message: "كلمة المرور طويلة جداً" });
+
+const fullNameSchema = z
+  .string()
+  .trim()
+  .min(2, { message: "الاسم الكامل مطلوب" })
+  .max(100);
+
 function LoginPage() {
   const navigate = useNavigate();
   const { session, loading } = useAuth();
   const tenant = useTenant();
+
+  // Password mode (default — fastest)
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [sent, setSent] = useState(false);
+
+  // Magic-link mode (kept as alternative)
+  const [magicEmail, setMagicEmail] = useState("");
+  const [magicSubmitting, setMagicSubmitting] = useState(false);
+  const [magicSent, setMagicSent] = useState(false);
 
   // If we already have a session, bounce to /auth/callback so it routes by role.
   useEffect(() => {
@@ -42,27 +63,81 @@ function LoginPage() {
   const companyLogo = tenant.company?.logo_url || null;
   const companyInitial = companyName.charAt(0).toUpperCase();
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const parsed = emailSchema.safeParse(email);
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
+
+    const emailParsed = emailSchema.safeParse(email);
+    if (!emailParsed.success) {
+      toast.error(emailParsed.error.issues[0].message);
+      return;
+    }
+    const passwordParsed = passwordSchema.safeParse(password);
+    if (!passwordParsed.success) {
+      toast.error(passwordParsed.error.issues[0].message);
       return;
     }
 
     setSubmitting(true);
+
+    if (mode === "signup") {
+      const nameParsed = fullNameSchema.safeParse(fullName);
+      if (!nameParsed.success) {
+        setSubmitting(false);
+        toast.error(nameParsed.error.issues[0].message);
+        return;
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email: emailParsed.data,
+        password: passwordParsed.data,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: { full_name: nameParsed.data },
+        },
+      });
+      setSubmitting(false);
+      if (error) {
+        toast.error(error.message || "تعذر إنشاء الحساب");
+        return;
+      }
+      toast.success("تم إنشاء الحساب — جارٍ تسجيل دخولك");
+      // Auto-confirm is enabled, so the session is set immediately.
+      // The useEffect above will redirect via /auth/callback.
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: emailParsed.data,
+      password: passwordParsed.data,
+    });
+    setSubmitting(false);
+    if (error) {
+      toast.error(error.message || "بيانات الدخول غير صحيحة");
+      return;
+    }
+    toast.success("تم تسجيل الدخول");
+  };
+
+  const handleMagicSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const parsed = emailSchema.safeParse(magicEmail);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    setMagicSubmitting(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: parsed.data,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
-    setSubmitting(false);
+    setMagicSubmitting(false);
     if (error) {
       toast.error(error.message || "تعذر إرسال رابط الدخول");
       return;
     }
-    setSent(true);
+    setMagicSent(true);
     toast.success("تم إرسال رابط الدخول إلى بريدك الإلكتروني");
   };
 
@@ -102,65 +177,167 @@ function LoginPage() {
         </div>
 
         <Card className="p-6 shadow-elegant">
-          <h2 className="text-lg font-bold mb-1 text-center">تسجيل الدخول</h2>
-          <p className="text-xs text-muted-foreground mb-6 text-center">
-            أدخل بريدك الإلكتروني وسنرسل لك رابط دخول آمن
-          </p>
+          <Tabs defaultValue="password" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="password" className="gap-2">
+                <KeyRound className="h-3.5 w-3.5" />
+                كلمة المرور
+              </TabsTrigger>
+              <TabsTrigger value="magic" className="gap-2">
+                <Mail className="h-3.5 w-3.5" />
+                رابط بالبريد
+              </TabsTrigger>
+            </TabsList>
 
-          {sent ? (
-            <div className="space-y-4 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <Mail className="h-7 w-7 text-primary" />
+            {/* PASSWORD TAB */}
+            <TabsContent value="password" className="space-y-4">
+              <div className="flex rounded-lg border bg-muted/40 p-1 text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={() => setMode("signin")}
+                  className={`flex-1 rounded-md py-1.5 transition ${
+                    mode === "signin"
+                      ? "bg-background shadow-sm text-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  تسجيل الدخول
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("signup")}
+                  className={`flex-1 rounded-md py-1.5 transition ${
+                    mode === "signup"
+                      ? "bg-background shadow-sm text-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  إنشاء حساب
+                </button>
               </div>
-              <div className="space-y-1">
-                <p className="font-semibold">تحقق من بريدك الإلكتروني</p>
-                <p className="text-sm text-muted-foreground">
-                  أرسلنا رابط دخول إلى{" "}
-                  <span dir="ltr" className="font-mono text-foreground">
-                    {email}
-                  </span>
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  انقر على الرابط في الرسالة لإكمال تسجيل الدخول. الرابط صالح لفترة محدودة.
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setSent(false);
-                  setEmail("");
-                }}
-              >
-                إرسال إلى بريد آخر
-              </Button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">البريد الإلكتروني</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  dir="ltr"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                إرسال رابط الدخول
-              </Button>
-              <p className="text-center text-[11px] text-muted-foreground">
-                سنرسل لك رابطاً آمناً لتسجيل الدخول بدون كلمة مرور.
-              </p>
-            </form>
-          )}
+
+              <form onSubmit={handlePasswordSubmit} className="space-y-3">
+                {mode === "signup" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="full_name">الاسم الكامل</Label>
+                    <Input
+                      id="full_name"
+                      name="full_name"
+                      type="text"
+                      autoComplete="name"
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="محمد العلوي"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">البريد الإلكتروني</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    dir="ltr"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">كلمة المرور</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete={
+                      mode === "signup" ? "new-password" : "current-password"
+                    }
+                    required
+                    dir="ltr"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                  />
+                  {mode === "signup" && (
+                    <p className="text-[11px] text-muted-foreground">
+                      8 أحرف على الأقل
+                    </p>
+                  )}
+                </div>
+
+                <Button type="submit" className="w-full" disabled={submitting}>
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {mode === "signup" ? "إنشاء حساب ودخول" : "تسجيل الدخول"}
+                </Button>
+              </form>
+            </TabsContent>
+
+            {/* MAGIC LINK TAB */}
+            <TabsContent value="magic">
+              {magicSent ? (
+                <div className="space-y-4 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                    <Mail className="h-7 w-7 text-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-semibold">تحقق من بريدك الإلكتروني</p>
+                    <p className="text-sm text-muted-foreground">
+                      أرسلنا رابط دخول إلى{" "}
+                      <span dir="ltr" className="font-mono text-foreground">
+                        {magicEmail}
+                      </span>
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setMagicSent(false);
+                      setMagicEmail("");
+                    }}
+                  >
+                    إرسال إلى بريد آخر
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleMagicSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="magic_email">البريد الإلكتروني</Label>
+                    <Input
+                      id="magic_email"
+                      name="magic_email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      dir="ltr"
+                      value={magicEmail}
+                      onChange={(e) => setMagicEmail(e.target.value)}
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={magicSubmitting}
+                  >
+                    {magicSubmitting && (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    )}
+                    إرسال رابط الدخول
+                  </Button>
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    سنرسل لك رابطاً آمناً لتسجيل الدخول بدون كلمة مرور.
+                  </p>
+                </form>
+              )}
+            </TabsContent>
+          </Tabs>
         </Card>
 
         {!tenant.company && (
