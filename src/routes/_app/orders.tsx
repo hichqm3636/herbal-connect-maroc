@@ -246,6 +246,18 @@ function OrdersPage() {
         )}
       </header>
 
+      {loading && (
+        <Card className="flex items-center justify-center p-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </Card>
+      )}
+
+      {!loading && error && (
+        <Card className="border-destructive/40 bg-destructive/5 p-6 text-sm text-destructive">
+          تعذّر تحميل الطلبات: {error}
+        </Card>
+      )}
+
       {/* Filters */}
       {!loading && !error && orders && orders.length > 0 && (
         <Card className="p-3 sm:p-4 space-y-3">
