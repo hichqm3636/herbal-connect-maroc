@@ -217,7 +217,7 @@ function VendorStorePage() {
             </div>
           </div>
           {isClient && cart.totalQty > 0 && (
-            <Button size="sm" variant="outline" onClick={cart.openCart} className="gap-1.5">
+            <Button type="button" size="sm" variant="outline" onClick={cart.openCart} className="gap-1.5">
               <ShoppingCart className="h-4 w-4" />
               {cart.totalQty}
             </Button>

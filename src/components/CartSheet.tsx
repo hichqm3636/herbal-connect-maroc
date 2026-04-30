@@ -11,13 +11,10 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/hooks/useCart";
-import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
 
 export function CartButton() {
   const { totalQty, openCart } = useCart();
-  const { isClient } = useAuth();
-  if (!isClient) return null;
   const label =
     totalQty > 0 ? `فتح السلة، ${totalQty} عنصر` : "فتح السلة، فارغة";
   return (
@@ -45,11 +42,7 @@ export function CartButton() {
 
 export function CartSheet() {
   const { items, isOpen, setOpen, updateQty, removeItem, clear, total } = useCart();
-  const { isClient } = useAuth();
   const navigate = useNavigate();
-
-  // Strict guard: only client accounts can ever see the cart.
-  if (!isClient) return null;
 
   const handleCheckout = () => {
     setOpen(false);
