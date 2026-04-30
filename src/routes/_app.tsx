@@ -48,38 +48,49 @@ function AppLayout() {
     !!companyId &&
     tenant.company.id !== companyId;
 
+  const onClientRoute = startsWithAny(path, CLIENT_ONLY_PREFIXES);
+  const onVendorRoute = startsWithAny(path, VENDOR_ONLY_PREFIXES);
+  const onAdminRoute = startsWithAny(path, ADMIN_ONLY_PREFIXES);
+  const onSuperAdminRoute = startsWithAny(path, SUPER_ADMIN_ONLY_PREFIXES);
+
+  // Hard gate: if the user does not match the surface they are trying to view,
+  // we must NOT render any of that surface's chrome (sidebar, header) — not
+  // even for one frame. We compute this synchronously and short-circuit below.
+  const surfaceBlocked =
+    !loading && !!session && (
+      (onClientRoute && !isClient) ||
+      (onVendorRoute && !isVendor) ||
+      (onAdminRoute && !isPlatformAdmin) ||
+      (onSuperAdminRoute && !isSuperAdmin)
+    );
+
   useEffect(() => {
     if (loading) return;
     if (!session) {
-      navigate({ to: "/login" });
+      navigate({ to: "/login", replace: true });
       return;
     }
 
-    const onClientRoute = startsWithAny(path, CLIENT_ONLY_PREFIXES);
-    const onVendorRoute = startsWithAny(path, VENDOR_ONLY_PREFIXES);
-    const onAdminRoute = startsWithAny(path, ADMIN_ONLY_PREFIXES);
-    const onSuperAdminRoute = startsWithAny(path, SUPER_ADMIN_ONLY_PREFIXES);
-
     if (onClientRoute && !isClient) {
-      navigate({ to: homeForRole(marketplaceRole) });
+      navigate({ to: homeForRole(marketplaceRole), replace: true });
       return;
     }
     // Vendor surface is reserved for the vendor role only — admins go to /admin.
     if (onVendorRoute && !isVendor) {
-      navigate({ to: homeForRole(marketplaceRole) });
+      navigate({ to: homeForRole(marketplaceRole), replace: true });
       return;
     }
     if (onAdminRoute && !isPlatformAdmin) {
-      navigate({ to: homeForRole(marketplaceRole) });
+      navigate({ to: homeForRole(marketplaceRole), replace: true });
       return;
     }
     if (onSuperAdminRoute && !isSuperAdmin) {
-      navigate({ to: homeForRole(marketplaceRole) });
+      navigate({ to: homeForRole(marketplaceRole), replace: true });
       return;
     }
-  }, [session, loading, marketplaceRole, isClient, isVendor, isPlatformAdmin, isSuperAdmin, path, navigate]);
+  }, [session, loading, marketplaceRole, isClient, isVendor, isPlatformAdmin, isSuperAdmin, path, onClientRoute, onVendorRoute, onAdminRoute, onSuperAdminRoute, navigate]);
 
-  if (loading || !session || (onTenantScopedRoute && tenant.loading)) {
+  if (loading || !session || surfaceBlocked || (onTenantScopedRoute && tenant.loading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-soft" dir="rtl">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-primary shadow-glow">
