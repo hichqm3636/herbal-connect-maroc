@@ -843,7 +843,21 @@ ${shippingAddress.trim() ? `📍 العنوان: ${shippingAddress.trim()}` : ""
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => setPaymentMethod(opt.value)}
+                    onClick={() => {
+                      setPaymentMethod(opt.value);
+                      try {
+                        if (vendor) {
+                          track("checkout_payment_selected", {
+                            vendor_id: vendor.id,
+                            product_id: cart.items[0]?.id ?? null,
+                            method: opt.value,
+                            user_id: user?.id ?? null,
+                          });
+                        }
+                      } catch {
+                        /* noop */
+                      }
+                    }}
                     aria-pressed={active}
                     className={`group flex items-start gap-3 rounded-xl border p-3.5 text-right transition-all ${
                       active
