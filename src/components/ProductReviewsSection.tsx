@@ -139,6 +139,7 @@ export const ProductReviewsSection = memo(function ProductReviewsSection({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [sort, setSort] = useState<"newest" | "highest">("newest");
+  const [filter, setFilter] = useState<RatingFilter>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Summary query — cached separately, fetched once per productId
@@ -148,10 +149,11 @@ export const ProductReviewsSection = memo(function ProductReviewsSection({
     staleTime: STALE_TIME,
   });
 
-  // Reviews list — infinite query with cursor pagination, keyed on sort
+  // Reviews list — infinite query with cursor pagination, keyed on sort + filter
   const listQuery = useInfiniteQuery({
-    queryKey: reviewsKeys.list(productId, sort),
-    queryFn: ({ pageParam }) => fetchReviewsPage(productId, sort, pageParam),
+    queryKey: reviewsKeys.list(productId, sort, filter),
+    queryFn: ({ pageParam }) =>
+      fetchReviewsPage(productId, sort, filter, pageParam),
     initialPageParam: null as ReviewRow | null,
     getNextPageParam: (lastPage) =>
       lastPage.length === PAGE_SIZE ? lastPage[lastPage.length - 1] : undefined,
