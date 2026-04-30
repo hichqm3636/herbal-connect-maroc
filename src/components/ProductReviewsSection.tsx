@@ -75,13 +75,26 @@ function normalizeSummary(raw: unknown): SummaryShape {
   };
 }
 
+// Filter values: 'all' | 'positive' (4-5) | 'negative' (1-2) | 1..5 (single star)
+type RatingFilter = "all" | "positive" | "negative" | 1 | 2 | 3 | 4 | 5;
+
+function filterToRange(f: RatingFilter): { min: number; max: number } {
+  if (f === "all") return { min: 1, max: 5 };
+  if (f === "positive") return { min: 4, max: 5 };
+  if (f === "negative") return { min: 1, max: 2 };
+  return { min: f, max: f };
+}
+
 // Query key factory for cache management
 const reviewsKeys = {
   all: ["product-reviews"] as const,
   summary: (productId: string) =>
     [...reviewsKeys.all, "summary", productId] as const,
-  list: (productId: string, sort: "newest" | "highest") =>
-    [...reviewsKeys.all, "list", productId, sort] as const,
+  list: (
+    productId: string,
+    sort: "newest" | "highest",
+    filter: RatingFilter,
+  ) => [...reviewsKeys.all, "list", productId, sort, filter] as const,
 };
 
 async function fetchSummary(productId: string): Promise<SummaryShape> {
