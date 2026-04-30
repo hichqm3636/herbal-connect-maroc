@@ -14,9 +14,9 @@ export const Route = createFileRoute("/_app/_admin")({
 });
 
 function AdminGuard() {
-  const { roles, isSuperAdmin, loading } = useAuth();
+  const { marketplaceRole, isSuperAdmin, loading } = useAuth();
   const navigate = useNavigate();
-  const isPlatformAdmin = roles.includes("admin") || isSuperAdmin;
+  const isPlatformAdmin = marketplaceRole === "admin" || isSuperAdmin;
 
   useEffect(() => {
     if (loading) return;
