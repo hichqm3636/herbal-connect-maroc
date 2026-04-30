@@ -1494,6 +1494,22 @@ export type Database = {
         Returns: boolean
       }
       admin_exists: { Args: never; Returns: boolean }
+      analytics_alerts: {
+        Args: { _days?: number; _vendor_id?: string }
+        Returns: {
+          abandonment_rate: number
+          add_to_cart: number
+          alert_type: string
+          cart_rate: number
+          checkout_started: number
+          completed: number
+          conversion_rate: number
+          product_id: string
+          severity: string
+          vendor_id: string
+          views: number
+        }[]
+      }
       analytics_checkout_funnel: {
         Args: { _days?: number; _vendor_id?: string }
         Returns: Json
@@ -1514,6 +1530,19 @@ export type Database = {
           orders_count: number
           revenue_mad: number
           vendor_id: string
+        }[]
+      }
+      analytics_vendor_product_stats: {
+        Args: { _days?: number; _vendor_id: string }
+        Returns: {
+          add_to_cart: number
+          cart_rate: number
+          checkout_started: number
+          completed: number
+          conversion_rate: number
+          exits_before_cart: number
+          product_id: string
+          views: number
         }[]
       }
       claim_client_role: { Args: never; Returns: boolean }

@@ -28,6 +28,8 @@ import { formatMAD } from "@/lib/format";
 import { parseTiers } from "@/lib/pricing";
 import { buildWhatsappLink } from "@/utils/whatsapp";
 import { track } from "@/lib/analytics";
+import { getVariant } from "@/lib/ab";
+import { useProductEngagementTracking } from "@/hooks/useProductEngagementTracking";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -249,6 +251,27 @@ function ProductDetailPage() {
     });
   }, [product, vendor, user?.id]);
 
+  // ---------- Engagement tracking (scroll depth, time, exit) ----------
+  const addedToCartRef = useRef(false);
+  useProductEngagementTracking({
+    productId: product?.id ?? "",
+    vendorId: vendor?.id ?? "",
+    price: safeNum(product?.price_mad),
+    userId: user?.id ?? null,
+    addedToCartRef,
+  });
+
+  // ---------- A/B variants (assigned once per visitor) ----------
+  const ctaVariant = product && vendor
+    ? getVariant("cta_label", { product_id: product.id, vendor_id: vendor.id, user_id: user?.id ?? null })
+    : "add_to_cart";
+  const priceVariant = product && vendor
+    ? getVariant("price_display", { product_id: product.id, vendor_id: vendor.id, user_id: user?.id ?? null })
+    : "plain";
+  const trustVariant = product && vendor
+    ? getVariant("trust_badges", { product_id: product.id, vendor_id: vendor.id, user_id: user?.id ?? null })
+    : "with";
+
   // ---------- Shared add-to-cart logic ----------
   const performAdd = (origin: "add_to_cart" | "buy_now"): boolean => {
     if (!cartProduct || !product || !vendor) return false;
@@ -264,6 +287,7 @@ function ProductDetailPage() {
       const res = cart.tryAdd(cartProduct, minOrder);
       if (res.kind === "added") {
         ok = true;
+        addedToCartRef.current = true;
         toast.success("تمت الإضافة إلى السلة");
         track(origin, {
           product_id: product.id,
@@ -435,7 +459,23 @@ ${productUrl ? `🔗 ${productUrl}` : ""}
 
             <div className="mt-4 flex items-end justify-between gap-3">
               <div>
-                <p className="text-2xl font-extrabold">{formatMAD(display)}</p>
+                {priceVariant === "highlight" && product.rrp_price && product.rrp_price > product.price_mad ? (
+                  <>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-2xl font-extrabold text-destructive">
+                        {formatMAD(product.price_mad)}
+                      </p>
+                      <p className="text-sm text-muted-foreground line-through">
+                        {formatMAD(product.rrp_price)}
+                      </p>
+                    </div>
+                    <Badge variant="destructive" className="mt-1 text-[10px]">
+                      وفّر {Math.round(((product.rrp_price - product.price_mad) / product.rrp_price) * 100)}%
+                    </Badge>
+                  </>
+                ) : (
+                  <p className="text-2xl font-extrabold">{formatMAD(display)}</p>
+                )}
                 {minOrder > 1 && (
                   <p className="text-[11px] text-muted-foreground">
                     الحد الأدنى: {minOrder}
@@ -448,6 +488,16 @@ ${productUrl ? `🔗 ${productUrl}` : ""}
                     <Lock className="h-4 w-4" />
                     تسجيل الدخول
                   </Link>
+                </Button>
+              ) : ctaVariant === "buy_now" ? (
+                <Button
+                  onClick={handleBuyNow}
+                  disabled={!canPurchase || adding}
+                  className="gap-1.5"
+                  title={cannotPurchaseReason ?? undefined}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  اشترِ الآن
                 </Button>
               ) : (
                 <div className="flex flex-col gap-1.5 sm:flex-row">
@@ -477,7 +527,7 @@ ${productUrl ? `🔗 ${productUrl}` : ""}
         </Card>
 
         {/* Trust signals — fixed layout, skeleton matches final exactly */}
-        {showTrustGrid && (
+        {showTrustGrid && trustVariant === "with" && (
           <Card className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
             <TrustItem
               icon={<ShieldCheck className="h-4 w-4 text-success" />}

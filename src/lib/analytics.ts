@@ -16,7 +16,14 @@ export type AnalyticsEvent =
   | "whatsapp_click"
   | "checkout_view"
   | "checkout_completed"
-  | "checkout_whatsapp_fallback";
+  | "checkout_whatsapp_fallback"
+  | "time_on_product"
+  | "scroll_depth_25"
+  | "scroll_depth_50"
+  | "scroll_depth_75"
+  | "scroll_depth_100"
+  | "exit_before_add_to_cart"
+  | "ab_assignment";
 
 export interface ProductEventPayload {
   product_id?: string | null;
