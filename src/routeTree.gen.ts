@@ -25,6 +25,7 @@ import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppOrdersRouteImport } from './routes/_app/orders'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
+import { Route as AppMyReviewsRouteImport } from './routes/_app/my-reviews'
 import { Route as AppClientRouteImport } from './routes/_app/client'
 import { Route as AppCheckoutRouteImport } from './routes/_app/checkout'
 import { Route as AppVendorRouteImport } from './routes/_app/_vendor'
@@ -37,6 +38,7 @@ import { Route as AppVendorVendorIndexRouteImport } from './routes/_app/_vendor/
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
 import { Route as AppVendorVendorTeamRouteImport } from './routes/_app/_vendor/vendor.team'
 import { Route as AppVendorVendorStorageHealthRouteImport } from './routes/_app/_vendor/vendor.storage-health'
+import { Route as AppVendorVendorReviewsRouteImport } from './routes/_app/_vendor/vendor.reviews'
 import { Route as AppVendorVendorProductsRouteImport } from './routes/_app/_vendor/vendor.products'
 import { Route as AppVendorVendorOrdersRouteImport } from './routes/_app/_vendor/vendor.orders'
 import { Route as AppVendorVendorInvoicesRouteImport } from './routes/_app/_vendor/vendor.invoices'
@@ -124,6 +126,11 @@ const AppNotificationsRoute = AppNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMyReviewsRoute = AppMyReviewsRouteImport.update({
+  id: '/my-reviews',
+  path: '/my-reviews',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppClientRoute = AppClientRouteImport.update({
   id: '/client',
   path: '/client',
@@ -183,6 +190,11 @@ const AppVendorVendorStorageHealthRoute =
     path: '/vendor/storage-health',
     getParentRoute: () => AppVendorRoute,
   } as any)
+const AppVendorVendorReviewsRoute = AppVendorVendorReviewsRouteImport.update({
+  id: '/vendor/reviews',
+  path: '/vendor/reviews',
+  getParentRoute: () => AppVendorRoute,
+} as any)
 const AppVendorVendorProductsRoute = AppVendorVendorProductsRouteImport.update({
   id: '/vendor/products',
   path: '/vendor/products',
@@ -230,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/vendors': typeof VendorsRoute
   '/checkout': typeof AppCheckoutRoute
   '/client': typeof AppClientRoute
+  '/my-reviews': typeof AppMyReviewsRoute
   '/notifications': typeof AppNotificationsRoute
   '/orders': typeof AppOrdersRoute
   '/profile': typeof AppProfileRoute
@@ -249,6 +262,7 @@ export interface FileRoutesByFullPath {
   '/vendor/invoices': typeof AppVendorVendorInvoicesRoute
   '/vendor/orders': typeof AppVendorVendorOrdersRoute
   '/vendor/products': typeof AppVendorVendorProductsRoute
+  '/vendor/reviews': typeof AppVendorVendorReviewsRoute
   '/vendor/storage-health': typeof AppVendorVendorStorageHealthRoute
   '/vendor/team': typeof AppVendorVendorTeamRoute
   '/admin/': typeof AppAdminAdminIndexRoute
@@ -264,6 +278,7 @@ export interface FileRoutesByTo {
   '/vendors': typeof VendorsRoute
   '/checkout': typeof AppCheckoutRoute
   '/client': typeof AppClientRoute
+  '/my-reviews': typeof AppMyReviewsRoute
   '/notifications': typeof AppNotificationsRoute
   '/orders': typeof AppOrdersRoute
   '/profile': typeof AppProfileRoute
@@ -282,6 +297,7 @@ export interface FileRoutesByTo {
   '/vendor/invoices': typeof AppVendorVendorInvoicesRoute
   '/vendor/orders': typeof AppVendorVendorOrdersRoute
   '/vendor/products': typeof AppVendorVendorProductsRoute
+  '/vendor/reviews': typeof AppVendorVendorReviewsRoute
   '/vendor/storage-health': typeof AppVendorVendorStorageHealthRoute
   '/vendor/team': typeof AppVendorVendorTeamRoute
   '/admin': typeof AppAdminAdminIndexRoute
@@ -301,6 +317,7 @@ export interface FileRoutesById {
   '/_app/_vendor': typeof AppVendorRouteWithChildren
   '/_app/checkout': typeof AppCheckoutRoute
   '/_app/client': typeof AppClientRoute
+  '/_app/my-reviews': typeof AppMyReviewsRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/orders': typeof AppOrdersRoute
   '/_app/profile': typeof AppProfileRoute
@@ -320,6 +337,7 @@ export interface FileRoutesById {
   '/_app/_vendor/vendor/invoices': typeof AppVendorVendorInvoicesRoute
   '/_app/_vendor/vendor/orders': typeof AppVendorVendorOrdersRoute
   '/_app/_vendor/vendor/products': typeof AppVendorVendorProductsRoute
+  '/_app/_vendor/vendor/reviews': typeof AppVendorVendorReviewsRoute
   '/_app/_vendor/vendor/storage-health': typeof AppVendorVendorStorageHealthRoute
   '/_app/_vendor/vendor/team': typeof AppVendorVendorTeamRoute
   '/_app/_admin/admin/': typeof AppAdminAdminIndexRoute
@@ -337,6 +355,7 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/checkout'
     | '/client'
+    | '/my-reviews'
     | '/notifications'
     | '/orders'
     | '/profile'
@@ -356,6 +375,7 @@ export interface FileRouteTypes {
     | '/vendor/invoices'
     | '/vendor/orders'
     | '/vendor/products'
+    | '/vendor/reviews'
     | '/vendor/storage-health'
     | '/vendor/team'
     | '/admin/'
@@ -371,6 +391,7 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/checkout'
     | '/client'
+    | '/my-reviews'
     | '/notifications'
     | '/orders'
     | '/profile'
@@ -389,6 +410,7 @@ export interface FileRouteTypes {
     | '/vendor/invoices'
     | '/vendor/orders'
     | '/vendor/products'
+    | '/vendor/reviews'
     | '/vendor/storage-health'
     | '/vendor/team'
     | '/admin'
@@ -407,6 +429,7 @@ export interface FileRouteTypes {
     | '/_app/_vendor'
     | '/_app/checkout'
     | '/_app/client'
+    | '/_app/my-reviews'
     | '/_app/notifications'
     | '/_app/orders'
     | '/_app/profile'
@@ -426,6 +449,7 @@ export interface FileRouteTypes {
     | '/_app/_vendor/vendor/invoices'
     | '/_app/_vendor/vendor/orders'
     | '/_app/_vendor/vendor/products'
+    | '/_app/_vendor/vendor/reviews'
     | '/_app/_vendor/vendor/storage-health'
     | '/_app/_vendor/vendor/team'
     | '/_app/_admin/admin/'
@@ -560,6 +584,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNotificationsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/my-reviews': {
+      id: '/_app/my-reviews'
+      path: '/my-reviews'
+      fullPath: '/my-reviews'
+      preLoaderRoute: typeof AppMyReviewsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/client': {
       id: '/_app/client'
       path: '/client'
@@ -644,6 +675,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVendorVendorStorageHealthRouteImport
       parentRoute: typeof AppVendorRoute
     }
+    '/_app/_vendor/vendor/reviews': {
+      id: '/_app/_vendor/vendor/reviews'
+      path: '/vendor/reviews'
+      fullPath: '/vendor/reviews'
+      preLoaderRoute: typeof AppVendorVendorReviewsRouteImport
+      parentRoute: typeof AppVendorRoute
+    }
     '/_app/_vendor/vendor/products': {
       id: '/_app/_vendor/vendor/products'
       path: '/vendor/products'
@@ -717,6 +755,7 @@ interface AppVendorRouteChildren {
   AppVendorVendorInvoicesRoute: typeof AppVendorVendorInvoicesRoute
   AppVendorVendorOrdersRoute: typeof AppVendorVendorOrdersRoute
   AppVendorVendorProductsRoute: typeof AppVendorVendorProductsRoute
+  AppVendorVendorReviewsRoute: typeof AppVendorVendorReviewsRoute
   AppVendorVendorStorageHealthRoute: typeof AppVendorVendorStorageHealthRoute
   AppVendorVendorTeamRoute: typeof AppVendorVendorTeamRoute
   AppVendorVendorIndexRoute: typeof AppVendorVendorIndexRoute
@@ -729,6 +768,7 @@ const AppVendorRouteChildren: AppVendorRouteChildren = {
   AppVendorVendorInvoicesRoute: AppVendorVendorInvoicesRoute,
   AppVendorVendorOrdersRoute: AppVendorVendorOrdersRoute,
   AppVendorVendorProductsRoute: AppVendorVendorProductsRoute,
+  AppVendorVendorReviewsRoute: AppVendorVendorReviewsRoute,
   AppVendorVendorStorageHealthRoute: AppVendorVendorStorageHealthRoute,
   AppVendorVendorTeamRoute: AppVendorVendorTeamRoute,
   AppVendorVendorIndexRoute: AppVendorVendorIndexRoute,
@@ -759,6 +799,7 @@ interface AppRouteChildren {
   AppVendorRoute: typeof AppVendorRouteWithChildren
   AppCheckoutRoute: typeof AppCheckoutRoute
   AppClientRoute: typeof AppClientRoute
+  AppMyReviewsRoute: typeof AppMyReviewsRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOrdersRoute: typeof AppOrdersRoute
   AppProfileRoute: typeof AppProfileRoute
@@ -772,6 +813,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppVendorRoute: AppVendorRouteWithChildren,
   AppCheckoutRoute: AppCheckoutRoute,
   AppClientRoute: AppClientRoute,
+  AppMyReviewsRoute: AppMyReviewsRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOrdersRoute: AppOrdersRoute,
   AppProfileRoute: AppProfileRoute,
