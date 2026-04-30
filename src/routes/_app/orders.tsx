@@ -105,36 +105,56 @@ function OrdersPage() {
   const [vendorFilter, setVendorFilter] = useState<string>("all");
   const [query, setQuery] = useState("");
 
+  const fetchOrders = async (uid: string, opts: { silent?: boolean } = {}) => {
+    if (!opts.silent) setLoading(true);
+    setError(null);
+    const { data, error } = await supabase
+      .from("orders")
+      .select(
+        `id, order_number, status, total_mad, created_at, notes, payment_method, payment_status, company_id,
+         companies:company_id ( id, name, display_name, logo_url ),
+         order_items ( id, quantity, unit_price_mad, product_id,
+           products:product_id ( name_ar, image_url ) )`,
+      )
+      .eq("buyer_id", uid)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      setError(error.message);
+      setOrders([]);
+    } else {
+      setOrders((data ?? []) as unknown as OrderRow[]);
+    }
+    if (!opts.silent) setLoading(false);
+  };
+
   useEffect(() => {
     if (authLoading || !user) return;
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setError(null);
-      const { data, error } = await supabase
-        .from("orders")
-        .select(
-          `id, order_number, status, total_mad, created_at, notes, payment_method, payment_status, company_id,
-           companies:company_id ( id, name, display_name, logo_url ),
-           order_items ( id, quantity, unit_price_mad, product_id,
-             products:product_id ( name_ar, image_url ) )`,
-        )
-        .eq("buyer_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (cancelled) return;
-      if (error) {
-        setError(error.message);
-        setOrders([]);
-      } else {
-        setOrders((data ?? []) as unknown as OrderRow[]);
-      }
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
+    fetchOrders(user.id);
   }, [user, authLoading]);
+
+  // Realtime: refresh whenever any of this buyer's orders change.
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`buyer-orders:${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `buyer_id=eq.${user.id}`,
+        },
+        () => {
+          fetchOrders(user.id, { silent: true });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const totalSpent = useMemo(
     () => (orders ?? []).reduce((s, o) => s + Number(o.total_mad ?? 0), 0),
