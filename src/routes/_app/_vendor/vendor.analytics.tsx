@@ -213,6 +213,9 @@ function VendorAnalyticsPage() {
         )}
       </Card>
 
+      {/* Recommendations — interpret funnel into actionable advice */}
+      <AnalyticsRecommendations funnel={f} />
+
       {/* Products */}
       <Card className="p-4">
         <h2 className="font-bold mb-3">أداء المنتجات</h2>
