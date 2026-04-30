@@ -1,0 +1,10 @@
+ALTER TABLE public.order_items DROP CONSTRAINT IF EXISTS fk_order_items_order;
+ALTER TABLE public.order_items DROP CONSTRAINT IF EXISTS fk_order_items_product;
+ALTER TABLE public.invoices DROP CONSTRAINT IF EXISTS fk_invoices_company;
+ALTER TABLE public.invoices DROP CONSTRAINT IF EXISTS fk_invoices_order;
+ALTER TABLE public.invoices DROP CONSTRAINT IF EXISTS fk_invoices_buyer;
+ALTER TABLE public.inventory_levels DROP CONSTRAINT IF EXISTS fk_inv_levels_product;
+ALTER TABLE public.inventory_levels DROP CONSTRAINT IF EXISTS fk_inv_levels_warehouse;
+ALTER TABLE public.inventory_movements DROP CONSTRAINT IF EXISTS fk_inv_movements_product;
+ALTER TABLE public.inventory_movements DROP CONSTRAINT IF EXISTS fk_inv_movements_warehouse;
+ALTER TABLE public.payments DROP CONSTRAINT IF EXISTS fk_payments_invoice;
