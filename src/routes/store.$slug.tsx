@@ -71,6 +71,9 @@ function VendorStorePage() {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState<"new" | "price_asc" | "price_desc" | "name">("new");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [stockOnly, setStockOnly] = useState(false);
 
   // Load vendor (public — anon can read listed companies)
   useEffect(() => {
