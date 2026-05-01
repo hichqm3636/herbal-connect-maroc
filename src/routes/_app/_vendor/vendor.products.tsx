@@ -150,6 +150,7 @@ function VendorProductsPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [urlOpen, setUrlOpen] = useState(false);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
 
   const load = async () => {
     if (!companyId) return;
