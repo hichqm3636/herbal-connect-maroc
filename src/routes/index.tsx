@@ -27,6 +27,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { homeForRole } from "@/lib/roleRouting";
 import { supabase } from "@/integrations/supabase/client";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/")({
   head: () => ({
