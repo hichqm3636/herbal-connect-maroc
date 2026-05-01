@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { toast } from "sonner";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
@@ -105,6 +106,11 @@ function SignupPage() {
       window.location.assign("https://nexora.app/signup");
     }
   }, [tenant.loading, tenant.kind]);
+
+  // Funnel: signup_view fires once when the form mounts.
+  useEffect(() => {
+    track("signup_view");
+  }, []);
 
   // Auto-generate slug from company name unless the user has typed in the slug field.
   useEffect(() => {
