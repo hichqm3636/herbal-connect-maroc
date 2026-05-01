@@ -220,7 +220,7 @@ function ClientDashboard() {
           </h2>
           {orders.length > 0 && (
             <Button asChild variant="ghost" size="sm">
-              <Link to="/orders">عرض الكل</Link>
+              <Link to="/client/orders">عرض الكل</Link>
             </Button>
           )}
         </div>
