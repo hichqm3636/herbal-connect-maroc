@@ -33,10 +33,10 @@ import { Route as AppAdminRouteImport } from './routes/_app/_admin'
 import { Route as AppSuperAdminIndexRouteImport } from './routes/_app/super-admin/index'
 import { Route as ApiPublicWooWebhookRouteImport } from './routes/api/public/woo-webhook'
 import { Route as AppSuperAdminUsersRouteImport } from './routes/_app/super-admin/users'
+import { Route as AppSuperAdminGrowthRouteImport } from './routes/_app/super-admin/growth'
 import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-admin/companies'
 import { Route as AppSuperAdminAnalyticsValidationRouteImport } from './routes/_app/super-admin/analytics-validation'
 import { Route as AppSuperAdminAnalyticsRouteImport } from './routes/_app/super-admin/analytics'
-import { Route as AppSuperAdminGrowthRouteImport } from './routes/_app/super-admin/growth'
 import { Route as AppSuperAdminAbTestsRouteImport } from './routes/_app/super-admin/ab-tests'
 import { Route as AppClientOrdersRouteImport } from './routes/_app/client.orders'
 import { Route as AppVendorVendorIndexRouteImport } from './routes/_app/_vendor/vendor.index'
@@ -170,6 +170,11 @@ const AppSuperAdminUsersRoute = AppSuperAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AppSuperAdminRoute,
 } as any)
+const AppSuperAdminGrowthRoute = AppSuperAdminGrowthRouteImport.update({
+  id: '/growth',
+  path: '/growth',
+  getParentRoute: () => AppSuperAdminRoute,
+} as any)
 const AppSuperAdminCompaniesRoute = AppSuperAdminCompaniesRouteImport.update({
   id: '/companies',
   path: '/companies',
@@ -184,11 +189,6 @@ const AppSuperAdminAnalyticsValidationRoute =
 const AppSuperAdminAnalyticsRoute = AppSuperAdminAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
-  getParentRoute: () => AppSuperAdminRoute,
-} as any)
-const AppSuperAdminGrowthRoute = AppSuperAdminGrowthRouteImport.update({
-  id: '/growth',
-  path: '/growth',
   getParentRoute: () => AppSuperAdminRoute,
 } as any)
 const AppSuperAdminAbTestsRoute = AppSuperAdminAbTestsRouteImport.update({
@@ -289,11 +289,11 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
   '/client/orders': typeof AppClientOrdersRoute
-  '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
-  '/super-admin/growth': typeof AppSuperAdminGrowthRoute
   '/super-admin/ab-tests': typeof AppSuperAdminAbTestsRoute
+  '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
+  '/super-admin/growth': typeof AppSuperAdminGrowthRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/super-admin/': typeof AppSuperAdminIndexRoute
@@ -330,11 +330,11 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
   '/client/orders': typeof AppClientOrdersRoute
-  '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
-  '/super-admin/growth': typeof AppSuperAdminGrowthRoute
   '/super-admin/ab-tests': typeof AppSuperAdminAbTestsRoute
+  '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
+  '/super-admin/growth': typeof AppSuperAdminGrowthRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/super-admin': typeof AppSuperAdminIndexRoute
@@ -376,11 +376,11 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
   '/_app/client/orders': typeof AppClientOrdersRoute
-  '/_app/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
-  '/_app/super-admin/growth': typeof AppSuperAdminGrowthRoute
   '/_app/super-admin/ab-tests': typeof AppSuperAdminAbTestsRoute
+  '/_app/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/_app/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
+  '/_app/super-admin/growth': typeof AppSuperAdminGrowthRoute
   '/_app/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/_app/super-admin/': typeof AppSuperAdminIndexRoute
@@ -420,11 +420,11 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/store/$slug'
     | '/client/orders'
-    | '/super-admin/analytics'
-    | '/super-admin/growth'
     | '/super-admin/ab-tests'
+    | '/super-admin/analytics'
     | '/super-admin/analytics-validation'
     | '/super-admin/companies'
+    | '/super-admin/growth'
     | '/super-admin/users'
     | '/api/public/woo-webhook'
     | '/super-admin/'
@@ -461,11 +461,11 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/store/$slug'
     | '/client/orders'
-    | '/super-admin/analytics'
-    | '/super-admin/growth'
     | '/super-admin/ab-tests'
+    | '/super-admin/analytics'
     | '/super-admin/analytics-validation'
     | '/super-admin/companies'
+    | '/super-admin/growth'
     | '/super-admin/users'
     | '/api/public/woo-webhook'
     | '/super-admin'
@@ -506,11 +506,11 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/store/$slug'
     | '/_app/client/orders'
-    | '/_app/super-admin/analytics'
-    | '/_app/super-admin/growth'
     | '/_app/super-admin/ab-tests'
+    | '/_app/super-admin/analytics'
     | '/_app/super-admin/analytics-validation'
     | '/_app/super-admin/companies'
+    | '/_app/super-admin/growth'
     | '/_app/super-admin/users'
     | '/api/public/woo-webhook'
     | '/_app/super-admin/'
@@ -713,6 +713,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSuperAdminUsersRouteImport
       parentRoute: typeof AppSuperAdminRoute
     }
+    '/_app/super-admin/growth': {
+      id: '/_app/super-admin/growth'
+      path: '/growth'
+      fullPath: '/super-admin/growth'
+      preLoaderRoute: typeof AppSuperAdminGrowthRouteImport
+      parentRoute: typeof AppSuperAdminRoute
+    }
     '/_app/super-admin/companies': {
       id: '/_app/super-admin/companies'
       path: '/companies'
@@ -732,13 +739,6 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/super-admin/analytics'
       preLoaderRoute: typeof AppSuperAdminAnalyticsRouteImport
-      parentRoute: typeof AppSuperAdminRoute
-    }
-    '/_app/super-admin/growth': {
-      id: '/_app/super-admin/growth'
-      path: '/growth'
-      fullPath: '/super-admin/growth'
-      preLoaderRoute: typeof AppSuperAdminGrowthRouteImport
       parentRoute: typeof AppSuperAdminRoute
     }
     '/_app/super-admin/ab-tests': {
@@ -906,21 +906,21 @@ const AppClientRouteWithChildren = AppClientRoute._addFileChildren(
 )
 
 interface AppSuperAdminRouteChildren {
-  AppSuperAdminAnalyticsRoute: typeof AppSuperAdminAnalyticsRoute
-  AppSuperAdminGrowthRoute: typeof AppSuperAdminGrowthRoute
   AppSuperAdminAbTestsRoute: typeof AppSuperAdminAbTestsRoute
+  AppSuperAdminAnalyticsRoute: typeof AppSuperAdminAnalyticsRoute
   AppSuperAdminAnalyticsValidationRoute: typeof AppSuperAdminAnalyticsValidationRoute
   AppSuperAdminCompaniesRoute: typeof AppSuperAdminCompaniesRoute
+  AppSuperAdminGrowthRoute: typeof AppSuperAdminGrowthRoute
   AppSuperAdminUsersRoute: typeof AppSuperAdminUsersRoute
   AppSuperAdminIndexRoute: typeof AppSuperAdminIndexRoute
 }
 
 const AppSuperAdminRouteChildren: AppSuperAdminRouteChildren = {
-  AppSuperAdminAnalyticsRoute: AppSuperAdminAnalyticsRoute,
-  AppSuperAdminGrowthRoute: AppSuperAdminGrowthRoute,
   AppSuperAdminAbTestsRoute: AppSuperAdminAbTestsRoute,
+  AppSuperAdminAnalyticsRoute: AppSuperAdminAnalyticsRoute,
   AppSuperAdminAnalyticsValidationRoute: AppSuperAdminAnalyticsValidationRoute,
   AppSuperAdminCompaniesRoute: AppSuperAdminCompaniesRoute,
+  AppSuperAdminGrowthRoute: AppSuperAdminGrowthRoute,
   AppSuperAdminUsersRoute: AppSuperAdminUsersRoute,
   AppSuperAdminIndexRoute: AppSuperAdminIndexRoute,
 }
