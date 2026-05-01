@@ -92,7 +92,7 @@ function AuthCallbackPage() {
         //  - super_admin → /super-admin (force apex host in production)
         //  - platform admin → /admin
         //  - company admin/vendor → /vendor
-        //  - client      → /vendors
+        //  - client      → /client (their growth dashboard)
         const host =
           typeof window !== "undefined" ? window.location.hostname.toLowerCase() : "";
 
