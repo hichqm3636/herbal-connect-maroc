@@ -333,7 +333,10 @@ function ClientDashboard() {
       />
 
       {hasNoOrders ? (
-        <ClientOnboarding />
+        <>
+          <ClientOnboarding />
+          <SampleVendors />
+        </>
       ) : (
         <>
           <Recommendations items={data.recommendations} />
