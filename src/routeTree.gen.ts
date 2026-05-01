@@ -722,6 +722,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSuperAdminAnalyticsRouteImport
       parentRoute: typeof AppSuperAdminRoute
     }
+    '/_app/super-admin/growth': {
+      id: '/_app/super-admin/growth'
+      path: '/growth'
+      fullPath: '/super-admin/growth'
+      preLoaderRoute: typeof AppSuperAdminGrowthRouteImport
+      parentRoute: typeof AppSuperAdminRoute
+    }
     '/_app/client/orders': {
       id: '/_app/client/orders'
       path: '/orders'
