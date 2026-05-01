@@ -338,16 +338,18 @@ function ClientDashboard() {
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Sparkles className="h-6 w-6" />
           </div>
-          <h3 className="text-base font-bold">ابدأ أول طلب لك</h3>
+          <h3 className="text-base font-bold">لا يوجد موردون حالياً</h3>
           <p className="max-w-sm text-sm text-muted-foreground">
-            اكتشف بائعينا واطلب منتجاتك بسهولة — مع تتبّع كامل لكل طلب.
+            ستظهر طلباتك ومورديك هنا فور توفّرهم. يمكنك تصفّح الدليل الآن أو العودة لاحقاً.
           </p>
-          <Button asChild size="lg">
-            <Link to="/vendors">
-              <Store className="h-5 w-5" />
-              تصفّح البائعين
-            </Link>
-          </Button>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button asChild size="lg" variant="outline">
+              <Link to="/vendors">
+                <Store className="h-5 w-5" />
+                تصفّح الدليل
+              </Link>
+            </Button>
+          </div>
         </section>
       ) : (
         <>
