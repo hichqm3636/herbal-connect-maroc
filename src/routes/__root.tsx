@@ -1,8 +1,8 @@
-import { Outlet, createRootRoute, HeadContent, Scripts, Link } from "@tanstack/react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { Outlet, createRootRoute, HeadContent, Scripts, Link, useRouter } from "@tanstack/react-router";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
 import { CartProvider } from "@/hooks/useCart";
 import { CartSheet } from "@/components/CartSheet";
@@ -95,6 +95,7 @@ function RootComponent() {
       <TenantProvider>
         <AuthProvider>
           <CartProvider>
+            <AuthSyncBridge />
             <Outlet />
             <CartSheet />
             <ReplaceCartDialog />
@@ -104,4 +105,33 @@ function RootComponent() {
       </TenantProvider>
     </QueryClientProvider>
   );
+}
+
+/**
+ * Bridges Supabase auth transitions into TanStack Router + Query.
+ * On every real session identity change (login / logout / user switch) we:
+ *   1. Clear all cached queries so no previous-user data leaks.
+ *   2. Invalidate the router so loaders re-run with the new auth context.
+ * The very first render is skipped — that's just session hydration.
+ */
+function AuthSyncBridge() {
+  const { session, loading } = useAuth();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const lastUserId = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (loading) return;
+    const currentId = session?.user?.id ?? null;
+    if (lastUserId.current === undefined) {
+      lastUserId.current = currentId;
+      return;
+    }
+    if (lastUserId.current === currentId) return;
+    lastUserId.current = currentId;
+    queryClient.clear();
+    router.invalidate();
+  }, [session?.user?.id, loading, router, queryClient]);
+
+  return null;
 }
