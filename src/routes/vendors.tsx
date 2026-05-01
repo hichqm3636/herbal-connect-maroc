@@ -40,6 +40,9 @@ function VendorDirectory() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const { session, marketplaceRole } = useAuth();
+  const dashboardHref = homeForRole(marketplaceRole);
+  const showDashboard = !!session && dashboardHref !== "/login";
 
   useEffect(() => {
     let alive = true;
