@@ -28,6 +28,7 @@ export function ReorderSection({ products }: Props) {
       vendor_id: p.vendor_id,
       qty: p.last_qty,
     });
+    setOrderSource("reorder");
     if (vendorId && vendorId !== p.vendor_id) {
       clear();
     }
