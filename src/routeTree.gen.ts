@@ -888,6 +888,7 @@ const AppClientRouteWithChildren = AppClientRoute._addFileChildren(
 
 interface AppSuperAdminRouteChildren {
   AppSuperAdminAnalyticsRoute: typeof AppSuperAdminAnalyticsRoute
+  AppSuperAdminGrowthRoute: typeof AppSuperAdminGrowthRoute
   AppSuperAdminAnalyticsValidationRoute: typeof AppSuperAdminAnalyticsValidationRoute
   AppSuperAdminCompaniesRoute: typeof AppSuperAdminCompaniesRoute
   AppSuperAdminUsersRoute: typeof AppSuperAdminUsersRoute
