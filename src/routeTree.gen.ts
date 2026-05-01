@@ -412,6 +412,7 @@ export interface FileRouteTypes {
     | '/store/$slug'
     | '/client/orders'
     | '/super-admin/analytics'
+    | '/super-admin/growth'
     | '/super-admin/analytics-validation'
     | '/super-admin/companies'
     | '/super-admin/users'
