@@ -372,10 +372,10 @@ function VendorProductsPage() {
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button>
+            <Button className="gap-1.5">
               <Plus className="h-4 w-4" />
-              إضافة منتج
-              <ChevronDown className="h-4 w-4" />
+              <span>إضافة منتج</span>
+              <ChevronDown className="h-4 w-4 opacity-80" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
