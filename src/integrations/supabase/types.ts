@@ -1545,6 +1545,16 @@ export type Database = {
         Returns: boolean
       }
       admin_exists: { Args: never; Returns: boolean }
+      analytics_ab_results: {
+        Args: { _days?: number }
+        Returns: {
+          assignments: number
+          conversion_rate: number
+          conversions: number
+          experiment: string
+          variant: string
+        }[]
+      }
       analytics_alerts: {
         Args: { _days?: number; _vendor_id?: string }
         Returns: {
