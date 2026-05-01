@@ -40,7 +40,13 @@ export type AnalyticsEvent =
   | "signup_started"
   | "signup_completed"
   | "signup_failed"
-  | "vendor_onboarded";
+  | "vendor_onboarded"
+  // Subscription / billing
+  | "pricing_view"
+  | "pricing_plan_click"
+  | "subscription_simulated"
+  | "subscription_upgraded"
+  | "billing_view";
 
 export interface ProductEventPayload {
   product_id?: string | null;
