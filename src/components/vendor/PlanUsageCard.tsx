@@ -102,11 +102,12 @@ export function PlanUsageCard({ companyId }: { companyId: string | null | undefi
               {usage.users} / {usage.maxUsers ?? "∞"}
             </span>
           </div>
-          <Progress
-            value={pctValue(usage.users, usage.maxUsers)}
-            className="h-2"
-            indicatorClassName={tone(usage.users, usage.maxUsers)}
-          />
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className={`h-full transition-all ${tone(usage.users, usage.maxUsers)}`}
+              style={{ width: `${pctValue(usage.users, usage.maxUsers)}%` }}
+            />
+          </div>
         </div>
       </div>
     </Card>
