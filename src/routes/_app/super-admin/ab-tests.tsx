@@ -27,7 +27,13 @@ interface AbRow {
 }
 
 async function fetchAb(days: number): Promise<AbRow[]> {
-  const { data, error } = await supabase.rpc("analytics_ab_results", { _days: days });
+  // RPC types are regenerated automatically; cast to keep this typesafe in the meantime.
+  const { data, error } = await (
+    supabase.rpc as unknown as (
+      fn: string,
+      args: { _days: number },
+    ) => Promise<{ data: Partial<AbRow>[] | null; error: Error | null }>
+  )("analytics_ab_results", { _days: days });
   if (error) throw error;
   return ((data ?? []) as Partial<AbRow>[]).map((r) => ({
     experiment: String(r.experiment ?? "unknown"),
