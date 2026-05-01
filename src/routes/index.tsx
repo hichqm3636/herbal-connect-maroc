@@ -318,7 +318,14 @@ function Categories() {
           {CATEGORIES.map(({ icon: Icon, label, desc, restricted }) => (
             <Card
               key={label}
-              className="group flex flex-col items-center gap-2 p-4 text-center transition-all hover:shadow-elegant hover:-translate-y-0.5"
+              role="button"
+              tabIndex={0}
+              onClick={() =>
+                track("landing_category_click", {
+                  metadata: { category: label, restricted: !!restricted },
+                })
+              }
+              className="group flex flex-col items-center gap-2 p-4 text-center transition-all hover:shadow-elegant hover:-translate-y-0.5 cursor-pointer"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-accent-foreground transition-colors group-hover:bg-gradient-primary group-hover:text-primary-foreground">
                 <Icon className="h-6 w-6" />
