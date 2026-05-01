@@ -7,6 +7,7 @@ import { useCart, type CartProduct } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
 import { trackClient } from "@/lib/clientAnalytics";
+import { setOrderSource } from "@/lib/orderAttribution";
 
 export interface RecommendedProduct extends CartProduct {
   vendor_slug: string;
