@@ -279,7 +279,7 @@ function ClientDashboard() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["client-dashboard", user?.id],
     queryFn: () => loadDashboard(user!.id),
-    enabled: !!user && !authLoading,
+    enabled: !!user && !authLoading && isClient,
     staleTime: 30_000,
   });
 
