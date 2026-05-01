@@ -496,6 +496,7 @@ export interface FileRouteTypes {
     | '/store/$slug'
     | '/_app/client/orders'
     | '/_app/super-admin/analytics'
+    | '/_app/super-admin/growth'
     | '/_app/super-admin/analytics-validation'
     | '/_app/super-admin/companies'
     | '/_app/super-admin/users'
