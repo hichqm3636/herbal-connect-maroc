@@ -24,6 +24,7 @@ import {
   TrendingUp,
   FlaskConical,
   Filter,
+  CreditCard,
 } from "lucide-react";
 import {
   Sidebar,
@@ -112,6 +113,7 @@ const vendorSections: NavSection[] = [
     items: [
       { title: "إعدادات المتجر", url: "/vendor/branding", icon: Settings },
       { title: "الفريق والصلاحيات", url: "/vendor/team", icon: UsersRound },
+      { title: "الاشتراك والفواتير", url: "/vendor/billing", icon: CreditCard },
       { title: "فحص صحة الوسائط", url: "/vendor/storage-health", icon: Activity },
     ],
   },
@@ -147,6 +149,7 @@ const superAdminSections: NavSection[] = [
     icon: Globe2,
     items: [
       { title: "الشركات", url: "/super-admin/companies", icon: Building2 },
+      { title: "خطط الاشتراك", url: "/super-admin/plans", icon: CreditCard },
       { title: "نمو العملاء", url: "/super-admin/growth", icon: TrendingUp },
       { title: "قمع التحويل", url: "/super-admin/funnel", icon: Filter },
       { title: "تجارب A/B", url: "/super-admin/ab-tests", icon: FlaskConical },

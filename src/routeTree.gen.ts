@@ -13,6 +13,7 @@ import { Route as VendorsRouteImport } from './routes/vendors'
 import { Route as VendorLoginRouteImport } from './routes/vendor-login'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ControlRouteImport } from './routes/control'
 import { Route as AppRouteImport } from './routes/_app'
@@ -33,6 +34,7 @@ import { Route as AppAdminRouteImport } from './routes/_app/_admin'
 import { Route as AppSuperAdminIndexRouteImport } from './routes/_app/super-admin/index'
 import { Route as ApiPublicWooWebhookRouteImport } from './routes/api/public/woo-webhook'
 import { Route as AppSuperAdminUsersRouteImport } from './routes/_app/super-admin/users'
+import { Route as AppSuperAdminPlansRouteImport } from './routes/_app/super-admin/plans'
 import { Route as AppSuperAdminGrowthRouteImport } from './routes/_app/super-admin/growth'
 import { Route as AppSuperAdminFunnelRouteImport } from './routes/_app/super-admin/funnel'
 import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-admin/companies'
@@ -50,6 +52,7 @@ import { Route as AppVendorVendorProductsRouteImport } from './routes/_app/_vend
 import { Route as AppVendorVendorOrdersRouteImport } from './routes/_app/_vendor/vendor.orders'
 import { Route as AppVendorVendorInvoicesRouteImport } from './routes/_app/_vendor/vendor.invoices'
 import { Route as AppVendorVendorBrandingRouteImport } from './routes/_app/_vendor/vendor.branding'
+import { Route as AppVendorVendorBillingRouteImport } from './routes/_app/_vendor/vendor.billing'
 import { Route as AppVendorVendorAnalyticsRouteImport } from './routes/_app/_vendor/vendor.analytics'
 import { Route as AppVendorVendorActivityRouteImport } from './routes/_app/_vendor/vendor.activity'
 import { Route as AppAdminAdminCompaniesRouteImport } from './routes/_app/_admin/admin.companies'
@@ -72,6 +75,11 @@ const SignupRoute = SignupRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -171,6 +179,11 @@ const AppSuperAdminUsersRoute = AppSuperAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AppSuperAdminRoute,
 } as any)
+const AppSuperAdminPlansRoute = AppSuperAdminPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => AppSuperAdminRoute,
+} as any)
 const AppSuperAdminGrowthRoute = AppSuperAdminGrowthRouteImport.update({
   id: '/growth',
   path: '/growth',
@@ -258,6 +271,11 @@ const AppVendorVendorBrandingRoute = AppVendorVendorBrandingRouteImport.update({
   path: '/vendor/branding',
   getParentRoute: () => AppVendorRoute,
 } as any)
+const AppVendorVendorBillingRoute = AppVendorVendorBillingRouteImport.update({
+  id: '/vendor/billing',
+  path: '/vendor/billing',
+  getParentRoute: () => AppVendorRoute,
+} as any)
 const AppVendorVendorAnalyticsRoute =
   AppVendorVendorAnalyticsRouteImport.update({
     id: '/vendor/analytics',
@@ -279,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/control': typeof ControlRoute
   '/login': typeof LoginRoute
+  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/vendor-login': typeof VendorLoginRoute
@@ -301,12 +320,14 @@ export interface FileRoutesByFullPath {
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/funnel': typeof AppSuperAdminFunnelRoute
   '/super-admin/growth': typeof AppSuperAdminGrowthRoute
+  '/super-admin/plans': typeof AppSuperAdminPlansRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/super-admin/': typeof AppSuperAdminIndexRoute
   '/admin/companies': typeof AppAdminAdminCompaniesRoute
   '/vendor/activity': typeof AppVendorVendorActivityRoute
   '/vendor/analytics': typeof AppVendorVendorAnalyticsRoute
+  '/vendor/billing': typeof AppVendorVendorBillingRoute
   '/vendor/branding': typeof AppVendorVendorBrandingRoute
   '/vendor/invoices': typeof AppVendorVendorInvoicesRoute
   '/vendor/orders': typeof AppVendorVendorOrdersRoute
@@ -322,6 +343,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/control': typeof ControlRoute
   '/login': typeof LoginRoute
+  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/vendor-login': typeof VendorLoginRoute
@@ -343,12 +365,14 @@ export interface FileRoutesByTo {
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/funnel': typeof AppSuperAdminFunnelRoute
   '/super-admin/growth': typeof AppSuperAdminGrowthRoute
+  '/super-admin/plans': typeof AppSuperAdminPlansRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/super-admin': typeof AppSuperAdminIndexRoute
   '/admin/companies': typeof AppAdminAdminCompaniesRoute
   '/vendor/activity': typeof AppVendorVendorActivityRoute
   '/vendor/analytics': typeof AppVendorVendorAnalyticsRoute
+  '/vendor/billing': typeof AppVendorVendorBillingRoute
   '/vendor/branding': typeof AppVendorVendorBrandingRoute
   '/vendor/invoices': typeof AppVendorVendorInvoicesRoute
   '/vendor/orders': typeof AppVendorVendorOrdersRoute
@@ -366,6 +390,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/control': typeof ControlRoute
   '/login': typeof LoginRoute
+  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/vendor-login': typeof VendorLoginRoute
@@ -390,12 +415,14 @@ export interface FileRoutesById {
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/_app/super-admin/funnel': typeof AppSuperAdminFunnelRoute
   '/_app/super-admin/growth': typeof AppSuperAdminGrowthRoute
+  '/_app/super-admin/plans': typeof AppSuperAdminPlansRoute
   '/_app/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/_app/super-admin/': typeof AppSuperAdminIndexRoute
   '/_app/_admin/admin/companies': typeof AppAdminAdminCompaniesRoute
   '/_app/_vendor/vendor/activity': typeof AppVendorVendorActivityRoute
   '/_app/_vendor/vendor/analytics': typeof AppVendorVendorAnalyticsRoute
+  '/_app/_vendor/vendor/billing': typeof AppVendorVendorBillingRoute
   '/_app/_vendor/vendor/branding': typeof AppVendorVendorBrandingRoute
   '/_app/_vendor/vendor/invoices': typeof AppVendorVendorInvoicesRoute
   '/_app/_vendor/vendor/orders': typeof AppVendorVendorOrdersRoute
@@ -413,6 +440,7 @@ export interface FileRouteTypes {
     | '/'
     | '/control'
     | '/login'
+    | '/pricing'
     | '/reset-password'
     | '/signup'
     | '/vendor-login'
@@ -435,12 +463,14 @@ export interface FileRouteTypes {
     | '/super-admin/companies'
     | '/super-admin/funnel'
     | '/super-admin/growth'
+    | '/super-admin/plans'
     | '/super-admin/users'
     | '/api/public/woo-webhook'
     | '/super-admin/'
     | '/admin/companies'
     | '/vendor/activity'
     | '/vendor/analytics'
+    | '/vendor/billing'
     | '/vendor/branding'
     | '/vendor/invoices'
     | '/vendor/orders'
@@ -456,6 +486,7 @@ export interface FileRouteTypes {
     | '/'
     | '/control'
     | '/login'
+    | '/pricing'
     | '/reset-password'
     | '/signup'
     | '/vendor-login'
@@ -477,12 +508,14 @@ export interface FileRouteTypes {
     | '/super-admin/companies'
     | '/super-admin/funnel'
     | '/super-admin/growth'
+    | '/super-admin/plans'
     | '/super-admin/users'
     | '/api/public/woo-webhook'
     | '/super-admin'
     | '/admin/companies'
     | '/vendor/activity'
     | '/vendor/analytics'
+    | '/vendor/billing'
     | '/vendor/branding'
     | '/vendor/invoices'
     | '/vendor/orders'
@@ -499,6 +532,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/control'
     | '/login'
+    | '/pricing'
     | '/reset-password'
     | '/signup'
     | '/vendor-login'
@@ -523,12 +557,14 @@ export interface FileRouteTypes {
     | '/_app/super-admin/companies'
     | '/_app/super-admin/funnel'
     | '/_app/super-admin/growth'
+    | '/_app/super-admin/plans'
     | '/_app/super-admin/users'
     | '/api/public/woo-webhook'
     | '/_app/super-admin/'
     | '/_app/_admin/admin/companies'
     | '/_app/_vendor/vendor/activity'
     | '/_app/_vendor/vendor/analytics'
+    | '/_app/_vendor/vendor/billing'
     | '/_app/_vendor/vendor/branding'
     | '/_app/_vendor/vendor/invoices'
     | '/_app/_vendor/vendor/orders'
@@ -546,6 +582,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   ControlRoute: typeof ControlRoute
   LoginRoute: typeof LoginRoute
+  PricingRoute: typeof PricingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   VendorLoginRoute: typeof VendorLoginRoute
@@ -583,6 +620,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -725,6 +769,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSuperAdminUsersRouteImport
       parentRoute: typeof AppSuperAdminRoute
     }
+    '/_app/super-admin/plans': {
+      id: '/_app/super-admin/plans'
+      path: '/plans'
+      fullPath: '/super-admin/plans'
+      preLoaderRoute: typeof AppSuperAdminPlansRouteImport
+      parentRoute: typeof AppSuperAdminRoute
+    }
     '/_app/super-admin/growth': {
       id: '/_app/super-admin/growth'
       path: '/growth'
@@ -844,6 +895,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVendorVendorBrandingRouteImport
       parentRoute: typeof AppVendorRoute
     }
+    '/_app/_vendor/vendor/billing': {
+      id: '/_app/_vendor/vendor/billing'
+      path: '/vendor/billing'
+      fullPath: '/vendor/billing'
+      preLoaderRoute: typeof AppVendorVendorBillingRouteImport
+      parentRoute: typeof AppVendorRoute
+    }
     '/_app/_vendor/vendor/analytics': {
       id: '/_app/_vendor/vendor/analytics'
       path: '/vendor/analytics'
@@ -885,6 +943,7 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 interface AppVendorRouteChildren {
   AppVendorVendorActivityRoute: typeof AppVendorVendorActivityRoute
   AppVendorVendorAnalyticsRoute: typeof AppVendorVendorAnalyticsRoute
+  AppVendorVendorBillingRoute: typeof AppVendorVendorBillingRoute
   AppVendorVendorBrandingRoute: typeof AppVendorVendorBrandingRoute
   AppVendorVendorInvoicesRoute: typeof AppVendorVendorInvoicesRoute
   AppVendorVendorOrdersRoute: typeof AppVendorVendorOrdersRoute
@@ -898,6 +957,7 @@ interface AppVendorRouteChildren {
 const AppVendorRouteChildren: AppVendorRouteChildren = {
   AppVendorVendorActivityRoute: AppVendorVendorActivityRoute,
   AppVendorVendorAnalyticsRoute: AppVendorVendorAnalyticsRoute,
+  AppVendorVendorBillingRoute: AppVendorVendorBillingRoute,
   AppVendorVendorBrandingRoute: AppVendorVendorBrandingRoute,
   AppVendorVendorInvoicesRoute: AppVendorVendorInvoicesRoute,
   AppVendorVendorOrdersRoute: AppVendorVendorOrdersRoute,
@@ -931,6 +991,7 @@ interface AppSuperAdminRouteChildren {
   AppSuperAdminCompaniesRoute: typeof AppSuperAdminCompaniesRoute
   AppSuperAdminFunnelRoute: typeof AppSuperAdminFunnelRoute
   AppSuperAdminGrowthRoute: typeof AppSuperAdminGrowthRoute
+  AppSuperAdminPlansRoute: typeof AppSuperAdminPlansRoute
   AppSuperAdminUsersRoute: typeof AppSuperAdminUsersRoute
   AppSuperAdminIndexRoute: typeof AppSuperAdminIndexRoute
 }
@@ -942,6 +1003,7 @@ const AppSuperAdminRouteChildren: AppSuperAdminRouteChildren = {
   AppSuperAdminCompaniesRoute: AppSuperAdminCompaniesRoute,
   AppSuperAdminFunnelRoute: AppSuperAdminFunnelRoute,
   AppSuperAdminGrowthRoute: AppSuperAdminGrowthRoute,
+  AppSuperAdminPlansRoute: AppSuperAdminPlansRoute,
   AppSuperAdminUsersRoute: AppSuperAdminUsersRoute,
   AppSuperAdminIndexRoute: AppSuperAdminIndexRoute,
 }
@@ -997,6 +1059,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   ControlRoute: ControlRoute,
   LoginRoute: LoginRoute,
+  PricingRoute: PricingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   VendorLoginRoute: VendorLoginRoute,
