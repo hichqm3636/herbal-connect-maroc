@@ -493,8 +493,11 @@ function VendorProductsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => openEdit(p)}>
+                          <Button size="sm" variant="ghost" onClick={() => openEdit(p)} title="تعديل">
                             <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleDuplicate(p)} title="نسخ المنتج">
+                            <Copy className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
