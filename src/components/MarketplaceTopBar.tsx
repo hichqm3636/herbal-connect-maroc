@@ -54,9 +54,9 @@ export function MarketplaceTopBar() {
       className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur"
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-3 sm:gap-4 sm:px-4">
-        {/* Brand */}
+        {/* Brand — authenticated clients land on their dashboard, guests on /vendors */}
         <Link
-          to="/vendors"
+          to={user ? "/client" : "/vendors"}
           className="flex items-center gap-2 shrink-0"
           aria-label={PLATFORM_NAME}
         >
