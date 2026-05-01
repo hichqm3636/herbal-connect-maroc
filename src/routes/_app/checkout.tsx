@@ -37,6 +37,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatMAD } from "@/lib/format";
 import { buildWhatsappLink } from "@/utils/whatsapp";
 import { track } from "@/lib/analytics";
+import { clearOrderSource, getOrderSource } from "@/lib/orderAttribution";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/checkout")({
@@ -342,6 +343,9 @@ function CheckoutPage() {
       cart.clear();
       toast.success("تم إرسال الطلب بنجاح");
 
+      // Attribution: where this order came from (reorder / recommendation / direct).
+      const orderSource = getOrderSource();
+
       try {
         // Emit one event per product so product_id is always a real product reference.
         for (const i of cart.items) {
@@ -353,11 +357,15 @@ function CheckoutPage() {
             order_id: orderRow.id,
             order_number: orderRow.order_number,
             quantity: i.qty,
+            source: orderSource,
           });
         }
       } catch {
         /* never break checkout on analytics */
       }
+
+      // Clear attribution AFTER tracking so it doesn't leak into the next order.
+      clearOrderSource();
     } catch (err) {
       console.error("[checkout] place order failed", err);
       toast.error(err instanceof Error ? err.message : "تعذر إرسال الطلب");

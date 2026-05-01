@@ -7,6 +7,7 @@ import { useCart, type CartProduct } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
 import { trackClient } from "@/lib/clientAnalytics";
+import { setOrderSource } from "@/lib/orderAttribution";
 
 export interface RecommendedProduct extends CartProduct {
   vendor_slug: string;
@@ -28,6 +29,7 @@ export function Recommendations({ items }: Props) {
       vendor_id: p.vendor_id,
       source: p.source,
     });
+    setOrderSource("recommendation");
     track("add_to_cart", {
       product_id: p.id,
       vendor_id: p.vendor_id,

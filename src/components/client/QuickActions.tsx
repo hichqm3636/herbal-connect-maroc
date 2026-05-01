@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { useCart, type CartProduct } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { trackClient } from "@/lib/clientAnalytics";
+import { setOrderSource } from "@/lib/orderAttribution";
 import { useState } from "react";
 
 export interface ReorderableItem {
@@ -29,6 +30,7 @@ export function QuickActions({ lastOrderItems, trackableOrderId }: Props) {
     if (!canReorder || reordering) return;
     setReordering(true);
     trackClient("quick_action_click", { action: "reorder_last_order" });
+    setOrderSource("reorder");
 
     const incomingVendorId = lastOrderItems[0]?.product.vendor_id;
     // Single-vendor invariant: if the cart already has another vendor, replace.
