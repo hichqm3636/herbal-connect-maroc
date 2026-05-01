@@ -21,6 +21,7 @@ import {
   Heart,
   MessageSquare,
   User as UserIcon,
+  TrendingUp,
 } from "lucide-react";
 import {
   Sidebar,
