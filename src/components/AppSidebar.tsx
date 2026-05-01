@@ -23,6 +23,7 @@ import {
   User as UserIcon,
   TrendingUp,
   FlaskConical,
+  Filter,
 } from "lucide-react";
 import {
   Sidebar,
@@ -147,6 +148,7 @@ const superAdminSections: NavSection[] = [
     items: [
       { title: "الشركات", url: "/super-admin/companies", icon: Building2 },
       { title: "نمو العملاء", url: "/super-admin/growth", icon: TrendingUp },
+      { title: "قمع التحويل", url: "/super-admin/funnel", icon: Filter },
       { title: "تجارب A/B", url: "/super-admin/ab-tests", icon: FlaskConical },
     ],
   },
