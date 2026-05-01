@@ -138,6 +138,11 @@ function NexoraLanding({ isAuthenticated }: { isAuthenticated: boolean }) {
   const [vendors, setVendors] = useState<VendorCard[]>([]);
   const [vendorsLoading, setVendorsLoading] = useState(true);
 
+  // Fire `landing_view` once when the public landing renders.
+  useEffect(() => {
+    track("landing_view", { metadata: { authenticated: false } });
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     supabase
