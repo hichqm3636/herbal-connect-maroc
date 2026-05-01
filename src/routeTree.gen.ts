@@ -37,6 +37,7 @@ import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-
 import { Route as AppSuperAdminAnalyticsValidationRouteImport } from './routes/_app/super-admin/analytics-validation'
 import { Route as AppSuperAdminAnalyticsRouteImport } from './routes/_app/super-admin/analytics'
 import { Route as AppSuperAdminGrowthRouteImport } from './routes/_app/super-admin/growth'
+import { Route as AppSuperAdminAbTestsRouteImport } from './routes/_app/super-admin/ab-tests'
 import { Route as AppClientOrdersRouteImport } from './routes/_app/client.orders'
 import { Route as AppVendorVendorIndexRouteImport } from './routes/_app/_vendor/vendor.index'
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
@@ -190,6 +191,11 @@ const AppSuperAdminGrowthRoute = AppSuperAdminGrowthRouteImport.update({
   path: '/growth',
   getParentRoute: () => AppSuperAdminRoute,
 } as any)
+const AppSuperAdminAbTestsRoute = AppSuperAdminAbTestsRouteImport.update({
+  id: '/ab-tests',
+  path: '/ab-tests',
+  getParentRoute: () => AppSuperAdminRoute,
+} as any)
 const AppClientOrdersRoute = AppClientOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -285,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/client/orders': typeof AppClientOrdersRoute
   '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/super-admin/growth': typeof AppSuperAdminGrowthRoute
+  '/super-admin/ab-tests': typeof AppSuperAdminAbTestsRoute
   '/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
@@ -325,6 +332,7 @@ export interface FileRoutesByTo {
   '/client/orders': typeof AppClientOrdersRoute
   '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/super-admin/growth': typeof AppSuperAdminGrowthRoute
+  '/super-admin/ab-tests': typeof AppSuperAdminAbTestsRoute
   '/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
@@ -370,6 +378,7 @@ export interface FileRoutesById {
   '/_app/client/orders': typeof AppClientOrdersRoute
   '/_app/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/_app/super-admin/growth': typeof AppSuperAdminGrowthRoute
+  '/_app/super-admin/ab-tests': typeof AppSuperAdminAbTestsRoute
   '/_app/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/_app/super-admin/users': typeof AppSuperAdminUsersRoute
@@ -413,6 +422,7 @@ export interface FileRouteTypes {
     | '/client/orders'
     | '/super-admin/analytics'
     | '/super-admin/growth'
+    | '/super-admin/ab-tests'
     | '/super-admin/analytics-validation'
     | '/super-admin/companies'
     | '/super-admin/users'
@@ -453,6 +463,7 @@ export interface FileRouteTypes {
     | '/client/orders'
     | '/super-admin/analytics'
     | '/super-admin/growth'
+    | '/super-admin/ab-tests'
     | '/super-admin/analytics-validation'
     | '/super-admin/companies'
     | '/super-admin/users'
@@ -497,6 +508,7 @@ export interface FileRouteTypes {
     | '/_app/client/orders'
     | '/_app/super-admin/analytics'
     | '/_app/super-admin/growth'
+    | '/_app/super-admin/ab-tests'
     | '/_app/super-admin/analytics-validation'
     | '/_app/super-admin/companies'
     | '/_app/super-admin/users'
@@ -729,6 +741,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSuperAdminGrowthRouteImport
       parentRoute: typeof AppSuperAdminRoute
     }
+    '/_app/super-admin/ab-tests': {
+      id: '/_app/super-admin/ab-tests'
+      path: '/ab-tests'
+      fullPath: '/super-admin/ab-tests'
+      preLoaderRoute: typeof AppSuperAdminAbTestsRouteImport
+      parentRoute: typeof AppSuperAdminRoute
+    }
     '/_app/client/orders': {
       id: '/_app/client/orders'
       path: '/orders'
@@ -889,6 +908,7 @@ const AppClientRouteWithChildren = AppClientRoute._addFileChildren(
 interface AppSuperAdminRouteChildren {
   AppSuperAdminAnalyticsRoute: typeof AppSuperAdminAnalyticsRoute
   AppSuperAdminGrowthRoute: typeof AppSuperAdminGrowthRoute
+  AppSuperAdminAbTestsRoute: typeof AppSuperAdminAbTestsRoute
   AppSuperAdminAnalyticsValidationRoute: typeof AppSuperAdminAnalyticsValidationRoute
   AppSuperAdminCompaniesRoute: typeof AppSuperAdminCompaniesRoute
   AppSuperAdminUsersRoute: typeof AppSuperAdminUsersRoute
@@ -898,6 +918,7 @@ interface AppSuperAdminRouteChildren {
 const AppSuperAdminRouteChildren: AppSuperAdminRouteChildren = {
   AppSuperAdminAnalyticsRoute: AppSuperAdminAnalyticsRoute,
   AppSuperAdminGrowthRoute: AppSuperAdminGrowthRoute,
+  AppSuperAdminAbTestsRoute: AppSuperAdminAbTestsRoute,
   AppSuperAdminAnalyticsValidationRoute: AppSuperAdminAnalyticsValidationRoute,
   AppSuperAdminCompaniesRoute: AppSuperAdminCompaniesRoute,
   AppSuperAdminUsersRoute: AppSuperAdminUsersRoute,

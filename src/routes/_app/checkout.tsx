@@ -38,6 +38,7 @@ import { formatMAD } from "@/lib/format";
 import { buildWhatsappLink } from "@/utils/whatsapp";
 import { track } from "@/lib/analytics";
 import { clearOrderSource, getOrderSource } from "@/lib/orderAttribution";
+import { getAllVariants } from "@/lib/ab";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/checkout")({
@@ -345,6 +346,7 @@ function CheckoutPage() {
 
       // Attribution: where this order came from (reorder / recommendation / direct).
       const orderSource = getOrderSource();
+      const abVariants = getAllVariants();
 
       try {
         // Emit one event per product so product_id is always a real product reference.
@@ -358,6 +360,8 @@ function CheckoutPage() {
             order_number: orderRow.order_number,
             quantity: i.qty,
             source: orderSource,
+            variant: abVariants.cta_label ?? null,
+            ab_variants: abVariants,
           });
         }
       } catch {
