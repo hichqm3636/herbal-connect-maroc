@@ -378,6 +378,7 @@ export interface FileRoutesById {
   '/_app/client/orders': typeof AppClientOrdersRoute
   '/_app/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/_app/super-admin/growth': typeof AppSuperAdminGrowthRoute
+  '/_app/super-admin/ab-tests': typeof AppSuperAdminAbTestsRoute
   '/_app/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/_app/super-admin/users': typeof AppSuperAdminUsersRoute
