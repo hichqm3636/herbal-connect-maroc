@@ -422,6 +422,7 @@ export interface FileRouteTypes {
     | '/client/orders'
     | '/super-admin/analytics'
     | '/super-admin/growth'
+    | '/super-admin/ab-tests'
     | '/super-admin/analytics-validation'
     | '/super-admin/companies'
     | '/super-admin/users'
