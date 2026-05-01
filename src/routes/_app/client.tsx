@@ -337,7 +337,6 @@ function ClientDashboard() {
           <ClientOnboarding />
           <SampleVendors />
         </>
-        </>
       ) : (
         <>
           <Recommendations items={data.recommendations} />
