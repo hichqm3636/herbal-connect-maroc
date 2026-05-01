@@ -378,7 +378,7 @@ function VendorProductsPage() {
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56" dir="rtl">
+          <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem onClick={openCreate}>
               <Pencil className="h-4 w-4" />
               <div className="flex flex-col">
