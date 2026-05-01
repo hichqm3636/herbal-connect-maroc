@@ -87,7 +87,7 @@ export function ClientOnboarding() {
           size="lg"
           className="font-bold"
           onClick={() =>
-            trackClient("onboarding_action", { action: "browse_vendors" })
+            trackClient("quick_action_click", { action: "onboarding_browse_vendors" })
           }
         >
           <Link to="/vendors">
@@ -101,7 +101,7 @@ export function ClientOnboarding() {
           size="lg"
           variant="outline"
           onClick={() =>
-            trackClient("onboarding_action", { action: "request_vendor" })
+            trackClient("quick_action_click", { action: "onboarding_request_vendor" })
           }
         >
           <a href={REQUEST_VENDOR_HREF} target="_blank" rel="noopener noreferrer">
@@ -114,7 +114,7 @@ export function ClientOnboarding() {
           size="lg"
           variant="ghost"
           onClick={() => {
-            trackClient("onboarding_action", { action: "how_it_works" });
+            trackClient("quick_action_click", { action: "onboarding_how_it_works" });
             setHowOpen(true);
           }}
         >
