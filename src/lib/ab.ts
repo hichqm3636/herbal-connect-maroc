@@ -63,3 +63,11 @@ export function getVariant<E extends ExperimentName>(
 
   return chosen;
 }
+
+/**
+ * Snapshot of all assigned variants. Useful to attach to conversion events
+ * (e.g. checkout_completed) so we can attribute conversions to variants.
+ */
+export function getAllVariants(): Record<string, string> {
+  return readStore();
+}
