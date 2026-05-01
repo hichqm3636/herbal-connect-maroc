@@ -360,6 +360,8 @@ function CheckoutPage() {
             order_number: orderRow.order_number,
             quantity: i.qty,
             source: orderSource,
+            variant: abVariants.cta_label ?? null,
+            ab_variants: abVariants,
           });
         }
       } catch {
