@@ -29,6 +29,7 @@ export function Recommendations({ items }: Props) {
       vendor_id: p.vendor_id,
       source: p.source,
     });
+    setOrderSource("recommendation");
     track("add_to_cart", {
       product_id: p.id,
       vendor_id: p.vendor_id,
