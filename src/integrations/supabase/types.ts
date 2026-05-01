@@ -1160,6 +1160,57 @@ export type Database = {
           },
         ]
       }
+      subscription_invoices: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          currency: string
+          id: string
+          paid_at: string | null
+          payment_method: string
+          payment_reference: string | null
+          period_end: string
+          period_start: string
+          plan_id: string
+          plan_name: string
+          status: string
+          subscription_id: string
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          payment_method?: string
+          payment_reference?: string | null
+          period_end: string
+          period_start?: string
+          plan_id: string
+          plan_name: string
+          status?: string
+          subscription_id: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          payment_method?: string
+          payment_reference?: string | null
+          period_end?: string
+          period_start?: string
+          plan_id?: string
+          plan_name?: string
+          status?: string
+          subscription_id?: string
+        }
+        Relationships: []
+      }
       subscription_plans: {
         Row: {
           active: boolean
@@ -1771,6 +1822,10 @@ export type Database = {
           _company_name: string
           _company_slug: string
         }
+        Returns: Json
+      }
+      simulate_subscription_payment: {
+        Args: { p_plan_id: string }
         Returns: Json
       }
     }
