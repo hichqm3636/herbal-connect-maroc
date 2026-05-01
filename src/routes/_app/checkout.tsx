@@ -346,6 +346,7 @@ function CheckoutPage() {
 
       // Attribution: where this order came from (reorder / recommendation / direct).
       const orderSource = getOrderSource();
+      const abVariants = getAllVariants();
 
       try {
         // Emit one event per product so product_id is always a real product reference.
