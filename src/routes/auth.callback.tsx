@@ -105,7 +105,7 @@ function AuthCallbackPage() {
           return;
         }
 
-        const dest = isAdmin && !userSlug ? "/admin" : isVendor || isAdmin ? "/vendor" : "/vendors";
+        const dest = isAdmin && !userSlug ? "/admin" : isVendor || isAdmin ? "/vendor" : "/client";
 
         // Cross-host bounce when user lands on the apex/wrong tenant.
         if (userSlug && tenant.slug !== userSlug) {
