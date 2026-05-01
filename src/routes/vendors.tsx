@@ -79,9 +79,18 @@ function VendorDirectory() {
             <span>الرئيسية</span>
           </Link>
           <h1 className="text-base font-bold sm:text-lg">دليل البائعين</h1>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/login">تسجيل الدخول</Link>
-          </Button>
+          {showDashboard ? (
+            <Button asChild variant="outline" size="sm">
+              <Link to={dashboardHref} className="flex items-center gap-1.5">
+                <LayoutDashboard className="h-4 w-4" />
+                <span>لوحتي</span>
+              </Link>
+            </Button>
+          ) : (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/login">تسجيل الدخول</Link>
+            </Button>
+          )}
         </div>
       </header>
 
