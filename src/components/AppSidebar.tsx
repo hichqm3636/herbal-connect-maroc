@@ -119,6 +119,7 @@ const vendorSections: NavSection[] = [
 // ---------------- Platform Admin — lives at /admin/* ----------------
 const adminTop: NavItem[] = [
   { title: "لوحة الإدارة", url: "/admin", icon: ShieldCheck },
+  { title: "لوحة العملاء", url: "/client", icon: UserIcon },
 ];
 
 const adminSections: NavSection[] = [
