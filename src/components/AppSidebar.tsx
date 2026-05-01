@@ -75,6 +75,7 @@ const clientAccountItems: NavItem[] = [
 // ---------------- Vendor (workspace owner) — lives at /vendor/* ----------------
 const vendorTop: NavItem[] = [
   { title: "لوحة التحكم", url: "/vendor", icon: LayoutDashboard },
+  { title: "لوحة العملاء", url: "/client", icon: UserIcon },
 ];
 
 const vendorSections: NavSection[] = [
