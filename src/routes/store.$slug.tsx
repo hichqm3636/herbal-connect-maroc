@@ -120,15 +120,38 @@ function VendorStorePage() {
     };
   }, [vendor, session]);
 
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => p.category && set.add(p.category));
+    return Array.from(set).sort();
+  }, [products]);
+
   const filtered = useMemo(() => {
-    if (!q.trim()) return products;
+    let list = products;
     const needle = q.trim().toLowerCase();
-    return products.filter(
-      (p) =>
-        p.name_ar.toLowerCase().includes(needle) ||
-        (p.category ?? "").toLowerCase().includes(needle),
-    );
-  }, [products, q]);
+    if (needle) {
+      list = list.filter(
+        (p) =>
+          p.name_ar.toLowerCase().includes(needle) ||
+          (p.category ?? "").toLowerCase().includes(needle),
+      );
+    }
+    if (categoryFilter !== "all") {
+      list = list.filter((p) => p.category === categoryFilter);
+    }
+    if (stockOnly) {
+      list = list.filter((p) => p.stock === null || (p.stock ?? 0) > 0);
+    }
+    const sorted = [...list];
+    if (sort === "price_asc") {
+      sorted.sort((a, b) => (a.rrp_price ?? a.price_mad) - (b.rrp_price ?? b.price_mad));
+    } else if (sort === "price_desc") {
+      sorted.sort((a, b) => (b.rrp_price ?? b.price_mad) - (a.rrp_price ?? a.price_mad));
+    } else if (sort === "name") {
+      sorted.sort((a, b) => a.name_ar.localeCompare(b.name_ar, "ar"));
+    }
+    return sorted;
+  }, [products, q, categoryFilter, stockOnly, sort]);
 
   function buildCartProduct(p: StoreProduct): CartProduct {
     const display = p.rrp_price ?? p.pharmacy_price ?? p.price_mad;
