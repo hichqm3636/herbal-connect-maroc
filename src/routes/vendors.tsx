@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Building2, Loader2, Search, ArrowLeft } from "lucide-react";
+import { Building2, Loader2, Search, ArrowLeft, LayoutDashboard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { homeForRole } from "@/lib/roleRouting";
 
 export const Route = createFileRoute("/vendors")({
   component: VendorDirectory,
