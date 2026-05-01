@@ -185,7 +185,7 @@ function ClientOrdersPage() {
 
   const setStatus = (key: string) => {
     navigate({
-      search: (prev) => ({
+      search: (prev: Record<string, unknown>) => ({
         ...prev,
         status: key === "all" ? undefined : key,
       }),

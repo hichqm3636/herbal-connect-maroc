@@ -163,13 +163,13 @@ function VendorOrdersPage() {
 
   const setStatusFilter = (s: OrderStatus | "all") => {
     navigate({
-      search: (prev) => ({ ...prev, status: s === "all" ? undefined : s }),
+      search: (prev: Record<string, unknown>) => ({ ...prev, status: s === "all" ? undefined : s }),
       replace: true,
     });
   };
   const setDateRange = (r: DateRange) => {
     navigate({
-      search: (prev) => ({ ...prev, range: r === "all" ? undefined : r }),
+      search: (prev: Record<string, unknown>) => ({ ...prev, range: r === "all" ? undefined : r }),
       replace: true,
     });
   };
@@ -409,7 +409,7 @@ function VendorOrdersPage() {
   const closeDialog = () => {
     setSelected(null);
     if (search.focus) {
-      navigate({ search: (prev) => ({ ...prev, focus: undefined }), replace: true });
+      navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, focus: undefined }), replace: true });
       focusedRef.current = null;
     }
   };
