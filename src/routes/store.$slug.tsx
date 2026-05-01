@@ -9,9 +9,17 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { EmptyState } from "@/components/EmptyState";
 import { formatMAD } from "@/lib/format";
 import { parseTiers } from "@/lib/pricing";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/store/$slug")({
@@ -63,6 +71,9 @@ function VendorStorePage() {
   const [products, setProducts] = useState<StoreProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState<"new" | "price_asc" | "price_desc" | "name">("new");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [stockOnly, setStockOnly] = useState(false);
 
   // Load vendor (public — anon can read listed companies)
   useEffect(() => {
@@ -109,15 +120,38 @@ function VendorStorePage() {
     };
   }, [vendor, session]);
 
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => p.category && set.add(p.category));
+    return Array.from(set).sort();
+  }, [products]);
+
   const filtered = useMemo(() => {
-    if (!q.trim()) return products;
+    let list = products;
     const needle = q.trim().toLowerCase();
-    return products.filter(
-      (p) =>
-        p.name_ar.toLowerCase().includes(needle) ||
-        (p.category ?? "").toLowerCase().includes(needle),
-    );
-  }, [products, q]);
+    if (needle) {
+      list = list.filter(
+        (p) =>
+          p.name_ar.toLowerCase().includes(needle) ||
+          (p.category ?? "").toLowerCase().includes(needle),
+      );
+    }
+    if (categoryFilter !== "all") {
+      list = list.filter((p) => p.category === categoryFilter);
+    }
+    if (stockOnly) {
+      list = list.filter((p) => p.stock === null || (p.stock ?? 0) > 0);
+    }
+    const sorted = [...list];
+    if (sort === "price_asc") {
+      sorted.sort((a, b) => (a.rrp_price ?? a.price_mad) - (b.rrp_price ?? b.price_mad));
+    } else if (sort === "price_desc") {
+      sorted.sort((a, b) => (b.rrp_price ?? b.price_mad) - (a.rrp_price ?? a.price_mad));
+    } else if (sort === "name") {
+      sorted.sort((a, b) => a.name_ar.localeCompare(b.name_ar, "ar"));
+    }
+    return sorted;
+  }, [products, q, categoryFilter, stockOnly, sort]);
 
   function buildCartProduct(p: StoreProduct): CartProduct {
     const display = p.rrp_price ?? p.pharmacy_price ?? p.price_mad;
@@ -274,15 +308,56 @@ function VendorStorePage() {
                 </p>
               </Card>
             )}
-            <div className="relative mb-4">
-              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="ابحث في منتجات هذا البائع..."
-                className="pr-9"
-              />
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="relative flex-1">
+                <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="ابحث في منتجات هذا البائع..."
+                  className="pr-9"
+                />
+              </div>
+              {categories.length > 0 && (
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="sm:w-44">
+                    <SelectValue placeholder="الفئة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">كل الفئات</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Select value={sort} onValueChange={(v) => setSort(v as typeof sort)}>
+                <SelectTrigger className="sm:w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">الأحدث</SelectItem>
+                  <SelectItem value="price_asc">السعر: من الأقل</SelectItem>
+                  <SelectItem value="price_desc">السعر: من الأعلى</SelectItem>
+                  <SelectItem value="name">الاسم (أبجدياً)</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant={stockOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStockOnly((s) => !s)}
+                className="shrink-0"
+              >
+                المتوفر فقط
+              </Button>
             </div>
+
+            <p className="mb-3 text-xs text-muted-foreground">
+              {filtered.length} منتج
+            </p>
 
             {productsLoading ? (
               <div className="flex items-center justify-center py-12">
@@ -294,27 +369,63 @@ function VendorStorePage() {
                   <Package className="h-7 w-7 text-muted-foreground" />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {q ? "لا توجد منتجات مطابقة لبحثك." : "لم يضِف هذا البائع منتجات بعد."}
+                  {q || categoryFilter !== "all" || stockOnly
+                    ? "لا توجد منتجات مطابقة لبحثك."
+                    : "لم يضِف هذا البائع منتجات بعد."}
                 </p>
               </Card>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {filtered.map((p) => {
-                  const display = p.rrp_price ?? p.pharmacy_price ?? p.price_mad;
+                  // price shown is sale (price_mad); rrp is shown crossed-out when higher
+                  const hasDiscount =
+                    p.rrp_price !== null && p.rrp_price > p.price_mad;
+                  const discountPct = hasDiscount
+                    ? Math.round(((p.rrp_price! - p.price_mad) / p.rrp_price!) * 100)
+                    : 0;
+                  const outOfStock = p.stock === 0;
+                  const lowStock =
+                    typeof p.stock === "number" && p.stock > 0 && p.stock <= 5;
                   return (
-                    <Card key={p.id} className="overflow-hidden">
+                    <Card
+                      key={p.id}
+                      className={cn(
+                        "group overflow-hidden transition-all hover:shadow-lg hover:-translate-y-0.5",
+                        outOfStock && "opacity-75",
+                      )}
+                    >
                       <Link
                         to="/store/$slug/product/$id"
                         params={{ slug, id: p.id }}
                         className="block"
                       >
-                        <div className="aspect-square bg-muted">
+                        <div className="relative aspect-square overflow-hidden bg-muted">
                           {p.image_url ? (
-                            <img src={p.image_url} alt={p.name_ar} className="h-full w-full object-cover" />
+                            <img
+                              src={p.image_url}
+                              alt={p.name_ar}
+                              loading="lazy"
+                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center">
                               <Package className="h-8 w-8 text-muted-foreground" />
                             </div>
+                          )}
+                          {hasDiscount && (
+                            <span className="absolute right-2 top-2 rounded-full bg-destructive px-2 py-0.5 text-[10px] font-bold text-destructive-foreground shadow">
+                              −{discountPct}%
+                            </span>
+                          )}
+                          {outOfStock && (
+                            <span className="absolute left-2 top-2 rounded-full bg-muted-foreground/90 px-2 py-0.5 text-[10px] font-bold text-background">
+                              نفد
+                            </span>
+                          )}
+                          {!outOfStock && lowStock && (
+                            <span className="absolute left-2 top-2 rounded-full bg-warning px-2 py-0.5 text-[10px] font-bold text-warning-foreground shadow">
+                              بقي {p.stock}
+                            </span>
                           )}
                         </div>
                       </Link>
@@ -322,7 +433,7 @@ function VendorStorePage() {
                         <Link
                           to="/store/$slug/product/$id"
                           params={{ slug, id: p.id }}
-                          className="line-clamp-2 text-sm font-semibold hover:text-primary"
+                          className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-tight hover:text-primary"
                         >
                           {p.name_ar}
                         </Link>
@@ -331,20 +442,34 @@ function VendorStorePage() {
                             {p.category}
                           </Badge>
                         )}
-                        <p className="mt-2 text-base font-bold">{formatMAD(display)}</p>
+                        <div className="mt-2 flex items-baseline gap-1.5">
+                          <p className="text-base font-extrabold text-foreground">
+                            {formatMAD(p.price_mad)}
+                          </p>
+                          {hasDiscount && (
+                            <p className="text-[11px] text-muted-foreground line-through">
+                              {formatMAD(p.rrp_price!)}
+                            </p>
+                          )}
+                        </div>
+                        {p.minimum_order > 1 && (
+                          <p className="text-[10px] text-muted-foreground">
+                            الحد الأدنى: {p.minimum_order}
+                          </p>
+                        )}
                         <Button
                           size="sm"
                           className="mt-2 w-full gap-1"
-                          disabled={p.stock === 0 || (!!session && !isClient)}
+                          disabled={outOfStock || (!!session && !isClient)}
                           onClick={() => tryAdd(p)}
                           title={!!session && !isClient ? "حسابك ليس حساب عميل" : undefined}
                         >
                           <ShoppingCart className="h-3.5 w-3.5" />
-                          {p.stock === 0
+                          {outOfStock
                             ? "غير متوفر"
                             : !!session && !isClient
                               ? "للعملاء فقط"
-                              : "أضف إلى السلة"}
+                              : "أضف للسلة"}
                         </Button>
                       </div>
                     </Card>

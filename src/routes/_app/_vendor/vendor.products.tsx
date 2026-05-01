@@ -2,7 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Loader2, Search, Plus, Pencil, Trash2, Package, Image as ImageIcon, Upload, X,
+  Copy, FileSpreadsheet, Link2, ChevronDown,
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { ProductImportDialog } from "@/components/vendor/ProductImportDialog";
+import { QuickAddDialog } from "@/components/vendor/QuickAddDialog";
+import { UrlImportDialog } from "@/components/vendor/UrlImportDialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -140,6 +147,9 @@ function VendorProductsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ProductRow | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [urlOpen, setUrlOpen] = useState(false);
 
   const load = async () => {
     if (!companyId) return;
@@ -325,6 +335,30 @@ function VendorProductsPage() {
     setDeleteTarget(null);
   };
 
+  const handleDuplicate = async (p: ProductRow) => {
+    if (!companyId) return;
+    const { id: _omit, ...rest } = p;
+    void _omit;
+    const payload = {
+      ...rest,
+      company_id: companyId,
+      name_ar: `${p.name_ar} (نسخة)`,
+      sku: p.sku ? `${p.sku}-COPY` : null,
+      external_id: `dup-${crypto.randomUUID()}`,
+      source: "duplicate",
+      active: false,
+    };
+    const { error } = await supabase.from("products").insert(payload);
+    if (error) {
+      const { handleLimitError } = await import("@/lib/limitErrors");
+      if (handleLimitError(error, "منتج")) return;
+      toast.error(error.message || "فشل النسخ");
+      return;
+    }
+    toast.success("تم نسخ المنتج (معطّل افتراضياً)");
+    load();
+  };
+
   const formOpen = creating || !!editing;
 
   return (
@@ -336,10 +370,46 @@ function VendorProductsPage() {
             {products.length} منتج · {filtered.length} معروض
           </p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4" />
-          منتج جديد
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4" />
+              إضافة منتج
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={openCreate}>
+              <Pencil className="h-4 w-4" />
+              <div className="flex flex-col">
+                <span>نموذج كامل</span>
+                <span className="text-[10px] text-muted-foreground">جميع الحقول والتسعير</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setQuickOpen(true)}>
+              <Plus className="h-4 w-4" />
+              <div className="flex flex-col">
+                <span>إضافة سريعة</span>
+                <span className="text-[10px] text-muted-foreground">اسم + سعر فقط</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setImportOpen(true)}>
+              <FileSpreadsheet className="h-4 w-4" />
+              <div className="flex flex-col">
+                <span>استيراد من CSV</span>
+                <span className="text-[10px] text-muted-foreground">دفعة منتجات</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setUrlOpen(true)}>
+              <Link2 className="h-4 w-4" />
+              <div className="flex flex-col">
+                <span>استيراد من رابط</span>
+                <span className="text-[10px] text-muted-foreground">WooCommerce / Shopify / أي صفحة</span>
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -423,8 +493,11 @@ function VendorProductsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => openEdit(p)}>
+                          <Button size="sm" variant="ghost" onClick={() => openEdit(p)} title="تعديل">
                             <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleDuplicate(p)} title="نسخ المنتج">
+                            <Copy className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
@@ -620,6 +693,29 @@ function VendorProductsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {companyId && (
+        <>
+          <ProductImportDialog
+            open={importOpen}
+            onOpenChange={setImportOpen}
+            companyId={companyId}
+            onImported={load}
+          />
+          <QuickAddDialog
+            open={quickOpen}
+            onOpenChange={setQuickOpen}
+            companyId={companyId}
+            onCreated={load}
+          />
+          <UrlImportDialog
+            open={urlOpen}
+            onOpenChange={setUrlOpen}
+            companyId={companyId}
+            onCreated={load}
+          />
+        </>
+      )}
     </div>
   );
 }
