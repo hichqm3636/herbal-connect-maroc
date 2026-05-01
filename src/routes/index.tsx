@@ -366,7 +366,10 @@ function FeaturedVendors({
             </p>
           </div>
           <Button asChild variant="ghost" size="sm" className="shrink-0">
-            <Link to="/vendors">
+            <Link
+              to="/vendors"
+              onClick={() => track("landing_cta_click", { metadata: { cta: "featured_view_all" } })}
+            >
               عرض الكل
               <ArrowLeftCircle className="h-4 w-4" />
             </Link>
@@ -386,7 +389,10 @@ function FeaturedVendors({
               لم يتم إدراج أي مورد بعد. كن أول مورد على Nexora.
             </p>
             <Button asChild className="mt-4">
-              <Link to="/signup">
+              <Link
+                to="/signup"
+                onClick={() => track("landing_cta_click", { metadata: { cta: "empty_vendors_signup" } })}
+              >
                 <Rocket className="h-4 w-4" />
                 أنشئ بوابتك
               </Link>
@@ -399,6 +405,12 @@ function FeaturedVendors({
                 key={v.id}
                 to="/store/$slug"
                 params={{ slug: v.slug }}
+                onClick={() =>
+                  track("landing_vendor_click", {
+                    vendor_id: v.id,
+                    metadata: { slug: v.slug, name: v.display_name },
+                  })
+                }
                 className="group"
               >
                 <Card className="flex h-full flex-col items-center gap-3 p-5 text-center transition-all hover:shadow-elegant hover:-translate-y-0.5">
