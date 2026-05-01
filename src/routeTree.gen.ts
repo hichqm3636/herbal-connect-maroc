@@ -34,6 +34,7 @@ import { Route as AppAdminRouteImport } from './routes/_app/_admin'
 import { Route as AppSuperAdminIndexRouteImport } from './routes/_app/super-admin/index'
 import { Route as ApiPublicWooWebhookRouteImport } from './routes/api/public/woo-webhook'
 import { Route as AppSuperAdminUsersRouteImport } from './routes/_app/super-admin/users'
+import { Route as AppSuperAdminPlansRouteImport } from './routes/_app/super-admin/plans'
 import { Route as AppSuperAdminGrowthRouteImport } from './routes/_app/super-admin/growth'
 import { Route as AppSuperAdminFunnelRouteImport } from './routes/_app/super-admin/funnel'
 import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-admin/companies'
@@ -178,6 +179,11 @@ const AppSuperAdminUsersRoute = AppSuperAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AppSuperAdminRoute,
 } as any)
+const AppSuperAdminPlansRoute = AppSuperAdminPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => AppSuperAdminRoute,
+} as any)
 const AppSuperAdminGrowthRoute = AppSuperAdminGrowthRouteImport.update({
   id: '/growth',
   path: '/growth',
@@ -314,6 +320,7 @@ export interface FileRoutesByFullPath {
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/funnel': typeof AppSuperAdminFunnelRoute
   '/super-admin/growth': typeof AppSuperAdminGrowthRoute
+  '/super-admin/plans': typeof AppSuperAdminPlansRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/super-admin/': typeof AppSuperAdminIndexRoute
@@ -358,6 +365,7 @@ export interface FileRoutesByTo {
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/funnel': typeof AppSuperAdminFunnelRoute
   '/super-admin/growth': typeof AppSuperAdminGrowthRoute
+  '/super-admin/plans': typeof AppSuperAdminPlansRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/super-admin': typeof AppSuperAdminIndexRoute
@@ -407,6 +415,7 @@ export interface FileRoutesById {
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/_app/super-admin/funnel': typeof AppSuperAdminFunnelRoute
   '/_app/super-admin/growth': typeof AppSuperAdminGrowthRoute
+  '/_app/super-admin/plans': typeof AppSuperAdminPlansRoute
   '/_app/super-admin/users': typeof AppSuperAdminUsersRoute
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/_app/super-admin/': typeof AppSuperAdminIndexRoute
@@ -454,6 +463,7 @@ export interface FileRouteTypes {
     | '/super-admin/companies'
     | '/super-admin/funnel'
     | '/super-admin/growth'
+    | '/super-admin/plans'
     | '/super-admin/users'
     | '/api/public/woo-webhook'
     | '/super-admin/'
@@ -498,6 +508,7 @@ export interface FileRouteTypes {
     | '/super-admin/companies'
     | '/super-admin/funnel'
     | '/super-admin/growth'
+    | '/super-admin/plans'
     | '/super-admin/users'
     | '/api/public/woo-webhook'
     | '/super-admin'
@@ -546,6 +557,7 @@ export interface FileRouteTypes {
     | '/_app/super-admin/companies'
     | '/_app/super-admin/funnel'
     | '/_app/super-admin/growth'
+    | '/_app/super-admin/plans'
     | '/_app/super-admin/users'
     | '/api/public/woo-webhook'
     | '/_app/super-admin/'
@@ -755,6 +767,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/super-admin/users'
       preLoaderRoute: typeof AppSuperAdminUsersRouteImport
+      parentRoute: typeof AppSuperAdminRoute
+    }
+    '/_app/super-admin/plans': {
+      id: '/_app/super-admin/plans'
+      path: '/plans'
+      fullPath: '/super-admin/plans'
+      preLoaderRoute: typeof AppSuperAdminPlansRouteImport
       parentRoute: typeof AppSuperAdminRoute
     }
     '/_app/super-admin/growth': {
@@ -972,6 +991,7 @@ interface AppSuperAdminRouteChildren {
   AppSuperAdminCompaniesRoute: typeof AppSuperAdminCompaniesRoute
   AppSuperAdminFunnelRoute: typeof AppSuperAdminFunnelRoute
   AppSuperAdminGrowthRoute: typeof AppSuperAdminGrowthRoute
+  AppSuperAdminPlansRoute: typeof AppSuperAdminPlansRoute
   AppSuperAdminUsersRoute: typeof AppSuperAdminUsersRoute
   AppSuperAdminIndexRoute: typeof AppSuperAdminIndexRoute
 }
@@ -983,6 +1003,7 @@ const AppSuperAdminRouteChildren: AppSuperAdminRouteChildren = {
   AppSuperAdminCompaniesRoute: AppSuperAdminCompaniesRoute,
   AppSuperAdminFunnelRoute: AppSuperAdminFunnelRoute,
   AppSuperAdminGrowthRoute: AppSuperAdminGrowthRoute,
+  AppSuperAdminPlansRoute: AppSuperAdminPlansRoute,
   AppSuperAdminUsersRoute: AppSuperAdminUsersRoute,
   AppSuperAdminIndexRoute: AppSuperAdminIndexRoute,
 }
