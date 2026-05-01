@@ -256,6 +256,23 @@ Deno.serve(async (req) => {
     .update({ pdf_path: path, updated_at: new Date().toISOString() })
     .eq("id", invoice_id);
 
+  // 6. Best-effort: trigger invoice email. If email is not yet configured
+  // (RESEND_API_KEY/FROM_EMAIL missing), the function is a safe no-op.
+  // We do NOT await/fail the PDF response on email errors.
+  try {
+    const emailUrl = `${SUPABASE_URL}/functions/v1/send-invoice-email`;
+    fetch(emailUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ invoice_id }),
+    }).catch((e) => console.warn("send-invoice-email dispatch failed", e));
+  } catch (e) {
+    console.warn("send-invoice-email dispatch threw", e);
+  }
+
   return new Response(
     JSON.stringify({ ok: true, path }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } },
