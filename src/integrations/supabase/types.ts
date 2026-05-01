@@ -563,6 +563,7 @@ export type Database = {
           created_by: string | null
           currency: string
           due_date: string | null
+          email_sent_at: string | null
           id: string
           invoice_number: string
           issue_date: string
@@ -587,6 +588,7 @@ export type Database = {
           created_by?: string | null
           currency?: string
           due_date?: string | null
+          email_sent_at?: string | null
           id?: string
           invoice_number: string
           issue_date?: string
@@ -611,6 +613,7 @@ export type Database = {
           created_by?: string | null
           currency?: string
           due_date?: string | null
+          email_sent_at?: string | null
           id?: string
           invoice_number?: string
           issue_date?: string
@@ -648,6 +651,61 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: true
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_transactions: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          order_id: string | null
+          points: number
+          type: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          points: number
+          type: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          points?: number
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1121,6 +1179,7 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          loyalty_points: number
           phone: string | null
           updated_at: string
         }
@@ -1134,6 +1193,7 @@ export type Database = {
           full_name?: string
           id: string
           is_active?: boolean
+          loyalty_points?: number
           phone?: string | null
           updated_at?: string
         }
@@ -1147,6 +1207,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          loyalty_points?: number
           phone?: string | null
           updated_at?: string
         }
