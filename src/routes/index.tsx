@@ -189,13 +189,25 @@ function LandingHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
-          <Link to="/vendors" className="transition-colors hover:text-foreground">
+          <Link
+            to="/vendors"
+            className="transition-colors hover:text-foreground"
+            onClick={() => track("landing_nav_click", { metadata: { target: "vendors" } })}
+          >
             السوق
           </Link>
-          <a href="#how-it-works" className="transition-colors hover:text-foreground">
+          <a
+            href="#how-it-works"
+            className="transition-colors hover:text-foreground"
+            onClick={() => track("landing_nav_click", { metadata: { target: "how_it_works" } })}
+          >
             كيف يعمل
           </a>
-          <a href="#why-nexora" className="transition-colors hover:text-foreground">
+          <a
+            href="#why-nexora"
+            className="transition-colors hover:text-foreground"
+            onClick={() => track("landing_nav_click", { metadata: { target: "why_nexora" } })}
+          >
             لماذا Nexora
           </a>
         </nav>
@@ -203,15 +215,21 @@ function LandingHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <Button asChild size="sm">
-              <Link to="/client">لوحتي</Link>
+              <Link to="/client" onClick={() => track("landing_cta_click", { metadata: { cta: "header_dashboard" } })}>
+                لوحتي
+              </Link>
             </Button>
           ) : (
             <>
               <Button asChild size="sm" variant="ghost" className="hidden sm:inline-flex">
-                <Link to="/login">تسجيل الدخول</Link>
+                <Link to="/login" onClick={() => track("landing_cta_click", { metadata: { cta: "header_login" } })}>
+                  تسجيل الدخول
+                </Link>
               </Button>
               <Button asChild size="sm">
-                <Link to="/signup">ابدأ مجانًا</Link>
+                <Link to="/signup" onClick={() => track("landing_cta_click", { metadata: { cta: "header_signup" } })}>
+                  ابدأ مجانًا
+                </Link>
               </Button>
             </>
           )}
