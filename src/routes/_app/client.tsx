@@ -331,26 +331,7 @@ function ClientDashboard() {
       />
 
       {hasNoOrders ? (
-        <section
-          className="flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-muted/30 p-8 text-center"
-          dir="rtl"
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Sparkles className="h-6 w-6" />
-          </div>
-          <h3 className="text-base font-bold">لا يوجد موردون حالياً</h3>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            ستظهر طلباتك ومورديك هنا فور توفّرهم. يمكنك تصفّح الدليل الآن أو العودة لاحقاً.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <Button asChild size="lg" variant="outline">
-              <Link to="/vendors">
-                <Store className="h-5 w-5" />
-                تصفّح الدليل
-              </Link>
-            </Button>
-          </div>
-        </section>
+        <ClientOnboarding />
       ) : (
         <>
           <Recommendations items={data.recommendations} />
