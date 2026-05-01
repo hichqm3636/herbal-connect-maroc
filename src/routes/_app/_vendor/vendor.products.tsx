@@ -27,6 +27,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger,
+} from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -150,6 +153,7 @@ function VendorProductsPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [urlOpen, setUrlOpen] = useState(false);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
 
   const load = async () => {
     if (!companyId) return;
@@ -370,46 +374,79 @@ function VendorProductsPage() {
             {products.length} منتج · {filtered.length} معروض
           </p>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <Sheet open={addMenuOpen} onOpenChange={setAddMenuOpen}>
+          <SheetTrigger asChild>
             <Button className="gap-1.5">
               <Plus className="h-4 w-4" />
               <span>إضافة منتج</span>
               <ChevronDown className="h-4 w-4 opacity-80" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={openCreate}>
-              <Pencil className="h-4 w-4" />
-              <div className="flex flex-col">
-                <span>نموذج كامل</span>
-                <span className="text-[10px] text-muted-foreground">جميع الحقول والتسعير</span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setQuickOpen(true)}>
-              <Plus className="h-4 w-4" />
-              <div className="flex flex-col">
-                <span>إضافة سريعة</span>
-                <span className="text-[10px] text-muted-foreground">اسم + سعر فقط</span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setImportOpen(true)}>
-              <FileSpreadsheet className="h-4 w-4" />
-              <div className="flex flex-col">
-                <span>استيراد من CSV</span>
-                <span className="text-[10px] text-muted-foreground">دفعة منتجات</span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setUrlOpen(true)}>
-              <Link2 className="h-4 w-4" />
-              <div className="flex flex-col">
-                <span>استيراد من رابط</span>
-                <span className="text-[10px] text-muted-foreground">WooCommerce / Shopify / أي صفحة</span>
-              </div>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </SheetTrigger>
+          <SheetContent
+            side="bottom"
+            dir="rtl"
+            className="rounded-t-2xl max-h-[85vh] sm:max-w-md sm:mx-auto"
+          >
+            <SheetHeader className="text-right">
+              <SheetTitle>طريقة إضافة المنتج</SheetTitle>
+              <SheetDescription>اختر الطريقة الأنسب لك</SheetDescription>
+            </SheetHeader>
+            <div className="grid grid-cols-1 gap-2 mt-4 pb-4">
+              <button
+                type="button"
+                onClick={() => { setAddMenuOpen(false); openCreate(); }}
+                className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-accent transition text-right"
+              >
+                <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Pencil className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-sm">نموذج كامل</div>
+                  <div className="text-xs text-muted-foreground">جميع الحقول والتسعير المتقدم</div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAddMenuOpen(false); setQuickOpen(true); }}
+                className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-accent transition text-right"
+              >
+                <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Plus className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-sm">إضافة سريعة</div>
+                  <div className="text-xs text-muted-foreground">اسم + سعر فقط</div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAddMenuOpen(false); setImportOpen(true); }}
+                className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-accent transition text-right"
+              >
+                <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <FileSpreadsheet className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-sm">استيراد من CSV</div>
+                  <div className="text-xs text-muted-foreground">دفعة منتجات من ملف</div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAddMenuOpen(false); setUrlOpen(true); }}
+                className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-accent transition text-right"
+              >
+                <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Link2 className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-sm">استيراد من رابط</div>
+                  <div className="text-xs text-muted-foreground">WooCommerce / Shopify / أي صفحة</div>
+                </div>
+              </button>
+            </div>
+          </SheetContent>
+        </Sheet>
       </header>
 
       <div className="flex flex-col sm:flex-row gap-3">
