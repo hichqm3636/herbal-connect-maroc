@@ -693,6 +693,29 @@ function VendorProductsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {companyId && (
+        <>
+          <ProductImportDialog
+            open={importOpen}
+            onOpenChange={setImportOpen}
+            companyId={companyId}
+            onImported={load}
+          />
+          <QuickAddDialog
+            open={quickOpen}
+            onOpenChange={setQuickOpen}
+            companyId={companyId}
+            onCreated={load}
+          />
+          <UrlImportDialog
+            open={urlOpen}
+            onOpenChange={setUrlOpen}
+            companyId={companyId}
+            onCreated={load}
+          />
+        </>
+      )}
     </div>
   );
 }
