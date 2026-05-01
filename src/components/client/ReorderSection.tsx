@@ -5,6 +5,7 @@ import { useCart, type CartProduct } from "@/hooks/useCart";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { trackClient } from "@/lib/clientAnalytics";
+import { setOrderSource } from "@/lib/orderAttribution";
 import { formatMAD } from "@/lib/format";
 
 export interface ReorderProduct extends CartProduct {
