@@ -595,7 +595,10 @@ function FinalCta() {
           </p>
           <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild size="lg" variant="secondary" className="w-full sm:w-auto">
-              <Link to="/signup">
+              <Link
+                to="/signup"
+                onClick={() => track("landing_cta_click", { metadata: { cta: "final_signup" } })}
+              >
                 <Rocket className="h-5 w-5" />
                 أنشئ بوابتك الآن
               </Link>
@@ -606,7 +609,12 @@ function FinalCta() {
               variant="outline"
               className="w-full border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground sm:w-auto"
             >
-              <Link to="/vendors">تصفّح السوق</Link>
+              <Link
+                to="/vendors"
+                onClick={() => track("landing_cta_click", { metadata: { cta: "final_browse_market" } })}
+              >
+                تصفّح السوق
+              </Link>
             </Button>
           </div>
         </Card>
