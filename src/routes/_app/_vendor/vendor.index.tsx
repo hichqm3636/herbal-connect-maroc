@@ -329,6 +329,8 @@ function VendorDashboard() {
         />
       </div>
 
+      <PlanUsageCard companyId={companyId} />
+
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Monthly revenue */}
