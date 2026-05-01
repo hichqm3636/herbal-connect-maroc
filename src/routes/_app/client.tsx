@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2, Sparkles, Store } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { ClientForbidden } from "@/components/ClientForbidden";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trackClient } from "@/lib/clientAnalytics";
@@ -267,12 +268,18 @@ async function loadDashboard(userId: string): Promise<DashboardData> {
 }
 
 function ClientDashboard() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, session, isClient, marketplaceRole } = useAuth();
+
+  // Non-client logged-in users land here from the sidebar link → show inline
+  // forbidden panel instead of fetching client-only data.
+  if (!authLoading && session && !isClient) {
+    return <ClientForbidden role={marketplaceRole} />;
+  }
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["client-dashboard", user?.id],
     queryFn: () => loadDashboard(user!.id),
-    enabled: !!user && !authLoading,
+    enabled: !!user && !authLoading && isClient,
     staleTime: 30_000,
   });
 

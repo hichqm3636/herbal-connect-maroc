@@ -75,6 +75,7 @@ const clientAccountItems: NavItem[] = [
 // ---------------- Vendor (workspace owner) — lives at /vendor/* ----------------
 const vendorTop: NavItem[] = [
   { title: "لوحة التحكم", url: "/vendor", icon: LayoutDashboard },
+  { title: "لوحة العملاء", url: "/client", icon: UserIcon },
 ];
 
 const vendorSections: NavSection[] = [
@@ -118,6 +119,7 @@ const vendorSections: NavSection[] = [
 // ---------------- Platform Admin — lives at /admin/* ----------------
 const adminTop: NavItem[] = [
   { title: "لوحة الإدارة", url: "/admin", icon: ShieldCheck },
+  { title: "لوحة العملاء", url: "/client", icon: UserIcon },
 ];
 
 const adminSections: NavSection[] = [
@@ -134,6 +136,7 @@ const adminSections: NavSection[] = [
 // ---------------- Super Admin — lives at /super-admin/* ----------------
 const superAdminTop: NavItem[] = [
   { title: "لوحة المنصة", url: "/super-admin", icon: LayoutDashboard },
+  { title: "لوحة العملاء", url: "/client", icon: UserIcon },
 ];
 
 const superAdminSections: NavSection[] = [
