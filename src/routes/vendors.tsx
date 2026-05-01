@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Building2, Loader2, Search, ArrowLeft } from "lucide-react";
+import { Building2, Loader2, Search, ArrowLeft, LayoutDashboard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { homeForRole } from "@/lib/roleRouting";
 
 export const Route = createFileRoute("/vendors")({
   component: VendorDirectory,
@@ -38,6 +40,9 @@ function VendorDirectory() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const { session, marketplaceRole } = useAuth();
+  const dashboardHref = homeForRole(marketplaceRole);
+  const showDashboard = !!session && dashboardHref !== "/login";
 
   useEffect(() => {
     let alive = true;
@@ -74,9 +79,18 @@ function VendorDirectory() {
             <span>الرئيسية</span>
           </Link>
           <h1 className="text-base font-bold sm:text-lg">دليل البائعين</h1>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/login">تسجيل الدخول</Link>
-          </Button>
+          {showDashboard ? (
+            <Button asChild variant="outline" size="sm">
+              <Link to={dashboardHref} className="flex items-center gap-1.5">
+                <LayoutDashboard className="h-4 w-4" />
+                <span>لوحتي</span>
+              </Link>
+            </Button>
+          ) : (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/login">تسجيل الدخول</Link>
+            </Button>
+          )}
         </div>
       </header>
 
