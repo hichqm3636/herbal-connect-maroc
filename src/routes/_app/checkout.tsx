@@ -37,6 +37,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatMAD } from "@/lib/format";
 import { buildWhatsappLink } from "@/utils/whatsapp";
 import { track } from "@/lib/analytics";
+import { clearOrderSource, getOrderSource } from "@/lib/orderAttribution";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/checkout")({
