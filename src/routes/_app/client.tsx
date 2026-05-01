@@ -268,7 +268,13 @@ async function loadDashboard(userId: string): Promise<DashboardData> {
 }
 
 function ClientDashboard() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, session, isClient, marketplaceRole } = useAuth();
+
+  // Non-client logged-in users land here from the sidebar link → show inline
+  // forbidden panel instead of fetching client-only data.
+  if (!authLoading && session && !isClient) {
+    return <ClientForbidden role={marketplaceRole} />;
+  }
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["client-dashboard", user?.id],
