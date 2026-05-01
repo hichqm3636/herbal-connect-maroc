@@ -377,7 +377,7 @@ function VendorStorePage() {
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {filtered.map((p) => {
-                  const display = p.rrp_price ?? p.pharmacy_price ?? p.price_mad;
+                  // price shown is sale (price_mad); rrp is shown crossed-out when higher
                   const hasDiscount =
                     p.rrp_price !== null && p.rrp_price > p.price_mad;
                   const discountPct = hasDiscount
