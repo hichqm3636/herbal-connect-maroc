@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { useCart, type CartProduct } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { trackClient } from "@/lib/clientAnalytics";
+import { setOrderSource } from "@/lib/orderAttribution";
 import { useState } from "react";
 
 export interface ReorderableItem {
