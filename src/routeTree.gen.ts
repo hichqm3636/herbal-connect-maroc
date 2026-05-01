@@ -908,6 +908,7 @@ const AppClientRouteWithChildren = AppClientRoute._addFileChildren(
 interface AppSuperAdminRouteChildren {
   AppSuperAdminAnalyticsRoute: typeof AppSuperAdminAnalyticsRoute
   AppSuperAdminGrowthRoute: typeof AppSuperAdminGrowthRoute
+  AppSuperAdminAbTestsRoute: typeof AppSuperAdminAbTestsRoute
   AppSuperAdminAnalyticsValidationRoute: typeof AppSuperAdminAnalyticsValidationRoute
   AppSuperAdminCompaniesRoute: typeof AppSuperAdminCompaniesRoute
   AppSuperAdminUsersRoute: typeof AppSuperAdminUsersRoute
@@ -917,6 +918,7 @@ interface AppSuperAdminRouteChildren {
 const AppSuperAdminRouteChildren: AppSuperAdminRouteChildren = {
   AppSuperAdminAnalyticsRoute: AppSuperAdminAnalyticsRoute,
   AppSuperAdminGrowthRoute: AppSuperAdminGrowthRoute,
+  AppSuperAdminAbTestsRoute: AppSuperAdminAbTestsRoute,
   AppSuperAdminAnalyticsValidationRoute: AppSuperAdminAnalyticsValidationRoute,
   AppSuperAdminCompaniesRoute: AppSuperAdminCompaniesRoute,
   AppSuperAdminUsersRoute: AppSuperAdminUsersRoute,
