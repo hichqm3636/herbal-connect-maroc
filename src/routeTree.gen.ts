@@ -37,6 +37,7 @@ import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-
 import { Route as AppSuperAdminAnalyticsValidationRouteImport } from './routes/_app/super-admin/analytics-validation'
 import { Route as AppSuperAdminAnalyticsRouteImport } from './routes/_app/super-admin/analytics'
 import { Route as AppSuperAdminGrowthRouteImport } from './routes/_app/super-admin/growth'
+import { Route as AppSuperAdminAbTestsRouteImport } from './routes/_app/super-admin/ab-tests'
 import { Route as AppClientOrdersRouteImport } from './routes/_app/client.orders'
 import { Route as AppVendorVendorIndexRouteImport } from './routes/_app/_vendor/vendor.index'
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
