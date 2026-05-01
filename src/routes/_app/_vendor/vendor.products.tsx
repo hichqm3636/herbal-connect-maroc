@@ -2,7 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Loader2, Search, Plus, Pencil, Trash2, Package, Image as ImageIcon, Upload, X,
+  Copy, FileSpreadsheet, Link2, ChevronDown,
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { ProductImportDialog } from "@/components/vendor/ProductImportDialog";
+import { QuickAddDialog } from "@/components/vendor/QuickAddDialog";
+import { UrlImportDialog } from "@/components/vendor/UrlImportDialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
