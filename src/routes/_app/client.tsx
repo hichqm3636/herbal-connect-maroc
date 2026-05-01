@@ -24,6 +24,7 @@ import {
 } from "@/components/client/ReorderSection";
 import { AlertsBanner, type ClientAlert } from "@/components/client/AlertsBanner";
 import { ClientOnboarding } from "@/components/client/ClientOnboarding";
+import { LoyaltyCard } from "@/components/client/LoyaltyCard";
 import { SampleVendors } from "@/components/client/SampleVendors";
 import type { CartProduct } from "@/hooks/useCart";
 
@@ -346,6 +347,7 @@ function ClientDashboard() {
         </>
       ) : (
         <>
+          <LoyaltyCard userId={user!.id} />
           <Recommendations items={data.recommendations} />
           <OrdersPreview orders={data.recentOrders} />
           <ReorderSection products={data.reorderProducts} />
