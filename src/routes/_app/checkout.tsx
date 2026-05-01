@@ -680,7 +680,7 @@ ${shippingAddress.trim() ? `📍 العنوان: ${shippingAddress.trim()}` : ""
 
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button asChild size="lg" className="flex-1">
-            <Link to="/orders" search={{ focus: placedOrder.id } as never}>
+            <Link to="/client/orders" search={{ focus: placedOrder.id } as never}>
               عرض الطلب
             </Link>
           </Button>
