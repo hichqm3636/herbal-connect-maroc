@@ -185,6 +185,11 @@ const AppSuperAdminAnalyticsRoute = AppSuperAdminAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AppSuperAdminRoute,
 } as any)
+const AppSuperAdminGrowthRoute = AppSuperAdminGrowthRouteImport.update({
+  id: '/growth',
+  path: '/growth',
+  getParentRoute: () => AppSuperAdminRoute,
+} as any)
 const AppClientOrdersRoute = AppClientOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
