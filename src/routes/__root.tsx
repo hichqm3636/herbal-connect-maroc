@@ -1,8 +1,8 @@
-import { Outlet, createRootRoute, HeadContent, Scripts, Link } from "@tanstack/react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { Outlet, createRootRoute, HeadContent, Scripts, Link, useRouter } from "@tanstack/react-router";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
 import { CartProvider } from "@/hooks/useCart";
 import { CartSheet } from "@/components/CartSheet";
