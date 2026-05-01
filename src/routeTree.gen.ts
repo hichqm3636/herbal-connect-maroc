@@ -332,6 +332,7 @@ export interface FileRoutesByTo {
   '/client/orders': typeof AppClientOrdersRoute
   '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/super-admin/growth': typeof AppSuperAdminGrowthRoute
+  '/super-admin/ab-tests': typeof AppSuperAdminAbTestsRoute
   '/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
   '/super-admin/users': typeof AppSuperAdminUsersRoute
