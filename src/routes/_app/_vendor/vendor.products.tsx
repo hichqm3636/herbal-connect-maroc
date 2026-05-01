@@ -370,10 +370,46 @@ function VendorProductsPage() {
             {products.length} منتج · {filtered.length} معروض
           </p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4" />
-          منتج جديد
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4" />
+              إضافة منتج
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56" dir="rtl">
+            <DropdownMenuItem onClick={openCreate}>
+              <Pencil className="h-4 w-4" />
+              <div className="flex flex-col">
+                <span>نموذج كامل</span>
+                <span className="text-[10px] text-muted-foreground">جميع الحقول والتسعير</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setQuickOpen(true)}>
+              <Plus className="h-4 w-4" />
+              <div className="flex flex-col">
+                <span>إضافة سريعة</span>
+                <span className="text-[10px] text-muted-foreground">اسم + سعر فقط</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setImportOpen(true)}>
+              <FileSpreadsheet className="h-4 w-4" />
+              <div className="flex flex-col">
+                <span>استيراد من CSV</span>
+                <span className="text-[10px] text-muted-foreground">دفعة منتجات</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setUrlOpen(true)}>
+              <Link2 className="h-4 w-4" />
+              <div className="flex flex-col">
+                <span>استيراد من رابط</span>
+                <span className="text-[10px] text-muted-foreground">WooCommerce / Shopify / أي صفحة</span>
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       <div className="flex flex-col sm:flex-row gap-3">
