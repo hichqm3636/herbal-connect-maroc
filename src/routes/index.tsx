@@ -263,13 +263,19 @@ function Hero() {
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild size="lg" className="w-full sm:w-auto">
-              <Link to="/signup">
+              <Link
+                to="/signup"
+                onClick={() => track("landing_cta_click", { metadata: { cta: "hero_vendor_signup" } })}
+              >
                 <Store className="h-5 w-5" />
                 اعرض منتجاتك (مورد)
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
-              <Link to="/vendors">
+              <Link
+                to="/vendors"
+                onClick={() => track("landing_cta_click", { metadata: { cta: "hero_browse_market" } })}
+              >
                 <ShoppingBag className="h-5 w-5" />
                 تصفّح السوق (مشترٍ)
               </Link>
