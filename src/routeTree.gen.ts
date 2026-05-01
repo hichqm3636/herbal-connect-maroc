@@ -897,6 +897,7 @@ interface AppSuperAdminRouteChildren {
 
 const AppSuperAdminRouteChildren: AppSuperAdminRouteChildren = {
   AppSuperAdminAnalyticsRoute: AppSuperAdminAnalyticsRoute,
+  AppSuperAdminGrowthRoute: AppSuperAdminGrowthRoute,
   AppSuperAdminAnalyticsValidationRoute: AppSuperAdminAnalyticsValidationRoute,
   AppSuperAdminCompaniesRoute: AppSuperAdminCompaniesRoute,
   AppSuperAdminUsersRoute: AppSuperAdminUsersRoute,
