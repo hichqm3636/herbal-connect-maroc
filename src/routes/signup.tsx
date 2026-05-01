@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { toast } from "sonner";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
@@ -106,6 +107,11 @@ function SignupPage() {
     }
   }, [tenant.loading, tenant.kind]);
 
+  // Funnel: signup_view fires once when the form mounts.
+  useEffect(() => {
+    track("signup_view");
+  }, []);
+
   // Auto-generate slug from company name unless the user has typed in the slug field.
   useEffect(() => {
     if (!slugTouched) setSlug(slugify(companyName));
@@ -115,6 +121,7 @@ function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    track("signup_started");
     const parsed = schema.safeParse({
       companyName,
       slug,
@@ -124,10 +131,12 @@ function SignupPage() {
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
+      track("signup_failed", { metadata: { reason: "validation", issue: parsed.error.issues[0].message } });
       return;
     }
     if (RESERVED.has(parsed.data.slug)) {
       toast.error("هذا النطاق محجوز، اختر اسماً آخر");
+      track("signup_failed", { metadata: { reason: "reserved_slug", slug: parsed.data.slug } });
       return;
     }
 
@@ -145,11 +154,23 @@ function SignupPage() {
       if (error) {
         const msg = error.message || "تعذر إنشاء الشركة";
         toast.error(msg);
+        track("signup_failed", { metadata: { reason: "rpc_error", message: msg } });
         return;
       }
 
       const created = data as { slug?: string; company_id?: string } | null;
       const newSlug = created?.slug ?? parsed.data.slug;
+      const newCompanyId = created?.company_id ?? null;
+
+      // Conversion: signup completed + vendor onboarded.
+      track("signup_completed", {
+        vendor_id: newCompanyId,
+        metadata: { slug: newSlug, role: "vendor_admin" },
+      });
+      track("vendor_onboarded", {
+        vendor_id: newCompanyId,
+        metadata: { slug: newSlug, source: "public_signup" },
+      });
 
       // Auto sign-in the new admin
       const { error: signInError } = await supabase.auth.signInWithPassword({

@@ -26,7 +26,21 @@ export type AnalyticsEvent =
   | "scroll_depth_75"
   | "scroll_depth_100"
   | "exit_before_add_to_cart"
-  | "ab_assignment";
+  | "ab_assignment"
+  // Landing & marketplace browsing
+  | "landing_view"
+  | "landing_cta_click"
+  | "landing_category_click"
+  | "landing_vendor_click"
+  | "landing_nav_click"
+  | "vendors_directory_view"
+  | "vendor_store_view"
+  // Signup funnel
+  | "signup_view"
+  | "signup_started"
+  | "signup_completed"
+  | "signup_failed"
+  | "vendor_onboarded";
 
 export interface ProductEventPayload {
   product_id?: string | null;

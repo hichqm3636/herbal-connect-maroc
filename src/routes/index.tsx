@@ -27,6 +27,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { homeForRole } from "@/lib/roleRouting";
 import { supabase } from "@/integrations/supabase/client";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -137,6 +138,11 @@ function NexoraLanding({ isAuthenticated }: { isAuthenticated: boolean }) {
   const [vendors, setVendors] = useState<VendorCard[]>([]);
   const [vendorsLoading, setVendorsLoading] = useState(true);
 
+  // Fire `landing_view` once when the public landing renders.
+  useEffect(() => {
+    track("landing_view", { metadata: { authenticated: false } });
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     supabase
@@ -183,13 +189,25 @@ function LandingHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
-          <Link to="/vendors" className="transition-colors hover:text-foreground">
+          <Link
+            to="/vendors"
+            className="transition-colors hover:text-foreground"
+            onClick={() => track("landing_nav_click", { metadata: { target: "vendors" } })}
+          >
             السوق
           </Link>
-          <a href="#how-it-works" className="transition-colors hover:text-foreground">
+          <a
+            href="#how-it-works"
+            className="transition-colors hover:text-foreground"
+            onClick={() => track("landing_nav_click", { metadata: { target: "how_it_works" } })}
+          >
             كيف يعمل
           </a>
-          <a href="#why-nexora" className="transition-colors hover:text-foreground">
+          <a
+            href="#why-nexora"
+            className="transition-colors hover:text-foreground"
+            onClick={() => track("landing_nav_click", { metadata: { target: "why_nexora" } })}
+          >
             لماذا Nexora
           </a>
         </nav>
@@ -197,15 +215,21 @@ function LandingHeader({ isAuthenticated }: { isAuthenticated: boolean }) {
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <Button asChild size="sm">
-              <Link to="/client">لوحتي</Link>
+              <Link to="/client" onClick={() => track("landing_cta_click", { metadata: { cta: "header_dashboard" } })}>
+                لوحتي
+              </Link>
             </Button>
           ) : (
             <>
               <Button asChild size="sm" variant="ghost" className="hidden sm:inline-flex">
-                <Link to="/login">تسجيل الدخول</Link>
+                <Link to="/login" onClick={() => track("landing_cta_click", { metadata: { cta: "header_login" } })}>
+                  تسجيل الدخول
+                </Link>
               </Button>
               <Button asChild size="sm">
-                <Link to="/signup">ابدأ مجانًا</Link>
+                <Link to="/signup" onClick={() => track("landing_cta_click", { metadata: { cta: "header_signup" } })}>
+                  ابدأ مجانًا
+                </Link>
               </Button>
             </>
           )}
@@ -239,13 +263,19 @@ function Hero() {
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild size="lg" className="w-full sm:w-auto">
-              <Link to="/signup">
+              <Link
+                to="/signup"
+                onClick={() => track("landing_cta_click", { metadata: { cta: "hero_vendor_signup" } })}
+              >
                 <Store className="h-5 w-5" />
                 اعرض منتجاتك (مورد)
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
-              <Link to="/vendors">
+              <Link
+                to="/vendors"
+                onClick={() => track("landing_cta_click", { metadata: { cta: "hero_browse_market" } })}
+              >
                 <ShoppingBag className="h-5 w-5" />
                 تصفّح السوق (مشترٍ)
               </Link>
@@ -288,7 +318,14 @@ function Categories() {
           {CATEGORIES.map(({ icon: Icon, label, desc, restricted }) => (
             <Card
               key={label}
-              className="group flex flex-col items-center gap-2 p-4 text-center transition-all hover:shadow-elegant hover:-translate-y-0.5"
+              role="button"
+              tabIndex={0}
+              onClick={() =>
+                track("landing_category_click", {
+                  metadata: { category: label, restricted: !!restricted },
+                })
+              }
+              className="group flex flex-col items-center gap-2 p-4 text-center transition-all hover:shadow-elegant hover:-translate-y-0.5 cursor-pointer"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-accent-foreground transition-colors group-hover:bg-gradient-primary group-hover:text-primary-foreground">
                 <Icon className="h-6 w-6" />
@@ -329,7 +366,10 @@ function FeaturedVendors({
             </p>
           </div>
           <Button asChild variant="ghost" size="sm" className="shrink-0">
-            <Link to="/vendors">
+            <Link
+              to="/vendors"
+              onClick={() => track("landing_cta_click", { metadata: { cta: "featured_view_all" } })}
+            >
               عرض الكل
               <ArrowLeftCircle className="h-4 w-4" />
             </Link>
@@ -349,7 +389,10 @@ function FeaturedVendors({
               لم يتم إدراج أي مورد بعد. كن أول مورد على Nexora.
             </p>
             <Button asChild className="mt-4">
-              <Link to="/signup">
+              <Link
+                to="/signup"
+                onClick={() => track("landing_cta_click", { metadata: { cta: "empty_vendors_signup" } })}
+              >
                 <Rocket className="h-4 w-4" />
                 أنشئ بوابتك
               </Link>
@@ -362,6 +405,12 @@ function FeaturedVendors({
                 key={v.id}
                 to="/store/$slug"
                 params={{ slug: v.slug }}
+                onClick={() =>
+                  track("landing_vendor_click", {
+                    vendor_id: v.id,
+                    metadata: { slug: v.slug, name: v.display_name },
+                  })
+                }
                 className="group"
               >
                 <Card className="flex h-full flex-col items-center gap-3 p-5 text-center transition-all hover:shadow-elegant hover:-translate-y-0.5">
@@ -546,7 +595,10 @@ function FinalCta() {
           </p>
           <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild size="lg" variant="secondary" className="w-full sm:w-auto">
-              <Link to="/signup">
+              <Link
+                to="/signup"
+                onClick={() => track("landing_cta_click", { metadata: { cta: "final_signup" } })}
+              >
                 <Rocket className="h-5 w-5" />
                 أنشئ بوابتك الآن
               </Link>
@@ -557,7 +609,12 @@ function FinalCta() {
               variant="outline"
               className="w-full border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground sm:w-auto"
             >
-              <Link to="/vendors">تصفّح السوق</Link>
+              <Link
+                to="/vendors"
+                onClick={() => track("landing_cta_click", { metadata: { cta: "final_browse_market" } })}
+              >
+                تصفّح السوق
+              </Link>
             </Button>
           </div>
         </Card>
