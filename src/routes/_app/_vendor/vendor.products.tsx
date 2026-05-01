@@ -147,6 +147,9 @@ function VendorProductsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ProductRow | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [urlOpen, setUrlOpen] = useState(false);
 
   const load = async () => {
     if (!companyId) return;
