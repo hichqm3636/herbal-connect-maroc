@@ -64,6 +64,11 @@ function AppLayout() {
       (onSuperAdminRoute && !isSuperAdmin)
     );
 
+  // Client surface gets a clear "no access" message instead of a silent
+  // redirect when a logged-in non-client user tries to view it.
+  const showClientForbidden =
+    !loading && !!session && onClientRoute && !isClient;
+
   useEffect(() => {
     if (loading) return;
     if (!session) {
@@ -71,8 +76,8 @@ function AppLayout() {
       return;
     }
 
+    // /client → show a forbidden screen (handled below). No silent redirect.
     if (onClientRoute && !isClient) {
-      navigate({ to: homeForRole(marketplaceRole), replace: true });
       return;
     }
     // Vendor surface is reserved for the vendor role only — admins go to /admin.
