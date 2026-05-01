@@ -263,6 +263,8 @@ function UsersPage() {
     setBusyId(null);
 
     if (ins.error) {
+      const { handleLimitError } = await import("@/lib/limitErrors");
+      if (handleLimitError(ins.error, "مستخدم")) return;
       toast.error("تعذّر إعطاء الدور الجديد");
       return;
     }
