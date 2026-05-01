@@ -1565,6 +1565,17 @@ export type Database = {
         Args: { _days?: number; _vendor_id?: string }
         Returns: Json
       }
+      analytics_client_growth: {
+        Args: { _days?: number }
+        Returns: {
+          conversion_rate: number
+          dashboard_views: number
+          orders: number
+          quick_action_clicks: number
+          recommendation_clicks: number
+          reorder_clicks: number
+        }[]
+      }
       analytics_integrity_report: {
         Args: never
         Returns: {
