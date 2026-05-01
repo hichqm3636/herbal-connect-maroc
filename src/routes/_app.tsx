@@ -64,6 +64,11 @@ function AppLayout() {
       (onSuperAdminRoute && !isSuperAdmin)
     );
 
+  // Client surface gets a clear "no access" message instead of a silent
+  // redirect when a logged-in non-client user tries to view it.
+  const showClientForbidden =
+    !loading && !!session && onClientRoute && !isClient;
+
   useEffect(() => {
     if (loading) return;
     if (!session) {
@@ -71,8 +76,8 @@ function AppLayout() {
       return;
     }
 
+    // /client → show a forbidden screen (handled below). No silent redirect.
     if (onClientRoute && !isClient) {
-      navigate({ to: homeForRole(marketplaceRole), replace: true });
       return;
     }
     // Vendor surface is reserved for the vendor role only — admins go to /admin.
@@ -90,7 +95,7 @@ function AppLayout() {
     }
   }, [session, loading, marketplaceRole, isClient, isVendor, isPlatformAdmin, isSuperAdmin, path, onClientRoute, onVendorRoute, onAdminRoute, onSuperAdminRoute, navigate]);
 
-  if (loading || !session || surfaceBlocked || (onTenantScopedRoute && tenant.loading)) {
+  if (loading || !session || (surfaceBlocked && !showClientForbidden) || (onTenantScopedRoute && tenant.loading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-soft" dir="rtl">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-primary shadow-glow">
@@ -99,6 +104,49 @@ function AppLayout() {
       </div>
     );
   }
+
+  if (showClientForbidden) {
+    const homePath = homeForRole(marketplaceRole);
+    const roleLabel =
+      marketplaceRole === "vendor"
+        ? "لوحة المورد"
+        : marketplaceRole === "admin"
+          ? "لوحة الإدارة"
+          : marketplaceRole === "super_admin"
+            ? "لوحة المشرف العام"
+            : "لوحتك";
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-soft p-6" dir="rtl">
+        <div className="max-w-md rounded-2xl border bg-card p-8 text-center shadow-elegant">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10">
+            <ShieldAlert className="h-7 w-7 text-destructive" />
+          </div>
+          <h1 className="mb-2 text-xl font-bold">لا تملك صلاحية الوصول</h1>
+          <p className="mb-6 text-sm text-muted-foreground">
+            صفحة <span className="font-semibold text-foreground">لوحة العملاء</span> مخصصة لحسابات
+            العملاء فقط. حسابك الحالي ليس حساب عميل، لذا لا يمكنك عرض هذه الصفحة.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <button
+              type="button"
+              onClick={() => navigate({ to: homePath })}
+              className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90"
+            >
+              الانتقال إلى {roleLabel}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/vendors" })}
+              className="inline-flex h-10 items-center justify-center rounded-md border bg-background px-6 text-sm font-medium hover:bg-muted"
+            >
+              تصفّح الموردين
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   if (tenantMismatch) {
     return (
