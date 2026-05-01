@@ -22,6 +22,7 @@ import {
   MessageSquare,
   User as UserIcon,
   TrendingUp,
+  FlaskConical,
 } from "lucide-react";
 import {
   Sidebar,
