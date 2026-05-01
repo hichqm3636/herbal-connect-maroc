@@ -23,6 +23,7 @@ import {
 } from "@/components/client/ReorderSection";
 import { AlertsBanner, type ClientAlert } from "@/components/client/AlertsBanner";
 import { ClientOnboarding } from "@/components/client/ClientOnboarding";
+import { SampleVendors } from "@/components/client/SampleVendors";
 import type { CartProduct } from "@/hooks/useCart";
 
 export const Route = createFileRoute("/_app/client")({
@@ -332,7 +333,10 @@ function ClientDashboard() {
       />
 
       {hasNoOrders ? (
-        <ClientOnboarding />
+        <>
+          <ClientOnboarding />
+          <SampleVendors />
+        </>
       ) : (
         <>
           <Recommendations items={data.recommendations} />
