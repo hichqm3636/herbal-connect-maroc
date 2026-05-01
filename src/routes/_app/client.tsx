@@ -251,7 +251,7 @@ function ClientDashboard() {
               return (
                 <li key={o.id}>
                   <Link
-                    to="/orders"
+                    to="/client/orders"
                     search={{ focus: o.id }}
                     className="flex items-center gap-3 p-4 transition-colors hover:bg-muted/40"
                   >
