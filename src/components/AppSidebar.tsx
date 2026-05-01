@@ -136,6 +136,7 @@ const adminSections: NavSection[] = [
 // ---------------- Super Admin — lives at /super-admin/* ----------------
 const superAdminTop: NavItem[] = [
   { title: "لوحة المنصة", url: "/super-admin", icon: LayoutDashboard },
+  { title: "لوحة العملاء", url: "/client", icon: UserIcon },
 ];
 
 const superAdminSections: NavSection[] = [
