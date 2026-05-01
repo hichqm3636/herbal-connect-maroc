@@ -335,6 +335,30 @@ function VendorProductsPage() {
     setDeleteTarget(null);
   };
 
+  const handleDuplicate = async (p: ProductRow) => {
+    if (!companyId) return;
+    const { id: _omit, ...rest } = p;
+    void _omit;
+    const payload = {
+      ...rest,
+      company_id: companyId,
+      name_ar: `${p.name_ar} (نسخة)`,
+      sku: p.sku ? `${p.sku}-COPY` : null,
+      external_id: `dup-${crypto.randomUUID()}`,
+      source: "duplicate",
+      active: false,
+    };
+    const { error } = await supabase.from("products").insert(payload);
+    if (error) {
+      const { handleLimitError } = await import("@/lib/limitErrors");
+      if (handleLimitError(error, "منتج")) return;
+      toast.error(error.message || "فشل النسخ");
+      return;
+    }
+    toast.success("تم نسخ المنتج (معطّل افتراضياً)");
+    load();
+  };
+
   const formOpen = creating || !!editing;
 
   return (
