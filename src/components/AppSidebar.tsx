@@ -61,7 +61,7 @@ type NavSection = {
 const clientTopItems: NavItem[] = [
   { title: "حسابي", url: "/client", icon: LayoutDashboard },
   { title: "البائعون", url: "/vendors", icon: ShoppingBag },
-  { title: "طلباتي", url: "/orders", icon: ClipboardList },
+  { title: "طلباتي", url: "/client/orders", icon: ClipboardList },
   { title: "المفضلة", url: "/wishlist", icon: Heart },
   { title: "مراجعاتي", url: "/my-reviews", icon: MessageSquare },
 ];
