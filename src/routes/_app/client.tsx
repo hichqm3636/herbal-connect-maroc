@@ -220,7 +220,7 @@ function ClientDashboard() {
           </h2>
           {orders.length > 0 && (
             <Button asChild variant="ghost" size="sm">
-              <Link to="/orders">عرض الكل</Link>
+              <Link to="/client/orders">عرض الكل</Link>
             </Button>
           )}
         </div>
@@ -251,7 +251,7 @@ function ClientDashboard() {
               return (
                 <li key={o.id}>
                   <Link
-                    to="/orders"
+                    to="/client/orders"
                     search={{ focus: o.id }}
                     className="flex items-center gap-3 p-4 transition-colors hover:bg-muted/40"
                   >

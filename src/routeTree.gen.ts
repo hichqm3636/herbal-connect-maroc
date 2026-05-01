@@ -36,6 +36,7 @@ import { Route as AppSuperAdminUsersRouteImport } from './routes/_app/super-admi
 import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-admin/companies'
 import { Route as AppSuperAdminAnalyticsValidationRouteImport } from './routes/_app/super-admin/analytics-validation'
 import { Route as AppSuperAdminAnalyticsRouteImport } from './routes/_app/super-admin/analytics'
+import { Route as AppClientOrdersRouteImport } from './routes/_app/client.orders'
 import { Route as AppVendorVendorIndexRouteImport } from './routes/_app/_vendor/vendor.index'
 import { Route as AppAdminAdminIndexRouteImport } from './routes/_app/_admin/admin.index'
 import { Route as StoreSlugProductIdRouteImport } from './routes/store.$slug.product.$id'
@@ -183,6 +184,11 @@ const AppSuperAdminAnalyticsRoute = AppSuperAdminAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AppSuperAdminRoute,
 } as any)
+const AppClientOrdersRoute = AppClientOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AppClientRoute,
+} as any)
 const AppVendorVendorIndexRoute = AppVendorVendorIndexRouteImport.update({
   id: '/vendor/',
   path: '/vendor/',
@@ -260,7 +266,7 @@ export interface FileRoutesByFullPath {
   '/vendor-login': typeof VendorLoginRoute
   '/vendors': typeof VendorsRoute
   '/checkout': typeof AppCheckoutRoute
-  '/client': typeof AppClientRoute
+  '/client': typeof AppClientRouteWithChildren
   '/my-reviews': typeof AppMyReviewsRoute
   '/notifications': typeof AppNotificationsRoute
   '/orders': typeof AppOrdersRoute
@@ -270,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
+  '/client/orders': typeof AppClientOrdersRoute
   '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -299,7 +306,7 @@ export interface FileRoutesByTo {
   '/vendor-login': typeof VendorLoginRoute
   '/vendors': typeof VendorsRoute
   '/checkout': typeof AppCheckoutRoute
-  '/client': typeof AppClientRoute
+  '/client': typeof AppClientRouteWithChildren
   '/my-reviews': typeof AppMyReviewsRoute
   '/notifications': typeof AppNotificationsRoute
   '/orders': typeof AppOrdersRoute
@@ -308,6 +315,7 @@ export interface FileRoutesByTo {
   '/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
+  '/client/orders': typeof AppClientOrdersRoute
   '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -341,7 +349,7 @@ export interface FileRoutesById {
   '/_app/_admin': typeof AppAdminRouteWithChildren
   '/_app/_vendor': typeof AppVendorRouteWithChildren
   '/_app/checkout': typeof AppCheckoutRoute
-  '/_app/client': typeof AppClientRoute
+  '/_app/client': typeof AppClientRouteWithChildren
   '/_app/my-reviews': typeof AppMyReviewsRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/orders': typeof AppOrdersRoute
@@ -351,6 +359,7 @@ export interface FileRoutesById {
   '/_app/wishlist': typeof AppWishlistRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
+  '/_app/client/orders': typeof AppClientOrdersRoute
   '/_app/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/_app/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
@@ -392,6 +401,7 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/auth/callback'
     | '/store/$slug'
+    | '/client/orders'
     | '/super-admin/analytics'
     | '/super-admin/analytics-validation'
     | '/super-admin/companies'
@@ -430,6 +440,7 @@ export interface FileRouteTypes {
     | '/wishlist'
     | '/auth/callback'
     | '/store/$slug'
+    | '/client/orders'
     | '/super-admin/analytics'
     | '/super-admin/analytics-validation'
     | '/super-admin/companies'
@@ -472,6 +483,7 @@ export interface FileRouteTypes {
     | '/_app/wishlist'
     | '/auth/callback'
     | '/store/$slug'
+    | '/_app/client/orders'
     | '/_app/super-admin/analytics'
     | '/_app/super-admin/analytics-validation'
     | '/_app/super-admin/companies'
@@ -698,6 +710,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSuperAdminAnalyticsRouteImport
       parentRoute: typeof AppSuperAdminRoute
     }
+    '/_app/client/orders': {
+      id: '/_app/client/orders'
+      path: '/orders'
+      fullPath: '/client/orders'
+      preLoaderRoute: typeof AppClientOrdersRouteImport
+      parentRoute: typeof AppClientRoute
+    }
     '/_app/_vendor/vendor/': {
       id: '/_app/_vendor/vendor/'
       path: '/vendor'
@@ -836,6 +855,18 @@ const AppVendorRouteWithChildren = AppVendorRoute._addFileChildren(
   AppVendorRouteChildren,
 )
 
+interface AppClientRouteChildren {
+  AppClientOrdersRoute: typeof AppClientOrdersRoute
+}
+
+const AppClientRouteChildren: AppClientRouteChildren = {
+  AppClientOrdersRoute: AppClientOrdersRoute,
+}
+
+const AppClientRouteWithChildren = AppClientRoute._addFileChildren(
+  AppClientRouteChildren,
+)
+
 interface AppSuperAdminRouteChildren {
   AppSuperAdminAnalyticsRoute: typeof AppSuperAdminAnalyticsRoute
   AppSuperAdminAnalyticsValidationRoute: typeof AppSuperAdminAnalyticsValidationRoute
@@ -860,7 +891,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppVendorRoute: typeof AppVendorRouteWithChildren
   AppCheckoutRoute: typeof AppCheckoutRoute
-  AppClientRoute: typeof AppClientRoute
+  AppClientRoute: typeof AppClientRouteWithChildren
   AppMyReviewsRoute: typeof AppMyReviewsRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOrdersRoute: typeof AppOrdersRoute
@@ -874,7 +905,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
   AppVendorRoute: AppVendorRouteWithChildren,
   AppCheckoutRoute: AppCheckoutRoute,
-  AppClientRoute: AppClientRoute,
+  AppClientRoute: AppClientRouteWithChildren,
   AppMyReviewsRoute: AppMyReviewsRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOrdersRoute: AppOrdersRoute,
