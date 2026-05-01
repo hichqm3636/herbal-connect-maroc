@@ -34,6 +34,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
 import type { Database } from "@/integrations/supabase/types";
+import { PlanUsageCard } from "@/components/vendor/PlanUsageCard";
 
 type OrderStatus = Database["public"]["Enums"]["order_status"];
 
