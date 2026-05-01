@@ -140,7 +140,10 @@ const superAdminSections: NavSection[] = [
     id: "platform",
     label: "المنصة",
     icon: Globe2,
-    items: [{ title: "الشركات", url: "/super-admin/companies", icon: Building2 }],
+    items: [
+      { title: "الشركات", url: "/super-admin/companies", icon: Building2 },
+      { title: "نمو العملاء", url: "/super-admin/growth", icon: TrendingUp },
+    ],
   },
 ];
 
