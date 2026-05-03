@@ -98,30 +98,38 @@ function VendorInvoicesPage() {
     })();
   }, [rows]);
 
-  const downloadPdf = async (inv: InvoiceRow) => {
+  const openPreview = async (inv: InvoiceRow) => {
     if (!inv.pdf_path) {
       toast.error("PDF لم يُنشأ بعد");
       return;
     }
-    // Open window synchronously to preserve the user gesture (mobile Safari
-    // blocks window.open() called after an await).
-    const newTab = window.open("", "_blank");
     setBusy(inv.id);
     const { data, error } = await supabase.storage
       .from("invoices")
       .createSignedUrl(inv.pdf_path, 3600);
     setBusy(null);
     if (error || !data?.signedUrl) {
-      if (newTab) newTab.close();
-      toast.error(error?.message || "تعذر إنشاء رابط التحميل");
+      toast.error(error?.message || "تعذر إنشاء رابط المعاينة");
       return;
     }
-    if (newTab) {
-      newTab.location.href = data.signedUrl;
-    } else {
-      // Popup blocked — fall back to same-tab navigation.
-      window.location.href = data.signedUrl;
-    }
+    setPreview({ inv, url: data.signedUrl });
+  };
+
+  const downloadCurrent = () => {
+    if (!preview) return;
+    const a = document.createElement("a");
+    a.href = preview.url;
+    a.download = `${preview.inv.invoice_number}.pdf`;
+    a.target = "_blank";
+    a.rel = "noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  const openInNewTab = () => {
+    if (!preview) return;
+    window.open(preview.url, "_blank", "noopener,noreferrer");
   };
 
   const confirmPayment = async (inv: InvoiceRow) => {
