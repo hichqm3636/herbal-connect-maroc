@@ -191,7 +191,19 @@ function VendorInvoicesPage() {
       ) : (
         <div className="space-y-3">
           {rows.map((inv) => (
-            <Card key={inv.id} className="p-4">
+            <Card
+              key={inv.id}
+              className="p-4 cursor-pointer transition-colors hover:bg-muted/40 active:bg-muted/60"
+              onClick={() => downloadPdf(inv)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  downloadPdf(inv);
+                }
+              }}
+            >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -214,7 +226,7 @@ function VendorInvoicesPage() {
                     variant="outline"
                     size="sm"
                     disabled={!inv.pdf_path || busy === inv.id}
-                    onClick={() => downloadPdf(inv)}
+                    onClick={(e) => { e.stopPropagation(); downloadPdf(inv); }}
                   >
                     {busy === inv.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -233,7 +245,10 @@ function VendorInvoicesPage() {
               )}
 
               {inv.payment_proof_url && proofUrls[inv.id] && (
-                <div className="mt-4 rounded-lg border bg-muted/30 p-3 space-y-2">
+                <div
+                  className="mt-4 rounded-lg border bg-muted/30 p-3 space-y-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold">إيصال الدفع المرفوع</span>
                     <a
