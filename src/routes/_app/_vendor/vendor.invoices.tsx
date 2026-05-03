@@ -204,10 +204,7 @@ function VendorInvoicesPage() {
                 }
               }}
             >
-              <div
-                className="flex flex-wrap items-start justify-between gap-3"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
