@@ -245,7 +245,10 @@ function VendorInvoicesPage() {
               )}
 
               {inv.payment_proof_url && proofUrls[inv.id] && (
-                <div className="mt-4 rounded-lg border bg-muted/30 p-3 space-y-2">
+                <div
+                  className="mt-4 rounded-lg border bg-muted/30 p-3 space-y-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold">إيصال الدفع المرفوع</span>
                     <a
