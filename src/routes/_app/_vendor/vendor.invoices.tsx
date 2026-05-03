@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Download, FileText, Check, X, ExternalLink } from "lucide-react";
+import { Loader2, Download, FileText, Check, X, ExternalLink, Eye } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD, formatDateTimeAr } from "@/lib/format";
@@ -53,6 +54,7 @@ function VendorInvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
+  const [preview, setPreview] = useState<{ inv: InvoiceRow; url: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -96,30 +98,38 @@ function VendorInvoicesPage() {
     })();
   }, [rows]);
 
-  const downloadPdf = async (inv: InvoiceRow) => {
+  const openPreview = async (inv: InvoiceRow) => {
     if (!inv.pdf_path) {
       toast.error("PDF لم يُنشأ بعد");
       return;
     }
-    // Open window synchronously to preserve the user gesture (mobile Safari
-    // blocks window.open() called after an await).
-    const newTab = window.open("", "_blank");
     setBusy(inv.id);
     const { data, error } = await supabase.storage
       .from("invoices")
       .createSignedUrl(inv.pdf_path, 3600);
     setBusy(null);
     if (error || !data?.signedUrl) {
-      if (newTab) newTab.close();
-      toast.error(error?.message || "تعذر إنشاء رابط التحميل");
+      toast.error(error?.message || "تعذر إنشاء رابط المعاينة");
       return;
     }
-    if (newTab) {
-      newTab.location.href = data.signedUrl;
-    } else {
-      // Popup blocked — fall back to same-tab navigation.
-      window.location.href = data.signedUrl;
-    }
+    setPreview({ inv, url: data.signedUrl });
+  };
+
+  const downloadCurrent = () => {
+    if (!preview) return;
+    const a = document.createElement("a");
+    a.href = preview.url;
+    a.download = `${preview.inv.invoice_number}.pdf`;
+    a.target = "_blank";
+    a.rel = "noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  const openInNewTab = () => {
+    if (!preview) return;
+    window.open(preview.url, "_blank", "noopener,noreferrer");
   };
 
   const confirmPayment = async (inv: InvoiceRow) => {
@@ -203,13 +213,13 @@ function VendorInvoicesPage() {
             <Card
               key={inv.id}
               className="p-4 cursor-pointer transition-colors hover:bg-muted/40 active:bg-muted/60"
-              onClick={() => downloadPdf(inv)}
+              onClick={() => openPreview(inv)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  downloadPdf(inv);
+                  openPreview(inv);
                 }
               }}
             >
@@ -235,14 +245,14 @@ function VendorInvoicesPage() {
                     variant="outline"
                     size="sm"
                     disabled={!inv.pdf_path || busy === inv.id}
-                    onClick={(e) => { e.stopPropagation(); downloadPdf(inv); }}
+                    onClick={(e) => { e.stopPropagation(); openPreview(inv); }}
                   >
                     {busy === inv.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Download className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                     )}
-                    تحميل PDF
+                    معاينة
                   </Button>
                 </div>
               </div>
@@ -308,6 +318,34 @@ function VendorInvoicesPage() {
           ))}
         </div>
       )}
+
+      <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
+        <DialogContent className="max-w-4xl w-[95vw] h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <FileText className="h-4 w-4" />
+              معاينة الفاتورة {preview?.inv.invoice_number}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden bg-muted/30">
+            {preview && (
+              <iframe
+                src={preview.url}
+                title="معاينة الفاتورة"
+                className="w-full h-full border-0 bg-white"
+              />
+            )}
+          </div>
+          <DialogFooter className="p-3 border-t flex-row gap-2 sm:justify-between">
+            <Button variant="outline" size="sm" onClick={openInNewTab}>
+              <ExternalLink className="h-4 w-4" /> فتح في تبويب جديد
+            </Button>
+            <Button size="sm" onClick={downloadCurrent}>
+              <Download className="h-4 w-4" /> تحميل PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
