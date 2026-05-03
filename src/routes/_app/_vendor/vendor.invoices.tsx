@@ -213,13 +213,13 @@ function VendorInvoicesPage() {
             <Card
               key={inv.id}
               className="p-4 cursor-pointer transition-colors hover:bg-muted/40 active:bg-muted/60"
-              onClick={() => downloadPdf(inv)}
+              onClick={() => openPreview(inv)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  downloadPdf(inv);
+                  openPreview(inv);
                 }
               }}
             >
@@ -245,14 +245,14 @@ function VendorInvoicesPage() {
                     variant="outline"
                     size="sm"
                     disabled={!inv.pdf_path || busy === inv.id}
-                    onClick={(e) => { e.stopPropagation(); downloadPdf(inv); }}
+                    onClick={(e) => { e.stopPropagation(); openPreview(inv); }}
                   >
                     {busy === inv.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Download className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                     )}
-                    تحميل PDF
+                    معاينة
                   </Button>
                 </div>
               </div>
