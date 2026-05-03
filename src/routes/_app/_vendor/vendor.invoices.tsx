@@ -191,8 +191,23 @@ function VendorInvoicesPage() {
       ) : (
         <div className="space-y-3">
           {rows.map((inv) => (
-            <Card key={inv.id} className="p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
+            <Card
+              key={inv.id}
+              className="p-4 cursor-pointer transition-colors hover:bg-muted/40 active:bg-muted/60"
+              onClick={() => downloadPdf(inv)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  downloadPdf(inv);
+                }
+              }}
+            >
+              <div
+                className="flex flex-wrap items-start justify-between gap-3"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
