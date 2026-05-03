@@ -318,6 +318,34 @@ function VendorInvoicesPage() {
           ))}
         </div>
       )}
+
+      <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
+        <DialogContent className="max-w-4xl w-[95vw] h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <FileText className="h-4 w-4" />
+              معاينة الفاتورة {preview?.inv.invoice_number}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden bg-muted/30">
+            {preview && (
+              <iframe
+                src={preview.url}
+                title="معاينة الفاتورة"
+                className="w-full h-full border-0 bg-white"
+              />
+            )}
+          </div>
+          <DialogFooter className="p-3 border-t flex-row gap-2 sm:justify-between">
+            <Button variant="outline" size="sm" onClick={openInNewTab}>
+              <ExternalLink className="h-4 w-4" /> فتح في تبويب جديد
+            </Button>
+            <Button size="sm" onClick={downloadCurrent}>
+              <Download className="h-4 w-4" /> تحميل PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
