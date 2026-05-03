@@ -54,6 +54,7 @@ function VendorInvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
+  const [preview, setPreview] = useState<{ inv: InvoiceRow; url: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
