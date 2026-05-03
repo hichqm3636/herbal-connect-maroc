@@ -226,7 +226,7 @@ function VendorInvoicesPage() {
                     variant="outline"
                     size="sm"
                     disabled={!inv.pdf_path || busy === inv.id}
-                    onClick={() => downloadPdf(inv)}
+                    onClick={(e) => { e.stopPropagation(); downloadPdf(inv); }}
                   >
                     {busy === inv.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
