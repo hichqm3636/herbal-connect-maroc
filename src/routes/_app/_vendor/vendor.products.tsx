@@ -482,76 +482,137 @@ function VendorProductsPage() {
             لا توجد منتجات
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-muted-foreground text-xs">
-                <tr className="text-right">
-                  <th className="px-4 py-3 font-medium">المنتج</th>
-                  <th className="px-4 py-3 font-medium">الفئة</th>
-                  <th className="px-4 py-3 font-medium">السعر</th>
-                  <th className="px-4 py-3 font-medium">المخزون</th>
-                  <th className="px-4 py-3 font-medium">الحالة</th>
-                  <th className="px-4 py-3 font-medium">إجراءات</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {filtered.map((p) => {
-                  const lowStock = p.stock != null && p.stock <= p.low_stock_threshold;
-                  return (
-                    <tr key={p.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          {p.image_url ? (
-                            <img src={p.image_url} alt={p.name_ar} className="h-10 w-10 rounded object-cover border" />
-                          ) : (
-                            <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
-                              <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="font-medium truncate">{p.name_ar}</p>
-                            {p.sku && <p className="text-xs text-muted-foreground font-mono">{p.sku}</p>}
-                          </div>
+          <>
+            {/* Mobile: vertical card list */}
+            <ul className="divide-y md:hidden">
+              {filtered.map((p) => {
+                const lowStock = p.stock != null && p.stock <= p.low_stock_threshold;
+                return (
+                  <li key={p.id} className="p-4 space-y-3">
+                    <div className="flex items-start gap-3">
+                      {p.image_url ? (
+                        <img src={p.image_url} alt={p.name_ar} className="h-14 w-14 rounded-lg object-cover border shrink-0" />
+                      ) : (
+                        <div className="h-14 w-14 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{p.category || "—"}</td>
-                      <td className="px-4 py-3 font-bold">{formatMAD(p.price_mad)}</td>
-                      <td className="px-4 py-3">
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold truncate">{p.name_ar}</p>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs text-muted-foreground">
+                          {p.sku && <span className="font-mono" dir="ltr">{p.sku}</span>}
+                          {p.category && <span>· {p.category}</span>}
+                        </div>
+                        <p className="font-bold mt-1">{formatMAD(p.price_mad)}</p>
+                      </div>
+                      <Switch checked={p.active} onCheckedChange={() => toggleActive(p)} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-xs">
+                        <span className="text-muted-foreground">المخزون: </span>
                         {p.stock == null ? (
-                          <span className="text-muted-foreground text-xs">غير محدد</span>
+                          <span className="text-muted-foreground">غير محدد</span>
                         ) : (
-                          <span className={lowStock ? "text-destructive font-bold" : ""}>
+                          <span className={lowStock ? "text-destructive font-bold" : "font-medium"}>
                             {p.stock}
                           </span>
                         )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Switch checked={p.active} onCheckedChange={() => toggleActive(p)} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => openEdit(p)} title="تعديل">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleDuplicate(p)} title="نسخ المنتج">
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-destructive"
-                            onClick={() => setDeleteTarget(p)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => openEdit(p)} title="تعديل">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => handleDuplicate(p)} title="نسخ">
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive"
+                          onClick={() => setDeleteTarget(p)}
+                          title="حذف"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Desktop / tablet: table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 text-muted-foreground text-xs">
+                  <tr className="text-right">
+                    <th className="px-4 py-3 font-medium">المنتج</th>
+                    <th className="px-4 py-3 font-medium">الفئة</th>
+                    <th className="px-4 py-3 font-medium">السعر</th>
+                    <th className="px-4 py-3 font-medium">المخزون</th>
+                    <th className="px-4 py-3 font-medium">الحالة</th>
+                    <th className="px-4 py-3 font-medium">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {filtered.map((p) => {
+                    const lowStock = p.stock != null && p.stock <= p.low_stock_threshold;
+                    return (
+                      <tr key={p.id} className="hover:bg-muted/30">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            {p.image_url ? (
+                              <img src={p.image_url} alt={p.name_ar} className="h-10 w-10 rounded object-cover border" />
+                            ) : (
+                              <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
+                                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{p.name_ar}</p>
+                              {p.sku && <p className="text-xs text-muted-foreground font-mono">{p.sku}</p>}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">{p.category || "—"}</td>
+                        <td className="px-4 py-3 font-bold">{formatMAD(p.price_mad)}</td>
+                        <td className="px-4 py-3">
+                          {p.stock == null ? (
+                            <span className="text-muted-foreground text-xs">غير محدد</span>
+                          ) : (
+                            <span className={lowStock ? "text-destructive font-bold" : ""}>
+                              {p.stock}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Switch checked={p.active} onCheckedChange={() => toggleActive(p)} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => openEdit(p)} title="تعديل">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleDuplicate(p)} title="نسخ المنتج">
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive"
+                              onClick={() => setDeleteTarget(p)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Card>
 
