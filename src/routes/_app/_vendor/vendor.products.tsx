@@ -136,6 +136,19 @@ function toForm(p: ProductRow): FormState {
   };
 }
 
+// Stable HSL color from category string (or product fallback).
+function categoryColor(category: string | null | undefined): string {
+  const s = (category ?? "").trim() || "default";
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return `hsl(${h % 360}, 55%, 45%)`;
+}
+
+function firstLetter(name: string): string {
+  const t = (name ?? "").trim();
+  return t ? t.charAt(0).toUpperCase() : "•";
+}
+
 function VendorProductsPage() {
   const { companyId, user } = useAuth();
   const [products, setProducts] = useState<ProductRow[]>([]);
