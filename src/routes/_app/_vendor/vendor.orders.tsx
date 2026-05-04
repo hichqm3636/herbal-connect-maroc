@@ -149,6 +149,8 @@ function VendorOrdersPage() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [, setTick] = useState(0);
   const [searchText, setSearchText] = useState("");
   const statusFilter: OrderStatus | "all" =
     (search.status as OrderStatus | "all" | undefined) ?? "all";
