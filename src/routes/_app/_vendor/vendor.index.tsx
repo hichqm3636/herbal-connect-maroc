@@ -224,6 +224,27 @@ function VendorDashboard() {
       });
       const monthly = Array.from(buckets.values());
 
+      // Last 14 days delivered revenue (daily series).
+      const dailyMap = new Map<string, DailyPoint>();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(today.getTime() - i * 86_400_000);
+        const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        dailyMap.set(k, {
+          key: k,
+          label: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`,
+          revenue: 0,
+        });
+      }
+      (monthlyOrders ?? []).forEach((o) => {
+        if (o.status !== "delivered") return;
+        const d = new Date(o.created_at as string);
+        const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        const b = dailyMap.get(k);
+        if (b) b.revenue += Number(o.total_mad ?? 0);
+      });
+      const daily14 = Array.from(dailyMap.values());
+
       // Resolve buyer names
       const buyerIds = Array.from(new Set((recent ?? []).map((o) => o.buyer_id)));
       const { data: profiles } = buyerIds.length
@@ -262,6 +283,7 @@ function VendorDashboard() {
         loyaltyPoints,
         ordersByStatus,
         monthly,
+        daily14,
         recentOrders,
         lowStock,
       });
