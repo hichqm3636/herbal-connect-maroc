@@ -136,6 +136,19 @@ function toForm(p: ProductRow): FormState {
   };
 }
 
+// Stable HSL color from category string (or product fallback).
+function categoryColor(category: string | null | undefined): string {
+  const s = (category ?? "").trim() || "default";
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return `hsl(${h % 360}, 55%, 45%)`;
+}
+
+function firstLetter(name: string): string {
+  const t = (name ?? "").trim();
+  return t ? t.charAt(0).toUpperCase() : "•";
+}
+
 function VendorProductsPage() {
   const { companyId, user } = useAuth();
   const [products, setProducts] = useState<ProductRow[]>([]);
@@ -493,16 +506,31 @@ function VendorProductsPage() {
                       {p.image_url ? (
                         <img src={p.image_url} alt={p.name_ar} className="h-14 w-14 rounded-lg object-cover border shrink-0" />
                       ) : (
-                        <div className="h-14 w-14 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                        <div
+                          className="h-14 w-14 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-lg shadow-sm"
+                          style={{ background: categoryColor(p.category) }}
+                        >
+                          {firstLetter(p.name_ar)}
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold truncate">{p.name_ar}</p>
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs text-muted-foreground">
                           {p.sku && <span className="font-mono" dir="ltr">{p.sku}</span>}
-                          {p.category && <span>· {p.category}</span>}
                         </div>
+                        {p.category && (
+                          <Badge
+                            variant="secondary"
+                            className="mt-1.5 text-[10px] border"
+                            style={{
+                              background: `${categoryColor(p.category)}22`,
+                              color: categoryColor(p.category),
+                              borderColor: `${categoryColor(p.category)}55`,
+                            }}
+                          >
+                            {p.category}
+                          </Badge>
+                        )}
                         <p className="font-bold mt-1">{formatMAD(p.price_mad)}</p>
                       </div>
                       <Switch checked={p.active} onCheckedChange={() => toggleActive(p)} />
@@ -564,8 +592,11 @@ function VendorProductsPage() {
                             {p.image_url ? (
                               <img src={p.image_url} alt={p.name_ar} className="h-10 w-10 rounded object-cover border" />
                             ) : (
-                              <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
-                                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                              <div
+                                className="h-10 w-10 rounded flex items-center justify-center text-white font-bold"
+                                style={{ background: categoryColor(p.category) }}
+                              >
+                                {firstLetter(p.name_ar)}
                               </div>
                             )}
                             <div className="min-w-0">
@@ -574,7 +605,23 @@ function VendorProductsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground">{p.category || "—"}</td>
+                        <td className="px-4 py-3">
+                          {p.category ? (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] border"
+                              style={{
+                                background: `${categoryColor(p.category)}22`,
+                                color: categoryColor(p.category),
+                                borderColor: `${categoryColor(p.category)}55`,
+                              }}
+                            >
+                              {p.category}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 font-bold">{formatMAD(p.price_mad)}</td>
                         <td className="px-4 py-3">
                           {p.stock == null ? (
@@ -735,7 +782,7 @@ function VendorProductsPage() {
 
             {/* Pricing */}
             <div>
-              <h3 className="text-sm font-bold mb-3">التسعير (MAD)</h3>
+              <h3 className="text-sm font-bold mb-3">التسعير (د.م)</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <NumField label="سعر البيع *" value={form.price_mad} onChange={(v) => setForm((f) => ({ ...f, price_mad: v }))} />
                 <NumField label="سعر التكلفة" value={form.cost_price} onChange={(v) => setForm((f) => ({ ...f, cost_price: v }))} />

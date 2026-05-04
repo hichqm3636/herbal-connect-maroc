@@ -181,7 +181,7 @@ export function UrlImportDialog({ open, onOpenChange, companyId, onCreated }: Pr
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="ui-price">السعر (MAD) *</Label>
+                  <Label htmlFor="ui-price">السعر (د.م) *</Label>
                   <Input
                     id="ui-price"
                     type="number"

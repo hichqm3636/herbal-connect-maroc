@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { formatMAD } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/super-admin/plans")({
   component: SuperAdminPlansPage,
@@ -123,7 +124,7 @@ function SuperAdminPlansPage() {
           value={
             loading
               ? null
-              : `${revenue.total_mad.toLocaleString("ar-MA")} MAD`
+              : formatMAD(revenue.total_mad)
           }
         />
       </div>

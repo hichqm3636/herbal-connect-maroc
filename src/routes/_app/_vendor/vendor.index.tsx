@@ -18,6 +18,8 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -50,6 +52,12 @@ interface MonthlyPoint {
   orders: number;
 }
 
+interface DailyPoint {
+  key: string; // YYYY-MM-DD
+  label: string; // DD/MM
+  revenue: number;
+}
+
 interface DashboardStats {
   revenueToday: number;
   revenueMonth: number;
@@ -58,6 +66,7 @@ interface DashboardStats {
   loyaltyPoints: number;
   ordersByStatus: Record<OrderStatus, number>;
   monthly: MonthlyPoint[];
+  daily14: DailyPoint[];
   recentOrders: {
     id: string;
     order_number: string;
@@ -217,6 +226,27 @@ function VendorDashboard() {
       });
       const monthly = Array.from(buckets.values());
 
+      // Last 14 days delivered revenue (daily series).
+      const dailyMap = new Map<string, DailyPoint>();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(today.getTime() - i * 86_400_000);
+        const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        dailyMap.set(k, {
+          key: k,
+          label: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`,
+          revenue: 0,
+        });
+      }
+      (monthlyOrders ?? []).forEach((o) => {
+        if (o.status !== "delivered") return;
+        const d = new Date(o.created_at as string);
+        const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        const b = dailyMap.get(k);
+        if (b) b.revenue += Number(o.total_mad ?? 0);
+      });
+      const daily14 = Array.from(dailyMap.values());
+
       // Resolve buyer names
       const buyerIds = Array.from(new Set((recent ?? []).map((o) => o.buyer_id)));
       const { data: profiles } = buyerIds.length
@@ -255,6 +285,7 @@ function VendorDashboard() {
         loyaltyPoints,
         ordersByStatus,
         monthly,
+        daily14,
         recentOrders,
         lowStock,
       });
@@ -304,30 +335,85 @@ function VendorDashboard() {
           label="إيرادات الشهر"
           value={formatMAD(stats.revenueMonth)}
           hint={`اليوم: ${formatMAD(stats.revenueToday)}`}
-          tone="text-success"
+          variant="green"
         />
         <KpiCard
           icon={<ShoppingBag className="h-5 w-5" />}
           label="إجمالي الطلبات"
           value={stats.ordersTotal.toString()}
           hint={`هذا الشهر: ${stats.ordersMonth}`}
-          tone="text-primary"
+          variant="blue"
         />
         <KpiCard
           icon={<Calendar className="h-5 w-5" />}
           label="طلبات نشطة"
-          value={totalActiveOrders.toString()}
-          hint="قيد المعالجة والشحن"
-          tone="text-foreground"
+          value={
+            totalActiveOrders === 0
+              ? "✅ كل شيء منجز!"
+              : totalActiveOrders.toString()
+          }
+          hint={
+            totalActiveOrders === 0
+              ? "لا طلبات معلقة"
+              : "قيد المعالجة والشحن"
+          }
+          variant={totalActiveOrders === 0 ? "green" : "orange"}
+          smallValue={totalActiveOrders === 0}
         />
         <KpiCard
           icon={<Sparkles className="h-5 w-5" />}
           label="نقاط الولاء"
           value={stats.loyaltyPoints.toLocaleString("ar")}
           hint="قابلة للمنح من المخزون الحالي"
-          tone="text-warning-foreground"
+          variant="amber"
         />
       </div>
+
+      {/* Last 14 days revenue (delivered orders) */}
+      <Card className="p-5">
+        <div className="mb-3">
+          <h2 className="text-base font-bold">إيرادات آخر 14 يومًا</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            من الطلبات المُسلَّمة فقط
+          </p>
+        </div>
+        <div className="h-56 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={stats.daily14} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis
+                dataKey="label"
+                stroke="hsl(var(--muted-foreground))"
+                tick={{ fontSize: 11 }}
+              />
+              <YAxis
+                stroke="hsl(var(--muted-foreground))"
+                tick={{ fontSize: 11 }}
+                width={50}
+                tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v}`)}
+                orientation="right"
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+                formatter={(v: number) => [formatMAD(Number(v)), "إيراد اليوم"]}
+              />
+              <Line
+                type="monotone"
+                dataKey="revenue"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
 
       <PlanUsageCard companyId={companyId} />
 
@@ -522,16 +608,47 @@ function VendorDashboard() {
   );
 }
 
+type KpiVariant = "green" | "blue" | "orange" | "amber";
+
+const KPI_VARIANT_CLASSES: Record<KpiVariant, { bg: string; tone: string }> = {
+  green: {
+    bg: "bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-transparent border-emerald-500/30",
+    tone: "text-emerald-700 dark:text-emerald-300",
+  },
+  blue: {
+    bg: "bg-gradient-to-br from-indigo-500/15 via-indigo-500/5 to-transparent border-indigo-500/30",
+    tone: "text-indigo-700 dark:text-indigo-300",
+  },
+  orange: {
+    bg: "bg-gradient-to-br from-orange-500/15 via-orange-500/5 to-transparent border-orange-500/30",
+    tone: "text-orange-700 dark:text-orange-300",
+  },
+  amber: {
+    bg: "bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-transparent border-amber-500/30",
+    tone: "text-amber-700 dark:text-amber-300",
+  },
+};
+
 function KpiCard({
-  icon, label, value, tone, hint,
-}: { icon: React.ReactNode; label: string; value: string; tone: string; hint?: string }) {
+  icon, label, value, variant, hint, smallValue = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  variant: KpiVariant;
+  hint?: string;
+  smallValue?: boolean;
+}) {
+  const v = KPI_VARIANT_CLASSES[variant];
   return (
-    <Card className="p-5">
+    <Card className={`p-5 border ${v.bg}`}>
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">{label}</span>
-        <span className={tone}>{icon}</span>
+        <span className={v.tone}>{icon}</span>
       </div>
-      <div className={`mt-2 text-2xl font-extrabold ${tone}`}>{value}</div>
+      <div className={`mt-2 ${smallValue ? "text-base" : "text-2xl"} font-extrabold ${v.tone}`}>
+        {value}
+      </div>
       {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
     </Card>
   );

@@ -50,10 +50,10 @@ const FORBIDDEN_PATTERNS = [
   },
 ];
 
-// Lines that contain "MAD" as a header label / form field caption rather
+// Lines that contain "MAD" / "د.م" as a header label / form field caption rather
 // than a numeric value display. Matches things like:
-//   "Amount (MAD)"   "الإيرادات (MAD)"   "تكلفة المنتج (MAD)"
-const HEADER_LABEL = /\(MAD\)/;
+//   "Amount (MAD)"   "الإيرادات (MAD)"   "تكلفة المنتج (د.م)"
+const HEADER_LABEL = /\((MAD|د\.م)\)/;
 
 function walk(dir, files = []) {
   for (const entry of readdirSync(dir)) {

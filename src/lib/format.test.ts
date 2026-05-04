@@ -39,25 +39,25 @@ describe("formatMAD", () => {
     expect(output).toMatchSnapshot();
   });
 
-  it("always appends the MAD suffix", () => {
-    expect(formatMAD(0)).toMatch(/ MAD$/);
-    expect(formatMAD(1234.56)).toMatch(/ MAD$/);
+  it("always appends the د.م suffix", () => {
+    expect(formatMAD(0)).toMatch(/ د\.م$/);
+    expect(formatMAD(1234.56)).toMatch(/ د\.م$/);
   });
 
   it("uses comma thousands separators and dot decimals", () => {
-    expect(formatMAD(1234567.89)).toBe("1,234,567.89 MAD");
+    expect(formatMAD(1234567.89)).toBe("1,234,567.89 د.م");
   });
 
   it("always renders exactly two fraction digits", () => {
-    expect(formatMAD(1)).toBe("1.00 MAD");
-    expect(formatMAD(1.5)).toBe("1.50 MAD");
-    expect(formatMAD(1.234)).toBe("1.23 MAD");
+    expect(formatMAD(1)).toBe("1.00 د.م");
+    expect(formatMAD(1.5)).toBe("1.50 د.م");
+    expect(formatMAD(1.234)).toBe("1.23 د.م");
   });
 
   it("falls back to 0.00 for non-finite or missing values", () => {
-    expect(formatMAD(null)).toBe("0.00 MAD");
-    expect(formatMAD(undefined)).toBe("0.00 MAD");
-    expect(formatMAD(Number.NaN)).toBe("0.00 MAD");
-    expect(formatMAD(Number.POSITIVE_INFINITY)).toBe("0.00 MAD");
+    expect(formatMAD(null)).toBe("0.00 د.م");
+    expect(formatMAD(undefined)).toBe("0.00 د.م");
+    expect(formatMAD(Number.NaN)).toBe("0.00 د.م");
+    expect(formatMAD(Number.POSITIVE_INFINITY)).toBe("0.00 د.م");
   });
 });
