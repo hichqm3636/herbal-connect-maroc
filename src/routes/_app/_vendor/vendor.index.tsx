@@ -50,6 +50,12 @@ interface MonthlyPoint {
   orders: number;
 }
 
+interface DailyPoint {
+  key: string; // YYYY-MM-DD
+  label: string; // DD/MM
+  revenue: number;
+}
+
 interface DashboardStats {
   revenueToday: number;
   revenueMonth: number;
@@ -58,6 +64,7 @@ interface DashboardStats {
   loyaltyPoints: number;
   ordersByStatus: Record<OrderStatus, number>;
   monthly: MonthlyPoint[];
+  daily14: DailyPoint[];
   recentOrders: {
     id: string;
     order_number: string;
