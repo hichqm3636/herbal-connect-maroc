@@ -493,16 +493,31 @@ function VendorProductsPage() {
                       {p.image_url ? (
                         <img src={p.image_url} alt={p.name_ar} className="h-14 w-14 rounded-lg object-cover border shrink-0" />
                       ) : (
-                        <div className="h-14 w-14 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                        <div
+                          className="h-14 w-14 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-lg shadow-sm"
+                          style={{ background: categoryColor(p.category) }}
+                        >
+                          {firstLetter(p.name_ar)}
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold truncate">{p.name_ar}</p>
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs text-muted-foreground">
                           {p.sku && <span className="font-mono" dir="ltr">{p.sku}</span>}
-                          {p.category && <span>· {p.category}</span>}
                         </div>
+                        {p.category && (
+                          <Badge
+                            variant="secondary"
+                            className="mt-1.5 text-[10px] border"
+                            style={{
+                              background: `${categoryColor(p.category)}22`,
+                              color: categoryColor(p.category),
+                              borderColor: `${categoryColor(p.category)}55`,
+                            }}
+                          >
+                            {p.category}
+                          </Badge>
+                        )}
                         <p className="font-bold mt-1">{formatMAD(p.price_mad)}</p>
                       </div>
                       <Switch checked={p.active} onCheckedChange={() => toggleActive(p)} />
@@ -564,8 +579,11 @@ function VendorProductsPage() {
                             {p.image_url ? (
                               <img src={p.image_url} alt={p.name_ar} className="h-10 w-10 rounded object-cover border" />
                             ) : (
-                              <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
-                                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                              <div
+                                className="h-10 w-10 rounded flex items-center justify-center text-white font-bold"
+                                style={{ background: categoryColor(p.category) }}
+                              >
+                                {firstLetter(p.name_ar)}
                               </div>
                             )}
                             <div className="min-w-0">
@@ -574,7 +592,23 @@ function VendorProductsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground">{p.category || "—"}</td>
+                        <td className="px-4 py-3">
+                          {p.category ? (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] border"
+                              style={{
+                                background: `${categoryColor(p.category)}22`,
+                                color: categoryColor(p.category),
+                                borderColor: `${categoryColor(p.category)}55`,
+                              }}
+                            >
+                              {p.category}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 font-bold">{formatMAD(p.price_mad)}</td>
                         <td className="px-4 py-3">
                           {p.stock == null ? (
