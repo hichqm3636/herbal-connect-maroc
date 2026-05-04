@@ -333,30 +333,85 @@ function VendorDashboard() {
           label="إيرادات الشهر"
           value={formatMAD(stats.revenueMonth)}
           hint={`اليوم: ${formatMAD(stats.revenueToday)}`}
-          tone="text-success"
+          variant="green"
         />
         <KpiCard
           icon={<ShoppingBag className="h-5 w-5" />}
           label="إجمالي الطلبات"
           value={stats.ordersTotal.toString()}
           hint={`هذا الشهر: ${stats.ordersMonth}`}
-          tone="text-primary"
+          variant="blue"
         />
         <KpiCard
           icon={<Calendar className="h-5 w-5" />}
           label="طلبات نشطة"
-          value={totalActiveOrders.toString()}
-          hint="قيد المعالجة والشحن"
-          tone="text-foreground"
+          value={
+            totalActiveOrders === 0
+              ? "✅ كل شيء منجز!"
+              : totalActiveOrders.toString()
+          }
+          hint={
+            totalActiveOrders === 0
+              ? "لا طلبات معلقة"
+              : "قيد المعالجة والشحن"
+          }
+          variant={totalActiveOrders === 0 ? "green" : "orange"}
+          smallValue={totalActiveOrders === 0}
         />
         <KpiCard
           icon={<Sparkles className="h-5 w-5" />}
           label="نقاط الولاء"
           value={stats.loyaltyPoints.toLocaleString("ar")}
           hint="قابلة للمنح من المخزون الحالي"
-          tone="text-warning-foreground"
+          variant="amber"
         />
       </div>
+
+      {/* Last 14 days revenue (delivered orders) */}
+      <Card className="p-5">
+        <div className="mb-3">
+          <h2 className="text-base font-bold">إيرادات آخر 14 يومًا</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            من الطلبات المُسلَّمة فقط
+          </p>
+        </div>
+        <div className="h-56 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={stats.daily14} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis
+                dataKey="label"
+                stroke="hsl(var(--muted-foreground))"
+                tick={{ fontSize: 11 }}
+              />
+              <YAxis
+                stroke="hsl(var(--muted-foreground))"
+                tick={{ fontSize: 11 }}
+                width={50}
+                tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v}`)}
+                orientation="right"
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+                formatter={(v: number) => [formatMAD(Number(v)), "إيراد اليوم"]}
+              />
+              <Line
+                type="monotone"
+                dataKey="revenue"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
 
       <PlanUsageCard companyId={companyId} />
 
