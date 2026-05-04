@@ -123,7 +123,7 @@ function SuperAdminPlansPage() {
           value={
             loading
               ? null
-              : `${revenue.total_mad.toLocaleString("ar-MA")} MAD`
+              : formatMAD(revenue.total_mad)
           }
         />
       </div>
