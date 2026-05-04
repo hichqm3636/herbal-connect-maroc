@@ -142,6 +142,18 @@ function rangeStart(range: DateRange): Date | null {
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 }
 
+function formatRelativeAr(d: Date): string {
+  const sec = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
+  if (sec < 5) return "الآن";
+  if (sec < 60) return `منذ ${sec} ثانية`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `منذ ${min} دقيقة`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `منذ ${hr} ساعة`;
+  const day = Math.floor(hr / 24);
+  return `منذ ${day} يوم`;
+}
+
 function VendorOrdersPage() {
   const { companyId } = useAuth();
   const search = useSearch({ from: "/_app/_vendor/vendor/orders" });
