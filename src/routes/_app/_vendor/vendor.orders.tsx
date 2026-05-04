@@ -516,48 +516,60 @@ function VendorOrdersPage() {
             لا توجد طلبات مطابقة
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-muted-foreground text-xs">
-                <tr className="text-right">
-                  <th className="px-4 py-3 font-medium">رقم الطلب</th>
-                  <th className="px-4 py-3 font-medium">العميل</th>
-                  <th className="px-4 py-3 font-medium">التاريخ</th>
-                  <th className="px-4 py-3 font-medium">المجموع</th>
-                  <th className="px-4 py-3 font-medium">الحالة</th>
-                  <th className="px-4 py-3 font-medium">إجراء</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {filtered.map((o) => (
-                  <tr
+          <>
+            {/* Mobile: vertical card list */}
+            <ul className="divide-y md:hidden">
+              {filtered.map((o) => {
+                const next = NEXT_STATUS[o.status].filter((s) => s !== "cancelled")[0];
+                const shortId = o.order_number.slice(-4);
+                return (
+                  <li
                     key={o.id}
-                    className="hover:bg-muted/30 cursor-pointer"
+                    className="p-4 cursor-pointer transition-colors hover:bg-muted/40 active:bg-muted/60"
                     onClick={() => openDetail(o)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openDetail(o);
+                      }
+                    }}
                   >
-                    <td className="px-4 py-3 font-mono font-semibold">{o.order_number}</td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{o.buyer_name}</div>
-                      {o.buyer_phone && (
-                        <div className="text-xs text-muted-foreground" dir="ltr">{o.buyer_phone}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                      {new Date(o.created_at).toLocaleDateString("ar")}
-                    </td>
-                    <td className="px-4 py-3 font-bold whitespace-nowrap">{formatMAD(o.total_mad)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col gap-1">
-                        <Badge variant="secondary" className={STATUS_TONE[o.status]}>
-                          {STATUS_LABELS[o.status]}
-                        </Badge>
-                        <Badge variant="secondary" className={cn("w-fit text-[10px]", PAYMENT_STATUS_TONE[o.payment_status])}>
-                          {PAYMENT_STATUS_LABELS[o.payment_status]}
-                        </Badge>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-muted">
+                            #{shortId}
+                          </span>
+                          <Badge variant="secondary" className={STATUS_TONE[o.status]}>
+                            {STATUS_LABELS[o.status]}
+                          </Badge>
+                        </div>
+                        <p className="font-semibold text-sm mt-1.5 truncate">{o.buyer_name}</p>
+                        {o.buyer_phone && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5" dir="ltr">
+                            {o.buyer_phone}
+                          </p>
+                        )}
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap items-center gap-1.5">
+                      <div className="text-left shrink-0">
+                        <div className="font-bold text-sm whitespace-nowrap">
+                          {formatMAD(o.total_mad)}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                          {new Date(o.created_at).toLocaleDateString("ar")}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-3">
+                      <Badge
+                        variant="secondary"
+                        className={cn("text-[10px]", PAYMENT_STATUS_TONE[o.payment_status])}
+                      >
+                        {PAYMENT_STATUS_LABELS[o.payment_status]}
+                      </Badge>
+                      <div className="flex items-center gap-1.5">
                         {o.payment_status === "awaiting_confirmation" && (
                           <Button
                             size="sm"
@@ -569,47 +581,129 @@ function VendorOrdersPage() {
                             }}
                           >
                             <BadgeCheck className="h-4 w-4" />
-                            تأكيد التحويل
+                            تأكيد
                           </Button>
                         )}
-                        {NEXT_STATUS[o.status]
-                          .filter((s) => s !== "cancelled")
-                          .slice(0, 1)
-                          .map((next) => (
+                        {next && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={savingStatus}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              quickAdvance(o, next);
+                            }}
+                          >
+                            {next === "confirmed" && <CheckCircle2 className="h-4 w-4" />}
+                            {next === "preparing" && <Package className="h-4 w-4" />}
+                            {next === "shipped" && <Truck className="h-4 w-4" />}
+                            {next === "delivered" && <CheckCircle2 className="h-4 w-4" />}
+                            {STATUS_LABELS[next]}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Desktop: table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 text-muted-foreground text-xs">
+                  <tr className="text-right">
+                    <th className="px-4 py-3 font-medium">رقم الطلب</th>
+                    <th className="px-4 py-3 font-medium">العميل</th>
+                    <th className="px-4 py-3 font-medium">التاريخ</th>
+                    <th className="px-4 py-3 font-medium">المجموع</th>
+                    <th className="px-4 py-3 font-medium">الحالة</th>
+                    <th className="px-4 py-3 font-medium">إجراء</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {filtered.map((o) => (
+                    <tr
+                      key={o.id}
+                      className="hover:bg-muted/30 cursor-pointer"
+                      onClick={() => openDetail(o)}
+                    >
+                      <td className="px-4 py-3 font-mono font-semibold">{o.order_number}</td>
+                      <td className="px-4 py-3">
+                        <div className="font-medium">{o.buyer_name}</div>
+                        {o.buyer_phone && (
+                          <div className="text-xs text-muted-foreground" dir="ltr">{o.buyer_phone}</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                        {new Date(o.created_at).toLocaleDateString("ar")}
+                      </td>
+                      <td className="px-4 py-3 font-bold whitespace-nowrap">{formatMAD(o.total_mad)}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1">
+                          <Badge variant="secondary" className={STATUS_TONE[o.status]}>
+                            {STATUS_LABELS[o.status]}
+                          </Badge>
+                          <Badge variant="secondary" className={cn("w-fit text-[10px]", PAYMENT_STATUS_TONE[o.payment_status])}>
+                            {PAYMENT_STATUS_LABELS[o.payment_status]}
+                          </Badge>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {o.payment_status === "awaiting_confirmation" && (
                             <Button
-                              key={next}
                               size="sm"
-                              variant="outline"
-                              disabled={savingStatus}
+                              variant="default"
+                              disabled={savingPayment}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                quickAdvance(o, next);
+                                confirmTransfer(o);
                               }}
                             >
-                              {next === "confirmed" && <CheckCircle2 className="h-4 w-4" />}
-                              {next === "preparing" && <Package className="h-4 w-4" />}
-                              {next === "shipped" && <Truck className="h-4 w-4" />}
-                              {next === "delivered" && <CheckCircle2 className="h-4 w-4" />}
-                              {STATUS_LABELS[next]}
+                              <BadgeCheck className="h-4 w-4" />
+                              تأكيد التحويل
                             </Button>
-                          ))}
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDetail(o);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                          )}
+                          {NEXT_STATUS[o.status]
+                            .filter((s) => s !== "cancelled")
+                            .slice(0, 1)
+                            .map((next) => (
+                              <Button
+                                key={next}
+                                size="sm"
+                                variant="outline"
+                                disabled={savingStatus}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  quickAdvance(o, next);
+                                }}
+                              >
+                                {next === "confirmed" && <CheckCircle2 className="h-4 w-4" />}
+                                {next === "preparing" && <Package className="h-4 w-4" />}
+                                {next === "shipped" && <Truck className="h-4 w-4" />}
+                                {next === "delivered" && <CheckCircle2 className="h-4 w-4" />}
+                                {STATUS_LABELS[next]}
+                              </Button>
+                            ))}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDetail(o);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Card>
 
