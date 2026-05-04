@@ -104,7 +104,7 @@ export function QuickAddDialog({ open, onOpenChange, companyId, onCreated }: Pro
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="qa-price">السعر (MAD) *</Label>
+              <Label htmlFor="qa-price">السعر (د.م) *</Label>
               <Input
                 id="qa-price"
                 type="number"

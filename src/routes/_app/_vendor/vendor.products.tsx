@@ -735,7 +735,7 @@ function VendorProductsPage() {
 
             {/* Pricing */}
             <div>
-              <h3 className="text-sm font-bold mb-3">التسعير (MAD)</h3>
+              <h3 className="text-sm font-bold mb-3">التسعير (د.م)</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <NumField label="سعر البيع *" value={form.price_mad} onChange={(v) => setForm((f) => ({ ...f, price_mad: v }))} />
                 <NumField label="سعر التكلفة" value={form.cost_price} onChange={(v) => setForm((f) => ({ ...f, cost_price: v }))} />
