@@ -608,16 +608,47 @@ function VendorDashboard() {
   );
 }
 
+type KpiVariant = "green" | "blue" | "orange" | "amber";
+
+const KPI_VARIANT_CLASSES: Record<KpiVariant, { bg: string; tone: string }> = {
+  green: {
+    bg: "bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-transparent border-emerald-500/30",
+    tone: "text-emerald-700 dark:text-emerald-300",
+  },
+  blue: {
+    bg: "bg-gradient-to-br from-indigo-500/15 via-indigo-500/5 to-transparent border-indigo-500/30",
+    tone: "text-indigo-700 dark:text-indigo-300",
+  },
+  orange: {
+    bg: "bg-gradient-to-br from-orange-500/15 via-orange-500/5 to-transparent border-orange-500/30",
+    tone: "text-orange-700 dark:text-orange-300",
+  },
+  amber: {
+    bg: "bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-transparent border-amber-500/30",
+    tone: "text-amber-700 dark:text-amber-300",
+  },
+};
+
 function KpiCard({
-  icon, label, value, tone, hint,
-}: { icon: React.ReactNode; label: string; value: string; tone: string; hint?: string }) {
+  icon, label, value, variant, hint, smallValue = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  variant: KpiVariant;
+  hint?: string;
+  smallValue?: boolean;
+}) {
+  const v = KPI_VARIANT_CLASSES[variant];
   return (
-    <Card className="p-5">
+    <Card className={`p-5 border ${v.bg}`}>
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">{label}</span>
-        <span className={tone}>{icon}</span>
+        <span className={v.tone}>{icon}</span>
       </div>
-      <div className={`mt-2 text-2xl font-extrabold ${tone}`}>{value}</div>
+      <div className={`mt-2 ${smallValue ? "text-base" : "text-2xl"} font-extrabold ${v.tone}`}>
+        {value}
+      </div>
       {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
     </Card>
   );
