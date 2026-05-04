@@ -209,12 +209,27 @@ function VendorOrdersPage() {
     );
     setLoading(false);
     setRefreshing(false);
+    setLastUpdated(new Date());
   };
 
   useEffect(() => {
     loadOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);
+
+  // Auto-refresh every 30 seconds.
+  useEffect(() => {
+    if (!companyId) return;
+    const id = window.setInterval(() => loadOrders(true), 30_000);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId]);
+
+  // Re-render every 10 seconds so the "آخر تحديث: منذ X" string stays fresh.
+  useEffect(() => {
+    const id = window.setInterval(() => setTick((t) => t + 1), 10_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   // Realtime: live-refresh on any change to the company's orders.
   useEffect(() => {
