@@ -265,19 +265,30 @@ function VendorInvoicesPage() {
                     <div className="text-lg font-bold">{formatMAD(inv.total_mad)}</div>
                     <div className="text-[11px] text-muted-foreground">شامل ض.ق.م</div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!inv.pdf_path || busy === inv.id}
-                    onClick={(e) => { e.stopPropagation(); openPreview(inv); }}
-                  >
-                    {busy === inv.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                    معاينة
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!inv.pdf_path || busy === inv.id}
+                      onClick={(e) => { e.stopPropagation(); openPreview(inv); }}
+                    >
+                      {busy === inv.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                      <span className="hidden sm:inline">معاينة</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      disabled={!inv.pdf_path || busy === inv.id}
+                      onClick={(e) => { e.stopPropagation(); downloadInvoice(inv); }}
+                      title="تحميل PDF"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
 
