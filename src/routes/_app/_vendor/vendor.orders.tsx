@@ -440,15 +440,12 @@ function VendorOrdersPage() {
             {counts.all} طلب · {filtered.length} معروض
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => loadOrders(true)}
-          disabled={refreshing || loading}
-        >
-          <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-          تحديث
-        </Button>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
+          {lastUpdated
+            ? `آخر تحديث: ${formatRelativeAr(lastUpdated)}`
+            : "جاري التحميل…"}
+        </div>
       </header>
 
       {/* Status quick-filter chips */}
