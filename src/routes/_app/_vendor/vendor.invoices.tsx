@@ -115,6 +115,30 @@ function VendorInvoicesPage() {
     setPreview({ inv, url: data.signedUrl });
   };
 
+  const downloadInvoice = async (inv: InvoiceRow) => {
+    if (!inv.pdf_path) {
+      toast.error("PDF لم يُنشأ بعد");
+      return;
+    }
+    setBusy(inv.id);
+    const { data, error } = await supabase.storage
+      .from("invoices")
+      .createSignedUrl(inv.pdf_path, 3600);
+    setBusy(null);
+    if (error || !data?.signedUrl) {
+      toast.error(error?.message || "تعذر إنشاء رابط التحميل");
+      return;
+    }
+    const a = document.createElement("a");
+    a.href = data.signedUrl;
+    a.download = `${inv.invoice_number}.pdf`;
+    a.target = "_blank";
+    a.rel = "noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
   const downloadCurrent = () => {
     if (!preview) return;
     const a = document.createElement("a");
