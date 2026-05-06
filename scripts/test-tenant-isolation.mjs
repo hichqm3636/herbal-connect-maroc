@@ -115,12 +115,15 @@ async function tests() {
     log(blocked, "User A cannot DELETE B's products");
   });
 
-  // 4. User A cannot see B's orders (no public policy on orders)
+  // 4. The B order's buyer is user A (cross-vendor purchase). They should see
+  //    THAT order as buyer, but not be able to access it as a vendor admin.
+  //    Filter by buyer_id != A.user to test cross-tenant leakage.
   await asUser(A.user, async () => {
     const { rows } = await client.query(
-      `SELECT id FROM orders WHERE company_id = $1`, [B.company],
+      `SELECT id FROM orders WHERE company_id = $1 AND buyer_id != $2`,
+      [B.company, A.user],
     );
-    log(rows.length === 0, "User A cannot see B's orders");
+    log(rows.length === 0, "User A cannot see B's orders from other buyers");
   });
 
   // 5. User A cannot UPDATE B's orders
