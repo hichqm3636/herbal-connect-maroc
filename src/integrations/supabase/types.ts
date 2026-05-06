@@ -1804,6 +1804,14 @@ export type Database = {
         Args: { _company_id: string }
         Returns: string
       }
+      get_company_plan_limits: {
+        Args: { _company_id: string }
+        Returns: {
+          max_clients: number
+          max_products: number
+          max_users: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
