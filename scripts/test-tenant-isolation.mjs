@@ -13,7 +13,7 @@
 import { Client } from "pg";
 import { randomUUID } from "node:crypto";
 
-const client = new Client();
+const client = new Client({ ssl: { rejectUnauthorized: false } });
 await client.connect();
 
 const A = { company: randomUUID(), user: randomUUID(), product: randomUUID(), order: randomUUID() };
