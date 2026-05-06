@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test:format-mad": "node scripts/check-mad-format.mjs",
+    "test:tenant-rls": "node scripts/audit-tenant-rls.mjs",
     "test": "vitest run --config ./vitest.config.ts",
     "test:watch": "vitest --config ./vitest.config.ts",
     "test:e2e": "playwright test --config playwright.config.ts"
