@@ -70,9 +70,9 @@ async function setup() {
   );
   // Product belonging to company B
   await client.query(
-    `INSERT INTO products (id, company_id, name_ar, price_mad, active)
-     VALUES ($1, $2, 'منتج B', 100, true)`,
-    [B.product, B.company],
+    `INSERT INTO products (id, company_id, name_ar, price_mad, active, external_id)
+     VALUES ($1, $2, 'منتج B', 100, true, $3)`,
+    [B.product, B.company, `iso-${B.product.slice(0,8)}`],
   );
   // Order belonging to company B with buyer = some random uuid (not user A)
   const fakeBuyer = randomUUID();
