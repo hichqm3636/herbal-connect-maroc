@@ -313,6 +313,63 @@ function VendorAnalyticsPage() {
           </div>
         )}
       </Card>
+      {/* Cached reports — Materialized Views (refreshed hourly) */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="إيرادات 30 يوم"
+          value={rev ? formatMAD(rev.revenue_mad) : "—"}
+          loading={revenueQ.isLoading}
+        />
+        <KpiCard
+          label="طلبات 30 يوم"
+          value={rev ? String(rev.orders_count) : "—"}
+          loading={revenueQ.isLoading}
+        />
+        <KpiCard
+          label="عملاء فريدون"
+          value={rev ? String(rev.unique_buyers) : "—"}
+          loading={revenueQ.isLoading}
+        />
+        <KpiCard
+          label="متوسط قيمة الطلب"
+          value={rev ? formatMAD(rev.avg_order_value) : "—"}
+          loading={revenueQ.isLoading}
+        />
+      </div>
+
+      <Card className="p-4">
+        <h2 className="font-bold mb-3">أفضل 10 منتجات (30 يوم)</h2>
+        {topProductsQ.isLoading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : (topProductsQ.data ?? []).length === 0 ? (
+          <p className="text-sm text-muted-foreground">لا توجد مبيعات في هذه الفترة</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-right text-xs text-muted-foreground">
+                <tr>
+                  <th className="py-2">المنتج</th>
+                  <th className="py-2">وحدات</th>
+                  <th className="py-2">طلبات</th>
+                  <th className="py-2">الإيراد</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(topProductsQ.data ?? []).map((r) => (
+                  <tr key={r.product_id} className="border-t">
+                    <td className="py-2 truncate max-w-[200px]">
+                      {topNamesQ.data?.get(r.product_id) ?? r.product_id.slice(0, 8)}
+                    </td>
+                    <td className="py-2 tabular-nums">{r.units_sold}</td>
+                    <td className="py-2 tabular-nums">{r.orders_count}</td>
+                    <td className="py-2 tabular-nums">{formatMAD(r.revenue_mad)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
