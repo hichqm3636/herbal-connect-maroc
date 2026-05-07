@@ -128,7 +128,57 @@ function VendorAnalyticsPage() {
     },
   });
 
+  // Fast cached reports from materialized views (refreshed hourly)
+  const revenueQ = useQuery({
+    queryKey: ["mv-revenue-30d", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_company_revenue_30d");
+      if (error) throw error;
+      return (data?.[0] ?? null) as
+        | {
+            orders_count: number;
+            unique_buyers: number;
+            revenue_mad: number;
+            avg_order_value: number;
+            last_order_at: string | null;
+          }
+        | null;
+    },
+  });
+
+  const topProductsQ = useQuery({
+    queryKey: ["mv-top-products-30d", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_company_top_products_30d", {
+        _limit: 10,
+      });
+      if (error) throw error;
+      return (data ?? []) as {
+        product_id: string;
+        units_sold: number;
+        revenue_mad: number;
+        orders_count: number;
+      }[];
+    },
+  });
+
+  const topProductIds = (topProductsQ.data ?? []).map((r) => r.product_id);
+  const topNamesQ = useQuery({
+    queryKey: ["mv-top-names", topProductIds.join(",")],
+    enabled: topProductIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id, name_ar")
+        .in("id", topProductIds);
+      return new Map((data ?? []).map((p) => [p.id, p.name_ar]));
+    },
+  });
+
   const f = funnelQ.data;
+  const rev = revenueQ.data;
 
   return (
     <div dir="rtl" className="space-y-5">
