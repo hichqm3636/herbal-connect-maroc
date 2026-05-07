@@ -17,6 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { AnalyticsRecommendations } from "@/components/AnalyticsRecommendations";
+import { formatMAD } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/_vendor/vendor/analytics")({
   component: VendorAnalyticsPage,
@@ -127,7 +128,57 @@ function VendorAnalyticsPage() {
     },
   });
 
+  // Fast cached reports from materialized views (refreshed hourly)
+  const revenueQ = useQuery({
+    queryKey: ["mv-revenue-30d", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_company_revenue_30d");
+      if (error) throw error;
+      return (data?.[0] ?? null) as
+        | {
+            orders_count: number;
+            unique_buyers: number;
+            revenue_mad: number;
+            avg_order_value: number;
+            last_order_at: string | null;
+          }
+        | null;
+    },
+  });
+
+  const topProductsQ = useQuery({
+    queryKey: ["mv-top-products-30d", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_company_top_products_30d", {
+        _limit: 10,
+      });
+      if (error) throw error;
+      return (data ?? []) as {
+        product_id: string;
+        units_sold: number;
+        revenue_mad: number;
+        orders_count: number;
+      }[];
+    },
+  });
+
+  const topProductIds = (topProductsQ.data ?? []).map((r) => r.product_id);
+  const topNamesQ = useQuery({
+    queryKey: ["mv-top-names", topProductIds.join(",")],
+    enabled: topProductIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id, name_ar")
+        .in("id", topProductIds);
+      return new Map((data ?? []).map((p) => [p.id, p.name_ar]));
+    },
+  });
+
   const f = funnelQ.data;
+  const rev = revenueQ.data;
 
   return (
     <div dir="rtl" className="space-y-5">
@@ -262,6 +313,63 @@ function VendorAnalyticsPage() {
           </div>
         )}
       </Card>
+      {/* Cached reports — Materialized Views (refreshed hourly) */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="إيرادات 30 يوم"
+          value={rev ? formatMAD(rev.revenue_mad) : "—"}
+          loading={revenueQ.isLoading}
+        />
+        <KpiCard
+          label="طلبات 30 يوم"
+          value={rev ? String(rev.orders_count) : "—"}
+          loading={revenueQ.isLoading}
+        />
+        <KpiCard
+          label="عملاء فريدون"
+          value={rev ? String(rev.unique_buyers) : "—"}
+          loading={revenueQ.isLoading}
+        />
+        <KpiCard
+          label="متوسط قيمة الطلب"
+          value={rev ? formatMAD(rev.avg_order_value) : "—"}
+          loading={revenueQ.isLoading}
+        />
+      </div>
+
+      <Card className="p-4">
+        <h2 className="font-bold mb-3">أفضل 10 منتجات (30 يوم)</h2>
+        {topProductsQ.isLoading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : (topProductsQ.data ?? []).length === 0 ? (
+          <p className="text-sm text-muted-foreground">لا توجد مبيعات في هذه الفترة</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-right text-xs text-muted-foreground">
+                <tr>
+                  <th className="py-2">المنتج</th>
+                  <th className="py-2">وحدات</th>
+                  <th className="py-2">طلبات</th>
+                  <th className="py-2">الإيراد</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(topProductsQ.data ?? []).map((r) => (
+                  <tr key={r.product_id} className="border-t">
+                    <td className="py-2 truncate max-w-[200px]">
+                      {topNamesQ.data?.get(r.product_id) ?? r.product_id.slice(0, 8)}
+                    </td>
+                    <td className="py-2 tabular-nums">{r.units_sold}</td>
+                    <td className="py-2 tabular-nums">{r.orders_count}</td>
+                    <td className="py-2 tabular-nums">{formatMAD(r.revenue_mad)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
@@ -294,6 +402,19 @@ function Step({
           {drop >= 50 ? <XCircle className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}{" "}
           فقدان {drop}%
         </p>
+      )}
+    </div>
+  );
+}
+
+function KpiCard({ label, value, loading }: { label: string; value: string; loading?: boolean }) {
+  return (
+    <div className="rounded-lg border bg-card p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      {loading ? (
+        <Skeleton className="mt-1 h-7 w-24" />
+      ) : (
+        <p className="mt-1 text-xl font-extrabold tabular-nums">{value}</p>
       )}
     </div>
   );
