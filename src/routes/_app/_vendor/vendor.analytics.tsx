@@ -17,6 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { AnalyticsRecommendations } from "@/components/AnalyticsRecommendations";
+import { formatMAD } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/_vendor/vendor/analytics")({
   component: VendorAnalyticsPage,
