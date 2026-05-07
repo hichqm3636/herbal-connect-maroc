@@ -1640,7 +1640,67 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      mv_company_daily_sales: {
+        Row: {
+          company_id: string | null
+          day: string | null
+          orders_count: number | null
+          revenue_mad: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mv_company_revenue_30d: {
+        Row: {
+          avg_order_value: number | null
+          company_id: string | null
+          last_order_at: string | null
+          orders_count: number | null
+          revenue_mad: number | null
+          unique_buyers: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mv_company_top_products_30d: {
+        Row: {
+          company_id: string | null
+          orders_count: number | null
+          product_id: string | null
+          revenue_mad: number | null
+          units_sold: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       _tmp_check_auth_user: {
@@ -1804,12 +1864,39 @@ export type Database = {
         Args: { _company_id: string }
         Returns: string
       }
+      get_company_daily_sales: {
+        Args: { _days?: number }
+        Returns: {
+          day: string
+          orders_count: number
+          revenue_mad: number
+        }[]
+      }
       get_company_plan_limits: {
         Args: { _company_id: string }
         Returns: {
           max_clients: number
           max_products: number
           max_users: number
+        }[]
+      }
+      get_company_revenue_30d: {
+        Args: never
+        Returns: {
+          avg_order_value: number
+          last_order_at: string
+          orders_count: number
+          revenue_mad: number
+          unique_buyers: number
+        }[]
+      }
+      get_company_top_products_30d: {
+        Args: { _limit?: number }
+        Returns: {
+          orders_count: number
+          product_id: string
+          revenue_mad: number
+          units_sold: number
         }[]
       }
       has_role: {
@@ -1900,6 +1987,7 @@ export type Database = {
         }
         Returns: Json
       }
+      refresh_reporting_views: { Args: never; Returns: undefined }
       simulate_subscription_payment: {
         Args: { p_plan_id: string }
         Returns: Json
