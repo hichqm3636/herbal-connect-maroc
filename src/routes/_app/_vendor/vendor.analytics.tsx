@@ -406,3 +406,16 @@ function Step({
     </div>
   );
 }
+
+function KpiCard({ label, value, loading }: { label: string; value: string; loading?: boolean }) {
+  return (
+    <div className="rounded-lg border bg-card p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      {loading ? (
+        <Skeleton className="mt-1 h-7 w-24" />
+      ) : (
+        <p className="mt-1 text-xl font-extrabold tabular-nums">{value}</p>
+      )}
+    </div>
+  );
+}
