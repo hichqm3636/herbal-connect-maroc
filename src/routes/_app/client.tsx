@@ -27,6 +27,9 @@ import { ClientOnboarding } from "@/components/client/ClientOnboarding";
 import { LoyaltyCard } from "@/components/client/LoyaltyCard";
 import { SampleVendors } from "@/components/client/SampleVendors";
 import type { CartProduct } from "@/hooks/useCart";
+import { parseTiers } from "@/lib/pricing";
+import { ClientSearchBar } from "@/components/client/ClientSearchBar";
+import { WhatsAppFloat } from "@/components/client/WhatsAppFloat";
 
 export const Route = createFileRoute("/_app/client")({
   component: ClientDashboard,
@@ -181,6 +184,7 @@ async function loadDashboard(userId: string): Promise<DashboardData> {
           o.companies?.display_name || o.companies?.name || undefined,
         minimum_order: p.minimum_order ?? 1,
         pack_size: p.pack_size ?? 1,
+        price_tiers: parseTiers(p.price_tiers),
       };
       if (existing) {
         existing.qty += it.quantity;
