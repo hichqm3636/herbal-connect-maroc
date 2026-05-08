@@ -37,7 +37,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatMAD } from "@/lib/format";
 import { buildWhatsappLink } from "@/utils/whatsapp";
 import { track } from "@/lib/analytics";
-import { clearOrderSource, getOrderSource } from "@/lib/orderAttribution";
+import { clearOrderSource, getOrderSource, consumeFastCheckout } from "@/lib/orderAttribution";
 import { getAllVariants } from "@/lib/ab";
 import { toast } from "sonner";
 
