@@ -211,6 +211,34 @@ function CheckoutPage() {
     };
   }, [user]);
 
+  // One-tap checkout: if the user came in via "إعادة آخر طلب" AND profile is
+  // complete (name/phone/address prefilled), auto-place the order after a
+  // brief countdown so they can cancel.
+  const fastRef = useRef<boolean>(false);
+  const [fastCountdown, setFastCountdown] = useState<number | null>(null);
+  useEffect(() => {
+    if (fastRef.current) return;
+    if (!user || !vendor || cart.items.length === 0) return;
+    if (!consumeFastCheckout()) return;
+    fastRef.current = true;
+    // Wait one tick for prefill to populate state.
+    requestAnimationFrame(() => setFastCountdown(3));
+  }, [user, vendor, cart.items.length]);
+
+  useEffect(() => {
+    if (fastCountdown === null) return;
+    if (fastCountdown <= 0) {
+      setFastCountdown(null);
+      if (formValid && !submitting) {
+        void handlePlaceOrder();
+      }
+      return;
+    }
+    const t = setTimeout(() => setFastCountdown((n) => (n ?? 1) - 1), 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fastCountdown]);
+
   // Vendor
   useEffect(() => {
     if (!vendorId) {
