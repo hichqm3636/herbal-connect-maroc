@@ -38,3 +38,27 @@ export function clearOrderSource(): void {
     /* ignore */
   }
 }
+
+const FAST_KEY = "order_fast_checkout";
+
+/** Flag the next checkout as one-tap (auto-submits if profile complete). */
+export function setFastCheckout(): void {
+  try {
+    if (typeof window === "undefined") return;
+    sessionStorage.setItem(FAST_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+export function consumeFastCheckout(): boolean {
+  try {
+    if (typeof window === "undefined") return false;
+    const v = sessionStorage.getItem(FAST_KEY);
+    if (v) sessionStorage.removeItem(FAST_KEY);
+    return v === "1";
+  } catch {
+    return false;
+  }
+}
+

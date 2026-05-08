@@ -27,6 +27,9 @@ import { ClientOnboarding } from "@/components/client/ClientOnboarding";
 import { LoyaltyCard } from "@/components/client/LoyaltyCard";
 import { SampleVendors } from "@/components/client/SampleVendors";
 import type { CartProduct } from "@/hooks/useCart";
+import { parseTiers } from "@/lib/pricing";
+import { ClientSearchBar } from "@/components/client/ClientSearchBar";
+import { WhatsAppFloat } from "@/components/client/WhatsAppFloat";
 
 export const Route = createFileRoute("/_app/client")({
   component: ClientDashboard,
@@ -69,6 +72,7 @@ interface OrderRow {
       price_mad: number;
       minimum_order: number | null;
       pack_size: number | null;
+      price_tiers: unknown;
     } | null;
   }[];
 }
@@ -100,7 +104,7 @@ async function loadDashboard(userId: string): Promise<DashboardData> {
        order_items (
          quantity, unit_price_mad,
          products:product_id (
-           id, name_ar, image_url, stock, price_mad, minimum_order, pack_size
+           id, name_ar, image_url, stock, price_mad, minimum_order, pack_size, price_tiers
          )
        )`,
     )
@@ -180,6 +184,7 @@ async function loadDashboard(userId: string): Promise<DashboardData> {
           o.companies?.display_name || o.companies?.name || undefined,
         minimum_order: p.minimum_order ?? 1,
         pack_size: p.pack_size ?? 1,
+        price_tiers: parseTiers(p.price_tiers),
       };
       if (existing) {
         existing.qty += it.quantity;
@@ -330,8 +335,10 @@ function ClientDashboard() {
   const hasNoOrders = data.recentOrders.length === 0;
 
   return (
-    <div className="space-y-6 pb-8" dir="rtl">
+    <div className="space-y-6 pb-24" dir="rtl">
       <ClientHero firstName={data.firstName} />
+
+      <ClientSearchBar />
 
       {data.alerts.length > 0 && <AlertsBanner alerts={data.alerts} />}
 
@@ -353,6 +360,8 @@ function ClientDashboard() {
           <ReorderSection products={data.reorderProducts} />
         </>
       )}
+
+      <WhatsAppFloat />
     </div>
   );
 }

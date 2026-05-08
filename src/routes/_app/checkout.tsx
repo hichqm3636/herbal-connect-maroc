@@ -37,7 +37,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatMAD } from "@/lib/format";
 import { buildWhatsappLink } from "@/utils/whatsapp";
 import { track } from "@/lib/analytics";
-import { clearOrderSource, getOrderSource } from "@/lib/orderAttribution";
+import { clearOrderSource, getOrderSource, consumeFastCheckout } from "@/lib/orderAttribution";
 import { getAllVariants } from "@/lib/ab";
 import { toast } from "sonner";
 
@@ -210,6 +210,34 @@ function CheckoutPage() {
       alive = false;
     };
   }, [user]);
+
+  // One-tap checkout: if the user came in via "إعادة آخر طلب" AND profile is
+  // complete (name/phone/address prefilled), auto-place the order after a
+  // brief countdown so they can cancel.
+  const fastRef = useRef<boolean>(false);
+  const [fastCountdown, setFastCountdown] = useState<number | null>(null);
+  useEffect(() => {
+    if (fastRef.current) return;
+    if (!user || !vendor || cart.items.length === 0) return;
+    if (!consumeFastCheckout()) return;
+    fastRef.current = true;
+    // Wait one tick for prefill to populate state.
+    requestAnimationFrame(() => setFastCountdown(3));
+  }, [user, vendor, cart.items.length]);
+
+  useEffect(() => {
+    if (fastCountdown === null) return;
+    if (fastCountdown <= 0) {
+      setFastCountdown(null);
+      if (formValid && !submitting) {
+        void handlePlaceOrder();
+      }
+      return;
+    }
+    const t = setTimeout(() => setFastCountdown((n) => (n ?? 1) - 1), 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fastCountdown]);
 
   // Vendor
   useEffect(() => {
@@ -748,6 +776,25 @@ ${shippingAddress.trim() ? `📍 العنوان: ${shippingAddress.trim()}` : ""
         <TrustBadge icon={<Truck className="h-4 w-4 text-primary" />} label="توصيل سريع" />
         <TrustBadge icon={<Headphones className="h-4 w-4 text-primary" />} label="دعم مباشر" />
       </div>
+
+      {fastCountdown !== null && (
+        <Card className="mb-4 flex items-center justify-between gap-3 border-emerald-500/40 bg-emerald-500/10 p-4">
+          <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300">
+            <Zap className="h-5 w-5" />
+            <span>
+              إرسال الطلب تلقائياً خلال <b>{fastCountdown}</b> ثوانٍ…
+            </span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setFastCountdown(null)}
+          >
+            إيقاف
+          </Button>
+        </Card>
+      )}
+
 
       <div className="grid gap-4 lg:grid-cols-[1fr,360px]">
         {/* LEFT: Form (single page) */}
