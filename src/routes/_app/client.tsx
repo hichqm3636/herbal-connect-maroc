@@ -69,6 +69,7 @@ interface OrderRow {
       price_mad: number;
       minimum_order: number | null;
       pack_size: number | null;
+      price_tiers: unknown;
     } | null;
   }[];
 }
@@ -100,7 +101,7 @@ async function loadDashboard(userId: string): Promise<DashboardData> {
        order_items (
          quantity, unit_price_mad,
          products:product_id (
-           id, name_ar, image_url, stock, price_mad, minimum_order, pack_size
+           id, name_ar, image_url, stock, price_mad, minimum_order, pack_size, price_tiers
          )
        )`,
     )
