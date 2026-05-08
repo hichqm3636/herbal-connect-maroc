@@ -777,6 +777,25 @@ ${shippingAddress.trim() ? `📍 العنوان: ${shippingAddress.trim()}` : ""
         <TrustBadge icon={<Headphones className="h-4 w-4 text-primary" />} label="دعم مباشر" />
       </div>
 
+      {fastCountdown !== null && (
+        <Card className="mb-4 flex items-center justify-between gap-3 border-emerald-500/40 bg-emerald-500/10 p-4">
+          <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300">
+            <Zap className="h-5 w-5" />
+            <span>
+              إرسال الطلب تلقائياً خلال <b>{fastCountdown}</b> ثوانٍ…
+            </span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setFastCountdown(null)}
+          >
+            إيقاف
+          </Button>
+        </Card>
+      )}
+
+
       <div className="grid gap-4 lg:grid-cols-[1fr,360px]">
         {/* LEFT: Form (single page) */}
         <div className="space-y-4">
