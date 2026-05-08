@@ -151,7 +151,10 @@ export function ClientSearchBar() {
                       to="/store/$slug"
                       params={{ slug: h.slug }}
                       onClick={() => {
-                        trackClient("vendor_store_view", { vendor_id: h.id, source: "search" });
+                        trackClient("quick_action_click", {
+                          action: "search_vendor_click",
+                          vendor_id: h.id,
+                        });
                         setOpen(false);
                       }}
                       className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-accent"
