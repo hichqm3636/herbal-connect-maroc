@@ -335,8 +335,10 @@ function ClientDashboard() {
   const hasNoOrders = data.recentOrders.length === 0;
 
   return (
-    <div className="space-y-6 pb-8" dir="rtl">
+    <div className="space-y-6 pb-24" dir="rtl">
       <ClientHero firstName={data.firstName} />
+
+      <ClientSearchBar />
 
       {data.alerts.length > 0 && <AlertsBanner alerts={data.alerts} />}
 
@@ -358,6 +360,8 @@ function ClientDashboard() {
           <ReorderSection products={data.reorderProducts} />
         </>
       )}
+
+      <WhatsAppFloat />
     </div>
   );
 }
