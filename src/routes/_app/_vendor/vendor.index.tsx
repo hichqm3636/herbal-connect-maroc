@@ -239,7 +239,19 @@ function VendorDashboard() {
       if (!alive) return;
 
       const revenueToday = (revToday ?? []).reduce((s, r) => s + Number(r.total_mad ?? 0), 0);
+      const revenueYesterday = (revYesterday ?? []).reduce((s, r) => s + Number(r.total_mad ?? 0), 0);
       const revenueMonth = (revMonth ?? []).reduce((s, r) => s + Number(r.total_mad ?? 0), 0);
+
+      // Week vs previous week (rolling 7 days)
+      const weekCutoff = new Date(now.getTime() - 7 * 86_400_000).getTime();
+      let revenueWeek = 0;
+      let revenuePrevWeek = 0;
+      (revWeekRange ?? []).forEach((r) => {
+        const t = new Date(r.created_at as string).getTime();
+        const v = Number(r.total_mad ?? 0);
+        if (t >= weekCutoff) revenueWeek += v;
+        else revenuePrevWeek += v;
+      });
 
       const ordersByStatus: Record<OrderStatus, number> = {
         pending: 0, confirmed: 0, processing: 0, preparing: 0,
@@ -249,6 +261,30 @@ function VendorDashboard() {
         ordersByStatus[o.status as OrderStatus] += 1;
       });
       const ordersTotal = (allOrders ?? []).length;
+      const ordersTodayCount = (ordersToday ?? []).length;
+      const pendingOrders = ordersByStatus.pending;
+
+      // Best seller (last 30d)
+      const productQty = new Map<string, number>();
+      type ItemRow = { quantity: number | null; products: { name_ar: string } | null };
+      ((items30d ?? []) as unknown as ItemRow[]).forEach((it) => {
+        const name = it.products?.name_ar;
+        if (!name) return;
+        productQty.set(name, (productQty.get(name) ?? 0) + Number(it.quantity ?? 0));
+      });
+      let bestSeller: { name: string; qty: number } | null = null;
+      productQty.forEach((qty, name) => {
+        if (!bestSeller || qty > bestSeller.qty) bestSeller = { name, qty };
+      });
+
+      // New customers (30d) — distinct buyers whose first-ever order is within 30d
+      const buyerFirstSeen = new Map<string, number>();
+      (customers30d ?? []).forEach((o) => {
+        const t = new Date(o.created_at as string).getTime();
+        const prev = buyerFirstSeen.get(o.buyer_id);
+        if (prev == null || t < prev) buyerFirstSeen.set(o.buyer_id, t);
+      });
+      const newCustomers30d = buyerFirstSeen.size;
 
       // بناء سلسلة شهرية لآخر 6 أشهر
       const buckets = new Map<string, MonthlyPoint>();
@@ -321,8 +357,6 @@ function VendorDashboard() {
           low_stock_threshold: Number(p.low_stock_threshold ?? 0),
         }));
 
-      // مجموع نقاط الولاء = Σ (points_per_unit × stock_remaining_potential)
-      // كقياس تقريبي للنقاط القابلة للمنح من المخزون الحالي.
       const loyaltyPoints = (products ?? []).reduce((s, p) => {
         const pts = Number(p.points_per_unit ?? 0);
         const stk = Number(p.stock ?? 0);
@@ -331,9 +365,16 @@ function VendorDashboard() {
 
       setStats({
         revenueToday,
+        revenueYesterday,
         revenueMonth,
+        revenueWeek,
+        revenuePrevWeek,
+        ordersToday: ordersTodayCount,
         ordersTotal,
         ordersMonth,
+        pendingOrders,
+        newCustomers30d,
+        bestSeller,
         loyaltyPoints,
         ordersByStatus,
         monthly,
