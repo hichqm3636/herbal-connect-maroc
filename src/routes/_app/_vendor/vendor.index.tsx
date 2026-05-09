@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ShoppingBag,
   TrendingUp,
+  TrendingDown,
   Calendar,
   AlertTriangle,
   Loader2,
@@ -13,6 +14,13 @@ import {
   Truck,
   XCircle,
   Sparkles,
+  Plus,
+  FileText,
+  Users,
+  Crown,
+  Zap,
+  Brain,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   ResponsiveContainer,
