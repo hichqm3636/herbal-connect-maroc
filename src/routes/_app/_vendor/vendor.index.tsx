@@ -68,9 +68,16 @@ interface DailyPoint {
 
 interface DashboardStats {
   revenueToday: number;
+  revenueYesterday: number;
   revenueMonth: number;
+  revenueWeek: number;
+  revenuePrevWeek: number;
+  ordersToday: number;
   ordersTotal: number;
   ordersMonth: number;
+  pendingOrders: number;
+  newCustomers30d: number;
+  bestSeller: { name: string; qty: number } | null;
   loyaltyPoints: number;
   ordersByStatus: Record<OrderStatus, number>;
   monthly: MonthlyPoint[];
