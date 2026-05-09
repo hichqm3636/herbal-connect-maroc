@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ShoppingBag,
   TrendingUp,
+  TrendingDown,
   Calendar,
   AlertTriangle,
   Loader2,
@@ -13,6 +14,13 @@ import {
   Truck,
   XCircle,
   Sparkles,
+  Plus,
+  FileText,
+  Users,
+  Crown,
+  Zap,
+  Brain,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -60,9 +68,16 @@ interface DailyPoint {
 
 interface DashboardStats {
   revenueToday: number;
+  revenueYesterday: number;
   revenueMonth: number;
+  revenueWeek: number;
+  revenuePrevWeek: number;
+  ordersToday: number;
   ordersTotal: number;
   ordersMonth: number;
+  pendingOrders: number;
+  newCustomers30d: number;
+  bestSeller: { name: string; qty: number } | null;
   loyaltyPoints: number;
   ordersByStatus: Record<OrderStatus, number>;
   monthly: MonthlyPoint[];
@@ -128,7 +143,11 @@ function VendorDashboard() {
       setLoading(true);
       const now = new Date();
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const startOf30d = new Date(now.getTime() - 30 * 86_400_000).toISOString();
+      const startOfWeek = new Date(now.getTime() - 7 * 86_400_000).toISOString();
+      const startOfPrevWeek = new Date(now.getTime() - 14 * 86_400_000).toISOString();
       // نافذة آخر 6 أشهر (شامل الشهر الحالي)
       const startOfWindow = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
 
@@ -142,11 +161,16 @@ function VendorDashboard() {
 
       const [
         { data: revToday },
+        { data: revYesterday },
         { data: revMonth },
+        { data: revWeekRange },
+        { data: ordersToday },
         { data: allOrders },
         { data: monthlyOrders },
         { data: recent },
         { data: products },
+        { data: items30d },
+        { data: customers30d },
       ] = await Promise.all([
         supabase
           .from("orders")
@@ -159,7 +183,25 @@ function VendorDashboard() {
           .select("total_mad")
           .eq("company_id", companyId)
           .in("status", REVENUE_STATUSES)
+          .gte("created_at", startOfYesterday)
+          .lt("created_at", startOfDay),
+        supabase
+          .from("orders")
+          .select("total_mad")
+          .eq("company_id", companyId)
+          .in("status", REVENUE_STATUSES)
           .gte("created_at", startOfMonth),
+        supabase
+          .from("orders")
+          .select("total_mad, created_at")
+          .eq("company_id", companyId)
+          .in("status", REVENUE_STATUSES)
+          .gte("created_at", startOfPrevWeek),
+        supabase
+          .from("orders")
+          .select("id")
+          .eq("company_id", companyId)
+          .gte("created_at", startOfDay),
         supabase
           .from("orders")
           .select("status")
@@ -182,12 +224,34 @@ function VendorDashboard() {
           .eq("company_id", companyId)
           .eq("active", true)
           .order("stock", { ascending: true }),
+        supabase
+          .from("order_items")
+          .select("quantity, products!inner(name_ar, company_id), orders!inner(company_id, created_at, status)")
+          .eq("orders.company_id", companyId)
+          .gte("orders.created_at", startOf30d),
+        supabase
+          .from("orders")
+          .select("buyer_id, created_at")
+          .eq("company_id", companyId)
+          .gte("created_at", startOf30d),
       ]);
 
       if (!alive) return;
 
       const revenueToday = (revToday ?? []).reduce((s, r) => s + Number(r.total_mad ?? 0), 0);
+      const revenueYesterday = (revYesterday ?? []).reduce((s, r) => s + Number(r.total_mad ?? 0), 0);
       const revenueMonth = (revMonth ?? []).reduce((s, r) => s + Number(r.total_mad ?? 0), 0);
+
+      // Week vs previous week (rolling 7 days)
+      const weekCutoff = new Date(now.getTime() - 7 * 86_400_000).getTime();
+      let revenueWeek = 0;
+      let revenuePrevWeek = 0;
+      (revWeekRange ?? []).forEach((r) => {
+        const t = new Date(r.created_at as string).getTime();
+        const v = Number(r.total_mad ?? 0);
+        if (t >= weekCutoff) revenueWeek += v;
+        else revenuePrevWeek += v;
+      });
 
       const ordersByStatus: Record<OrderStatus, number> = {
         pending: 0, confirmed: 0, processing: 0, preparing: 0,
@@ -197,6 +261,30 @@ function VendorDashboard() {
         ordersByStatus[o.status as OrderStatus] += 1;
       });
       const ordersTotal = (allOrders ?? []).length;
+      const ordersTodayCount = (ordersToday ?? []).length;
+      const pendingOrders = ordersByStatus.pending;
+
+      // Best seller (last 30d)
+      const productQty = new Map<string, number>();
+      type ItemRow = { quantity: number | null; products: { name_ar: string } | null };
+      ((items30d ?? []) as unknown as ItemRow[]).forEach((it) => {
+        const name = it.products?.name_ar;
+        if (!name) return;
+        productQty.set(name, (productQty.get(name) ?? 0) + Number(it.quantity ?? 0));
+      });
+      let bestSeller: { name: string; qty: number } | null = null;
+      productQty.forEach((qty, name) => {
+        if (!bestSeller || qty > bestSeller.qty) bestSeller = { name, qty };
+      });
+
+      // New customers (30d) — distinct buyers whose first-ever order is within 30d
+      const buyerFirstSeen = new Map<string, number>();
+      (customers30d ?? []).forEach((o) => {
+        const t = new Date(o.created_at as string).getTime();
+        const prev = buyerFirstSeen.get(o.buyer_id);
+        if (prev == null || t < prev) buyerFirstSeen.set(o.buyer_id, t);
+      });
+      const newCustomers30d = buyerFirstSeen.size;
 
       // بناء سلسلة شهرية لآخر 6 أشهر
       const buckets = new Map<string, MonthlyPoint>();
@@ -269,8 +357,6 @@ function VendorDashboard() {
           low_stock_threshold: Number(p.low_stock_threshold ?? 0),
         }));
 
-      // مجموع نقاط الولاء = Σ (points_per_unit × stock_remaining_potential)
-      // كقياس تقريبي للنقاط القابلة للمنح من المخزون الحالي.
       const loyaltyPoints = (products ?? []).reduce((s, p) => {
         const pts = Number(p.points_per_unit ?? 0);
         const stk = Number(p.stock ?? 0);
@@ -279,9 +365,16 @@ function VendorDashboard() {
 
       setStats({
         revenueToday,
+        revenueYesterday,
         revenueMonth,
+        revenueWeek,
+        revenuePrevWeek,
+        ordersToday: ordersTodayCount,
         ordersTotal,
         ordersMonth,
+        pendingOrders,
+        newCustomers30d,
+        bestSeller,
         loyaltyPoints,
         ordersByStatus,
         monthly,
@@ -319,55 +412,177 @@ function VendorDashboard() {
     stats.ordersByStatus.preparing +
     stats.ordersByStatus.shipped;
 
+  // Quick insights derived from data
+  const weekDelta =
+    stats.revenuePrevWeek > 0
+      ? ((stats.revenueWeek - stats.revenuePrevWeek) / stats.revenuePrevWeek) * 100
+      : stats.revenueWeek > 0
+        ? 100
+        : 0;
+  const todayDelta =
+    stats.revenueYesterday > 0
+      ? ((stats.revenueToday - stats.revenueYesterday) / stats.revenueYesterday) * 100
+      : stats.revenueToday > 0
+        ? 100
+        : 0;
+
   return (
     <div className="space-y-6" dir="rtl">
-      <header>
-        <h1 className="text-2xl font-bold">لوحة التحكم</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          ملخّص أداء متجرك: المبيعات، الطلبات، ونقاط الولاء
-        </p>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">لوحة التحكم</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">
+            مركز قيادة متجرك — مبيعات اليوم، الطلبات، والعملاء
+          </p>
+        </div>
+        {/* Quick Actions */}
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm" className="bg-gradient-primary text-primary-foreground shadow-elegant hover:opacity-90">
+            <Link to="/vendor/products">
+              <Plus className="h-4 w-4" />
+              منتج جديد
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/vendor/orders">
+              <ShoppingBag className="h-4 w-4" />
+              طلب جديد
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/vendor/invoices">
+              <FileText className="h-4 w-4" />
+              فاتورة جديدة
+            </Link>
+          </Button>
+        </div>
       </header>
 
-      {/* KPI cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Primary KPI grid */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
         <KpiCard
           icon={<TrendingUp className="h-5 w-5" />}
-          label="إيرادات الشهر"
-          value={formatMAD(stats.revenueMonth)}
-          hint={`اليوم: ${formatMAD(stats.revenueToday)}`}
+          label="إيرادات اليوم"
+          value={formatMAD(stats.revenueToday)}
+          hint={
+            stats.revenueYesterday > 0
+              ? `أمس: ${formatMAD(stats.revenueYesterday)}`
+              : "أول مبيعات اليوم"
+          }
+          delta={todayDelta}
           variant="green"
         />
         <KpiCard
           icon={<ShoppingBag className="h-5 w-5" />}
-          label="إجمالي الطلبات"
-          value={stats.ordersTotal.toString()}
-          hint={`هذا الشهر: ${stats.ordersMonth}`}
+          label="طلبات اليوم"
+          value={stats.ordersToday.toString()}
+          hint={`الشهر: ${stats.ordersMonth}`}
           variant="blue"
         />
         <KpiCard
-          icon={<Calendar className="h-5 w-5" />}
-          label="طلبات نشطة"
-          value={
-            totalActiveOrders === 0
-              ? "✅ كل شيء منجز!"
-              : totalActiveOrders.toString()
-          }
+          icon={<Clock className="h-5 w-5" />}
+          label="طلبات معلقة"
+          value={stats.pendingOrders.toString()}
           hint={
-            totalActiveOrders === 0
-              ? "لا طلبات معلقة"
-              : "قيد المعالجة والشحن"
+            stats.pendingOrders === 0
+              ? "كل شيء تحت السيطرة ✓"
+              : "تحتاج تأكيد"
           }
-          variant={totalActiveOrders === 0 ? "green" : "orange"}
-          smallValue={totalActiveOrders === 0}
+          variant={stats.pendingOrders === 0 ? "green" : "orange"}
         />
         <KpiCard
-          icon={<Sparkles className="h-5 w-5" />}
-          label="نقاط الولاء"
-          value={stats.loyaltyPoints.toLocaleString("ar")}
-          hint="قابلة للمنح من المخزون الحالي"
+          icon={<Users className="h-5 w-5" />}
+          label="عملاء جدد"
+          value={stats.newCustomers30d.toString()}
+          hint="آخر 30 يومًا"
+          variant="blue"
+        />
+        <KpiCard
+          icon={<Crown className="h-5 w-5" />}
+          label="الأكثر مبيعًا"
+          value={stats.bestSeller ? stats.bestSeller.name : "—"}
+          hint={
+            stats.bestSeller
+              ? `${stats.bestSeller.qty} وحدة (30 يوم)`
+              : "لا بيانات بعد"
+          }
           variant="amber"
+          smallValue
         />
       </div>
+
+      {/* Quick Insights */}
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Zap className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold">رؤى سريعة</h2>
+              <p className="text-xs text-muted-foreground">ملخّص أداء أسبوعك</p>
+            </div>
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <InsightTile
+            tone={weekDelta >= 0 ? "success" : "destructive"}
+            icon={weekDelta >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+            title={
+              weekDelta >= 0
+                ? `المبيعات ارتفعت ${Math.round(Math.abs(weekDelta))}%`
+                : `المبيعات انخفضت ${Math.round(Math.abs(weekDelta))}%`
+            }
+            body={`${formatMAD(stats.revenueWeek)} هذا الأسبوع مقابل ${formatMAD(stats.revenuePrevWeek)}`}
+          />
+          <InsightTile
+            tone="primary"
+            icon={<Crown className="h-4 w-4" />}
+            title={stats.bestSeller ? `${stats.bestSeller.name}` : "لا منتج رائج بعد"}
+            body={
+              stats.bestSeller
+                ? `الأكثر طلبًا — ${stats.bestSeller.qty} وحدة في 30 يوم`
+                : "ابدأ ببيع أول منتج لتظهر هنا توصيات"
+            }
+          />
+          <InsightTile
+            tone={stats.lowStock.length > 0 ? "warning" : "success"}
+            icon={<AlertTriangle className="h-4 w-4" />}
+            title={
+              stats.lowStock.length > 0
+                ? `${stats.lowStock.length} منتج بمخزون منخفض`
+                : "المخزون في وضع جيد"
+            }
+            body={
+              stats.lowStock.length > 0
+                ? `أقربها: ${stats.lowStock[0].name_ar}`
+                : "جميع المنتجات فوق حد التنبيه"
+            }
+          />
+        </div>
+      </Card>
+
+      {/* AI Insights placeholder — يتفعّل قريبًا */}
+      <Card className="p-5 relative overflow-hidden border-dashed">
+        <div className="absolute inset-0 bg-gradient-to-l from-primary/5 via-transparent to-transparent pointer-events-none" />
+        <div className="relative flex items-start gap-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-primary text-primary-foreground shadow-elegant shrink-0">
+            <Brain className="h-5 w-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base font-bold">مساعد Nexora الذكي</h2>
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                قريبًا
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1.5">
+              توصيات ذكية لزيادة المبيعات، اكتشاف فرص خفية، وتنبيهات استباقية للمخزون والعملاء.
+            </p>
+          </div>
+          <ArrowUpRight className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
+        </div>
+      </Card>
 
       {/* Last 14 days revenue (delivered orders) */}
       <Card className="p-5">
@@ -630,7 +845,7 @@ const KPI_VARIANT_CLASSES: Record<KpiVariant, { bg: string; tone: string }> = {
 };
 
 function KpiCard({
-  icon, label, value, variant, hint, smallValue = false,
+  icon, label, value, variant, hint, smallValue = false, delta,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -638,19 +853,68 @@ function KpiCard({
   variant: KpiVariant;
   hint?: string;
   smallValue?: boolean;
+  delta?: number;
 }) {
   const v = KPI_VARIANT_CLASSES[variant];
+  const showDelta = typeof delta === "number" && Number.isFinite(delta) && Math.abs(delta) >= 1;
+  const up = (delta ?? 0) >= 0;
   return (
-    <Card className={`p-5 border ${v.bg}`}>
+    <Card className={`p-5 border ${v.bg} transition-shadow hover:shadow-elegant`}>
       <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">{label}</span>
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
         <span className={v.tone}>{icon}</span>
       </div>
-      <div className={`mt-2 ${smallValue ? "text-base" : "text-2xl"} font-extrabold ${v.tone}`}>
+      <div className={`mt-2 ${smallValue ? "text-base leading-tight" : "text-2xl"} font-extrabold ${v.tone} truncate`}>
         {value}
       </div>
-      {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
+      <div className="mt-1.5 flex items-center justify-between gap-2">
+        {hint && <span className="text-xs text-muted-foreground truncate">{hint}</span>}
+        {showDelta && (
+          <span
+            className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
+              up
+                ? "bg-success/15 text-success"
+                : "bg-destructive/15 text-destructive"
+            }`}
+          >
+            {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+            {Math.round(Math.abs(delta!))}%
+          </span>
+        )}
+      </div>
     </Card>
+  );
+}
+
+type InsightTone = "success" | "warning" | "destructive" | "primary";
+
+const INSIGHT_TONES: Record<InsightTone, string> = {
+  success: "bg-success/10 text-success border-success/20",
+  warning: "bg-warning/15 text-warning-foreground border-warning/30",
+  destructive: "bg-destructive/10 text-destructive border-destructive/20",
+  primary: "bg-primary/10 text-primary border-primary/20",
+};
+
+function InsightTile({
+  tone, icon, title, body,
+}: {
+  tone: InsightTone;
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="rounded-xl border bg-card p-4 hover:shadow-soft transition-shadow">
+      <div className="flex items-start gap-3">
+        <div className={`flex h-8 w-8 items-center justify-center rounded-lg border ${INSIGHT_TONES[tone]} shrink-0`}>
+          {icon}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold truncate">{title}</p>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{body}</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
