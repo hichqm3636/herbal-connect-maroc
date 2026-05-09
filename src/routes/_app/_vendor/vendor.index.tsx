@@ -143,7 +143,11 @@ function VendorDashboard() {
       setLoading(true);
       const now = new Date();
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const startOf30d = new Date(now.getTime() - 30 * 86_400_000).toISOString();
+      const startOfWeek = new Date(now.getTime() - 7 * 86_400_000).toISOString();
+      const startOfPrevWeek = new Date(now.getTime() - 14 * 86_400_000).toISOString();
       // نافذة آخر 6 أشهر (شامل الشهر الحالي)
       const startOfWindow = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
 
@@ -157,11 +161,16 @@ function VendorDashboard() {
 
       const [
         { data: revToday },
+        { data: revYesterday },
         { data: revMonth },
+        { data: revWeekRange },
+        { data: ordersToday },
         { data: allOrders },
         { data: monthlyOrders },
         { data: recent },
         { data: products },
+        { data: items30d },
+        { data: customers30d },
       ] = await Promise.all([
         supabase
           .from("orders")
@@ -174,7 +183,25 @@ function VendorDashboard() {
           .select("total_mad")
           .eq("company_id", companyId)
           .in("status", REVENUE_STATUSES)
+          .gte("created_at", startOfYesterday)
+          .lt("created_at", startOfDay),
+        supabase
+          .from("orders")
+          .select("total_mad")
+          .eq("company_id", companyId)
+          .in("status", REVENUE_STATUSES)
           .gte("created_at", startOfMonth),
+        supabase
+          .from("orders")
+          .select("total_mad, created_at")
+          .eq("company_id", companyId)
+          .in("status", REVENUE_STATUSES)
+          .gte("created_at", startOfPrevWeek),
+        supabase
+          .from("orders")
+          .select("id")
+          .eq("company_id", companyId)
+          .gte("created_at", startOfDay),
         supabase
           .from("orders")
           .select("status")
@@ -197,6 +224,16 @@ function VendorDashboard() {
           .eq("company_id", companyId)
           .eq("active", true)
           .order("stock", { ascending: true }),
+        supabase
+          .from("order_items")
+          .select("quantity, products!inner(name_ar, company_id), orders!inner(company_id, created_at, status)")
+          .eq("orders.company_id", companyId)
+          .gte("orders.created_at", startOf30d),
+        supabase
+          .from("orders")
+          .select("buyer_id, created_at")
+          .eq("company_id", companyId)
+          .gte("created_at", startOf30d),
       ]);
 
       if (!alive) return;
