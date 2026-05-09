@@ -412,55 +412,177 @@ function VendorDashboard() {
     stats.ordersByStatus.preparing +
     stats.ordersByStatus.shipped;
 
+  // Quick insights derived from data
+  const weekDelta =
+    stats.revenuePrevWeek > 0
+      ? ((stats.revenueWeek - stats.revenuePrevWeek) / stats.revenuePrevWeek) * 100
+      : stats.revenueWeek > 0
+        ? 100
+        : 0;
+  const todayDelta =
+    stats.revenueYesterday > 0
+      ? ((stats.revenueToday - stats.revenueYesterday) / stats.revenueYesterday) * 100
+      : stats.revenueToday > 0
+        ? 100
+        : 0;
+
   return (
     <div className="space-y-6" dir="rtl">
-      <header>
-        <h1 className="text-2xl font-bold">لوحة التحكم</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          ملخّص أداء متجرك: المبيعات، الطلبات، ونقاط الولاء
-        </p>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">لوحة التحكم</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">
+            مركز قيادة متجرك — مبيعات اليوم، الطلبات، والعملاء
+          </p>
+        </div>
+        {/* Quick Actions */}
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm" className="bg-gradient-primary text-primary-foreground shadow-elegant hover:opacity-90">
+            <Link to="/vendor/products">
+              <Plus className="h-4 w-4" />
+              منتج جديد
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/vendor/orders">
+              <ShoppingBag className="h-4 w-4" />
+              طلب جديد
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/vendor/invoices">
+              <FileText className="h-4 w-4" />
+              فاتورة جديدة
+            </Link>
+          </Button>
+        </div>
       </header>
 
-      {/* KPI cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Primary KPI grid */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
         <KpiCard
           icon={<TrendingUp className="h-5 w-5" />}
-          label="إيرادات الشهر"
-          value={formatMAD(stats.revenueMonth)}
-          hint={`اليوم: ${formatMAD(stats.revenueToday)}`}
+          label="إيرادات اليوم"
+          value={formatMAD(stats.revenueToday)}
+          hint={
+            stats.revenueYesterday > 0
+              ? `أمس: ${formatMAD(stats.revenueYesterday)}`
+              : "أول مبيعات اليوم"
+          }
+          delta={todayDelta}
           variant="green"
         />
         <KpiCard
           icon={<ShoppingBag className="h-5 w-5" />}
-          label="إجمالي الطلبات"
-          value={stats.ordersTotal.toString()}
-          hint={`هذا الشهر: ${stats.ordersMonth}`}
+          label="طلبات اليوم"
+          value={stats.ordersToday.toString()}
+          hint={`الشهر: ${stats.ordersMonth}`}
           variant="blue"
         />
         <KpiCard
-          icon={<Calendar className="h-5 w-5" />}
-          label="طلبات نشطة"
-          value={
-            totalActiveOrders === 0
-              ? "✅ كل شيء منجز!"
-              : totalActiveOrders.toString()
-          }
+          icon={<Clock className="h-5 w-5" />}
+          label="طلبات معلقة"
+          value={stats.pendingOrders.toString()}
           hint={
-            totalActiveOrders === 0
-              ? "لا طلبات معلقة"
-              : "قيد المعالجة والشحن"
+            stats.pendingOrders === 0
+              ? "كل شيء تحت السيطرة ✓"
+              : "تحتاج تأكيد"
           }
-          variant={totalActiveOrders === 0 ? "green" : "orange"}
-          smallValue={totalActiveOrders === 0}
+          variant={stats.pendingOrders === 0 ? "green" : "orange"}
         />
         <KpiCard
-          icon={<Sparkles className="h-5 w-5" />}
-          label="نقاط الولاء"
-          value={stats.loyaltyPoints.toLocaleString("ar")}
-          hint="قابلة للمنح من المخزون الحالي"
+          icon={<Users className="h-5 w-5" />}
+          label="عملاء جدد"
+          value={stats.newCustomers30d.toString()}
+          hint="آخر 30 يومًا"
+          variant="blue"
+        />
+        <KpiCard
+          icon={<Crown className="h-5 w-5" />}
+          label="الأكثر مبيعًا"
+          value={stats.bestSeller ? stats.bestSeller.name : "—"}
+          hint={
+            stats.bestSeller
+              ? `${stats.bestSeller.qty} وحدة (30 يوم)`
+              : "لا بيانات بعد"
+          }
           variant="amber"
+          smallValue
         />
       </div>
+
+      {/* Quick Insights */}
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Zap className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold">رؤى سريعة</h2>
+              <p className="text-xs text-muted-foreground">ملخّص أداء أسبوعك</p>
+            </div>
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <InsightTile
+            tone={weekDelta >= 0 ? "success" : "destructive"}
+            icon={weekDelta >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+            title={
+              weekDelta >= 0
+                ? `المبيعات ارتفعت ${Math.round(Math.abs(weekDelta))}%`
+                : `المبيعات انخفضت ${Math.round(Math.abs(weekDelta))}%`
+            }
+            body={`${formatMAD(stats.revenueWeek)} هذا الأسبوع مقابل ${formatMAD(stats.revenuePrevWeek)}`}
+          />
+          <InsightTile
+            tone="primary"
+            icon={<Crown className="h-4 w-4" />}
+            title={stats.bestSeller ? `${stats.bestSeller.name}` : "لا منتج رائج بعد"}
+            body={
+              stats.bestSeller
+                ? `الأكثر طلبًا — ${stats.bestSeller.qty} وحدة في 30 يوم`
+                : "ابدأ ببيع أول منتج لتظهر هنا توصيات"
+            }
+          />
+          <InsightTile
+            tone={stats.lowStock.length > 0 ? "warning" : "success"}
+            icon={<AlertTriangle className="h-4 w-4" />}
+            title={
+              stats.lowStock.length > 0
+                ? `${stats.lowStock.length} منتج بمخزون منخفض`
+                : "المخزون في وضع جيد"
+            }
+            body={
+              stats.lowStock.length > 0
+                ? `أقربها: ${stats.lowStock[0].name_ar}`
+                : "جميع المنتجات فوق حد التنبيه"
+            }
+          />
+        </div>
+      </Card>
+
+      {/* AI Insights placeholder — يتفعّل قريبًا */}
+      <Card className="p-5 relative overflow-hidden border-dashed">
+        <div className="absolute inset-0 bg-gradient-to-l from-primary/5 via-transparent to-transparent pointer-events-none" />
+        <div className="relative flex items-start gap-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-primary text-primary-foreground shadow-elegant shrink-0">
+            <Brain className="h-5 w-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base font-bold">مساعد Nexora الذكي</h2>
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                قريبًا
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1.5">
+              توصيات ذكية لزيادة المبيعات، اكتشاف فرص خفية، وتنبيهات استباقية للمخزون والعملاء.
+            </p>
+          </div>
+          <ArrowUpRight className="h-4 w-4 text-muted-foreground shrink-0 hidden sm:block" />
+        </div>
+      </Card>
 
       {/* Last 14 days revenue (delivered orders) */}
       <Card className="p-5">
