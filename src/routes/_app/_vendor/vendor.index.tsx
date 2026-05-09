@@ -845,7 +845,7 @@ const KPI_VARIANT_CLASSES: Record<KpiVariant, { bg: string; tone: string }> = {
 };
 
 function KpiCard({
-  icon, label, value, variant, hint, smallValue = false,
+  icon, label, value, variant, hint, smallValue = false, delta,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -853,19 +853,68 @@ function KpiCard({
   variant: KpiVariant;
   hint?: string;
   smallValue?: boolean;
+  delta?: number;
 }) {
   const v = KPI_VARIANT_CLASSES[variant];
+  const showDelta = typeof delta === "number" && Number.isFinite(delta) && Math.abs(delta) >= 1;
+  const up = (delta ?? 0) >= 0;
   return (
-    <Card className={`p-5 border ${v.bg}`}>
+    <Card className={`p-5 border ${v.bg} transition-shadow hover:shadow-elegant`}>
       <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">{label}</span>
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
         <span className={v.tone}>{icon}</span>
       </div>
-      <div className={`mt-2 ${smallValue ? "text-base" : "text-2xl"} font-extrabold ${v.tone}`}>
+      <div className={`mt-2 ${smallValue ? "text-base leading-tight" : "text-2xl"} font-extrabold ${v.tone} truncate`}>
         {value}
       </div>
-      {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
+      <div className="mt-1.5 flex items-center justify-between gap-2">
+        {hint && <span className="text-xs text-muted-foreground truncate">{hint}</span>}
+        {showDelta && (
+          <span
+            className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
+              up
+                ? "bg-success/15 text-success"
+                : "bg-destructive/15 text-destructive"
+            }`}
+          >
+            {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+            {Math.round(Math.abs(delta!))}%
+          </span>
+        )}
+      </div>
     </Card>
+  );
+}
+
+type InsightTone = "success" | "warning" | "destructive" | "primary";
+
+const INSIGHT_TONES: Record<InsightTone, string> = {
+  success: "bg-success/10 text-success border-success/20",
+  warning: "bg-warning/15 text-warning-foreground border-warning/30",
+  destructive: "bg-destructive/10 text-destructive border-destructive/20",
+  primary: "bg-primary/10 text-primary border-primary/20",
+};
+
+function InsightTile({
+  tone, icon, title, body,
+}: {
+  tone: InsightTone;
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="rounded-xl border bg-card p-4 hover:shadow-soft transition-shadow">
+      <div className="flex items-start gap-3">
+        <div className={`flex h-8 w-8 items-center justify-center rounded-lg border ${INSIGHT_TONES[tone]} shrink-0`}>
+          {icon}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold truncate">{title}</p>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{body}</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
