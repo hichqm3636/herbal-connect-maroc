@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import {
   Loader2, Search, Eye, Package, Clock, CheckCircle2, Truck, XCircle,
-  Calendar, RefreshCw, Save, BadgeCheck,
+  Calendar, RefreshCw, Save, BadgeCheck, MessageCircle, Phone,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +47,7 @@ interface OrderRow {
   status: OrderStatus;
   total_mad: number;
   created_at: string;
+  updated_at: string | null;
   buyer_id: string;
   notes: string | null;
   admin_notes: string | null;
@@ -154,6 +155,92 @@ function formatRelativeAr(d: Date): string {
   return `منذ ${day} يوم`;
 }
 
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "؟";
+  if (parts.length === 1) return parts[0].slice(0, 2);
+  return (parts[0][0] ?? "") + (parts[1][0] ?? "");
+}
+
+function CustomerAvatar({ name, size = "md" }: { name: string; size?: "sm" | "md" }) {
+  const dim = size === "sm" ? "h-8 w-8 text-[11px]" : "h-9 w-9 text-xs";
+  return (
+    <div
+      className={cn(
+        "shrink-0 rounded-full bg-gradient-primary text-primary-foreground font-semibold flex items-center justify-center shadow-sm",
+        dim,
+      )}
+      aria-hidden
+    >
+      {getInitials(name).toUpperCase()}
+    </div>
+  );
+}
+
+const TIMELINE_FLOW: OrderStatus[] = [
+  "pending",
+  "confirmed",
+  "preparing",
+  "shipped",
+  "delivered",
+];
+
+function OrderTimeline({ status, createdAt, updatedAt }: { status: OrderStatus; createdAt: string; updatedAt?: string | null }) {
+  const cancelled = status === "cancelled";
+  const currentIndex = cancelled
+    ? -1
+    : TIMELINE_FLOW.indexOf(status === "processing" ? "preparing" : status);
+
+  return (
+    <ol className="relative space-y-3 ps-6 border-s-2 border-border">
+      {TIMELINE_FLOW.map((s, idx) => {
+        const reached = !cancelled && idx <= currentIndex;
+        const isCurrent = !cancelled && idx === currentIndex;
+        return (
+          <li key={s} className="relative">
+            <span
+              className={cn(
+                "absolute -start-[31px] flex h-5 w-5 items-center justify-center rounded-full border-2",
+                reached
+                  ? "bg-primary border-primary text-primary-foreground"
+                  : "bg-background border-border text-muted-foreground",
+                isCurrent && "ring-4 ring-primary/20",
+              )}
+            >
+              {reached ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+            </span>
+            <div className="flex items-center justify-between gap-2">
+              <span className={cn("text-sm", reached ? "font-semibold" : "text-muted-foreground")}>
+                {STATUS_LABELS[s]}
+              </span>
+              {isCurrent && updatedAt && (
+                <span className="text-[10px] text-muted-foreground">
+                  {formatRelativeAr(new Date(updatedAt))}
+                </span>
+              )}
+              {idx === 0 && (
+                <span className="text-[10px] text-muted-foreground">
+                  {formatRelativeAr(new Date(createdAt))}
+                </span>
+              )}
+            </div>
+          </li>
+        );
+      })}
+      {cancelled && (
+        <li className="relative">
+          <span className="absolute -start-[31px] flex h-5 w-5 items-center justify-center rounded-full border-2 bg-destructive border-destructive text-destructive-foreground">
+            <XCircle className="h-3 w-3" />
+          </span>
+          <span className="text-sm font-semibold text-destructive">
+            {STATUS_LABELS.cancelled}
+          </span>
+        </li>
+      )}
+    </ol>
+  );
+}
+
 function VendorOrdersPage() {
   const { companyId } = useAuth();
   const search = useSearch({ from: "/_app/_vendor/vendor/orders" });
@@ -194,7 +281,7 @@ function VendorOrdersPage() {
     else setLoading(true);
     const { data, error } = await supabase
       .from("orders")
-      .select("id, order_number, status, total_mad, created_at, buyer_id, notes, admin_notes, payment_method, payment_status, payment_reference, payment_paid_at")
+      .select("id, order_number, status, total_mad, created_at, updated_at, buyer_id, notes, admin_notes, payment_method, payment_status, payment_reference, payment_paid_at")
       .eq("company_id", companyId)
       .order("created_at", { ascending: false });
 
@@ -536,10 +623,11 @@ function VendorOrdersPage() {
                       }
                     }}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <CustomerAvatar name={o.buyer_name} size="sm" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-muted">
+                          <span className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-muted">
                             #{shortId}
                           </span>
                           <Badge variant="secondary" className={STATUS_TONE[o.status]}>
@@ -558,7 +646,7 @@ function VendorOrdersPage() {
                           {formatMAD(o.total_mad)}
                         </div>
                         <div className="text-[10px] text-muted-foreground mt-0.5">
-                          {new Date(o.created_at).toLocaleDateString("ar")}
+                          {formatRelativeAr(new Date(o.created_at))}
                         </div>
                       </div>
                     </div>
@@ -628,15 +716,21 @@ function VendorOrdersPage() {
                       className="hover:bg-muted/30 cursor-pointer"
                       onClick={() => openDetail(o)}
                     >
-                      <td className="px-4 py-3 font-mono font-semibold">{o.order_number}</td>
+                      <td className="px-4 py-3 font-mono font-bold">{o.order_number}</td>
                       <td className="px-4 py-3">
-                        <div className="font-medium">{o.buyer_name}</div>
-                        {o.buyer_phone && (
-                          <div className="text-xs text-muted-foreground" dir="ltr">{o.buyer_phone}</div>
-                        )}
+                        <div className="flex items-center gap-2.5">
+                          <CustomerAvatar name={o.buyer_name} size="sm" />
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">{o.buyer_name}</div>
+                            {o.buyer_phone && (
+                              <div className="text-xs text-muted-foreground" dir="ltr">{o.buyer_phone}</div>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                        {new Date(o.created_at).toLocaleDateString("ar")}
+                        <div className="text-xs">{new Date(o.created_at).toLocaleDateString("ar")}</div>
+                        <div className="text-[10px] opacity-70">{formatRelativeAr(new Date(o.created_at))}</div>
                       </td>
                       <td className="px-4 py-3 font-bold whitespace-nowrap">{formatMAD(o.total_mad)}</td>
                       <td className="px-4 py-3">
@@ -720,17 +814,48 @@ function VendorOrdersPage() {
               </DialogHeader>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">العميل:</span>
-                    <p className="font-medium">{selected.buyer_name}</p>
+                {/* Customer card */}
+                <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+                  <CustomerAvatar name={selected.buyer_name} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold truncate">{selected.buyer_name}</p>
+                    {selected.buyer_phone && (
+                      <p className="text-xs text-muted-foreground" dir="ltr">
+                        {selected.buyer_phone}
+                      </p>
+                    )}
                   </div>
                   {selected.buyer_phone && (
-                    <div>
-                      <span className="text-muted-foreground">الهاتف:</span>
-                      <p className="font-medium" dir="ltr">{selected.buyer_phone}</p>
+                    <div className="flex gap-1.5">
+                      <Button asChild size="sm" variant="outline">
+                        <a href={`tel:${selected.buyer_phone}`}>
+                          <Phone className="h-4 w-4" />
+                        </a>
+                      </Button>
+                      <Button asChild size="sm" variant="outline" className="text-success">
+                        <a
+                          href={`https://wa.me/${selected.buyer_phone.replace(/[^\d]/g, "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </a>
+                      </Button>
                     </div>
                   )}
+                </div>
+
+                {/* Timeline */}
+                <div className="rounded-lg border p-4">
+                  <h3 className="text-sm font-bold mb-3">المسار الزمني</h3>
+                  <OrderTimeline
+                    status={selected.status}
+                    createdAt={selected.created_at}
+                    updatedAt={selected.updated_at}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-muted-foreground">الحالة:</span>
                     <p>
