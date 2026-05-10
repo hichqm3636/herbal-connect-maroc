@@ -716,15 +716,21 @@ function VendorOrdersPage() {
                       className="hover:bg-muted/30 cursor-pointer"
                       onClick={() => openDetail(o)}
                     >
-                      <td className="px-4 py-3 font-mono font-semibold">{o.order_number}</td>
+                      <td className="px-4 py-3 font-mono font-bold">{o.order_number}</td>
                       <td className="px-4 py-3">
-                        <div className="font-medium">{o.buyer_name}</div>
-                        {o.buyer_phone && (
-                          <div className="text-xs text-muted-foreground" dir="ltr">{o.buyer_phone}</div>
-                        )}
+                        <div className="flex items-center gap-2.5">
+                          <CustomerAvatar name={o.buyer_name} size="sm" />
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">{o.buyer_name}</div>
+                            {o.buyer_phone && (
+                              <div className="text-xs text-muted-foreground" dir="ltr">{o.buyer_phone}</div>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                        {new Date(o.created_at).toLocaleDateString("ar")}
+                        <div className="text-xs">{new Date(o.created_at).toLocaleDateString("ar")}</div>
+                        <div className="text-[10px] opacity-70">{formatRelativeAr(new Date(o.created_at))}</div>
                       </td>
                       <td className="px-4 py-3 font-bold whitespace-nowrap">{formatMAD(o.total_mad)}</td>
                       <td className="px-4 py-3">
