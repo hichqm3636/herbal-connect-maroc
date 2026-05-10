@@ -814,17 +814,56 @@ function VendorOrdersPage() {
               </DialogHeader>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">العميل:</span>
-                    <p className="font-medium">{selected.buyer_name}</p>
+                {/* Customer card */}
+                <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+                  <CustomerAvatar name={selected.buyer_name} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold truncate">{selected.buyer_name}</p>
+                    {selected.buyer_phone && (
+                      <p className="text-xs text-muted-foreground" dir="ltr">
+                        {selected.buyer_phone}
+                      </p>
+                    )}
                   </div>
                   {selected.buyer_phone && (
-                    <div>
-                      <span className="text-muted-foreground">الهاتف:</span>
-                      <p className="font-medium" dir="ltr">{selected.buyer_phone}</p>
+                    <div className="flex gap-1.5">
+                      <Button asChild size="sm" variant="outline">
+                        <a href={`tel:${selected.buyer_phone}`}>
+                          <Phone className="h-4 w-4" />
+                        </a>
+                      </Button>
+                      <Button asChild size="sm" variant="outline" className="text-success">
+                        <a
+                          href={`https://wa.me/${selected.buyer_phone.replace(/[^\d]/g, "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </a>
+                      </Button>
                     </div>
                   )}
+                </div>
+
+                {/* Timeline */}
+                <div className="rounded-lg border p-4">
+                  <h3 className="text-sm font-bold mb-3">المسار الزمني</h3>
+                  <OrderTimeline
+                    status={selected.status}
+                    createdAt={selected.created_at}
+                    updatedAt={selected.updated_at}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">الحالة:</span>
+                    <p>
+                      <Badge variant="secondary" className={STATUS_TONE[selected.status]}>
+                        {STATUS_LABELS[selected.status]}
+                      </Badge>
+                    </p>
+                  </div>
                   <div>
                     <span className="text-muted-foreground">الحالة:</span>
                     <p>
