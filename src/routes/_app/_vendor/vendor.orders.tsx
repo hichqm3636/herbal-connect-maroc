@@ -239,6 +239,8 @@ function OrderTimeline({ status, createdAt, updatedAt }: { status: OrderStatus; 
     </ol>
   );
 }
+
+function VendorOrdersPage() {
   const { companyId } = useAuth();
   const search = useSearch({ from: "/_app/_vendor/vendor/orders" });
   const navigate = Route.useNavigate();
