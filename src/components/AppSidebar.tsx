@@ -17,6 +17,10 @@ import {
   BarChart3,
   Cog,
   Briefcase,
+  Megaphone,
+  Wallet,
+  Tag,
+  Users,
   ShieldCheck,
   Heart,
   MessageSquare,
@@ -53,7 +57,12 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 
-type NavItem = { title: string; url: string; icon: LucideIcon };
+type NavItem = {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  comingSoon?: boolean;
+};
 type NavSection = {
   id: string;
   label: string;
@@ -82,20 +91,32 @@ const vendorTop: NavItem[] = [
 
 const vendorSections: NavSection[] = [
   {
-    id: "sales",
-    label: "المبيعات",
+    id: "commerce",
+    label: "التجارة",
     icon: ShoppingCart,
     items: [
       { title: "الطلبات", url: "/vendor/orders", icon: ClipboardList },
-      { title: "الفواتير", url: "/vendor/invoices", icon: Receipt },
-      { title: "المراجعات", url: "/vendor/reviews", icon: MessageSquare },
+      { title: "المنتجات", url: "/vendor/products", icon: Package },
+      { title: "العملاء", url: "/vendor/customers", icon: Users, comingSoon: true },
     ],
   },
   {
-    id: "catalog",
-    label: "الكتالوج",
-    icon: Package,
-    items: [{ title: "المنتجات", url: "/vendor/products", icon: Package }],
+    id: "finance",
+    label: "المالية",
+    icon: Wallet,
+    items: [
+      { title: "الفواتير", url: "/vendor/invoices", icon: Receipt },
+      { title: "الاشتراك والفواتير", url: "/vendor/billing", icon: CreditCard },
+    ],
+  },
+  {
+    id: "marketing",
+    label: "التسويق",
+    icon: Megaphone,
+    items: [
+      { title: "المراجعات", url: "/vendor/reviews", icon: MessageSquare },
+      { title: "كوبونات الخصم", url: "/vendor/coupons", icon: Tag, comingSoon: true },
+    ],
   },
   {
     id: "analytics",
@@ -113,7 +134,6 @@ const vendorSections: NavSection[] = [
     items: [
       { title: "إعدادات المتجر", url: "/vendor/branding", icon: Settings },
       { title: "الفريق والصلاحيات", url: "/vendor/team", icon: UsersRound },
-      { title: "الاشتراك والفواتير", url: "/vendor/billing", icon: CreditCard },
       { title: "فحص صحة الوسائط", url: "/vendor/storage-health", icon: Activity },
     ],
   },
@@ -246,20 +266,22 @@ export function AppSidebar() {
         <SidebarGroup key={section.id}>
           <SidebarGroupContent>
             <SidebarMenu>
-              {section.items.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.url)}
-                    tooltip={item.title}
-                  >
-                    <Link to={item.url} onClick={handleNavClick}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {section.items
+                .filter((item) => !item.comingSoon)
+                .map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.url)}
+                      tooltip={item.title}
+                    >
+                      <Link to={item.url} onClick={handleNavClick}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -275,7 +297,7 @@ export function AppSidebar() {
       >
         <SidebarGroup>
           <SidebarGroupLabel asChild>
-            <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors">
+            <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
               <span className="flex items-center gap-2">
                 <section.icon className="h-3.5 w-3.5" />
                 {section.label}
@@ -286,16 +308,31 @@ export function AppSidebar() {
           <CollapsibleContent>
             <SidebarGroupContent>
               <SidebarMenuSub>
-                {section.items.map((item) => (
-                  <SidebarMenuSubItem key={item.url}>
-                    <SidebarMenuSubButton asChild isActive={isActive(item.url)}>
-                      <Link to={item.url} onClick={handleNavClick}>
+                {section.items.map((item) =>
+                  item.comingSoon ? (
+                    <SidebarMenuSubItem key={item.url}>
+                      <SidebarMenuSubButton
+                        aria-disabled
+                        className="opacity-60 cursor-not-allowed pointer-events-none"
+                      >
                         <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                ))}
+                        <span className="flex-1">{item.title}</span>
+                        <span className="ms-auto rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+                          قريباً
+                        </span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  ) : (
+                    <SidebarMenuSubItem key={item.url}>
+                      <SidebarMenuSubButton asChild isActive={isActive(item.url)}>
+                        <Link to={item.url} onClick={handleNavClick}>
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  ),
+                )}
               </SidebarMenuSub>
             </SidebarGroupContent>
           </CollapsibleContent>
