@@ -47,6 +47,7 @@ interface OrderRow {
   status: OrderStatus;
   total_mad: number;
   created_at: string;
+  updated_at: string | null;
   buyer_id: string;
   notes: string | null;
   admin_notes: string | null;
