@@ -865,14 +865,6 @@ function VendorOrdersPage() {
                     </p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">الحالة:</span>
-                    <p>
-                      <Badge variant="secondary" className={STATUS_TONE[selected.status]}>
-                        {STATUS_LABELS[selected.status]}
-                      </Badge>
-                    </p>
-                  </div>
-                  <div>
                     <span className="text-muted-foreground">المجموع:</span>
                     <p className="font-bold text-base">{formatMAD(selected.total_mad)}</p>
                   </div>
