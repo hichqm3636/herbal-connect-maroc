@@ -266,20 +266,22 @@ export function AppSidebar() {
         <SidebarGroup key={section.id}>
           <SidebarGroupContent>
             <SidebarMenu>
-              {section.items.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.url)}
-                    tooltip={item.title}
-                  >
-                    <Link to={item.url} onClick={handleNavClick}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {section.items
+                .filter((item) => !item.comingSoon)
+                .map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.url)}
+                      tooltip={item.title}
+                    >
+                      <Link to={item.url} onClick={handleNavClick}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -295,7 +297,7 @@ export function AppSidebar() {
       >
         <SidebarGroup>
           <SidebarGroupLabel asChild>
-            <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors">
+            <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
               <span className="flex items-center gap-2">
                 <section.icon className="h-3.5 w-3.5" />
                 {section.label}
@@ -306,16 +308,31 @@ export function AppSidebar() {
           <CollapsibleContent>
             <SidebarGroupContent>
               <SidebarMenuSub>
-                {section.items.map((item) => (
-                  <SidebarMenuSubItem key={item.url}>
-                    <SidebarMenuSubButton asChild isActive={isActive(item.url)}>
-                      <Link to={item.url} onClick={handleNavClick}>
+                {section.items.map((item) =>
+                  item.comingSoon ? (
+                    <SidebarMenuSubItem key={item.url}>
+                      <SidebarMenuSubButton
+                        aria-disabled
+                        className="opacity-60 cursor-not-allowed pointer-events-none"
+                      >
                         <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                ))}
+                        <span className="flex-1">{item.title}</span>
+                        <span className="ms-auto rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+                          قريباً
+                        </span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  ) : (
+                    <SidebarMenuSubItem key={item.url}>
+                      <SidebarMenuSubButton asChild isActive={isActive(item.url)}>
+                        <Link to={item.url} onClick={handleNavClick}>
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  ),
+                )}
               </SidebarMenuSub>
             </SidebarGroupContent>
           </CollapsibleContent>
