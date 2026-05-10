@@ -154,7 +154,91 @@ function formatRelativeAr(d: Date): string {
   return `منذ ${day} يوم`;
 }
 
-function VendorOrdersPage() {
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "؟";
+  if (parts.length === 1) return parts[0].slice(0, 2);
+  return (parts[0][0] ?? "") + (parts[1][0] ?? "");
+}
+
+function CustomerAvatar({ name, size = "md" }: { name: string; size?: "sm" | "md" }) {
+  const dim = size === "sm" ? "h-8 w-8 text-[11px]" : "h-9 w-9 text-xs";
+  return (
+    <div
+      className={cn(
+        "shrink-0 rounded-full bg-gradient-primary text-primary-foreground font-semibold flex items-center justify-center shadow-sm",
+        dim,
+      )}
+      aria-hidden
+    >
+      {getInitials(name).toUpperCase()}
+    </div>
+  );
+}
+
+const TIMELINE_FLOW: OrderStatus[] = [
+  "pending",
+  "confirmed",
+  "preparing",
+  "shipped",
+  "delivered",
+];
+
+function OrderTimeline({ status, createdAt, updatedAt }: { status: OrderStatus; createdAt: string; updatedAt?: string | null }) {
+  const cancelled = status === "cancelled";
+  const currentIndex = cancelled
+    ? -1
+    : TIMELINE_FLOW.indexOf(status === "processing" ? "preparing" : status);
+
+  return (
+    <ol className="relative space-y-3 ps-6 border-s-2 border-border">
+      {TIMELINE_FLOW.map((s, idx) => {
+        const reached = !cancelled && idx <= currentIndex;
+        const isCurrent = !cancelled && idx === currentIndex;
+        return (
+          <li key={s} className="relative">
+            <span
+              className={cn(
+                "absolute -start-[31px] flex h-5 w-5 items-center justify-center rounded-full border-2",
+                reached
+                  ? "bg-primary border-primary text-primary-foreground"
+                  : "bg-background border-border text-muted-foreground",
+                isCurrent && "ring-4 ring-primary/20",
+              )}
+            >
+              {reached ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+            </span>
+            <div className="flex items-center justify-between gap-2">
+              <span className={cn("text-sm", reached ? "font-semibold" : "text-muted-foreground")}>
+                {STATUS_LABELS[s]}
+              </span>
+              {isCurrent && updatedAt && (
+                <span className="text-[10px] text-muted-foreground">
+                  {formatRelativeAr(new Date(updatedAt))}
+                </span>
+              )}
+              {idx === 0 && (
+                <span className="text-[10px] text-muted-foreground">
+                  {formatRelativeAr(new Date(createdAt))}
+                </span>
+              )}
+            </div>
+          </li>
+        );
+      })}
+      {cancelled && (
+        <li className="relative">
+          <span className="absolute -start-[31px] flex h-5 w-5 items-center justify-center rounded-full border-2 bg-destructive border-destructive text-destructive-foreground">
+            <XCircle className="h-3 w-3" />
+          </span>
+          <span className="text-sm font-semibold text-destructive">
+            {STATUS_LABELS.cancelled}
+          </span>
+        </li>
+      )}
+    </ol>
+  );
+}
   const { companyId } = useAuth();
   const search = useSearch({ from: "/_app/_vendor/vendor/orders" });
   const navigate = Route.useNavigate();
