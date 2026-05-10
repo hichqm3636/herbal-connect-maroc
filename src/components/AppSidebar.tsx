@@ -91,20 +91,32 @@ const vendorTop: NavItem[] = [
 
 const vendorSections: NavSection[] = [
   {
-    id: "sales",
-    label: "المبيعات",
+    id: "commerce",
+    label: "التجارة",
     icon: ShoppingCart,
     items: [
       { title: "الطلبات", url: "/vendor/orders", icon: ClipboardList },
-      { title: "الفواتير", url: "/vendor/invoices", icon: Receipt },
-      { title: "المراجعات", url: "/vendor/reviews", icon: MessageSquare },
+      { title: "المنتجات", url: "/vendor/products", icon: Package },
+      { title: "العملاء", url: "/vendor/customers", icon: Users, comingSoon: true },
     ],
   },
   {
-    id: "catalog",
-    label: "الكتالوج",
-    icon: Package,
-    items: [{ title: "المنتجات", url: "/vendor/products", icon: Package }],
+    id: "finance",
+    label: "المالية",
+    icon: Wallet,
+    items: [
+      { title: "الفواتير", url: "/vendor/invoices", icon: Receipt },
+      { title: "الاشتراك والفواتير", url: "/vendor/billing", icon: CreditCard },
+    ],
+  },
+  {
+    id: "marketing",
+    label: "التسويق",
+    icon: Megaphone,
+    items: [
+      { title: "المراجعات", url: "/vendor/reviews", icon: MessageSquare },
+      { title: "كوبونات الخصم", url: "/vendor/coupons", icon: Tag, comingSoon: true },
+    ],
   },
   {
     id: "analytics",
@@ -122,7 +134,6 @@ const vendorSections: NavSection[] = [
     items: [
       { title: "إعدادات المتجر", url: "/vendor/branding", icon: Settings },
       { title: "الفريق والصلاحيات", url: "/vendor/team", icon: UsersRound },
-      { title: "الاشتراك والفواتير", url: "/vendor/billing", icon: CreditCard },
       { title: "فحص صحة الوسائط", url: "/vendor/storage-health", icon: Activity },
     ],
   },
