@@ -57,7 +57,12 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 
-type NavItem = { title: string; url: string; icon: LucideIcon };
+type NavItem = {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  comingSoon?: boolean;
+};
 type NavSection = {
   id: string;
   label: string;
