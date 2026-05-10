@@ -623,10 +623,11 @@ function VendorOrdersPage() {
                       }
                     }}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <CustomerAvatar name={o.buyer_name} size="sm" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-muted">
+                          <span className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-muted">
                             #{shortId}
                           </span>
                           <Badge variant="secondary" className={STATUS_TONE[o.status]}>
@@ -645,7 +646,7 @@ function VendorOrdersPage() {
                           {formatMAD(o.total_mad)}
                         </div>
                         <div className="text-[10px] text-muted-foreground mt-0.5">
-                          {new Date(o.created_at).toLocaleDateString("ar")}
+                          {formatRelativeAr(new Date(o.created_at))}
                         </div>
                       </div>
                     </div>
