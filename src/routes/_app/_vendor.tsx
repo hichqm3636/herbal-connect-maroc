@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { ShieldAlert, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { CompanyTypeGate } from "@/components/vendor/CompanyTypeGate";
 
 /**
  * Pathless layout route that gates the entire `/vendor/*` workspace.
@@ -56,5 +57,10 @@ function VendorGuard() {
     );
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <CompanyTypeGate />
+      <Outlet />
+    </>
+  );
 }
