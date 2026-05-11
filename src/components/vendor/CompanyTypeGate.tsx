@@ -59,7 +59,7 @@ export function CompanyTypeGate() {
 
   return (
     <Dialog open={open} onOpenChange={() => { /* blocking */ }}>
-      <DialogContent className="max-w-2xl" dir="rtl" hideClose>
+      <DialogContent className="max-w-2xl [&>button.absolute]:hidden" dir="rtl" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-xl">مرحبًا بك في Nexora 👋</DialogTitle>
           <DialogDescription>
