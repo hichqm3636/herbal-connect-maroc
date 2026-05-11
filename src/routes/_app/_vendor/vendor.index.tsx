@@ -45,6 +45,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
 import type { Database } from "@/integrations/supabase/types";
 import { PlanUsageCard } from "@/components/vendor/PlanUsageCard";
+import { OnboardingChecklist } from "@/components/vendor/OnboardingChecklist";
 
 type OrderStatus = Database["public"]["Enums"]["order_status"];
 
@@ -457,6 +458,8 @@ function VendorDashboard() {
           </Button>
         </div>
       </header>
+
+      <OnboardingChecklist />
 
       {/* Primary KPI grid */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">

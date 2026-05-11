@@ -190,6 +190,7 @@ export type Database = {
         Row: {
           address: string | null
           brand_color: string
+          company_type: Database["public"]["Enums"]["company_type"] | null
           contact_email: string | null
           contact_phone: string | null
           created_at: string
@@ -200,6 +201,7 @@ export type Database = {
           is_listed: boolean
           logo_url: string | null
           name: string
+          onboarding_state: Json
           payment_instructions: string
           rc: string | null
           slug: string
@@ -209,6 +211,7 @@ export type Database = {
         Insert: {
           address?: string | null
           brand_color?: string
+          company_type?: Database["public"]["Enums"]["company_type"] | null
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -219,6 +222,7 @@ export type Database = {
           is_listed?: boolean
           logo_url?: string | null
           name: string
+          onboarding_state?: Json
           payment_instructions?: string
           rc?: string | null
           slug: string
@@ -228,6 +232,7 @@ export type Database = {
         Update: {
           address?: string | null
           brand_color?: string
+          company_type?: Database["public"]["Enums"]["company_type"] | null
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
@@ -238,6 +243,7 @@ export type Database = {
           is_listed?: boolean
           logo_url?: string | null
           name?: string
+          onboarding_state?: Json
           payment_instructions?: string
           rc?: string | null
           slug?: string
@@ -2004,6 +2010,13 @@ export type Database = {
         | "partner"
         | "vendor"
         | "client"
+      company_type:
+        | "pharmacy"
+        | "supplements"
+        | "herbs"
+        | "medical_supplies"
+        | "sports_supplies"
+        | "other"
       inventory_movement_type:
         | "purchase"
         | "sale"
@@ -2184,6 +2197,14 @@ export const Constants = {
         "partner",
         "vendor",
         "client",
+      ],
+      company_type: [
+        "pharmacy",
+        "supplements",
+        "herbs",
+        "medical_supplies",
+        "sports_supplies",
+        "other",
       ],
       inventory_movement_type: [
         "purchase",
