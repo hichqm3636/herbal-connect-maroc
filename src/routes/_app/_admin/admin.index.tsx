@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Building2, Users, ClipboardList } from "lucide-react";
+import { Building2, Users, ClipboardList, Stethoscope } from "lucide-react";
 
 export const Route = createFileRoute("/_app/_admin/admin/")({
   component: AdminHome,
@@ -56,6 +56,23 @@ function AdminHome() {
             <div className="min-w-0">
               <h2 className="font-bold text-base">الإبلاغات</h2>
               <p className="text-xs text-muted-foreground mt-1">قريباً.</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-5 shadow-soft border-primary/20">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Stethoscope className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="font-bold text-base">اختبار الـ Backend</h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                فحص الجداول وسياسات RLS وعدد السجلات.
+              </p>
+              <Button asChild size="sm" variant="outline" className="mt-3">
+                <Link to="/admin/test-suite">فتح أداة الاختبار</Link>
+              </Button>
             </div>
           </div>
         </Card>
