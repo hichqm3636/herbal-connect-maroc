@@ -55,6 +55,7 @@ import { Route as AppVendorVendorBrandingRouteImport } from './routes/_app/_vend
 import { Route as AppVendorVendorBillingRouteImport } from './routes/_app/_vendor/vendor.billing'
 import { Route as AppVendorVendorAnalyticsRouteImport } from './routes/_app/_vendor/vendor.analytics'
 import { Route as AppVendorVendorActivityRouteImport } from './routes/_app/_vendor/vendor.activity'
+import { Route as AppAdminAdminTestSuiteRouteImport } from './routes/_app/_admin/admin.test-suite'
 import { Route as AppAdminAdminCompaniesRouteImport } from './routes/_app/_admin/admin.companies'
 
 const VendorsRoute = VendorsRouteImport.update({
@@ -287,6 +288,11 @@ const AppVendorVendorActivityRoute = AppVendorVendorActivityRouteImport.update({
   path: '/vendor/activity',
   getParentRoute: () => AppVendorRoute,
 } as any)
+const AppAdminAdminTestSuiteRoute = AppAdminAdminTestSuiteRouteImport.update({
+  id: '/admin/test-suite',
+  path: '/admin/test-suite',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminAdminCompaniesRoute = AppAdminAdminCompaniesRouteImport.update({
   id: '/admin/companies',
   path: '/admin/companies',
@@ -325,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/super-admin/': typeof AppSuperAdminIndexRoute
   '/admin/companies': typeof AppAdminAdminCompaniesRoute
+  '/admin/test-suite': typeof AppAdminAdminTestSuiteRoute
   '/vendor/activity': typeof AppVendorVendorActivityRoute
   '/vendor/analytics': typeof AppVendorVendorAnalyticsRoute
   '/vendor/billing': typeof AppVendorVendorBillingRoute
@@ -370,6 +377,7 @@ export interface FileRoutesByTo {
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/super-admin': typeof AppSuperAdminIndexRoute
   '/admin/companies': typeof AppAdminAdminCompaniesRoute
+  '/admin/test-suite': typeof AppAdminAdminTestSuiteRoute
   '/vendor/activity': typeof AppVendorVendorActivityRoute
   '/vendor/analytics': typeof AppVendorVendorAnalyticsRoute
   '/vendor/billing': typeof AppVendorVendorBillingRoute
@@ -420,6 +428,7 @@ export interface FileRoutesById {
   '/api/public/woo-webhook': typeof ApiPublicWooWebhookRoute
   '/_app/super-admin/': typeof AppSuperAdminIndexRoute
   '/_app/_admin/admin/companies': typeof AppAdminAdminCompaniesRoute
+  '/_app/_admin/admin/test-suite': typeof AppAdminAdminTestSuiteRoute
   '/_app/_vendor/vendor/activity': typeof AppVendorVendorActivityRoute
   '/_app/_vendor/vendor/analytics': typeof AppVendorVendorAnalyticsRoute
   '/_app/_vendor/vendor/billing': typeof AppVendorVendorBillingRoute
@@ -468,6 +477,7 @@ export interface FileRouteTypes {
     | '/api/public/woo-webhook'
     | '/super-admin/'
     | '/admin/companies'
+    | '/admin/test-suite'
     | '/vendor/activity'
     | '/vendor/analytics'
     | '/vendor/billing'
@@ -513,6 +523,7 @@ export interface FileRouteTypes {
     | '/api/public/woo-webhook'
     | '/super-admin'
     | '/admin/companies'
+    | '/admin/test-suite'
     | '/vendor/activity'
     | '/vendor/analytics'
     | '/vendor/billing'
@@ -562,6 +573,7 @@ export interface FileRouteTypes {
     | '/api/public/woo-webhook'
     | '/_app/super-admin/'
     | '/_app/_admin/admin/companies'
+    | '/_app/_admin/admin/test-suite'
     | '/_app/_vendor/vendor/activity'
     | '/_app/_vendor/vendor/analytics'
     | '/_app/_vendor/vendor/billing'
@@ -916,6 +928,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVendorVendorActivityRouteImport
       parentRoute: typeof AppVendorRoute
     }
+    '/_app/_admin/admin/test-suite': {
+      id: '/_app/_admin/admin/test-suite'
+      path: '/admin/test-suite'
+      fullPath: '/admin/test-suite'
+      preLoaderRoute: typeof AppAdminAdminTestSuiteRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/_admin/admin/companies': {
       id: '/_app/_admin/admin/companies'
       path: '/admin/companies'
@@ -928,11 +947,13 @@ declare module '@tanstack/react-router' {
 
 interface AppAdminRouteChildren {
   AppAdminAdminCompaniesRoute: typeof AppAdminAdminCompaniesRoute
+  AppAdminAdminTestSuiteRoute: typeof AppAdminAdminTestSuiteRoute
   AppAdminAdminIndexRoute: typeof AppAdminAdminIndexRoute
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminAdminCompaniesRoute: AppAdminAdminCompaniesRoute,
+  AppAdminAdminTestSuiteRoute: AppAdminAdminTestSuiteRoute,
   AppAdminAdminIndexRoute: AppAdminAdminIndexRoute,
 }
 
@@ -1071,12 +1092,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
