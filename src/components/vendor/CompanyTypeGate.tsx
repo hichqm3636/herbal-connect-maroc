@@ -158,26 +158,26 @@ export function CompanyTypeGate() {
               );
             })}
           </div>
+        </div>
 
-          {/* Footer */}
-          <div className="mt-5 flex items-center justify-between gap-3 border-t pt-4">
-            <button
-              type="button"
-              onClick={skip}
-              disabled={saving}
-              className="text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
-            >
-              سأحدد هذا لاحقًا
-            </button>
-            <Button
-              onClick={() => save()}
-              disabled={!selected || saving}
-              className="bg-gradient-primary min-w-32"
-            >
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              متابعة
-            </Button>
-          </div>
+        {/* Footer — sticky */}
+        <div className="shrink-0 border-t bg-background px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={skip}
+            disabled={saving}
+            className="text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+          >
+            سأحدد هذا لاحقًا
+          </button>
+          <Button
+            onClick={() => save()}
+            disabled={!selected || saving}
+            className="bg-gradient-primary min-w-28 sm:min-w-32"
+          >
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+            متابعة
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
