@@ -97,28 +97,28 @@ export function CompanyTypeGate() {
   return (
     <Dialog open={open} onOpenChange={() => { /* blocking */ }}>
       <DialogContent
-        className="max-w-3xl p-0 overflow-hidden [&>button.absolute]:hidden"
+        className="max-w-3xl p-0 gap-0 overflow-hidden [&>button.absolute]:hidden w-[calc(100vw-1rem)] max-h-[92vh] sm:max-h-[88vh] flex flex-col rounded-2xl"
         dir="rtl"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         {/* Header */}
-        <div className="bg-gradient-primary px-6 py-7 text-primary-foreground">
-          <div className="flex items-center gap-2 text-xs font-medium opacity-90">
+        <div className="bg-gradient-primary px-5 py-5 sm:px-6 sm:py-7 text-primary-foreground shrink-0">
+          <div className="flex items-center gap-2 text-[11px] sm:text-xs font-medium opacity-90">
             <Sparkles className="h-3.5 w-3.5" />
             مرحبًا بك في Nexora
           </div>
-          <h2 className="mt-2 text-2xl font-extrabold tracking-tight">
+          <h2 className="mt-1.5 text-lg sm:text-2xl font-extrabold tracking-tight leading-tight">
             أدِر شركتك الصحية من مكان واحد
           </h2>
-          <p className="mt-1.5 text-sm opacity-90">
+          <p className="mt-1 text-xs sm:text-sm opacity-90 leading-relaxed">
             ابدأ بإعداد مساحتك لتناسب نشاطك وعملياتك اليومية.
           </p>
         </div>
 
-        {/* Body */}
-        <div className="px-6 py-5">
-          <p className="text-sm text-muted-foreground mb-4">
+        {/* Body — scrollable */}
+        <div className="px-4 sm:px-6 py-4 sm:py-5 overflow-y-auto flex-1 min-h-0">
+          <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 leading-relaxed">
             اختر نوع شركتك لنضبط Nexora وفق طريقة عملك — يمكنك تعديل هذا لاحقًا من الإعدادات.
           </p>
 
@@ -158,26 +158,26 @@ export function CompanyTypeGate() {
               );
             })}
           </div>
+        </div>
 
-          {/* Footer */}
-          <div className="mt-5 flex items-center justify-between gap-3 border-t pt-4">
-            <button
-              type="button"
-              onClick={skip}
-              disabled={saving}
-              className="text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
-            >
-              سأحدد هذا لاحقًا
-            </button>
-            <Button
-              onClick={() => save()}
-              disabled={!selected || saving}
-              className="bg-gradient-primary min-w-32"
-            >
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              متابعة
-            </Button>
-          </div>
+        {/* Footer — sticky */}
+        <div className="shrink-0 border-t bg-background px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={skip}
+            disabled={saving}
+            className="text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+          >
+            سأحدد هذا لاحقًا
+          </button>
+          <Button
+            onClick={() => save()}
+            disabled={!selected || saving}
+            className="bg-gradient-primary min-w-28 sm:min-w-32"
+          >
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+            متابعة
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
