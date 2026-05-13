@@ -919,7 +919,7 @@ function FeaturedProducts({
         ) : (
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {products.map((p) => {
-              const inStock = (p.stock_quantity ?? 0) > 0;
+              const inStock = (p.stock ?? 0) > 0;
               return (
                 <Card
                   key={p.id}
@@ -929,7 +929,7 @@ function FeaturedProducts({
                     {p.image_url ? (
                       <img
                         src={p.image_url}
-                        alt={p.name}
+                        alt={p.name_ar}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform group-hover:scale-105"
                       />
@@ -951,16 +951,16 @@ function FeaturedProducts({
                     </Badge>
                   </div>
                   <div className="flex flex-1 flex-col p-4">
-                    <h3 className="line-clamp-2 text-sm font-bold">{p.name}</h3>
+                    <h3 className="line-clamp-2 text-sm font-bold">{p.name_ar}</h3>
                     <p className="mt-1 line-clamp-1 text-[11px] text-muted-foreground">
                       {p.company?.display_name || p.company?.name || "—"}
                     </p>
                     <div className="mt-3 flex items-center justify-between text-xs">
                       <span className="font-extrabold text-primary">
-                        {p.price != null ? `${p.price} د.م` : "—"}
+                        {p.price_mad != null ? `${p.price_mad} د.م` : "—"}
                       </span>
                       <span className="text-muted-foreground">
-                        MOQ: {p.min_order_quantity ?? 1}
+                        MOQ: {p.minimum_order ?? 1}
                       </span>
                     </div>
                     {p.company?.slug ? (
@@ -974,8 +974,8 @@ function FeaturedProducts({
                           to="/store/$slug/product/$id"
                           params={{ slug: p.company.slug, id: p.id }}
                           onClick={() =>
-                            track("landing_product_click", {
-                              metadata: { product_id: p.id },
+                            track("landing_cta_click", {
+                              metadata: { cta: "product_details", product_id: p.id },
                             })
                           }
                         >
