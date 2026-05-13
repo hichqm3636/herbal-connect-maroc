@@ -177,12 +177,12 @@ function NexoraLanding({ isAuthenticated }: { isAuthenticated: boolean }) {
         supabase
           .from("products")
           .select(
-            "id, name, price, image_url, min_order_quantity, stock_quantity, company:companies(display_name, name, slug)"
+            "id, name_ar, price_mad, image_url, minimum_order, stock, company:companies(display_name, name, slug)"
           )
-          .eq("status", "active")
+          .eq("active", true)
           .order("created_at", { ascending: false })
           .limit(4),
-        supabase.from("products").select("id", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("active", true),
         supabase.from("companies").select("id", { count: "exact", head: true }).eq("is_listed", true),
         supabase.from("orders").select("id", { count: "exact", head: true }),
       ]);
