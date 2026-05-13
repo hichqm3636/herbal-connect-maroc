@@ -136,11 +136,11 @@ interface VendorCard {
 
 interface ProductCard {
   id: string;
-  name: string;
-  price: number | null;
+  name_ar: string;
+  price_mad: number | null;
   image_url: string | null;
-  min_order_quantity: number | null;
-  stock_quantity: number | null;
+  minimum_order: number | null;
+  stock: number | null;
   company: { display_name: string | null; name: string; slug: string } | null;
 }
 
