@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://herbal-connect-maroc.lovable.app/sitemap.xml
