@@ -43,7 +43,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           const { data: products } = await supabase
             .from("products")
             .select("id, company_id, updated_at, companies(slug)")
-            .eq("status", "active")
+            .eq("active", true)
             .limit(1000);
           for (const p of (products ?? []) as any[]) {
             const slug = p.companies?.slug;
