@@ -24,15 +24,34 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/store/$slug")({
   component: VendorStorePage,
-  head: ({ params }) => ({
-    meta: [
-      { title: `${params.slug} — متجر البائع` },
-      {
-        name: "description",
-        content: `كتالوج البائع ${params.slug} على منصة Nexora.`,
-      },
-    ],
-  }),
+  head: ({ params }) => {
+    const url = `https://herbal-connect-maroc.lovable.app/store/${params.slug}`;
+    const title = `متجر ${params.slug} — كتالوج جملة على Nexora`;
+    const description = `تصفّح كتالوج البائع ${params.slug} على Nexora: منتجات صحية بالجملة، أسعار للصيدليات، حدود طلب صغيرة، وشحن داخل المغرب. اطلب مباشرة من المورّد.`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "website" },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: title,
+            description,
+            url,
+          }),
+        },
+      ],
+    };
+  },
 });
 
 interface Vendor {

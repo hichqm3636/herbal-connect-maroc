@@ -10,21 +10,35 @@ import { homeForRole } from "@/lib/roleRouting";
 
 export const Route = createFileRoute("/vendors")({
   component: VendorDirectory,
-  head: () => ({
-    meta: [
-      { title: "دليل البائعين — Nexora" },
-      {
-        name: "description",
-        content:
-          "تصفّح قائمة البائعين المعتمدين على منصة Nexora — صيدليات، مكملات غذائية، معدات صحية ورياضية.",
-      },
-      { property: "og:title", content: "دليل البائعين — Nexora" },
-      {
-        property: "og:description",
-        content: "اكتشف بائعي القطاع الصحي والرياضي على Nexora.",
-      },
-    ],
-  }),
+  head: () => {
+    const url = "https://herbal-connect-maroc.lovable.app/vendors";
+    const title = "دليل البائعين — Nexora";
+    const description =
+      "تصفّح قائمة البائعين المعتمدين على منصة Nexora — صيدليات، مكملات غذائية، معدات صحية ورياضية.";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "website" },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: title,
+            description,
+            url,
+          }),
+        },
+      ],
+    };
+  },
 });
 
 interface Vendor {

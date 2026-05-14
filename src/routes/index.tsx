@@ -55,17 +55,26 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Nexora" },
+      { property: "og:url", content: "https://herbal-connect-maroc.lovable.app/" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://herbal-connect-maroc.lovable.app/" },
     ],
     scripts: [
       {
         type: "application/ld+json",
         children: JSON.stringify({
           "@context": "https://schema.org",
-          "@type": "Organization",
+          "@type": "WebSite",
           name: "Nexora",
-          url: "https://nexora.app",
+          url: "https://herbal-connect-maroc.lovable.app/",
           description:
             "منصة B2B لقطاع الصحة تجمع بين السوق وإدارة الأعمال.",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://herbal-connect-maroc.lovable.app/vendors?q={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
         }),
       },
     ],

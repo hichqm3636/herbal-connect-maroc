@@ -15,7 +15,25 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/login")({
   component: LoginPage,
   head: () => ({
-    meta: [{ title: "تسجيل الدخول — Nexora" }],
+    meta: [
+      { title: "تسجيل الدخول — Nexora" },
+      {
+        name: "description",
+        content:
+          "سجّل الدخول إلى حسابك على Nexora لإدارة طلبات الجملة والمخزون والفواتير في قطاع الصحة من لوحة تحكم موحدة.",
+      },
+      { property: "og:title", content: "تسجيل الدخول — Nexora" },
+      {
+        property: "og:description",
+        content:
+          "ادخل إلى Nexora لإدارة مشترياتك ومبيعاتك في قطاع الصحة (أدوية، مكملات، مستلزمات طبية ورياضية).",
+      },
+      { property: "og:url", content: "https://herbal-connect-maroc.lovable.app/login" },
+      { property: "og:type", content: "website" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://herbal-connect-maroc.lovable.app/login" },
+    ],
   }),
 });
 
