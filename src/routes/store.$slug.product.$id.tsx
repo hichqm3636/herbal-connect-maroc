@@ -35,12 +35,41 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/store/$slug/product/$id")({
   component: ProductDetailPage,
-  head: ({ params }) => ({
-    meta: [
-      { title: `منتج — ${params.slug}` },
-      { name: "description", content: "تفاصيل المنتج والمراجعات على Nexora." },
-    ],
-  }),
+  head: ({ params }) => {
+    const url = `https://herbal-connect-maroc.lovable.app/store/${params.slug}/product/${params.id}`;
+    const title = `منتج من ${params.slug} — تفاصيل وأسعار جملة | Nexora`;
+    const description = `اطّلع على تفاصيل المنتج من البائع ${params.slug} على Nexora: السعر بالجملة، الحد الأدنى للطلب، التوفر، ومراجعات المشترين قبل إتمام الطلب.`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:url", content: url },
+        { property: "og:type", content: "product" },
+      ],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: title,
+            description,
+            url,
+            brand: { "@type": "Brand", name: params.slug },
+            offers: {
+              "@type": "Offer",
+              priceCurrency: "MAD",
+              availability: "https://schema.org/InStock",
+              url,
+            },
+          }),
+        },
+      ],
+    };
+  },
 });
 
 interface Vendor {

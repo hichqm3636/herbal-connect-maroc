@@ -1,0 +1,16 @@
+# Nexora
+
+> Nexora is a B2B SaaS marketplace for Morocco's health sector — pharmaceuticals, supplements, medical herbs, medical supplies, and sports nutrition. Vendors list wholesale catalogs and run their business (orders, invoices, inventory, loyalty) from one dashboard; buyers (pharmacies, clinics, retailers) source from verified suppliers.
+
+## Pages
+
+- [Home](/): What Nexora is and who it's for.
+- [Vendor directory](/vendors): Browse verified suppliers in Morocco's health sector.
+- [Pricing](/pricing): SaaS plans for vendors.
+- [Sign in](/login): Existing account login.
+- [Sign up](/signup): Create a buyer or vendor account.
+- [Vendor sign in](/vendor-login): Vendor portal login.
+
+## Optional
+
+- [Sitemap](/sitemap.xml): Full machine-readable URL list including vendor stores and product pages.
