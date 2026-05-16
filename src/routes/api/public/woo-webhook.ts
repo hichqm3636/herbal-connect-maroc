@@ -30,7 +30,7 @@ import {
   loadSupplier,
   upsertWooProductFromWebhook,
   type WooProduct,
-} from "@/lib/integrations/herbialife-woocommerce";
+} from "@/lib/integrations/herbialife-woocommerce.server";
 
 function verifySignature(rawBody: string, signature: string | null, secret: string): boolean {
   if (!signature) return false;
