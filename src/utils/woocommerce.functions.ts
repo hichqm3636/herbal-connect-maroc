@@ -5,12 +5,12 @@ import {
   retrySendOrderToWoo,
   type SyncProductsResult,
   type SendOrderResult,
-} from "@/lib/integrations/herbialife-woocommerce";
+} from "@/lib/integrations/herbialife-woocommerce.server";
 
 /**
  * Server functions wrapping the Herbialife WooCommerce integration.
  *
- * The actual API logic lives in `src/lib/integrations/herbialife-woocommerce.ts`
+ * The actual API logic lives in `src/lib/integrations/herbialife-woocommerce.server.ts`
  * — these wrappers exist only to expose it over RPC to the client.
  */
 
