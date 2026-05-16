@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { resolveTenant } from "@/lib/tenant.functions";
 import type { Company } from "@/hooks/useAuth";
 
 /**
@@ -91,19 +91,18 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     }
 
     setState((s) => ({ ...s, loading: true, slug, kind: "tenant" }));
-    supabase
-      .from("companies")
-      .select("id, name, display_name, logo_url, brand_color, slug")
-      .eq("slug", slug)
-      .maybeSingle()
-      .then(({ data }) => {
+    resolveTenant({ data: { slug } })
+      .then((res) => {
         if (cancelled) return;
-        if (!data) {
+        if (!res.found) {
           setState({ kind: "unknown", slug, company: null, loading: false });
           return;
         }
-        const { slug: _ignore, ...company } = data as Company & { slug: string };
-        setState({ kind: "tenant", slug, company, loading: false });
+        setState({ kind: "tenant", slug, company: res.company, loading: false });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setState({ kind: "unknown", slug, company: null, loading: false });
       });
 
     return () => {
