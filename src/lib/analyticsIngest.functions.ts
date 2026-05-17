@@ -209,7 +209,7 @@ export const ingestAnalytics = createServerFn({ method: "POST" })
         vendor_id: vendorId,           // server-resolved
         user_id: userId,               // server-resolved
         price: ev.price ?? null,
-        metadata: { ...(ev.metadata ?? {}), __dk: dedupKey, ip_hash: ipHash },
+        metadata: { ...(ev.metadata ?? {}), __dk: dedupKey, ip_hash: ipHash } as never,
       });
     }
 
