@@ -1131,6 +1131,51 @@ function VendorOrdersPage() {
 
                 <Separator />
 
+                {/* Invoice issuance */}
+                <div>
+                  <h3 className="text-sm font-bold mb-3">الفاتورة</h3>
+                  {invoiceMap[selected.id] ? (
+                    <div className="flex items-center gap-2 rounded-md border border-success/30 bg-success/10 p-3 text-sm">
+                      <FileText className="h-4 w-4 text-success" />
+                      <div className="flex-1">
+                        <p className="font-semibold text-success">
+                          تم إصدار الفاتورة
+                        </p>
+                        <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                          {invoiceMap[selected.id].invoice_number}
+                        </p>
+                      </div>
+                    </div>
+                  ) : isAdmin && INVOICE_ELIGIBLE.includes(selected.status) ? (
+                    <div className="flex items-start gap-2">
+                      <Button
+                        size="sm"
+                        variant="default"
+                        disabled={issuingInvoice === selected.id}
+                        onClick={() => issueInvoice(selected)}
+                      >
+                        {issuingInvoice === selected.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <FileText className="h-4 w-4" />
+                        )}
+                        إصدار فاتورة
+                      </Button>
+                      <p className="text-xs text-muted-foreground flex-1">
+                        ستتولى المنظومة توليد الرقم والـ PDF وإرسال البريد تلقائياً.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {!isAdmin
+                        ? "إصدار الفاتورة متاح للمدراء فقط."
+                        : "يجب أن يكون الطلب مؤكَّداً أو قيد التحضير أو مشحوناً أو مُسلَّماً لإصدار الفاتورة."}
+                    </p>
+                  )}
+                </div>
+
+                <Separator />
+
                 {/* Status transitions */}
                 {NEXT_STATUS[selected.status].length > 0 ? (
                   <div>
