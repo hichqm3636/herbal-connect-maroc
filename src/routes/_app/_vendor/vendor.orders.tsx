@@ -565,15 +565,17 @@ function VendorOrdersPage() {
       .slice(0, 10);
     const { data, error } = await supabase
       .from("invoices")
-      .insert({
-        company_id: companyId,
-        order_id: order.id,
-        buyer_id: order.buyer_id,
-        total_mad: total,
-        subtotal_mad: subtotal,
-        vat_amount_mad: vat,
-        due_date: dueDate,
-      })
+      .insert([
+        {
+          company_id: companyId,
+          order_id: order.id,
+          buyer_id: order.buyer_id,
+          total_mad: total,
+          subtotal_mad: subtotal,
+          vat_amount_mad: vat,
+          due_date: dueDate,
+        },
+      ])
       .select("id, invoice_number")
       .single();
     setIssuingInvoice(null);
