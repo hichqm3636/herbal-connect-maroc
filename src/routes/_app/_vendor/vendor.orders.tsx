@@ -539,7 +539,55 @@ function VendorOrdersPage() {
     if (selected?.id === order.id) setSelected({ ...order, status: next });
   };
 
-  const saveAdminNotes = async () => {
+  // Manual invoice issuance. We insert ONLY the canonical fields; every
+  // downstream step (number, PDF, email, paid-status sync) is owned by
+  // existing DB triggers and edge functions — do not duplicate them here.
+  const issueInvoice = async (order: OrderRow) => {
+    if (!companyId || !isAdmin) {
+      toast.error("صلاحية غير كافية");
+      return;
+    }
+    if (invoiceMap[order.id]) {
+      toast.message("الفاتورة مُصدَرة مسبقاً");
+      return;
+    }
+    if (!INVOICE_ELIGIBLE.includes(order.status)) {
+      toast.error("لا يمكن إصدار فاتورة لهذه الحالة");
+      return;
+    }
+    setIssuingInvoice(order.id);
+    const total = Number(order.total_mad) || 0;
+    // VAT-inclusive total: subtotal = total / 1.20 ; vat = total - subtotal.
+    const subtotal = Math.round((total / 1.2) * 100) / 100;
+    const vat = Math.round((total - subtotal) * 100) / 100;
+    const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const { data, error } = await supabase
+      .from("invoices")
+      .insert({
+        company_id: companyId,
+        order_id: order.id,
+        buyer_id: order.buyer_id,
+        total_mad: total,
+        subtotal_mad: subtotal,
+        vat_amount_mad: vat,
+        due_date: dueDate,
+      })
+      .select("id, invoice_number")
+      .single();
+    setIssuingInvoice(null);
+    if (error || !data) {
+      toast.error(error?.message || "تعذر إصدار الفاتورة");
+      return;
+    }
+    toast.success(`تم إصدار الفاتورة ${data.invoice_number}`);
+    setInvoiceMap((prev) => ({
+      ...prev,
+      [order.id]: { id: data.id, invoice_number: data.invoice_number },
+    }));
+  };
+
     if (!selected) return;
     const value = adminNotes.trim() || null;
     if ((selected.admin_notes ?? null) === value) return;
