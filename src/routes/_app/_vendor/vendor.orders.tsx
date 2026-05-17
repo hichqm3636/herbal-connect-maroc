@@ -902,6 +902,35 @@ function VendorOrdersPage() {
                                 {STATUS_LABELS[next]}
                               </Button>
                             ))}
+                          {invoiceMap[o.id] ? (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] bg-success/15 text-success border border-success/30"
+                            >
+                              <FileText className="h-3 w-3 ms-1" />
+                              {invoiceMap[o.id].invoice_number}
+                            </Badge>
+                          ) : (
+                            isAdmin &&
+                            INVOICE_ELIGIBLE.includes(o.status) && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={issuingInvoice === o.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  issueInvoice(o);
+                                }}
+                              >
+                                {issuingInvoice === o.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <FileText className="h-4 w-4" />
+                                )}
+                                إصدار فاتورة
+                              </Button>
+                            )
+                          )}
                           <Button
                             size="sm"
                             variant="ghost"
