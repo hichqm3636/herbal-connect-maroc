@@ -588,6 +588,7 @@ function VendorOrdersPage() {
     }));
   };
 
+  const saveAdminNotes = async () => {
     if (!selected) return;
     const value = adminNotes.trim() || null;
     if ((selected.admin_notes ?? null) === value) return;
