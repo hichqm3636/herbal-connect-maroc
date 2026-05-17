@@ -400,8 +400,12 @@ function VendorDashboard() {
 
   if (loading || !stats) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="space-y-6" dir="rtl">
+        <KpiGridSkeleton count={4} />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <DashboardBlockSkeleton />
+          <DashboardBlockSkeleton />
+        </div>
       </div>
     );
   }
