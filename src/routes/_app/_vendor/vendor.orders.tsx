@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
+import { EmptyState } from "@/components/EmptyState";
+import { TableRowsSkeleton } from "@/components/Skeletons";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD } from "@/lib/format";
 import { cn } from "@/lib/utils";
