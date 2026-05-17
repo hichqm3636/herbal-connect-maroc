@@ -58,11 +58,9 @@ describe("EventSchema", () => {
     // first-class fields.
     const parsed = EventSchema.parse({
       event_name: "product_view",
-      // @ts-expect-error — intentionally testing unknown fields
       vendor_id: "00000000-0000-0000-0000-000000000000",
-      // @ts-expect-error — intentionally testing unknown fields
       user_id: "00000000-0000-0000-0000-000000000000",
-    });
+    } as unknown);
     expect("vendor_id" in parsed).toBe(false);
     expect("user_id" in parsed).toBe(false);
   });
