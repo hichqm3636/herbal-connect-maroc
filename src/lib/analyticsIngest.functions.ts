@@ -159,7 +159,15 @@ export const ingestAnalytics = createServerFn({ method: "POST" })
       }
     }
 
-    const rows: Array<Record<string, unknown>> = [];
+    type AnalyticsRow = {
+      event_name: string;
+      product_id: string | null;
+      vendor_id: string | null;
+      user_id: string | null;
+      price: number | null;
+      metadata: Record<string, unknown>;
+    };
+    const rows: AnalyticsRow[] = [];
     let rejected = 0;
 
     for (const ev of data.events) {
