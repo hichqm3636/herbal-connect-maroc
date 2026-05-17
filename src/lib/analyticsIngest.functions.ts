@@ -165,7 +165,7 @@ export const ingestAnalytics = createServerFn({ method: "POST" })
       vendor_id: string | null;
       user_id: string | null;
       price: number | null;
-      metadata: Record<string, unknown>;
+      metadata: never;
     };
     const rows: AnalyticsRow[] = [];
     let rejected = 0;
