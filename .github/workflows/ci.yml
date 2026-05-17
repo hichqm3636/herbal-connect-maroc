@@ -29,5 +29,13 @@ jobs:
           PGDATABASE: ${{ secrets.PGDATABASE }}
           PGPORT: ${{ secrets.PGPORT }}
         continue-on-error: true
+      - name: Tenant isolation integration suite
+        # Skips automatically (exit 0) if Supabase secrets are absent.
+        # When secrets are present, ANY cross-tenant leak fails CI.
+        run: bun run test:tenant-isolation
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
       - name: Build
         run: bun run build
