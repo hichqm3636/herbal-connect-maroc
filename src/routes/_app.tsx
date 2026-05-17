@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { toast } from "sonner";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
@@ -80,14 +81,23 @@ function AppLayout() {
     }
     // Vendor surface is reserved for the vendor role only — admins go to /admin.
     if (onVendorRoute && !isVendor) {
+      toast.warning("لا تملك صلاحية الوصول إلى مساحة عمل البائع", {
+        description: "تمت إعادتك إلى البوابة المناسبة لحسابك.",
+      });
       navigate({ to: homeForRole(marketplaceRole), replace: true });
       return;
     }
     if (onAdminRoute && !isPlatformAdmin) {
+      toast.warning("هذه المنطقة مخصصة لمسؤولي المنصة", {
+        description: "تمت إعادتك إلى البوابة المناسبة لحسابك.",
+      });
       navigate({ to: homeForRole(marketplaceRole), replace: true });
       return;
     }
     if (onSuperAdminRoute && !isSuperAdmin) {
+      toast.warning("هذه المنطقة مخصصة للمشرف العام فقط", {
+        description: "تمت إعادتك إلى البوابة المناسبة لحسابك.",
+      });
       navigate({ to: homeForRole(marketplaceRole), replace: true });
       return;
     }
