@@ -471,23 +471,65 @@ function VendorOrdersPage() {
   };
 
   const [savingPayment, setSavingPayment] = useState(false);
+
+  // P0 consistency bridge: when an order is marked paid AND an invoice exists,
+  // also insert a `payments` row. The `trg_sync_invoice_payment_state` trigger
+  // then derives invoice.status/paid_at and re-confirms order.payment_status.
+  // Idempotent: skips when a payment row already covers the invoice total.
+  const insertPaymentIfInvoiceExists = async (
+    orderId: string,
+    paidAtIso: string,
+  ): Promise<void> => {
+    const inv = invoiceMap[orderId];
+    if (!inv) return;
+    const { data: existing } = await supabase
+      .from("payments")
+      .select("id, amount")
+      .eq("invoice_id", inv.id);
+    const { data: invRow } = await supabase
+      .from("invoices")
+      .select("id, company_id, currency, total_mad")
+      .eq("id", inv.id)
+      .single();
+    if (!invRow) return;
+    const sum = (existing ?? []).reduce((a, p) => a + Number(p.amount || 0), 0);
+    if (sum >= Number(invRow.total_mad)) return; // already covered
+    await supabase.from("payments").insert({
+      company_id: invRow.company_id,
+      invoice_id: invRow.id,
+      amount: Number(invRow.total_mad) - sum,
+      currency: invRow.currency,
+      payment_method: "manual",
+      paid_at: paidAtIso,
+    });
+  };
+
   const updatePaymentStatus = async (next: PaymentStatus) => {
     if (!selected) return;
     setSavingPayment(true);
+    const nowIso = new Date().toISOString();
     const patch: { payment_status: PaymentStatus; payment_paid_at?: string } = { payment_status: next };
-    if (next === "paid") patch.payment_paid_at = new Date().toISOString();
+    if (next === "paid") patch.payment_paid_at = nowIso;
     const { error } = await supabase.from("orders").update(patch).eq("id", selected.id);
-    setSavingPayment(false);
     if (error) {
+      setSavingPayment(false);
       toast.error("تعذر تحديث حالة الدفع");
       return;
     }
+    if (next === "paid") {
+      try {
+        await insertPaymentIfInvoiceExists(selected.id, nowIso);
+      } catch (e) {
+        console.warn("payment row insert failed (non-fatal)", e);
+      }
+    }
+    setSavingPayment(false);
     toast.success(`حالة الدفع: ${PAYMENT_STATUS_LABELS[next]}`);
     const updated = {
       ...selected,
       payment_status: next,
       payment_paid_at:
-        next === "paid" ? (selected.payment_paid_at ?? new Date().toISOString()) : selected.payment_paid_at,
+        next === "paid" ? (selected.payment_paid_at ?? nowIso) : selected.payment_paid_at,
     };
     setSelected(updated);
     setOrders((prev) => prev.map((o) => (o.id === selected.id ? { ...o, ...updated } : o)));
@@ -502,14 +544,19 @@ function VendorOrdersPage() {
       payment_paid_at: string;
       status?: OrderStatus;
     } = { payment_status: "paid", payment_paid_at: nowIso };
-    // Only auto-advance status if the order is still pending.
     if (order.status === "pending") patch.status = "confirmed";
     const { error } = await supabase.from("orders").update(patch).eq("id", order.id);
-    setSavingPayment(false);
     if (error) {
+      setSavingPayment(false);
       toast.error("تعذر تأكيد التحويل");
       return;
     }
+    try {
+      await insertPaymentIfInvoiceExists(order.id, nowIso);
+    } catch (e) {
+      console.warn("payment row insert failed (non-fatal)", e);
+    }
+    setSavingPayment(false);
     toast.success("تم تأكيد التحويل وتأكيد الطلب");
     const updated: OrderRow = {
       ...order,
