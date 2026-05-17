@@ -6,7 +6,6 @@ import {
   TrendingDown,
   Calendar,
   AlertTriangle,
-  Loader2,
   ArrowLeft,
   Package,
   Clock,
