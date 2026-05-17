@@ -1857,6 +1857,13 @@ export type Database = {
           views: number
         }[]
       }
+      assert_tenant_admin_invariant: {
+        Args: never
+        Returns: {
+          company_id: string
+          vendor_count: number
+        }[]
+      }
       claim_client_role: { Args: never; Returns: boolean }
       claim_whatsapp_outbox: {
         Args: { _limit?: number }
