@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { EmptyState } from "@/components/EmptyState";
+import { TableRowsSkeleton } from "@/components/Skeletons";
 import { useAuth } from "@/hooks/useAuth";
 import { formatMAD, formatDateTimeAr } from "@/lib/format";
 import { toast } from "sonner";
