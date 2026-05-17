@@ -596,14 +596,14 @@ function VendorOrdersPage() {
       {/* Table */}
       <Card className="overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
+          <TableRowsSkeleton rows={6} cols={5} />
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-sm text-muted-foreground">
-            <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
-            لا توجد طلبات مطابقة
-          </div>
+          <EmptyState
+            bare
+            icon={Package}
+            title="لا توجد طلبات مطابقة"
+            description="جرّب تعديل الفلاتر أو نطاق التاريخ لرؤية المزيد من الطلبات."
+          />
         ) : (
           <>
             {/* Mobile: vertical card list */}
