@@ -131,7 +131,6 @@ const vendorSections: NavSection[] = [
     icon: Cog,
     items: [
       { title: "إعدادات المتجر", url: "/vendor/branding", icon: Settings },
-      { title: "الفريق والصلاحيات", url: "/vendor/team", icon: UsersRound },
       { title: "فحص صحة الوسائط", url: "/vendor/storage-health", icon: Activity },
     ],
   },
