@@ -69,7 +69,7 @@ export async function createTenant(label) {
       display_name: `${TAG} ${label}`,
       slug,
       is_listed: true,
-      company_type: "vendor",
+      company_type: "other",
     })
     .select("id, slug")
     .single();
