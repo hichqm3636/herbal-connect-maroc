@@ -574,6 +574,10 @@ function VendorOrdersPage() {
           subtotal_mad: subtotal,
           vat_amount_mad: vat,
           due_date: dueDate,
+          // Auto-filled by `trg_assign_invoice_number` BEFORE INSERT trigger
+          // when blank. The empty string here satisfies the NOT NULL column
+          // without bypassing the sequence-based numbering.
+          invoice_number: "",
         },
       ])
       .select("id, invoice_number")
