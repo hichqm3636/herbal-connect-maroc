@@ -226,13 +226,15 @@ function VendorInvoicesPage() {
       </div>
 
       {loading ? (
-        <Card className="p-8 flex items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin" />
+        <Card className="overflow-hidden">
+          <TableRowsSkeleton rows={5} cols={4} />
         </Card>
       ) : rows.length === 0 ? (
-        <Card className="p-8 text-center text-sm text-muted-foreground">
-          لا توجد فواتير بعد.
-        </Card>
+        <EmptyState
+          icon={FileText}
+          title="لا توجد فواتير بعد"
+          description="ستظهر فواتيرك هنا تلقائياً فور تأكيد أول طلب."
+        />
       ) : (
         <div className="space-y-3">
           {rows.map((inv) => (
