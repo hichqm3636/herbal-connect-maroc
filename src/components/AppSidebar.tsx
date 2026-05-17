@@ -97,7 +97,6 @@ const vendorSections: NavSection[] = [
     items: [
       { title: "الطلبات", url: "/vendor/orders", icon: ClipboardList },
       { title: "المنتجات", url: "/vendor/products", icon: Package },
-      { title: "العملاء", url: "/vendor/customers", icon: Users, comingSoon: true },
     ],
   },
   {
@@ -115,7 +114,6 @@ const vendorSections: NavSection[] = [
     icon: Megaphone,
     items: [
       { title: "المراجعات", url: "/vendor/reviews", icon: MessageSquare },
-      { title: "كوبونات الخصم", url: "/vendor/coupons", icon: Tag, comingSoon: true },
     ],
   },
   {
