@@ -325,6 +325,25 @@ function VendorOrdersPage() {
         buyer_phone: map.get(o.buyer_id)?.phone ?? null,
       })),
     );
+
+    // Load existing invoices for these orders so we know which ones are
+    // already issued. Scoped by company_id (RLS-safe) + the order_id set.
+    const orderIds = (data ?? []).map((o) => o.id);
+    if (orderIds.length > 0) {
+      const { data: invs } = await supabase
+        .from("invoices")
+        .select("id, invoice_number, order_id")
+        .eq("company_id", companyId)
+        .in("order_id", orderIds);
+      const next: Record<string, { id: string; invoice_number: string }> = {};
+      for (const inv of invs ?? []) {
+        next[inv.order_id] = { id: inv.id, invoice_number: inv.invoice_number };
+      }
+      setInvoiceMap(next);
+    } else {
+      setInvoiceMap({});
+    }
+
     setLoading(false);
     setRefreshing(false);
     setLastUpdated(new Date());
