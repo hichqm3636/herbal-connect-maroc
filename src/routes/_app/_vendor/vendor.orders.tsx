@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import {
   Loader2, Search, Eye, Package, Clock, CheckCircle2, Truck, XCircle,
-  Calendar, RefreshCw, Save, BadgeCheck, MessageCircle, Phone,
+  Calendar, RefreshCw, Save, BadgeCheck, MessageCircle, Phone, FileText,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -244,7 +244,7 @@ function OrderTimeline({ status, createdAt, updatedAt }: { status: OrderStatus; 
 }
 
 function VendorOrdersPage() {
-  const { companyId } = useAuth();
+  const { companyId, isAdmin } = useAuth();
   const search = useSearch({ from: "/_app/_vendor/vendor/orders" });
   const navigate = Route.useNavigate();
   const [orders, setOrders] = useState<OrderRow[]>([]);
@@ -262,7 +262,24 @@ function VendorOrdersPage() {
   const [savingStatus, setSavingStatus] = useState(false);
   const [adminNotes, setAdminNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  // order_id -> { id, invoice_number } for any order in this company that
+  // already has an issued invoice. Lets us hide/replace the "إصدار فاتورة"
+  // action and surface an "invoice issued" indicator instead.
+  const [invoiceMap, setInvoiceMap] = useState<
+    Record<string, { id: string; invoice_number: string }>
+  >({});
+  const [issuingInvoice, setIssuingInvoice] = useState<string | null>(null);
   const focusedRef = useRef<string | null>(null);
+
+  // Statuses for which a vendor admin may issue an invoice. Pending and
+  // cancelled orders are excluded by design.
+  const INVOICE_ELIGIBLE: OrderStatus[] = [
+    "confirmed",
+    "preparing",
+    "processing",
+    "shipped",
+    "delivered",
+  ];
 
   const setStatusFilter = (s: OrderStatus | "all") => {
     navigate({
@@ -308,6 +325,25 @@ function VendorOrdersPage() {
         buyer_phone: map.get(o.buyer_id)?.phone ?? null,
       })),
     );
+
+    // Load existing invoices for these orders so we know which ones are
+    // already issued. Scoped by company_id (RLS-safe) + the order_id set.
+    const orderIds = (data ?? []).map((o) => o.id);
+    if (orderIds.length > 0) {
+      const { data: invs } = await supabase
+        .from("invoices")
+        .select("id, invoice_number, order_id")
+        .eq("company_id", companyId)
+        .in("order_id", orderIds);
+      const next: Record<string, { id: string; invoice_number: string }> = {};
+      for (const inv of invs ?? []) {
+        next[inv.order_id] = { id: inv.id, invoice_number: inv.invoice_number };
+      }
+      setInvoiceMap(next);
+    } else {
+      setInvoiceMap({});
+    }
+
     setLoading(false);
     setRefreshing(false);
     setLastUpdated(new Date());
@@ -503,6 +539,61 @@ function VendorOrdersPage() {
     if (selected?.id === order.id) setSelected({ ...order, status: next });
   };
 
+  // Manual invoice issuance. We insert ONLY the canonical fields; every
+  // downstream step (number, PDF, email, paid-status sync) is owned by
+  // existing DB triggers and edge functions — do not duplicate them here.
+  const issueInvoice = async (order: OrderRow) => {
+    if (!companyId || !isAdmin) {
+      toast.error("صلاحية غير كافية");
+      return;
+    }
+    if (invoiceMap[order.id]) {
+      toast.message("الفاتورة مُصدَرة مسبقاً");
+      return;
+    }
+    if (!INVOICE_ELIGIBLE.includes(order.status)) {
+      toast.error("لا يمكن إصدار فاتورة لهذه الحالة");
+      return;
+    }
+    setIssuingInvoice(order.id);
+    const total = Number(order.total_mad) || 0;
+    // VAT-inclusive total: subtotal = total / 1.20 ; vat = total - subtotal.
+    const subtotal = Math.round((total / 1.2) * 100) / 100;
+    const vat = Math.round((total - subtotal) * 100) / 100;
+    const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    const { data, error } = await supabase
+      .from("invoices")
+      .insert([
+        {
+          company_id: companyId,
+          order_id: order.id,
+          buyer_id: order.buyer_id,
+          total_mad: total,
+          subtotal_mad: subtotal,
+          vat_amount_mad: vat,
+          due_date: dueDate,
+          // Auto-filled by `trg_assign_invoice_number` BEFORE INSERT trigger
+          // when blank. The empty string here satisfies the NOT NULL column
+          // without bypassing the sequence-based numbering.
+          invoice_number: "",
+        },
+      ])
+      .select("id, invoice_number")
+      .single();
+    setIssuingInvoice(null);
+    if (error || !data) {
+      toast.error(error?.message || "تعذر إصدار الفاتورة");
+      return;
+    }
+    toast.success(`تم إصدار الفاتورة ${data.invoice_number}`);
+    setInvoiceMap((prev) => ({
+      ...prev,
+      [order.id]: { id: data.id, invoice_number: data.invoice_number },
+    }));
+  };
+
   const saveAdminNotes = async () => {
     if (!selected) return;
     const value = adminNotes.trim() || null;
@@ -691,6 +782,35 @@ function VendorOrdersPage() {
                             {STATUS_LABELS[next]}
                           </Button>
                         )}
+                        {invoiceMap[o.id] ? (
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] bg-success/15 text-success border border-success/30"
+                          >
+                            <FileText className="h-3 w-3 ms-1" />
+                            فاتورة {invoiceMap[o.id].invoice_number}
+                          </Badge>
+                        ) : (
+                          isAdmin &&
+                          INVOICE_ELIGIBLE.includes(o.status) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={issuingInvoice === o.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                issueInvoice(o);
+                              }}
+                            >
+                              {issuingInvoice === o.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <FileText className="h-4 w-4" />
+                              )}
+                              إصدار فاتورة
+                            </Button>
+                          )
+                        )}
                       </div>
                     </div>
                   </li>
@@ -782,6 +902,35 @@ function VendorOrdersPage() {
                                 {STATUS_LABELS[next]}
                               </Button>
                             ))}
+                          {invoiceMap[o.id] ? (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] bg-success/15 text-success border border-success/30"
+                            >
+                              <FileText className="h-3 w-3 ms-1" />
+                              {invoiceMap[o.id].invoice_number}
+                            </Badge>
+                          ) : (
+                            isAdmin &&
+                            INVOICE_ELIGIBLE.includes(o.status) && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={issuingInvoice === o.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  issueInvoice(o);
+                                }}
+                              >
+                                {issuingInvoice === o.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <FileText className="h-4 w-4" />
+                                )}
+                                إصدار فاتورة
+                              </Button>
+                            )
+                          )}
                           <Button
                             size="sm"
                             variant="ghost"
@@ -976,6 +1125,51 @@ function VendorOrdersPage() {
                   {selected.payment_method === "cod" && (
                     <p className="text-xs text-muted-foreground mt-2">
                       ملاحظة: طلبات الدفع عند الاستلام تُسجَّل تلقائياً كمدفوعة عند تأكيد التسليم.
+                    </p>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Invoice issuance */}
+                <div>
+                  <h3 className="text-sm font-bold mb-3">الفاتورة</h3>
+                  {invoiceMap[selected.id] ? (
+                    <div className="flex items-center gap-2 rounded-md border border-success/30 bg-success/10 p-3 text-sm">
+                      <FileText className="h-4 w-4 text-success" />
+                      <div className="flex-1">
+                        <p className="font-semibold text-success">
+                          تم إصدار الفاتورة
+                        </p>
+                        <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                          {invoiceMap[selected.id].invoice_number}
+                        </p>
+                      </div>
+                    </div>
+                  ) : isAdmin && INVOICE_ELIGIBLE.includes(selected.status) ? (
+                    <div className="flex items-start gap-2">
+                      <Button
+                        size="sm"
+                        variant="default"
+                        disabled={issuingInvoice === selected.id}
+                        onClick={() => issueInvoice(selected)}
+                      >
+                        {issuingInvoice === selected.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <FileText className="h-4 w-4" />
+                        )}
+                        إصدار فاتورة
+                      </Button>
+                      <p className="text-xs text-muted-foreground flex-1">
+                        ستتولى المنظومة توليد الرقم والـ PDF وإرسال البريد تلقائياً.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {!isAdmin
+                        ? "إصدار الفاتورة متاح للمدراء فقط."
+                        : "يجب أن يكون الطلب مؤكَّداً أو قيد التحضير أو مشحوناً أو مُسلَّماً لإصدار الفاتورة."}
                     </p>
                   )}
                 </div>
