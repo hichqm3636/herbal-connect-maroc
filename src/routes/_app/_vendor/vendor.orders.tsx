@@ -244,7 +244,7 @@ function OrderTimeline({ status, createdAt, updatedAt }: { status: OrderStatus; 
 }
 
 function VendorOrdersPage() {
-  const { companyId } = useAuth();
+  const { companyId, isAdmin } = useAuth();
   const search = useSearch({ from: "/_app/_vendor/vendor/orders" });
   const navigate = Route.useNavigate();
   const [orders, setOrders] = useState<OrderRow[]>([]);
@@ -262,7 +262,24 @@ function VendorOrdersPage() {
   const [savingStatus, setSavingStatus] = useState(false);
   const [adminNotes, setAdminNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  // order_id -> { id, invoice_number } for any order in this company that
+  // already has an issued invoice. Lets us hide/replace the "إصدار فاتورة"
+  // action and surface an "invoice issued" indicator instead.
+  const [invoiceMap, setInvoiceMap] = useState<
+    Record<string, { id: string; invoice_number: string }>
+  >({});
+  const [issuingInvoice, setIssuingInvoice] = useState<string | null>(null);
   const focusedRef = useRef<string | null>(null);
+
+  // Statuses for which a vendor admin may issue an invoice. Pending and
+  // cancelled orders are excluded by design.
+  const INVOICE_ELIGIBLE: OrderStatus[] = [
+    "confirmed",
+    "preparing",
+    "processing",
+    "shipped",
+    "delivered",
+  ];
 
   const setStatusFilter = (s: OrderStatus | "all") => {
     navigate({
