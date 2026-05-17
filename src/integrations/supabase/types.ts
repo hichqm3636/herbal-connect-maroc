@@ -1709,15 +1709,6 @@ export type Database = {
       }
     }
     Functions: {
-      _tmp_check_auth_user: {
-        Args: { _email: string }
-        Returns: {
-          created_at: string
-          email: string
-          id: string
-          raw_user_meta_data: Json
-        }[]
-      }
       activity_counts: {
         Args: { p_company_id: string; p_snapshot: string }
         Returns: {
@@ -1837,7 +1828,6 @@ export type Database = {
         }[]
       }
       claim_client_role: { Args: never; Returns: boolean }
-      claim_first_admin: { Args: never; Returns: boolean }
       claim_whatsapp_outbox: {
         Args: { _limit?: number }
         Returns: {
