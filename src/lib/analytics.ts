@@ -4,10 +4,12 @@
  * - Never throws (wraps everything in try/catch)
  * - Forwards to window.dataLayer (GTM-compatible) and any window.analytics.track
  *   sink if present
- * - Persists every event to the `analytics_events` table for in-app dashboards
+ * - Persists every event via the secure `ingestAnalytics` server function
+ *   (server-side validation, rate limiting, dedup, tenant resolution).
+ *   Direct client INSERTs into `analytics_events` are no longer permitted.
  */
 
-import { supabase } from "@/integrations/supabase/client";
+import { ingestAnalytics } from "@/lib/analyticsIngest.functions";
 
 export type AnalyticsEvent =
   | "product_view"
@@ -27,7 +29,6 @@ export type AnalyticsEvent =
   | "scroll_depth_100"
   | "exit_before_add_to_cart"
   | "ab_assignment"
-  // Landing & marketplace browsing
   | "landing_view"
   | "landing_cta_click"
   | "landing_category_click"
@@ -35,13 +36,11 @@ export type AnalyticsEvent =
   | "landing_nav_click"
   | "vendors_directory_view"
   | "vendor_store_view"
-  // Signup funnel
   | "signup_view"
   | "signup_started"
   | "signup_completed"
   | "signup_failed"
   | "vendor_onboarded"
-  // Subscription / billing
   | "pricing_view"
   | "pricing_plan_click"
   | "subscription_simulated"
@@ -50,9 +49,9 @@ export type AnalyticsEvent =
 
 export interface ProductEventPayload {
   product_id?: string | null;
-  vendor_id?: string | null;
+  vendor_id?: string | null; // ignored by server (resolved from product_id)
   price?: number | null;
-  user_id?: string | null;
+  user_id?: string | null;   // ignored by server (resolved from auth)
   [key: string]: unknown;
 }
 
@@ -61,28 +60,42 @@ interface DataLayerWindow {
   analytics?: { track?: (event: string, payload: Record<string, unknown>) => void };
 }
 
-function persistToDb(event: AnalyticsEvent, payload: ProductEventPayload): void {
-  // Fire and forget — never await, never surface errors.
-  try {
-    const { product_id, vendor_id, price, user_id, ...rest } = payload;
-    void supabase
-      .from("analytics_events")
-      .insert([
-        {
-          event_name: event,
-          product_id: product_id ?? null,
-          vendor_id: vendor_id ?? null,
-          user_id: user_id ?? null,
-          price: typeof price === "number" && Number.isFinite(price) ? price : null,
-          metadata: (rest ?? {}) as never,
-        },
-      ])
-      .then(() => {
+// ---------- Client-side micro-batching + best-effort dedup ----------
+interface QueuedEvent {
+  event_name: string;
+  product_id?: string | null;
+  price?: number | null;
+  metadata?: Record<string, unknown>;
+}
+const queue: QueuedEvent[] = [];
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+const lastSentAt = new Map<string, number>(); // client-side dedup hint
+const CLIENT_DEDUP_MS = 1500;
+
+function scheduleFlush() {
+  if (flushTimer || typeof window === "undefined") return;
+  flushTimer = setTimeout(() => {
+    flushTimer = null;
+    const batch = queue.splice(0, queue.length);
+    if (batch.length === 0) return;
+    try {
+      void ingestAnalytics({ data: { events: batch } }).catch(() => {
         /* swallow */
       });
-  } catch {
-    /* never break UI */
-  }
+    } catch {
+      /* swallow */
+    }
+  }, 400);
+}
+
+function enqueue(ev: QueuedEvent) {
+  const key = `${ev.event_name}|${ev.product_id ?? ""}`;
+  const now = Date.now();
+  const last = lastSentAt.get(key) ?? 0;
+  if (now - last < CLIENT_DEDUP_MS) return;
+  lastSentAt.set(key, now);
+  queue.push(ev);
+  scheduleFlush();
 }
 
 export function track(event: AnalyticsEvent, payload: ProductEventPayload = {}): void {
@@ -100,7 +113,16 @@ export function track(event: AnalyticsEvent, payload: ProductEventPayload = {}):
       }
     }
 
-    persistToDb(event, payload);
+    // Strip server-controlled fields before sending.
+    const { product_id, price, vendor_id: _v, user_id: _u, ...rest } = payload;
+    void _v;
+    void _u;
+    enqueue({
+      event_name: event,
+      product_id: product_id ?? null,
+      price: typeof price === "number" && Number.isFinite(price) ? price : null,
+      metadata: rest as Record<string, unknown>,
+    });
   } catch {
     // Never let analytics break the UI
   }

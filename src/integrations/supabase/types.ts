@@ -135,6 +135,36 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_rejections: {
+        Row: {
+          created_at: string
+          event_name: string | null
+          id: string
+          ip_hash: string | null
+          payload: Json
+          reason: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_name?: string | null
+          id?: string
+          ip_hash?: string | null
+          payload?: Json
+          reason: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_name?: string | null
+          id?: string
+          ip_hash?: string | null
+          payload?: Json
+          reason?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       checkout_optimization_baselines: {
         Row: {
           abandonment_rate: number
