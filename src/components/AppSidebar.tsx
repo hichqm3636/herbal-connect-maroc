@@ -24,6 +24,7 @@ import {
   User as UserIcon,
   TrendingUp,
   FlaskConical,
+  AlertTriangle,
   Filter,
   CreditCard,
 } from "lucide-react";
@@ -167,6 +168,7 @@ const superAdminSections: NavSection[] = [
       { title: "نمو العملاء", url: "/super-admin/growth", icon: TrendingUp },
       { title: "قمع التحويل", url: "/super-admin/funnel", icon: Filter },
       { title: "تجارب A/B", url: "/super-admin/ab-tests", icon: FlaskConical },
+      { title: "سجل الأخطاء", url: "/super-admin/errors", icon: AlertTriangle },
     ],
   },
 ];

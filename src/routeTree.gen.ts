@@ -38,6 +38,7 @@ import { Route as AppSuperAdminUsersRouteImport } from './routes/_app/super-admi
 import { Route as AppSuperAdminPlansRouteImport } from './routes/_app/super-admin/plans'
 import { Route as AppSuperAdminGrowthRouteImport } from './routes/_app/super-admin/growth'
 import { Route as AppSuperAdminFunnelRouteImport } from './routes/_app/super-admin/funnel'
+import { Route as AppSuperAdminErrorsRouteImport } from './routes/_app/super-admin/errors'
 import { Route as AppSuperAdminCompaniesRouteImport } from './routes/_app/super-admin/companies'
 import { Route as AppSuperAdminAnalyticsValidationRouteImport } from './routes/_app/super-admin/analytics-validation'
 import { Route as AppSuperAdminAnalyticsRouteImport } from './routes/_app/super-admin/analytics'
@@ -201,6 +202,11 @@ const AppSuperAdminFunnelRoute = AppSuperAdminFunnelRouteImport.update({
   path: '/funnel',
   getParentRoute: () => AppSuperAdminRoute,
 } as any)
+const AppSuperAdminErrorsRoute = AppSuperAdminErrorsRouteImport.update({
+  id: '/errors',
+  path: '/errors',
+  getParentRoute: () => AppSuperAdminRoute,
+} as any)
 const AppSuperAdminCompaniesRoute = AppSuperAdminCompaniesRouteImport.update({
   id: '/companies',
   path: '/companies',
@@ -331,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
+  '/super-admin/errors': typeof AppSuperAdminErrorsRoute
   '/super-admin/funnel': typeof AppSuperAdminFunnelRoute
   '/super-admin/growth': typeof AppSuperAdminGrowthRoute
   '/super-admin/plans': typeof AppSuperAdminPlansRoute
@@ -378,6 +385,7 @@ export interface FileRoutesByTo {
   '/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/super-admin/companies': typeof AppSuperAdminCompaniesRoute
+  '/super-admin/errors': typeof AppSuperAdminErrorsRoute
   '/super-admin/funnel': typeof AppSuperAdminFunnelRoute
   '/super-admin/growth': typeof AppSuperAdminGrowthRoute
   '/super-admin/plans': typeof AppSuperAdminPlansRoute
@@ -430,6 +438,7 @@ export interface FileRoutesById {
   '/_app/super-admin/analytics': typeof AppSuperAdminAnalyticsRoute
   '/_app/super-admin/analytics-validation': typeof AppSuperAdminAnalyticsValidationRoute
   '/_app/super-admin/companies': typeof AppSuperAdminCompaniesRoute
+  '/_app/super-admin/errors': typeof AppSuperAdminErrorsRoute
   '/_app/super-admin/funnel': typeof AppSuperAdminFunnelRoute
   '/_app/super-admin/growth': typeof AppSuperAdminGrowthRoute
   '/_app/super-admin/plans': typeof AppSuperAdminPlansRoute
@@ -480,6 +489,7 @@ export interface FileRouteTypes {
     | '/super-admin/analytics'
     | '/super-admin/analytics-validation'
     | '/super-admin/companies'
+    | '/super-admin/errors'
     | '/super-admin/funnel'
     | '/super-admin/growth'
     | '/super-admin/plans'
@@ -527,6 +537,7 @@ export interface FileRouteTypes {
     | '/super-admin/analytics'
     | '/super-admin/analytics-validation'
     | '/super-admin/companies'
+    | '/super-admin/errors'
     | '/super-admin/funnel'
     | '/super-admin/growth'
     | '/super-admin/plans'
@@ -578,6 +589,7 @@ export interface FileRouteTypes {
     | '/_app/super-admin/analytics'
     | '/_app/super-admin/analytics-validation'
     | '/_app/super-admin/companies'
+    | '/_app/super-admin/errors'
     | '/_app/super-admin/funnel'
     | '/_app/super-admin/growth'
     | '/_app/super-admin/plans'
@@ -822,6 +834,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSuperAdminFunnelRouteImport
       parentRoute: typeof AppSuperAdminRoute
     }
+    '/_app/super-admin/errors': {
+      id: '/_app/super-admin/errors'
+      path: '/errors'
+      fullPath: '/super-admin/errors'
+      preLoaderRoute: typeof AppSuperAdminErrorsRouteImport
+      parentRoute: typeof AppSuperAdminRoute
+    }
     '/_app/super-admin/companies': {
       id: '/_app/super-admin/companies'
       path: '/companies'
@@ -1030,6 +1049,7 @@ interface AppSuperAdminRouteChildren {
   AppSuperAdminAnalyticsRoute: typeof AppSuperAdminAnalyticsRoute
   AppSuperAdminAnalyticsValidationRoute: typeof AppSuperAdminAnalyticsValidationRoute
   AppSuperAdminCompaniesRoute: typeof AppSuperAdminCompaniesRoute
+  AppSuperAdminErrorsRoute: typeof AppSuperAdminErrorsRoute
   AppSuperAdminFunnelRoute: typeof AppSuperAdminFunnelRoute
   AppSuperAdminGrowthRoute: typeof AppSuperAdminGrowthRoute
   AppSuperAdminPlansRoute: typeof AppSuperAdminPlansRoute
@@ -1042,6 +1062,7 @@ const AppSuperAdminRouteChildren: AppSuperAdminRouteChildren = {
   AppSuperAdminAnalyticsRoute: AppSuperAdminAnalyticsRoute,
   AppSuperAdminAnalyticsValidationRoute: AppSuperAdminAnalyticsValidationRoute,
   AppSuperAdminCompaniesRoute: AppSuperAdminCompaniesRoute,
+  AppSuperAdminErrorsRoute: AppSuperAdminErrorsRoute,
   AppSuperAdminFunnelRoute: AppSuperAdminFunnelRoute,
   AppSuperAdminGrowthRoute: AppSuperAdminGrowthRoute,
   AppSuperAdminPlansRoute: AppSuperAdminPlansRoute,
