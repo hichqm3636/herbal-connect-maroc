@@ -45,7 +45,7 @@ export async function reportError(input: ReportInput): Promise<void> {
     const { data: sessionRes } = await supabase.auth.getSession();
     const userId = sessionRes.session?.user?.id ?? null;
 
-    await supabase.from("client_error_logs").insert({
+    const row = {
       user_id: userId,
       message,
       stack: input.stack?.slice(0, 8000) ?? null,
@@ -53,8 +53,9 @@ export async function reportError(input: ReportInput): Promise<void> {
       route: window.location.pathname.slice(0, 500),
       user_agent: navigator.userAgent.slice(0, 500),
       severity: input.severity ?? "error",
-      context: input.context ?? null,
-    });
+      context: (input.context ?? null) as never,
+    };
+    await supabase.from("client_error_logs").insert(row as never);
   } catch {
     // never let the logger itself break the app
   }
