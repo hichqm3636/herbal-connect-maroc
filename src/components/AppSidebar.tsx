@@ -24,6 +24,7 @@ import {
   User as UserIcon,
   TrendingUp,
   FlaskConical,
+  AlertTriangle,
   Filter,
   CreditCard,
 } from "lucide-react";
