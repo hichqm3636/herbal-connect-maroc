@@ -21,43 +21,56 @@ WHERE o.status = 'paid'
   AND p.id IS NULL;
 
 -- =====================================================
--- Delivered orders missing invoices
+-- Orders without items
 -- =====================================================
 
 SELECT
   o.id AS order_id,
   o.company_id
 FROM public.orders o
-LEFT JOIN public.invoices i
-  ON i.order_id = o.id
-WHERE o.status = 'delivered'
-  AND i.id IS NULL;
+LEFT JOIN public.order_items oi
+  ON oi.order_id = o.id
+WHERE oi.id IS NULL;
 
 -- =====================================================
 -- BILLING
 -- =====================================================
 
--- Invoice totals not matching payment sums
+-- Payments without linked orders
 
 SELECT
-  i.id,
-  i.total_amount,
-  COALESCE(SUM(p.amount), 0) AS paid_amount
-FROM public.invoices i
-LEFT JOIN public.payments p
-  ON p.invoice_id = i.id
-GROUP BY i.id, i.total_amount
-HAVING COALESCE(SUM(p.amount), 0) <> i.total_amount;
+  p.id AS payment_id,
+  p.order_id,
+  p.amount,
+  p.status
+FROM public.payments p
+LEFT JOIN public.orders o
+  ON o.id = p.order_id
+WHERE o.id IS NULL;
 
 -- =====================================================
--- INVENTORY
+-- PRODUCTS
 -- =====================================================
 
--- Negative inventory detection
+-- Products missing price
 
 SELECT
-  company_id,
-  product_id,
-  quantity_on_hand
-FROM public.inventory_levels
-WHERE quantity_on_hand < 0;
+  id,
+  name
+FROM public.products
+WHERE price IS NULL
+   OR price <= 0;
+
+-- =====================================================
+-- LOYALTY
+-- =====================================================
+
+-- Loyalty transactions without valid profile
+
+SELECT
+  lt.id,
+  lt.profile_id
+FROM public.loyalty_transactions lt
+LEFT JOIN public.profiles p
+  ON p.id = lt.profile_id
+WHERE p.id IS NULL;
