@@ -7,8 +7,43 @@ import { TenantProvider } from "@/hooks/useTenant";
 import { CartProvider } from "@/hooks/useCart";
 import { CartSheet } from "@/components/CartSheet";
 import { ReplaceCartDialog } from "@/components/ReplaceCartDialog";
+import { installGlobalErrorHandlers, reportError } from "@/lib/errorLogger";
 
 import appCss from "../styles.css?url";
+
+function RootErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  useEffect(() => {
+    console.error(error);
+    void reportError({
+      message: error.message || "Root error boundary",
+      stack: error.stack ?? null,
+      severity: "error",
+      context: { source: "root.errorComponent" },
+    });
+  }, [error]);
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4" dir="rtl">
+      <div className="max-w-md text-center">
+        <h1 className="text-3xl font-bold">حدث خطأ غير متوقع</h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          نأسف لذلك. تم تسجيل المشكلة وسنعمل على إصلاحها.
+        </p>
+        <div className="mt-6 flex justify-center gap-2">
+          <button
+            onClick={() => { router.invalidate(); reset(); }}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            إعادة المحاولة
+          </button>
+          <Link to="/" className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted">
+            العودة للرئيسية
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function NotFoundComponent() {
   return (
@@ -61,6 +96,7 @@ export const Route = createRootRoute({
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
+  errorComponent: RootErrorComponent,
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
@@ -90,6 +126,11 @@ function RootComponent() {
         },
       }),
   );
+
+  useEffect(() => {
+    installGlobalErrorHandlers();
+  }, []);
+
 
   return (
     <QueryClientProvider client={queryClient}>
