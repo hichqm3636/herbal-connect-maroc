@@ -1,0 +1,5 @@
+-- =========================================
+-- CORE HEALTH CHECKS
+-- READ ONLY
+-- SAFE FOR PRODUCTION INSPECTION
+-- =========================================
