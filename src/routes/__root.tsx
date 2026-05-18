@@ -127,6 +127,11 @@ function RootComponent() {
       }),
   );
 
+  useEffect(() => {
+    installGlobalErrorHandlers();
+  }, []);
+
+
   return (
     <QueryClientProvider client={queryClient}>
       <TenantProvider>
