@@ -942,6 +942,42 @@ export type Database = {
           },
         ]
       }
+      order_status_transitions: {
+        Row: {
+          actor_id: string | null
+          company_id: string
+          created_at: string
+          from_status: Database["public"]["Enums"]["order_status"] | null
+          id: string
+          metadata: Json
+          order_id: string
+          reason: string | null
+          to_status: Database["public"]["Enums"]["order_status"]
+        }
+        Insert: {
+          actor_id?: string | null
+          company_id: string
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["order_status"] | null
+          id?: string
+          metadata?: Json
+          order_id: string
+          reason?: string | null
+          to_status: Database["public"]["Enums"]["order_status"]
+        }
+        Update: {
+          actor_id?: string | null
+          company_id?: string
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["order_status"] | null
+          id?: string
+          metadata?: Json
+          order_id?: string
+          reason?: string | null
+          to_status?: Database["public"]["Enums"]["order_status"]
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           admin_notes: string | null
