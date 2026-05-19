@@ -193,7 +193,7 @@ function NotificationContent({ n }: { n: NotificationRow }) {
       {n.body && (
         <p className="text-xs text-muted-foreground leading-snug">{n.body}</p>
       )}
-      <p className="text-[10px] text-muted-foreground">{formatDateAr(n.created_at)}</p>
+      <p className="text-[10px] text-muted-foreground">{formatDateTimeAr(n.created_at)}</p>
     </div>
   );
 }
