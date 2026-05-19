@@ -1520,6 +1520,36 @@ export type Database = {
           },
         ]
       }
+      system_alerts: {
+        Row: {
+          created_at: string
+          details: Json
+          id: string
+          kind: string
+          message: string
+          resolved_at: string | null
+          severity: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          id?: string
+          kind: string
+          message: string
+          resolved_at?: string | null
+          severity: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          id?: string
+          kind?: string
+          message?: string
+          resolved_at?: string | null
+          severity?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           company_id: string | null
@@ -1953,6 +1983,7 @@ export type Database = {
           vendor_count: number
         }[]
       }
+      check_operational_health: { Args: never; Returns: undefined }
       claim_client_role: { Args: never; Returns: boolean }
       claim_whatsapp_outbox: {
         Args: { _limit?: number }
