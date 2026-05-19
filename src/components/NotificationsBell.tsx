@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { formatDateAr } from "@/lib/format";
+import { formatDateTimeAr } from "@/lib/format";
 
 interface NotificationRow {
   id: string;
