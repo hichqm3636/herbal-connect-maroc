@@ -852,6 +852,7 @@ export type Database = {
           body: string | null
           company_id: string
           created_at: string
+          dedupe_key: string | null
           id: string
           kind: string
           link: string | null
@@ -864,6 +865,7 @@ export type Database = {
           body?: string | null
           company_id: string
           created_at?: string
+          dedupe_key?: string | null
           id?: string
           kind: string
           link?: string | null
@@ -876,6 +878,7 @@ export type Database = {
           body?: string | null
           company_id?: string
           created_at?: string
+          dedupe_key?: string | null
           id?: string
           kind?: string
           link?: string | null

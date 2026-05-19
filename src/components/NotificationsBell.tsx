@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { formatDateAr } from "@/lib/format";
+import { formatDateTimeAr } from "@/lib/format";
 
 interface NotificationRow {
   id: string;
@@ -193,7 +193,7 @@ function NotificationContent({ n }: { n: NotificationRow }) {
       {n.body && (
         <p className="text-xs text-muted-foreground leading-snug">{n.body}</p>
       )}
-      <p className="text-[10px] text-muted-foreground">{formatDateAr(n.created_at)}</p>
+      <p className="text-[10px] text-muted-foreground">{formatDateTimeAr(n.created_at)}</p>
     </div>
   );
 }
